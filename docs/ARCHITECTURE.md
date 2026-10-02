@@ -49,6 +49,7 @@ src/
     remote/     Supabase client + (later) sync uploaders.
   config/       Typed environment parsing.
   ui/           Reusable presentational components + theme tokens.
+  i18n/         Localization layer: he / en strings + t() (Slice 1.0).
 docs/           Governance documents.
 supabase/       SQL migrations + RLS policies for the cloud schema.
 ```
@@ -67,7 +68,7 @@ Every platform capability is consumed through an interface:
 | `HapticsService` | `services/haptics/HapticsService.ts` | `expo-haptics`, best-effort (errors swallowed). |
 | `Clock` | `services/clock/Clock.ts` | `performance.now()` (monotonic) + `Date.now()` (wall). |
 | `newUuid()` | `services/ids/newUuid.ts` | `expo-crypto.randomUUID()`. |
-| Notifications | — | Phase 12. |
+| Notifications | — | Calendar + Notifications slice. |
 
 Services are composed in `services/index.ts` (`createServices`) and provided
 via `AppProvider`. Tests construct fakes. If a real platform difference
@@ -92,7 +93,7 @@ Results store `measuredResult`, `finalResult`, `wasEdited`; statistics read
   available → upsert → mark synced`.
 - Upload order respects dependencies (`Session → Exercise entry → Set →
   Attempt`). The choice between dependency-aware outbox and aggregate
-  workout upload is deferred until Phase 3/6 needs it.
+  workout upload is deferred until the Training Engine / Progress slices need it.
 - Single writer (the parent device) in the MVP. No multi-device conflict
   resolution yet.
 
@@ -104,8 +105,8 @@ Results store `measuredResult`, `finalResult`, `wasEdited`; statistics read
   `1..n` with no gaps, each applied in its own transaction by
   `runMigrations`. A shipped migration is never edited. The app refuses to run
   against a newer schema than it knows.
-- Domain tables arrive with their phase (Phase 1 children, Phase 2 exercises,
-  Phase 3 sessions/results/outbox).
+- Domain tables arrive with their slice (1.1 family/players, 1.2
+  self-assessment, 2.0 exercises, 2.1 sessions/results/outbox).
 
 ## 8. Cloud (Supabase)
 
@@ -121,18 +122,32 @@ Results store `measuredResult`, `finalResult`, `wasEdited`; statistics read
 ## 9. Domain model (target, filled in by phases)
 
 ```
-Parent (auth user) ─┬─ Family ─── Child (dateOfBirth, avatar, active)
-                    │                └── ChildSport (sport)
-Sport (key) ─── Exercise (category, measurementType, defaults, tutorialUrl, isCustom)
-WorkoutTemplate ── TemplateItem (exercise, sets, target, rest, order)
-Session (child, sport, startedAt, endedAt)
+Parent (auth user) ─┬─ Family ─── Player (a child; dateOfBirth, profile, active)
+                    │                ├── PlayerSport (sport)
+                    │                └── SelfAssessment (takenAt) ── SelfAssessmentRating (category, 1–5)
+Sport (key) ─── Exercise (category, measurementType, comparisonPolicy?, defaults, tutorialUrl, isCustom)
+WorkoutTemplate (purpose) ── TemplateItem (exercise, sets, target, rest, order)
+WorkoutSession (player, sport, purpose, template?, startedAt, endedAt)
   └── SessionExercise ── Set ── Attempt ── Measurement / Result
                                  (measuredResult, finalResult, wasEdited)
 ```
 
-`MeasurementType`: `TIME` (lower is better), `DURATION`, `REPETITIONS`,
-`MADE_ATTEMPTS`, `DISTANCE`, `RATING` (higher is better), `COMPLETION` (not
-ranked). Age is always computed from `dateOfBirth`.
+- "Child" in PRODUCT_SPEC and "Player" here are the same entity; code uses
+  `Player` / `player_id`.
+- Player profile fields (PRODUCT_SPEC §65): name, dateOfBirth, primary and
+  optional secondary position, dominant hand, experience, weekly training
+  frequency, height. **No weight column** in V1 (§66).
+- `SelfAssessment` is subjective data and lives in its own tables. It never
+  writes to, or is derived from, the result pipeline (§12 below).
+
+`MeasurementType` (`TIME`, `DURATION`, `REPETITIONS`, `MADE_ATTEMPTS`,
+`DISTANCE`, `RATING`, `COMPLETION`) describes WHAT was measured; a separate
+comparison policy (`LOWER_IS_BETTER`, `HIGHER_IS_BETTER`, `CUSTOM`,
+`NOT_RANKED`) describes HOW results compare. Defaults: `TIME` lower is
+better, `REPETITIONS` higher is better, `MADE_ATTEMPTS` custom,
+`COMPLETION` not ranked; `DURATION`, `DISTANCE` and `RATING` have **no
+default** — the exercise must declare its policy, otherwise comparison
+fails closed. Age is always computed from `dateOfBirth`.
 
 Personal-record rules (minimum sample for percentages, improvement threshold
 for manually timed results) are **product rules to be defined after field
@@ -144,7 +159,88 @@ testing** — the engine must accept them as configuration, not hard-code a numb
   `development-simulator` for simulator).
 - `npx expo export --platform ios` and `npx expo prebuild` must succeed in CI-like
   checks every phase.
-- Real iOS dev-build gates: after Phase 3 (Training Engine), Phase 10 (full
-  validation), Phase 12 (notifications).
+- **Early iOS dev-build gate: Slice 2.1 (Training Engine)** — verify the core
+  runtime path (navigation, SQLite, timer, audio cue, haptics) on iOS.
+- **Full iOS validation: the dedicated iOS Validation slice** — the
+  accumulated product on iOS, plus notifications on Android + iPhone in the
+  Calendar + Notifications slice.
+- No iOS build or iOS runtime check has been run yet.
 - iOS builds run on EAS (no Mac required): `npm run build:ios:dev` (needs an
   Apple Developer account for device builds) or `npm run build:ios:sim`.
+
+## 11. Localization and direction (approved — implemented in Slice 1.0)
+
+- One localization layer in `src/i18n/` (`he.*`, `en.*`, `index.*`).
+  Screens call `t('home.quickTraining')`, `t('common.save')`, … — no visible
+  text literals in feature screens. `en` and `he` must have identical key
+  sets (enforced by a test).
+- **Hebrew is the default** on a fresh install regardless of the OS locale.
+  The chosen language is persisted locally.
+- Direction follows the language: Hebrew RTL, English LTR. If the platform
+  needs an app reload to apply a direction change, the app reloads; no
+  per-screen mirroring hacks.
+- Direction-safe layout only: logical `start` / `end` (e.g.
+  `marginStart`, `paddingEnd`, `textAlign: 'auto'`) instead of left/right;
+  directional icons (back/next) mirror with direction.
+- Sports values keep their LTR logical order inside RTL text (`18/20`,
+  `80%`, `4.38`, `00:45`, `20m`). Formatting is measurement-specific and
+  added when the measurement appears (`formatTime`, `formatDuration`,
+  `formatMadeAttempts`, `formatPercentage`, `formatDistance`) — no single
+  generic formatter.
+- Avoid a large i18n dependency unless Slice 1.0 shows it is justified;
+  iOS uses the same layer.
+
+## 12. One result pipeline — Baseline is a Training Engine use case (approved)
+
+**One player · one result model · one training engine · multiple session purposes (TRAINING, BASELINE, REASSESSMENT).**
+
+```
+   entry (UX):   Quick Training   Workout / template run
+                        │                    │
+   purpose:         TRAINING         TRAINING · BASELINE · REASSESSMENT
+                        └─────────┬──────────┘
+                                  ▼
+          WorkoutTemplate (optional; purpose)  →  WorkoutSession (purpose)
+                                              ▼
+                       SessionExercise → Set → Attempt → Result
+                    (same timer, same MADE/MISS, same manual input,
+                     measuredResult / finalResult / wasEdited)
+                                              ▼
+                      one history · one PB logic · one graph pipeline
+```
+
+- **Session purpose = WHY the measurement exists:** `TRAINING`, `BASELINE`,
+  `REASSESSMENT`. It is the only thing that differs between uses, stored on
+  the session (and on its template when there is one). Analytics
+  distinguish a baseline reference point from training by `purpose`, never
+  by a separate table. Column introduced with the session table (Slice 2.1).
+- **Quick Training is an entry mode, not a purpose.** It is how the user
+  starts a session (minimal taps); it always creates an ordinary
+  `TRAINING` session. If analytics ever need the entry path, a separate
+  field (conceptually `entryMode = QUICK | WORKOUT`) may be added — **not
+  built now**, and never merged into `purpose`.
+- **Forbidden:** `BaselineAssessment`, `AssessmentResult`, a baseline timer,
+  a baseline shooting engine, baseline-only graphs, or any second result store.
+- **Baseline template:** a predefined `WorkoutTemplate` (purpose BASELINE)
+  whose item order encodes the coaching order (jump → sprint → agility →
+  ball handling → shooting). Age variations are template parameters (shot
+  count, distance, duration, rest).
+- **Multi-session baselines:** if a baseline must span days, an optional
+  grouping (conceptually `AssessmentCycle` → its `WorkoutSession`s) may be
+  added. It only groups sessions and stores no results. Not built until a
+  slice needs it.
+- **Reassessment** repeats the baseline template as new sessions; the
+  original baseline sessions are never modified.
+- The Training Engine does not depend on Baseline; Baseline depends on the
+  Training Engine.
+
+## 13. Cloud-ready ownership (approved)
+
+- Every local entity that will sync carries a client-generated UUID from its
+  first write: `family_id`, `player_id`, `session_id`, `exercise_id`,
+  `set_id`, `attempt_id`, … No server-generated or sequential ids.
+- Local rows carry their ownership from the start: a local `Family` row
+  (UUID) is created on first use and every `Player` references it, so
+  attaching the family to a cloud account later is an ownership hand-over,
+  not a schema migration.
+- No sync is built until its slice.

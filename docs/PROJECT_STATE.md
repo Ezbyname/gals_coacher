@@ -12,8 +12,10 @@ Real Android runtime validation completed by the owner on a physical device.
 | Verified baseline on `main` | `fb3e960` chore: establish verified Phase 0 baseline · `1b538a8` chore: link EAS project and tighten audio permissions |
 | EAS | Project linked (`owner: ezbyname`, `extra.eas.projectId: 80ab62ce-99fc-494d-bb5c-a41877158a18`) |
 | Android | **Verified on a physical device** (preview/internal APK, see below) |
-| iOS | Configuration prepared; no iOS build or runtime validation yet (gate after Phase 3) |
-| Phase 1 | **Not started** — waiting for explicit owner approval |
+| iOS | Configuration prepared; **no iOS build or runtime validation has been run.** Early iOS dev-build gate: Slice 2.1; full iOS validation: dedicated iOS Validation slice (ROADMAP) |
+| Controlled docs | PRODUCT_SPEC, ARCHITECTURE and ROADMAP aligned with the owner decisions of 2026-10-02, corrected after the 2026-10-03 patch review (languages/RTL, player profile, no weight in V1, self-assessment, baseline as a Training Engine use case, one result pipeline, new slice order). **Documentation only — none of these features is implemented.** |
+| Phase 0 hardening (slice 0.H) | Prepared as a separate patch / branch `phase0-hardening`; **not merged, not device-verified** |
+| Slice 1.0 and later | **Not started** — waiting for hardening review and explicit owner approval |
 
 ---
 
@@ -84,18 +86,18 @@ in this state record.
 
 ### Known limitations
 
-- iOS: no build or runtime validation yet (planned after Phase 3, full gate in Phase 10).
+- iOS: no build or runtime validation yet (early dev-build gate in Slice 2.1, full validation in the dedicated iOS Validation slice).
 - Verified build was the **preview** profile; the development-client build path was not part of this validation.
-- `AudioCueService` is a silent stub; whistle assets come in Phase 3.
+- `AudioCueService` is a silent stub; whistle assets come in Slice 2.1.
 - Supabase: client wired, offline-only; no project/schema/RLS yet.
 - Players / Exercises / Quick Training / History are placeholders.
-- `MeasurementType → direction` mapping on `main` still treats `MADE_ATTEMPTS` and `DISTANCE` as higher-is-better (fixed only in the unverified hardening branch).
+- Code on `main` still maps every `MeasurementType` to a fixed direction (`MADE_ATTEMPTS`, `DISTANCE`, `DURATION`, `RATING` treated as higher-is-better); ARCHITECTURE §9 documents the approved comparison-policy rule, and the code fix is only in the unverified hardening patch.
 - `AppProvider` fires `audio.preload()` without rejection handling (silent stub cannot reject today; fixed only in the unverified hardening branch).
-- Android may follow system dark mode (`userInterfaceStyle: "light"` needs `expo-system-ui` on Android).
+- Android may follow system dark mode (`userInterfaceStyle: "light"` is not enforced on Android without `expo-system-ui`). Theme behaviour is an open product decision — **DEFERRED** to UI/theme work.
 
-### Next proposed phase
+### Next proposed action
 
-**Phase 1 — Family + Children.** Not started; requires explicit owner approval.
+**Review the Phase 0 hardening patch (slice 0.H).** Slice 1.0 (Localization / RTL) is not started and requires explicit owner approval.
 
 ---
 
@@ -188,4 +190,5 @@ None platform-specific. All native modules used (`expo-sqlite`, `expo-audio`,
 
 ## Proposals (architecture changes awaiting owner approval)
 
-_None._
+1. **Cloud Foundation before the Training Engine** (slice C after 1.2, before 2.0) — **RECOMMENDED / PENDING PRODUCT OWNER APPROVAL.** Shown at that position in ROADMAP with the same label; not yet explicitly approved.
+- `expo-system-ui` to enforce the light theme on Android — **DEFERRED — decide during UI/theme work.** Theme behaviour (light only / dark / system) is not decided; no dependency added.

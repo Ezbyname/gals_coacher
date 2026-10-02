@@ -114,6 +114,8 @@ MVP: `Parent → Family → Children`. ההורה הוא מנהל המערכת. 
 
 לדוגמה: NOAM · Age 11 · Sport: Basketball · Current focus: Shooting, Speed, Ball Handling · Training history · Personal Records.
 
+Full V1 player profile fields: see §65. No weight in V1: see §66.
+
 ## 15. Exercise library
 
 קטן ומדויק בהתחלה:
@@ -303,6 +305,8 @@ See [ROADMAP.md](./ROADMAP.md).
 
 AI, Wearables, Apple Health, Health Connect, Camera analysis, Automatic shot detection, Automatic sprint detection, Social network, Leaderboards, Coach marketplace, Advanced nutrition, Complex recovery algorithm, Video analysis, Cloud AI speech.
 
+Also not building (approved 2026-10-02): weight collection in V1, ideal-weight / weight scores / weight-loss targets / calorie goals, body-comparison messaging, normative age-percentile scoring or labels such as "elite" / "below average", a self-assessment "gap score", separate U9/U12/U15 baseline engines, a sport plugin system.
+
 ## 58. Development quality rule
 
 כל Phase: `Implement → Test → Run → Prove → Update PROJECT_STATE.md → STOP`. אין מעבר אוטומטי לשלב הבא.
@@ -333,3 +337,76 @@ Coach: "16/20. יפה. ארבע הזריקות החסרות רשומות לאי�
 ואז 20m Sprint. 5 4 3 2 1 📣 RUN. STOP. 4.31. 🏆 "עכשיו כבר אין מה להתווכח עם השעון."
 
 זה המוצר שאנחנו בונים. לא מערכת ניהול ספורט. **כלי אימון אמיתי.**
+
+---
+
+# Approved additions — 2026-10-02
+
+> Owner-approved product decisions. Same CONTROLLED status as the sections above.
+
+## 64. Languages and direction
+
+- V1 supports **Hebrew** and **English**.
+- **Default language: Hebrew.** A fresh install starts in Hebrew even when the device OS is English.
+- Hebrew UI is **RTL**; English UI is **LTR**. One screen implementation serves both — no separate Hebrew/English screens.
+- If switching between RTL and LTR requires an app reload, that is acceptable. No brittle layout hacks to force instant switching.
+- All user-facing strings go through one localization layer; no visible text hard-coded in feature screens. Both languages stay key-compatible.
+- Sports measurements stay naturally readable in Hebrew: `18/20`, `80%`, `4.38`, `00:45`, `20m` keep their left-to-right logical order inside RTL text.
+- RTL must be validated on a physical Android device; iOS inherits the same localization architecture.
+
+## 65. Player profile — basketball V1
+
+Fields (V1 target):
+
+- Name
+- Date of birth (source of truth) → calculated age (never stored as the truth — §13)
+- Primary position; optional secondary position — Point Guard, Shooting Guard, Small Forward, Power Forward, Center, Multiple, Not sure
+- Dominant hand
+- Basketball experience
+- Approximate weekly training frequency
+- Height
+- Sport assignment: Basketball
+
+## 66. Weight — not collected in V1
+
+The product is used with children. Weight is intentionally **not** part of the V1 profile or onboarding.
+
+If ever added later it must be optional, parent-only, never part of a performance score and never a body/weight target. Never: ideal weight, weight score, weight-loss target, calorie goal, body-comparison messaging.
+
+Possible future optional metric: wingspan (not in V1).
+
+## 67. Self-assessment
+
+- After the player profile, the player completes a **short** structured self-assessment: about 5–6 basketball categories. Initial candidates: Shooting, Ball Handling, Passing, Finishing, Defense, Athleticism / Speed (final list is an open decision).
+- Each category rated **1–5** with large radio/button-style choices. No free text in V1.
+- Meaning: **how the player sees themselves.** It is not objective performance and is stored separately from measured results.
+- **Repeatable:** taken again at reassessment, history preserved (e.g. Ball Handling 2/5 → 4/5) and may be shown *alongside* measured improvement.
+- Never: automatic performance scores from self-assessment, converting objective measurements to 1–5, or a "gap score" between self-view and measurements.
+
+## 68. Baseline and reassessment
+
+- **Baseline is a use of the Training Engine, not a second measurement system.** Baseline, normal training, Quick Training and reassessment all record results through the same session → exercise → set → attempt → result pipeline and feed the same history and graphs. Same timer, same MADE/MISS, same manual input.
+- Session purposes are **Training, Baseline, Reassessment**. Quick Training is a fast way to *start* a session, not a separate purpose — it records ordinary training.
+- Baseline V1 is **small** (not a combine). Candidate areas: standing vertical jump (manual input), 10m or 20m sprint (multiple attempts), one timed dribble/slalom test, one or two shooting tests such as free throws. Exact test set is an open decision.
+- **Order matters** — high-intensity tests while fresh: 1. Jump · 2. Sprint · 3. Agility · 4. Ball Handling · 5. Shooting.
+- A baseline may be completed in **one or several sessions** (younger players, fatigue).
+- **One** basketball baseline template; small configurable variations by age (shot count, distance, drill duration, rest). No normative percentiles, no "elite / below average" labels.
+- **Player vs. their own baseline** is the primary comparison.
+- The original baseline is **never overwritten**. Reassessment repeats the same baseline; progress can show baseline, training progression and reassessment from the same result stream (e.g. 20m sprint: baseline 4.34 → training 4.27, 4.20 → reassessment 4.08).
+
+## 69. Coaching guardrails
+
+Encourage: consistency, effort, technique, gradual progress, confidence, recovery, healthy competition, enjoyment.
+
+Never encourage: shame, punishment, body comparison, sibling ranking, extreme training, training through pain, unsafe conditioning.
+
+## 70. Open product decisions
+
+Not decided yet — implementation must keep these configurable and ask the owner:
+
+- Final 5–6 self-assessment categories (and their Hebrew/English wording).
+- Exact Baseline V1 exercises, attempt counts and rest.
+- Baseline split rules by age (when to split across sessions; per-age variations).
+- Shooting PB minimum attempt volume (§27).
+- Sprint / manual-timer PB significance threshold (§24).
+- App theme behaviour (light only / dark / follow system).
