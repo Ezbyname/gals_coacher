@@ -1,15 +1,14 @@
-// expo-sqlite has native code; app-level tests use an in-memory stand-in.
+// expo-sqlite has native code; app-level tests run the same SQL against
+// Node's real SQLite engine (in-memory) instead.
 jest.mock('expo-sqlite', () => ({
   openDatabaseAsync: jest.fn(async () => {
-    let version = 0;
-    const db = {
-      execAsync: jest.fn(async (sql: string) => {
-        const m = /PRAGMA user_version = (\d+)/.exec(sql);
-        if (m) version = Number(m[1]);
-      }),
-      getFirstAsync: jest.fn(async () => ({ user_version: version })),
-      withTransactionAsync: jest.fn(async (task: () => Promise<void>) => task()),
-    };
-    return db;
+    const { openNodeSqlite } = require('./src/test-support/nodeSqlite');
+    return openNodeSqlite(':memory:');
   }),
+}));
+
+// jest-expo auto-mocks native expo-crypto (randomUUID returns undefined);
+// use Node's implementation so id generation behaves like the device.
+jest.mock('expo-crypto', () => ({
+  randomUUID: () => require('node:crypto').randomUUID(),
 }));

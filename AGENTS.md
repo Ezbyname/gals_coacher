@@ -16,7 +16,7 @@ TypeScript + Expo Router, SQLite on device, Supabase in the cloud.
 2. Proof first. Never report "works". Report counts and evidence (e.g. `Unit tests: 18/18 PASS`, `Android: verified on device`). Say plainly what was *not* verified.
 3. **Generic domain, specialized UX.** No sport-specific tables/types in the domain or storage (`basketball_results` is forbidden). Basketball-specific screens are encouraged.
 4. **Cross-platform.** Use platform capabilities only through the interfaces in `src/services/`. No Android-only code where a cross-platform option exists.
-5. **Local-first.** Training never needs the network. Generate UUIDs on device before the first write. SQLite is the operational source of truth; Supabase is canonical after sync.
+5. **Local-first.** Training never needs the network. Generate UUIDs on device (via `services.ids` / `IdService`) before the first write. SQLite is the operational source of truth; Supabase is canonical after sync.
 6. **Timers** derive elapsed time from timestamps (`Clock`), never from counting intervals.
 7. Store `dateOfBirth`, never age. Store `measuredResult`, `finalResult`, `wasEdited`.
 8. Do not invent numeric product rules (PB thresholds, minimum shot samples). Make them configurable and flag them for the owner.

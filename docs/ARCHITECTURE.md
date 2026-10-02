@@ -50,6 +50,7 @@ src/
   config/       Typed environment parsing.
   ui/           Reusable presentational components + theme tokens.
   i18n/         Localization layer: he / en strings + t() (Slice 1.0).
+  test-support/ Test-only helpers (e.g. node:sqlite adapter). Never imported by app code.
 docs/           Governance documents.
 supabase/       SQL migrations + RLS policies for the cloud schema.
 ```
@@ -64,14 +65,29 @@ Every platform capability is consumed through an interface:
 
 | Interface | File | V1 implementation |
 |---|---|---|
-| `AudioCueService` (`WHISTLE`, `DOUBLE_WHISTLE`, `COUNTDOWN_TICK`) | `services/audio/AudioCueService.ts` | Phase 0: silent stub. Phase 3: `expo-audio` with **bundled local assets**, preloaded before a workout. |
+| `AudioCueService` (`WHISTLE`, `DOUBLE_WHISTLE`, `COUNTDOWN_TICK`) | `services/audio/AudioCueService.ts` | Phase 0: silent stub. Slice 2.1: `expo-audio` with **bundled local assets**, preloaded before a workout. Always wrapped by `withAudioFailureSafety` (`services/audio/failSafeAudio.ts`). |
 | `HapticsService` | `services/haptics/HapticsService.ts` | `expo-haptics`, best-effort (errors swallowed). |
 | `Clock` | `services/clock/Clock.ts` | `performance.now()` (monotonic) + `Date.now()` (wall). |
-| `newUuid()` | `services/ids/newUuid.ts` | `expo-crypto.randomUUID()`. |
+| `IdService.newUuid()` | `services/ids/IdService.ts` | `expo-crypto.randomUUID()`, validated as a UUID before use. Tests inject `createSequentialIdService()` for deterministic ids. |
 | Notifications | — | Calendar + Notifications slice. |
 
 Services are composed in `services/index.ts` (`createServices`) and provided
-via `AppProvider`. Tests construct fakes. If a real platform difference
+via `AppProvider` (which also accepts injected `services` for tests). Tests
+construct fakes.
+
+**Audio is never load-bearing.** A failed preload, play or release is reported
+(`console.warn`) and swallowed; it must not crash the app, block boot, or
+affect timers, workouts or result persistence. Training without sound is
+degraded, not broken. Two deliberate layers:
+
+1. `createServices()` wraps the real `AudioCueService` in
+   `withAudioFailureSafety` — this protects **every** call site, including
+   `play()` inside the Training Engine.
+2. `AppProvider` additionally guards its own boot-time `preload()` /
+   `release()` calls, so boot stays safe even when an *unwrapped* service is
+   injected (tests, future composition changes).
+
+If a real platform difference
 appears, use `x.ts` / `x.android.ts` / `x.ios.ts` behind the same interface.
 
 ## 5. Timer
@@ -86,6 +102,22 @@ Results store `measuredResult`, `finalResult`, `wasEdited`; statistics read
 
 ## 6. Local-first & sync
 
+### Offline / sync hard rules (approved)
+
+1. No generic bidirectional sync engine in V1.
+2. Active and unsynchronized training data is local-first.
+3. SQLite is the operational source of truth for active and unsynchronized workouts.
+4. Supabase becomes the canonical cloud source after successful synchronization.
+5. All syncable entities receive client-generated UUIDs (`IdService`) before their first local write.
+6. The MVP assumes one primary writer (the parent device).
+7. Multi-device conflict resolution is deferred until Child Mode introduces additional writers.
+8. Sync must preserve entity dependency order (`Session → Exercise entry → Set → Attempt`).
+9. The upload strategy is chosen later: dependency-aware writes **or** aggregate workout/session synchronization.
+
+None of this is implemented yet; it binds the slices that add storage and sync.
+
+### Mechanics
+
 - Active training never depends on the network.
 - Every syncable entity gets a UUID **on device before its first write**, so
   upload retries are idempotent upserts.
@@ -97,6 +129,24 @@ Results store `measuredResult`, `finalResult`, `wasEdited`; statistics read
 - Single writer (the parent device) in the MVP. No multi-device conflict
   resolution yet.
 
+## 6a. Future Child Mode authentication (approved direction — not implemented)
+
+Child devices never need an email/password account.
+
+```
+Parent account → pairing code → child device
+→ Supabase Anonymous Auth → server-controlled pairing (code validated server-side)
+→ auth.uid() linked to the correct family/player → RLS
+```
+
+- The anonymous child must **never** be able to choose an arbitrary
+  `family_id` or `player_id`. The link is created only by server-side code
+  (e.g. a `SECURITY DEFINER` RPC or Edge Function) after validating the
+  pairing code (single-use, expiring).
+- RLS policies resolve the child's access from that server-written link,
+  never from client-supplied ids.
+- Implemented in the Child Mode Foundation slice.
+
 ## 7. Local database
 
 - File: `gals_coacher.db`, WAL mode, `foreign_keys = ON`.
@@ -105,6 +155,9 @@ Results store `measuredResult`, `finalResult`, `wasEdited`; statistics read
   `1..n` with no gaps, each applied in its own transaction by
   `runMigrations`. A shipped migration is never edited. The app refuses to run
   against a newer schema than it knows.
+- Tests run the real SQL against Node's built-in SQLite (`node:sqlite`, Node ≥ 22.13) via
+  `src/test-support/nodeSqlite.ts`, including a close/reopen restart test
+  and migration rollback.
 - Domain tables arrive with their slice (1.1 family/players, 1.2
   self-assessment, 2.0 exercises, 2.1 sessions/results/outbox).
 
@@ -140,14 +193,31 @@ WorkoutSession (player, sport, purpose, template?, startedAt, endedAt)
 - `SelfAssessment` is subjective data and lives in its own tables. It never
   writes to, or is derived from, the result pipeline (§12 below).
 
-`MeasurementType` (`TIME`, `DURATION`, `REPETITIONS`, `MADE_ATTEMPTS`,
-`DISTANCE`, `RATING`, `COMPLETION`) describes WHAT was measured; a separate
-comparison policy (`LOWER_IS_BETTER`, `HIGHER_IS_BETTER`, `CUSTOM`,
-`NOT_RANKED`) describes HOW results compare. Defaults: `TIME` lower is
-better, `REPETITIONS` higher is better, `MADE_ATTEMPTS` custom,
-`COMPLETION` not ranked; `DURATION`, `DISTANCE` and `RATING` have **no
-default** — the exercise must declare its policy, otherwise comparison
-fails closed. Age is always computed from `dateOfBirth`.
+**Measurement type = WHAT was measured. Comparison policy = HOW improvement
+is evaluated.** They are separate (`domain/measurement.ts`,
+`domain/comparison.ts`).
+
+- `MeasurementType`: `TIME`, `DURATION`, `REPETITIONS`, `MADE_ATTEMPTS`,
+  `DISTANCE`, `RATING`, `COMPLETION`.
+- `ComparisonPolicy`: `LOWER_IS_BETTER`, `HIGHER_IS_BETTER`, `CUSTOM`,
+  `NOT_RANKED`. An exercise may declare its policy; otherwise the
+  measurement type's default applies:
+
+| MeasurementType | Default policy | Why |
+|---|---|---|
+| `TIME` | `LOWER_IS_BETTER` | sprint / slalom completion time |
+| `DURATION` | none — exercise must declare | plank (longer better) vs. timed drill (shorter better) |
+| `REPETITIONS` | `HIGHER_IS_BETTER` | |
+| `MADE_ATTEMPTS` | `CUSTOM` | 1/1 = 100% must not beat 18/20 = 90%; needs a sample-size rule (open decision) |
+| `DISTANCE` | none — exercise must declare | jump/throw distance vs. distance from a target |
+| `RATING` | none — exercise must declare | skill (higher better) vs. fatigue / discomfort (lower) vs. effort / RPE (not ranked) |
+| `COMPLETION` | `NOT_RANKED` | |
+
+`resolveComparisonPolicy` throws when neither the exercise nor the type
+provides a policy, so results are never compared with a guessed rule. PB
+significance thresholds and the shooting minimum sample are not implemented.
+
+Age is always computed from `dateOfBirth`.
 
 Personal-record rules (minimum sample for percentages, improvement threshold
 for manually timed results) are **product rules to be defined after field

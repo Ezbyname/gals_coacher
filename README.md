@@ -10,7 +10,7 @@ first, built on a multi-sport core. Android first, iPhone ready.
 
 ## Getting started (Windows / macOS / Linux)
 
-Requirements: Node.js 22 LTS, npm, an Android phone (or emulator), a free Expo account.
+Requirements: Node.js 22 LTS (22.13 or newer — tests use the built-in `node:sqlite`), npm, an Android phone (or emulator), a free Expo account.
 
 ```bash
 git clone https://github.com/Ezbyname/gals_coacher.git

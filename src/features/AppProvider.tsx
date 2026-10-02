@@ -14,8 +14,14 @@ type AppContextValue = { boot: BootState; services: Services };
 
 const AppContext = createContext<AppContextValue | null>(null);
 
-export function AppProvider({ children }: { children: ReactNode }) {
-  const services = useMemo(() => createServices(), []);
+type AppProviderProps = {
+  children: ReactNode;
+  /** Injected in tests; the app uses the real platform services. */
+  services?: Services;
+};
+
+export function AppProvider({ children, services: injected }: AppProviderProps) {
+  const services = useMemo(() => injected ?? createServices(), [injected]);
   const [boot, setBoot] = useState<BootState>({ status: 'booting' });
 
   useEffect(() => {
@@ -27,10 +33,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .catch((e: unknown) => {
         if (!cancelled) setBoot({ status: 'error', error: e instanceof Error ? e : new Error(String(e)) });
       });
-    void services.audio.preload();
+    // Audio is optional: a failed preload is reported and never blocks boot.
+    Promise.resolve()
+      .then(() => services.audio.preload())
+      .catch((e: unknown) => console.warn('[audio] preload failed; continuing without sound.', e));
     return () => {
       cancelled = true;
-      services.audio.release();
+      try {
+        services.audio.release();
+      } catch (e) {
+        console.warn('[audio] release failed', e);
+      }
     };
   }, [services]);
 

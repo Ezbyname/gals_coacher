@@ -2,6 +2,9 @@
   "name": "gals-coacher",
   "version": "0.1.0",
   "main": "expo-router/entry",
+  "engines": {
+    "node": ">=22.13"
+  },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.117.2",

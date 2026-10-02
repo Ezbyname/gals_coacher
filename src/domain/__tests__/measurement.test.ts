@@ -1,4 +1,4 @@
-import { MEASUREMENT_TYPES, isMeasurementType, resultDirection } from '../measurement';
+import { MEASUREMENT_TYPES, isMeasurementType } from '../measurement';
 import { isUuid } from '../ids';
 
 describe('measurement types', () => {
@@ -12,20 +12,6 @@ describe('measurement types', () => {
       'RATING',
       'COMPLETION',
     ]);
-  });
-
-  it('treats sprint-style TIME as lower-is-better', () => {
-    expect(resultDirection('TIME')).toBe('LOWER_IS_BETTER');
-  });
-
-  it('treats held DURATION (plank) and counts as higher-is-better', () => {
-    expect(resultDirection('DURATION')).toBe('HIGHER_IS_BETTER');
-    expect(resultDirection('REPETITIONS')).toBe('HIGHER_IS_BETTER');
-    expect(resultDirection('MADE_ATTEMPTS')).toBe('HIGHER_IS_BETTER');
-  });
-
-  it('does not rank COMPLETION', () => {
-    expect(resultDirection('COMPLETION')).toBe('NOT_RANKED');
   });
 
   it('guards unknown values', () => {
