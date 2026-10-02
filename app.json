@@ -27,7 +27,21 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-audio"
-    ]
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "80ab62ce-99fc-494d-bb5c-a41877158a18"
+      }
+    },
+    "owner": "ezbyname"
   }
 }
