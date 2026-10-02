@@ -4,17 +4,106 @@
 
 ## Current status
 
-**Phase 0 — Foundation: IMPLEMENTED, gate PARTIALLY PROVEN.**
-JavaScript and native-config checks pass in CI-like conditions. **The Android
-device build and on-device launch have not been run yet** (no Android SDK or
-Expo account in the authoring environment). Phase 1 must not start until the
-owner completes the open gate items below.
+**Phase 0 — Foundation: CLOSED / VERIFIED** (2026-10-02).
+Real Android runtime validation completed by the owner on a physical device.
+
+| Item | State |
+|---|---|
+| Verified baseline on `main` | `fb3e960` chore: establish verified Phase 0 baseline · `1b538a8` chore: link EAS project and tighten audio permissions |
+| EAS | Project linked (`owner: ezbyname`, `extra.eas.projectId: 80ab62ce-99fc-494d-bb5c-a41877158a18`) |
+| Android | **Verified on a physical device** (preview/internal APK, see below) |
+| iOS | Configuration prepared; no iOS build or runtime validation yet (gate after Phase 3) |
+| Phase 1 | **Not started** — waiting for explicit owner approval |
 
 ---
 
-## Phase 0 report — 2026-10-02
+## Phase 0 closure — 2026-10-02
 
-### Gate checklist
+### Android runtime evidence (physical device, verified manually by the owner)
+
+| Check | Result |
+|---|---|
+| Preview/internal APK built through EAS | ✅ build successful |
+| APK installed on physical Android device | ✅ |
+| App launches directly, without Metro | ✅ |
+| Home screen renders | ✅ |
+| Players screen opens | ✅ no crash |
+| Exercises screen opens | ✅ no crash |
+| History screen opens | ✅ no crash |
+| Quick Training screen opens | ✅ no crash |
+| Diagnostics screen opens | ✅ |
+| Platform displayed | ✅ correct |
+| App version displayed | ✅ `0.1.0` |
+| SQLite, first real-device launch | ✅ `schema v1`, `applied this launch: 1` |
+| SQLite, after fully closing and reopening | ✅ `schema v1`, `applied this launch: 0` |
+| SQLite persistence across restart | ✅ confirmed (schema version survived restart; migration not re-applied) |
+| Test Haptics | ✅ worked on the physical device |
+| Supabase | `not configured (offline only)` — expected in Phase 0 |
+
+Constraints recorded: no security/network bypass is permitted or required; the
+owner's work-machine Cato / corporate security configuration must not be modified.
+
+### Automated evidence
+
+| Check | Owner PC (verified baseline) | Authoring sandbox re-run on `1b538a8` |
+|---|---|---|
+| `npm ci` | — | PASS (1080 packages) |
+| TypeScript (`tsc --noEmit`) | PASS | PASS (via `npm run check`) |
+| Lint (`expo lint`) | PASS | PASS (via `npm run check`) |
+| Jest | **18/18 PASS, 4/4 suites** | **18/18 PASS, 4/4 suites** (`npm run check` exit 0) |
+| Expo Doctor | **21/21 PASS** | 19/21 — the 2 remaining checks (config schema, React Native Directory) cannot reach `api.expo.dev` / `reactnative.directory` from the sandbox; not a project failure. Owner's 21/21 is authoritative. |
+| Expo dependency check | up to date | — |
+| Android EAS preview build | successful | — |
+
+### Phase 0 gate
+
+| Gate | Result |
+|---|---|
+| App opens | ✅ physical Android device, without Metro |
+| Navigation works | ✅ all five screens on device |
+| TypeScript passes | ✅ |
+| Tests run | ✅ 18/18 |
+| Android build works | ✅ EAS preview build, installed and run |
+| iOS build path documented | ✅ ARCHITECTURE §10, EAS iOS profiles (not executed) |
+
+### Configuration added on `main` since the original Phase 0 commit
+
+- `app.json`: EAS `projectId` + `owner`; `expo-audio` plugin configured with `microphonePermission: false`, `recordAudioAndroid: false`, `enableBackgroundPlayback: false` (playback-only whistles; no microphone permission requested).
+- `package-lock.json`: npm metadata only (`dev` → `devOptional`), no version changes.
+
+### Not part of the verified baseline
+
+A Phase 0 hardening pass (comparison-policy model, injectable `IdService`,
+fail-safe audio preload, launch counter on Diagnostics, real-SQLite tests,
+offline/sync + Child Mode auth rules in ARCHITECTURE, governance table in
+CLAUDE.md; 40 tests) was authored in a separate session history and is
+**not on `main`, not built and not device-verified**. It is kept on the
+authoring environment's local branch `phase0-hardening-unverified`
+(`1a2e55b`, `b6e97ca`) pending an owner decision. Nothing from it is assumed
+in this state record.
+
+### Known limitations
+
+- iOS: no build or runtime validation yet (planned after Phase 3, full gate in Phase 10).
+- Verified build was the **preview** profile; the development-client build path was not part of this validation.
+- `AudioCueService` is a silent stub; whistle assets come in Phase 3.
+- Supabase: client wired, offline-only; no project/schema/RLS yet.
+- Players / Exercises / Quick Training / History are placeholders.
+- `MeasurementType → direction` mapping on `main` still treats `MADE_ATTEMPTS` and `DISTANCE` as higher-is-better (fixed only in the unverified hardening branch).
+- `AppProvider` fires `audio.preload()` without rejection handling (silent stub cannot reject today; fixed only in the unverified hardening branch).
+- Android may follow system dark mode (`userInterfaceStyle: "light"` needs `expo-system-ui` on Android).
+
+### Next proposed phase
+
+**Phase 1 — Family + Children.** Not started; requires explicit owner approval.
+
+---
+
+## History
+
+### Phase 0 implementation report — 2026-10-02 (pre-device; superseded by the closure record above)
+
+#### Gate checklist
 
 | Gate | Result | Evidence |
 |---|---|---|
@@ -26,7 +115,7 @@ owner completes the open gate items below.
 | Android build works | ⚠️ JS + native config only | `expo export --platform android` → Hermes bundle produced. `expo prebuild` → `android/` generated, `applicationId com.ezbyname.galscoacher`. **Gradle/EAS build not run.** |
 | iOS build path documented | ✅ | `expo export --platform ios` → Hermes bundle produced. `expo prebuild` → `ios/` generated, bundle id `com.ezbyname.galscoacher`. EAS `development` / `development-simulator` profiles + ARCHITECTURE §10. |
 
-### Open gate items for the owner (Windows machine)
+#### Open gate items for the owner (Windows machine)
 
 1. `npm install`
 2. `npx eas-cli@latest login` then `npx eas-cli@latest init` (links the EAS project; adds `extra.eas.projectId` to app config — commit it).
@@ -35,7 +124,7 @@ owner completes the open gate items below.
 5. Tap **Test haptics** → the phone vibrates.
 6. Record the results here.
 
-### Files
+#### Files
 
 - App config: `app.json`, `eas.json`, `package.json`, `tsconfig.json`, `eslint.config.js`, `jest.config.js`, `jest.setup.ts`, `.env.example`, `.gitignore`
 - Routes: `src/app/_layout.tsx`, `index.tsx`, `quick-training.tsx`, `children.tsx`, `exercises.tsx`, `history.tsx`, `diagnostics.tsx`
@@ -46,12 +135,12 @@ owner completes the open gate items below.
 - UI: `src/ui/{theme.ts,BigButton.tsx,PlaceholderScreen.tsx}`, `src/features/AppProvider.tsx`
 - Docs: `CLAUDE.md`, `AGENTS.md`, `README.md`, `docs/{PRODUCT_SPEC,ARCHITECTURE,ROADMAP,PROJECT_STATE}.md`, `supabase/README.md`
 
-### DB changes
+#### DB changes
 
 - Local SQLite v1: `app_meta (key TEXT PK, value TEXT)`. Versioned via `PRAGMA user_version`.
 - Supabase: none (no project linked yet).
 
-### Tests
+#### Tests
 
 | Suite | Tests |
 |---|---|
@@ -61,7 +150,7 @@ owner completes the open gate items below.
 | `app/__tests__/navigation.test.tsx` | 2 |
 | **Total** | **18 / 18 PASS** |
 
-### Commands run
+#### Commands run
 
 ```
 npx tsc --noEmit                                   → exit 0
@@ -72,12 +161,12 @@ npx expo prebuild --no-install --clean (scratch copy) → android/ + ios/ genera
 npx expo-doctor                                    → 19/21; the 2 failures are network-only (schema + RN Directory fetch blocked in the authoring sandbox)
 ```
 
-### iOS impact
+#### iOS impact
 
 None platform-specific. All native modules used (`expo-sqlite`, `expo-audio`,
 `expo-haptics`, `expo-crypto`, `expo-router`) are cross-platform Expo modules.
 
-### Known limitations
+#### Known limitations
 
 - No on-device run yet (see open gate items).
 - `AudioCueService` is a silent stub; whistle assets and `expo-audio` implementation come in Phase 3.
@@ -85,13 +174,13 @@ None platform-specific. All native modules used (`expo-sqlite`, `expo-audio`,
 - Placeholder screens for Players / Exercises / Quick Training / History.
 - Light theme only.
 
-### Decisions taken in Phase 0
+#### Decisions taken in Phase 0
 
 - **Expo SDK 57** (current stable) instead of 56: `expo-doctor` flags a Hermes V1 memory regression in SDK 56 that is fixed in SDK 57.
 - App identifiers `com.ezbyname.galscoacher`, URL scheme `galscoacher` — change before the first store submission if desired.
 - Jest 29 (`jest-expo` 57 is built on Jest 29).
 
-### Next proposed phase
+#### Next proposed phase
 
 **Phase 1 — Family + Children**, after the open gate items above are recorded as passing.
 
