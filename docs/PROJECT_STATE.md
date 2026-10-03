@@ -6,19 +6,62 @@
 
 **Phase 0 — Foundation: CLOSED / VERIFIED** (2026-10-02).
 **Phase 0.H — Hardening: CLOSED / VERIFIED** (2026-10-03).
-Both verified by the owner on a physical Android device.
+**Slice 1.0 — Localization / RTL / Startup Splash: CLOSED / VERIFIED** (2026-10-03).
+All verified by the owner on a physical Android device. iOS bundle export validated; no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
 |---|---|
-| Verified baseline on `main` | `fb3e960` chore: establish verified Phase 0 baseline · `1b538a8` chore: link EAS project and tighten audio permissions · `a023e00` docs: close verified Phase 0 gate · `67844b2` docs: align controlled docs with approved product decisions · **`13a09c9` chore: harden phase 0 architecture** (HEAD, pushed) |
+| Verified baseline on `main` | `fb3e960` chore: establish verified Phase 0 baseline · `1b538a8` chore: link EAS project and tighten audio permissions · `a023e00` docs: close verified Phase 0 gate · `67844b2` docs: align controlled docs with approved product decisions · `13a09c9` chore: harden phase 0 architecture · `25e3694` docs: close verified Phase 0 hardening gate · **Slice 1.0:** `590ce2a` feat(i18n): add translation core · `baf761f` feat(i18n): add persisted language and direction control · `15feb2d` feat(i18n): localize existing app · `5f97f8b` feat(startup): add coach splash experience (owner's local `main`; applied with `git am`, so they differ from the authoring-branch hashes, e.g. startup = authoring `cafd90a`) |
 | EAS | Project linked (`owner: ezbyname`, `extra.eas.projectId: 80ab62ce-99fc-494d-bb5c-a41877158a18`) |
 | Android | **Verified on a physical device** (preview/internal APK, see below) |
-| iOS | Configuration prepared; **no iOS build or runtime validation has been run.** Early iOS dev-build gate: Slice 2.1; full iOS validation: dedicated iOS Validation slice (ROADMAP) |
-| Controlled docs | PRODUCT_SPEC, ARCHITECTURE and ROADMAP aligned with the owner decisions of 2026-10-02, corrected after the 2026-10-03 patch review (languages/RTL, player profile, no weight in V1, self-assessment, baseline as a Training Engine use case, one result pipeline, new slice order). **Documentation only — none of these features is implemented.** |
+| iOS | Configuration prepared; **iOS bundle export validated (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.** Early iOS dev-build gate: Slice 2.1; full iOS validation: dedicated iOS Validation slice (ROADMAP) |
+| Controlled docs | PRODUCT_SPEC, ARCHITECTURE and ROADMAP aligned with the owner decisions of 2026-10-02, corrected after the 2026-10-03 patch review (languages/RTL, player profile, no weight in V1, self-assessment, baseline as a Training Engine use case, one result pipeline, new slice order). **Slice 1.0 decisions (Hebrew/English, Hebrew default, RTL/LTR, measurement display) are implemented and verified on Android. Player Profile, Self-Assessment, Baseline/Reassessment, the one-result-pipeline Training Engine and the Cloud Foundation position remain roadmap/product decisions — not implemented.** |
 | Phase 0 hardening (slice 0.H) | **CLOSED / VERIFIED** — merged as `13a09c9`, 40/40 tests on the owner's machine, physical Android device verified (see below) |
 | Cloud Foundation position | **RECOMMENDED / PENDING PRODUCT OWNER APPROVAL** (see Proposals) |
-| Slice 1.0 (Localization / RTL + startup splash) | **IMPLEMENTATION COMPLETE — PHYSICAL DEVICE VALIDATION PENDING.** On branch `slice-1.0-localization-rtl-splash` (not merged): translation core, AsyncStorage language preference (Hebrew default, OS language ignored), DirectionService with reload-loop guard, Settings language selector, all existing screens localized, Diagnostics direction + RTL measurement rows, coach startup splash (`assets/images/splash-coach.png`; native splash = same artwork small and centred (160 dp, contain) on its matching background `#A9886F`, full-screen artwork at app level, ~5 s minimum on cold start, gated on language/direction and app readiness). **Not verified on a device.** |
+| Slice 1.0 (Localization / RTL + startup splash) | **CLOSED / VERIFIED** — 123/123 tests, 20/20 suites; physical Android Preview APK verified (see below) |
 | Slices after 1.0 | **Not started** |
+
+---
+
+## Slice 1.0 closure — 2026-10-03
+
+### What Slice 1.0 contains
+
+- **Languages:** Hebrew (default on every fresh install, independent of the OS locale) and English; one translation layer (`t()`, typed keys, HE/EN key and placeholder parity); all existing screens, headers and Diagnostics localized; approved Hebrew copy; `react/jsx-no-literals` enforced.
+- **Direction:** Hebrew RTL / English LTR via `DirectionService` (Hebrew `allowRTL(true)`+`forceRTL(true)`, English `forceRTL(false)`+`allowRTL(false)`, `reloadAppAsync()`); reload-loop protection (`@gals-coacher/rtl.reloadTarget`); mismatches exposed on Diagnostics, never retried.
+- **Persistence:** language in AsyncStorage (`@gals-coacher/ui.language`; missing/invalid → Hebrew). No SQLite migration (schema still v1).
+- **Settings:** Hebrew / English selector with confirmation; fast language-switch reload (no 5 s splash; transient marker `@gals-coacher/startup.languageSwitchAt`, consumed once, ≤30 s freshness).
+- **Startup splash:** approved coach artwork `assets/images/splash-coach.png` (SHA-256 `E3CA6E7124A11F55B923B194763C26B97D81AC9DA62236E7A76D2A614C5E8805`); native splash = same artwork small and centred on `#A9886F` (supported SDK 57 config), app-level full-screen artwork; ~5 s minimum on cold start (including the first-launch RTL correction, without a double wait), gated on language/direction and app readiness; background → foreground never replays it (completion remembered per JS runtime).
+- **Diagnostics:** direction actual/expected row and RTL measurement sample (`18/20`, `80%`, `4.38`, `00:45`, `20m`).
+
+### Automated evidence (final)
+
+| Check | Result |
+|---|---|
+| Jest | ✅ **20/20 suites, 123/123 tests PASS, 0 failed, 0 skipped** |
+| TypeScript | ✅ PASS |
+| Lint | ✅ PASS |
+| Android / iOS bundle export | ✅ validated during implementation |
+| Prebuild + Android manifest | ✅ `supportsRtl="true"`, `MODIFY_AUDIO_SETTINGS`, **no `RECORD_AUDIO`** |
+| Splash artwork | ✅ SHA-256 verified (above) |
+
+### Physical Android evidence (EAS Preview APK, owner)
+
+| Check | Result |
+|---|---|
+| Fresh launch | ✅ native splash shows the smaller centred coach image, then the app-level splash fills the screen; ~5 s startup; Hebrew + RTL |
+| Home / Players / Exercises / History / Quick Training / Settings / Diagnostics | ✅ all open, no crash |
+| Diagnostics | ✅ schema v1; direction actual/expected correct; haptics work; `18/20`, `80%`, `4.38`, `00:45`, `20m` render correctly |
+| Hebrew → English | ✅ switch succeeds, LTR, app works |
+| Full restart | ✅ English and LTR persist |
+| English → Hebrew | ✅ switch succeeds, RTL |
+| Full restart | ✅ Hebrew and RTL persist |
+| Background → foreground | ✅ **bug found and fixed:** the first Preview APK replayed the 5 s splash on resume; fixed in the startup commit (JS-runtime startup completion state); a new Preview APK was verified with ≥3 background → foreground cycles — no splash, no delay, returns to the active screen. **Closed.** |
+
+### Not verified / not started
+
+- iOS bundle export validated; no physical iOS device/runtime validation or native iOS build has been performed.
+- No Player Profile, Self-Assessment, Cloud/Auth, Exercise Model or Training Engine work.
 
 ---
 
@@ -128,7 +171,7 @@ owner's work-machine Cato / corporate security configuration must not be modifie
 
 ### Known limitations
 
-- iOS: no build or runtime validation yet (early dev-build gate in Slice 2.1, full validation in the dedicated iOS Validation slice).
+- iOS: bundle export validated; no physical iOS device/runtime validation or native iOS build yet (early dev-build gate in Slice 2.1, full validation in the dedicated iOS Validation slice).
 - Verified build was the **preview** profile; the development-client build path was not part of this validation.
 - `AudioCueService` is a silent stub; whistle assets come in Slice 2.1.
 - Supabase: client wired, offline-only; no project/schema/RLS yet.
@@ -138,7 +181,7 @@ owner's work-machine Cato / corporate security configuration must not be modifie
 
 ### Next proposed action
 
-**Slice 1.0 — Localization / RTL**, only after explicit owner approval. Not started.
+**Slice 1.1 — Player Profile**, only after explicit owner approval. Not started. (Cloud Foundation position remains RECOMMENDED / PENDING PRODUCT OWNER APPROVAL.)
 
 ---
 
