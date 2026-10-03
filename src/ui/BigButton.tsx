@@ -7,15 +7,17 @@ type Props = {
   onPress: () => void;
   variant?: 'primary' | 'secondary';
   disabled?: boolean;
+  /** Marks the current choice in a set (e.g. the active language). */
+  selected?: boolean;
   testID?: string;
 };
 
-export function BigButton({ label, onPress, variant = 'primary', disabled, testID }: Props) {
+export function BigButton({ label, onPress, variant = 'primary', disabled, selected, testID }: Props) {
   const primary = variant === 'primary';
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityState={{ disabled: !!disabled }}
+      accessibilityState={{ disabled: !!disabled, selected }}
       disabled={disabled}
       onPress={onPress}
       testID={testID}

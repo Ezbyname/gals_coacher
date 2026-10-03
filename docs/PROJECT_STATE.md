@@ -17,7 +17,8 @@ Both verified by the owner on a physical Android device.
 | Controlled docs | PRODUCT_SPEC, ARCHITECTURE and ROADMAP aligned with the owner decisions of 2026-10-02, corrected after the 2026-10-03 patch review (languages/RTL, player profile, no weight in V1, self-assessment, baseline as a Training Engine use case, one result pipeline, new slice order). **Documentation only — none of these features is implemented.** |
 | Phase 0 hardening (slice 0.H) | **CLOSED / VERIFIED** — merged as `13a09c9`, 40/40 tests on the owner's machine, physical Android device verified (see below) |
 | Cloud Foundation position | **RECOMMENDED / PENDING PRODUCT OWNER APPROVAL** (see Proposals) |
-| Slice 1.0 and later | **Not started** — Slice 1.0 (Localization / RTL) requires explicit owner approval |
+| Slice 1.0 (Localization / RTL + startup splash) | **IMPLEMENTATION IN PROGRESS — DEVICE VALIDATION PENDING.** On branch `slice-1.0-localization-rtl-splash` (not merged): translation core, AsyncStorage language preference (Hebrew default, OS language ignored), DirectionService with reload-loop guard, Settings language selector, all existing screens localized, Diagnostics direction + RTL measurement rows. Startup splash not yet implemented. **Not verified on a device.** |
+| Slices after 1.0 | **Not started** |
 
 ---
 

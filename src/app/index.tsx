@@ -1,29 +1,37 @@
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { useI18n } from '@/i18n/I18nProvider';
 import { BigButton } from '@/ui/BigButton';
 import { colors, spacing } from '@/ui/theme';
 
 export default function HomeScreen() {
+  const { t } = useI18n();
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>🏀 Ready to train?</Text>
-      <Text style={styles.subtitle}>Pick a player, pick a drill, go.</Text>
+      <Text style={styles.title}>{t('home.title')}</Text>
+      <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
 
       <BigButton
         testID="home-quick-training"
-        label="QUICK TRAINING"
+        label={t('home.quickTraining')}
         onPress={() => router.push('/quick-training')}
       />
 
       <View style={styles.grid}>
-        <BigButton variant="secondary" label="Players" onPress={() => router.push('/children')} />
-        <BigButton variant="secondary" label="Exercises" onPress={() => router.push('/exercises')} />
-        <BigButton variant="secondary" label="History" onPress={() => router.push('/history')} />
+        <BigButton variant="secondary" label={t('nav.players')} onPress={() => router.push('/children')} />
+        <BigButton variant="secondary" label={t('nav.exercises')} onPress={() => router.push('/exercises')} />
+        <BigButton variant="secondary" label={t('nav.history')} onPress={() => router.push('/history')} />
+        <BigButton
+          testID="home-settings"
+          variant="secondary"
+          label={t('nav.settings')}
+          onPress={() => router.push('/settings')}
+        />
         <BigButton
           testID="home-diagnostics"
           variant="secondary"
-          label="Diagnostics"
+          label={t('nav.diagnostics')}
           onPress={() => router.push('/diagnostics')}
         />
       </View>

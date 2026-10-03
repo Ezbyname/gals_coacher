@@ -2,12 +2,12 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, spacing } from './theme';
 
-/** Stand-in for a route whose feature belongs to a later roadmap phase. */
-export function PlaceholderScreen({ title, phase }: { title: string; phase: number }) {
+/** Stand-in for a route whose feature arrives in a later slice. Text is already translated. */
+export function PlaceholderScreen({ title, body }: { title: string; body: string }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.body}>Arrives in Phase {phase}. See docs/ROADMAP.md.</Text>
+      <Text style={styles.body}>{body}</Text>
     </View>
   );
 }

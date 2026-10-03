@@ -3,27 +3,51 @@ import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { env } from '@/config/env';
 import { useApp } from '@/features/AppProvider';
+import { ltr } from '@/i18n/bidi';
+import { useI18n } from '@/i18n/I18nProvider';
 import { BigButton } from '@/ui/BigButton';
 import { colors, spacing } from '@/ui/theme';
 
-/** Phase 0 proof screen: shows that each foundation layer is wired up on-device. */
+/** On-device proof screen: shows that each foundation layer is wired up. */
 export default function DiagnosticsScreen() {
   const { boot, services } = useApp();
+  const { t, direction, nativeDirection, directionMismatch } = useI18n();
 
   const dbLine =
     boot.status === 'ready'
-      ? `ready · schema v${boot.migration.to} (applied this launch: ${boot.migration.applied.length})`
+      ? t('diagnostics.sqliteReady', { version: boot.migration.to, applied: boot.migration.applied.length })
       : boot.status === 'error'
-        ? `ERROR · ${boot.error.message}`
-        : 'opening…';
+        ? t('diagnostics.sqliteError', { message: boot.error.message })
+        : t('diagnostics.sqliteOpening');
+
+  const directionLine = t('diagnostics.directionValue', { actual: nativeDirection, expected: direction });
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Row label="Platform" value={`${Platform.OS} ${String(Platform.Version)}`} />
-      <Row label="App version" value={Constants.expoConfig?.version ?? 'unknown'} />
-      <Row label="SQLite" value={dbLine} testID="diag-sqlite" />
-      <Row label="Supabase" value={env.supabase ? 'configured' : 'not configured (offline only)'} />
-      <BigButton variant="secondary" label="Test haptics" onPress={() => services.haptics.success()} />
+      <Row label={t('diagnostics.platform')} value={ltr(`${Platform.OS} ${String(Platform.Version)}`)} />
+      <Row label={t('diagnostics.appVersion')} value={Constants.expoConfig?.version ? ltr(Constants.expoConfig.version) : t('common.unknown')} />
+      <Row label={t('diagnostics.sqlite')} value={dbLine} testID="diag-sqlite" />
+      <Row
+        label={t('diagnostics.supabase')}
+        value={env.supabase ? t('diagnostics.supabaseConfigured') : t('diagnostics.supabaseOffline')}
+      />
+      <Row
+        label={t('diagnostics.direction')}
+        value={directionMismatch ? `${directionLine} · ${t('diagnostics.directionMismatch')}` : directionLine}
+        testID="diag-direction"
+      />
+      <Row
+        label={t('diagnostics.rtlSample')}
+        value={t('diagnostics.rtlSampleValue', {
+          shots: ltr('18/20'),
+          percent: ltr('80%'),
+          sprint: ltr('4.38'),
+          rest: ltr('00:45'),
+          distance: ltr('20m'),
+        })}
+        testID="diag-rtl-sample"
+      />
+      <BigButton variant="secondary" label={t('diagnostics.testHaptics')} onPress={() => services.haptics.success()} />
     </ScrollView>
   );
 }
