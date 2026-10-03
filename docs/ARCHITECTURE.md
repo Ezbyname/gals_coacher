@@ -50,6 +50,7 @@ src/
   config/       Typed environment parsing.
   ui/           Reusable presentational components + theme tokens.
   i18n/         Localization layer: he / en strings + t() (Slice 1.0).
+  preferences/  Device-local UI preferences in AsyncStorage (e.g. language). Not domain data, never synced.
   test-support/ Test-only helpers (e.g. node:sqlite adapter). Never imported by app code.
 docs/           Governance documents.
 supabase/       SQL migrations + RLS policies for the cloud schema.
@@ -69,6 +70,7 @@ Every platform capability is consumed through an interface:
 | `HapticsService` | `services/haptics/HapticsService.ts` | `expo-haptics`, best-effort (errors swallowed). |
 | `Clock` | `services/clock/Clock.ts` | `performance.now()` (monotonic) + `Date.now()` (wall). |
 | `IdService.newUuid()` | `services/ids/IdService.ts` | `expo-crypto.randomUUID()`, validated as a UUID before use. Tests inject `createSequentialIdService()` for deterministic ids. |
+| `DirectionService` (`isRTL`, `apply`, `reload`) | `services/direction/DirectionService.ts` | `I18nManager` (Hebrew: `allowRTL(true)` + `forceRTL(true)`; English: `forceRTL(false)` + `allowRTL(false)`) and `reloadAppAsync()` from `expo`. |
 | Notifications | — | Calendar + Notifications slice. |
 
 Services are composed in `services/index.ts` (`createServices`) and provided
@@ -245,7 +247,10 @@ testing** — the engine must accept them as configuration, not hard-code a numb
   text literals in feature screens. `en` and `he` must have identical key
   sets (enforced by a test).
 - **Hebrew is the default** on a fresh install regardless of the OS locale.
-  The chosen language is persisted locally.
+  The chosen language is persisted in AsyncStorage
+  (`@gals-coacher/ui.language`; missing or invalid → Hebrew), independent
+  of the SQLite domain database. A temporary key
+  (`@gals-coacher/rtl.reloadTarget`) guards against direction-reload loops.
 - Direction follows the language: Hebrew RTL, English LTR. If the platform
   needs an app reload to apply a direction change, the app reloads; no
   per-screen mirroring hacks.

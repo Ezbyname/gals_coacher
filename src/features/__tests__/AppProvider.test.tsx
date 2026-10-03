@@ -3,6 +3,7 @@ import { Text } from 'react-native';
 
 import { systemClock } from '@/services/clock/Clock';
 import { createSequentialIdService } from '@/services/ids/IdService';
+import { createFakeDirectionService } from '@/test-support/fakeDirection';
 import type { Services } from '@/services';
 
 import { AppProvider, useApp } from '../AppProvider';
@@ -23,6 +24,7 @@ function servicesWithAudio(audio: Services['audio']): Services {
     haptics: { tap: jest.fn(), success: jest.fn(), warning: jest.fn() },
     clock: systemClock,
     ids: createSequentialIdService(),
+    direction: createFakeDirectionService(false),
   };
 }
 

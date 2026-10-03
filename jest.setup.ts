@@ -12,3 +12,16 @@ jest.mock('expo-sqlite', () => ({
 jest.mock('expo-crypto', () => ({
   randomUUID: () => require('node:crypto').randomUUID(),
 }));
+
+// Official in-memory AsyncStorage mock (language preference, reload guard).
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+);
+
+// A real app reload must never happen in tests; tests inject a fake DirectionService.
+jest.mock('expo', () => ({
+  ...jest.requireActual('expo'),
+  reloadAppAsync: jest.fn(async () => {
+    throw new Error('reloadAppAsync called in a test');
+  }),
+}));
