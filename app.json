@@ -34,6 +34,15 @@
           "recordAudioAndroid": false,
           "enableBackgroundPlayback": false
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#A9886F",
+          "image": "./assets/images/splash-coach.png",
+          "imageWidth": 160,
+          "resizeMode": "contain"
+        }
       ]
     ],
     "extra": {

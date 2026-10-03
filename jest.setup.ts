@@ -25,3 +25,11 @@ jest.mock('expo', () => ({
     throw new Error('reloadAppAsync called in a test');
   }),
 }));
+
+// expo-splash-screen is native; tests only need the calls to be observable.
+jest.mock('expo-splash-screen', () => ({
+  preventAutoHideAsync: jest.fn(async () => true),
+  hide: jest.fn(),
+  hideAsync: jest.fn(async () => {}),
+  setOptions: jest.fn(),
+}));

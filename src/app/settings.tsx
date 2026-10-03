@@ -1,5 +1,6 @@
 import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
 
+import { clearLanguageSwitch, markLanguageSwitch } from '@/features/startup/languageSwitchMarker';
 import { useI18n } from '@/i18n/I18nProvider';
 import { LANGUAGES, type Language } from '@/i18n/languages';
 import { BigButton } from '@/ui/BigButton';
@@ -16,7 +17,14 @@ export default function SettingsScreen() {
       {
         text: t('common.confirm'),
         onPress: () => {
-          setLanguage(next).catch((e: unknown) => console.warn('[i18n] language change failed', e));
+          // Tell the startup splash the coming reload is a language change (no 5 s wait).
+          markLanguageSwitch()
+            .catch((e: unknown) => console.warn('[splash] could not mark the language change', e))
+            .then(() => setLanguage(next))
+            .catch((e: unknown) => {
+              console.warn('[i18n] language change failed', e);
+              void clearLanguageSwitch();
+            });
         },
       },
     ]);

@@ -80,6 +80,8 @@ describe('navigation — Hebrew (default)', () => {
     expect(order).toEqual(['alert:החלפת שפה', 'forceRTL(false)', 'allowRTL(false)', 'reload']);
     const AsyncStorage = jest.requireMock('@react-native-async-storage/async-storage');
     expect(await AsyncStorage.getItem('@gals-coacher/ui.language')).toBe('en');
+    // The explicit switch marks the coming reload as a language change (no 5 s splash).
+    expect(Number(await AsyncStorage.getItem('@gals-coacher/startup.languageSwitchAt'))).toBeGreaterThan(0);
   });
 });
 

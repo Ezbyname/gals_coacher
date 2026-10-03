@@ -3,20 +3,30 @@ import { StatusBar } from 'expo-status-bar';
 import { useMemo } from 'react';
 
 import { AppProvider } from '@/features/AppProvider';
+import { keepNativeSplash } from '@/features/startup/nativeSplash';
+import { StartupReadySignal } from '@/features/startup/StartupReadySignal';
+import { StartupSplash } from '@/features/startup/StartupSplash';
 import { I18nProvider, useI18n } from '@/i18n/I18nProvider';
 import { createServices } from '@/services';
 import { colors } from '@/ui/theme';
+
+// Keep the native splash up until the app-level coach splash is ready (module
+// scope, so it runs before the first render as Expo recommends).
+keepNativeSplash();
 
 export default function RootLayout() {
   // One composition root: the same services feed language/direction and the app.
   const services = useMemo(() => createServices(), []);
   return (
-    <I18nProvider direction={services.direction}>
-      <AppProvider services={services}>
-        <StatusBar style="dark" />
-        <AppStack />
-      </AppProvider>
-    </I18nProvider>
+    <StartupSplash>
+      <I18nProvider direction={services.direction}>
+        <AppProvider services={services}>
+          <StatusBar style="dark" />
+          <StartupReadySignal />
+          <AppStack />
+        </AppProvider>
+      </I18nProvider>
+    </StartupSplash>
   );
 }
 
