@@ -5,17 +5,69 @@
 ## Current status
 
 **Phase 0 — Foundation: CLOSED / VERIFIED** (2026-10-02).
-Real Android runtime validation completed by the owner on a physical device.
+**Phase 0.H — Hardening: CLOSED / VERIFIED** (2026-10-03).
+Both verified by the owner on a physical Android device.
 
 | Item | State |
 |---|---|
-| Verified baseline on `main` | `fb3e960` chore: establish verified Phase 0 baseline · `1b538a8` chore: link EAS project and tighten audio permissions |
+| Verified baseline on `main` | `fb3e960` chore: establish verified Phase 0 baseline · `1b538a8` chore: link EAS project and tighten audio permissions · `a023e00` docs: close verified Phase 0 gate · `67844b2` docs: align controlled docs with approved product decisions · **`13a09c9` chore: harden phase 0 architecture** (HEAD, pushed) |
 | EAS | Project linked (`owner: ezbyname`, `extra.eas.projectId: 80ab62ce-99fc-494d-bb5c-a41877158a18`) |
 | Android | **Verified on a physical device** (preview/internal APK, see below) |
 | iOS | Configuration prepared; **no iOS build or runtime validation has been run.** Early iOS dev-build gate: Slice 2.1; full iOS validation: dedicated iOS Validation slice (ROADMAP) |
 | Controlled docs | PRODUCT_SPEC, ARCHITECTURE and ROADMAP aligned with the owner decisions of 2026-10-02, corrected after the 2026-10-03 patch review (languages/RTL, player profile, no weight in V1, self-assessment, baseline as a Training Engine use case, one result pipeline, new slice order). **Documentation only — none of these features is implemented.** |
-| Phase 0 hardening (slice 0.H) | Prepared as a separate patch / branch `phase0-hardening`; **not merged, not device-verified** |
-| Slice 1.0 and later | **Not started** — waiting for hardening review and explicit owner approval |
+| Phase 0 hardening (slice 0.H) | **CLOSED / VERIFIED** — merged as `13a09c9`, 40/40 tests on the owner's machine, physical Android device verified (see below) |
+| Cloud Foundation position | **RECOMMENDED / PENDING PRODUCT OWNER APPROVAL** (see Proposals) |
+| Slice 1.0 and later | **Not started** — Slice 1.0 (Localization / RTL) requires explicit owner approval |
+
+---
+
+## Phase 0.H closure — 2026-10-03
+
+### What the hardening contains (`13a09c9`, merged on `main`)
+
+- Measurement type separated from comparison policy (`LOWER_IS_BETTER`, `HIGHER_IS_BETTER`, `CUSTOM`, `NOT_RANKED`).
+- `RATING` (like `DURATION` and `DISTANCE`) has no implicit comparison direction; `MADE_ATTEMPTS` defaults to `CUSTOM`.
+- Fail-closed comparison resolution (no policy → error, never a guess).
+- Injectable `IdService` (`services.ids`), validated UUIDs, deterministic test ids.
+- Audio failure safety (`withAudioFailureSafety` + guarded boot-time preload/release).
+- Real-SQLite tests (`node:sqlite`): first launch, restart persistence, PRAGMAs, migration rollback.
+- ARCHITECTURE: offline/sync hard rules, future Child Mode auth rules.
+- Node >= 22.13 requirement (`package.json` `engines`, clear test-time error).
+- Document governance (CLAUDE.md).
+
+No schema change (local SQLite still v1), no product feature.
+
+### Automated evidence (owner's Windows machine, after applying the hardening)
+
+| Check | Result |
+|---|---|
+| `npm ci` | ✅ completed successfully |
+| `npm run check` | ✅ PASS |
+| TypeScript | ✅ PASS |
+| Lint | ✅ PASS |
+| Jest | ✅ **9/9 suites, 40/40 tests PASS, 0 failed, 0 skipped** |
+
+### Physical Android evidence (EAS Preview APK containing the hardening)
+
+| Check | Result |
+|---|---|
+| APK built through EAS and installed on a real device | ✅ |
+| App launches | ✅ |
+| Home / Diagnostics / Players / Exercises / History / Quick Training open | ✅ all, no crash observed |
+| Haptics | ✅ physically verified |
+| SQLite after Android app data was explicitly cleared | ✅ `ready · schema v1 (applied this launch: 1)` |
+| SQLite after fully closing and reopening | ✅ `ready · schema v1 (applied this launch: 0)` |
+| Supabase | `not configured (offline only)` — expected at this stage, not a failure |
+
+Proven on the physical Android build: schema v1 is created from clean
+application data, the migration applies once, database state persists across
+an application restart, and the migration is not re-applied.
+
+### Not verified / not started
+
+- No iOS physical-device (or any iOS) build or validation.
+- No Cloud / Auth implementation.
+- No Localization, Player Profile or Training Engine implementation.
 
 ---
 
@@ -73,17 +125,6 @@ owner's work-machine Cato / corporate security configuration must not be modifie
 - `app.json`: EAS `projectId` + `owner`; `expo-audio` plugin configured with `microphonePermission: false`, `recordAudioAndroid: false`, `enableBackgroundPlayback: false` (playback-only whistles; no microphone permission requested).
 - `package-lock.json`: npm metadata only (`dev` → `devOptional`), no version changes.
 
-### Not part of the verified baseline
-
-A Phase 0 hardening pass (comparison-policy model, injectable `IdService`,
-fail-safe audio preload, launch counter on Diagnostics, real-SQLite tests,
-offline/sync + Child Mode auth rules in ARCHITECTURE, governance table in
-CLAUDE.md; 40 tests) was authored in a separate session history and is
-**not on `main`, not built and not device-verified**. It is kept on the
-authoring environment's local branch `phase0-hardening-unverified`
-(`1a2e55b`, `b6e97ca`) pending an owner decision. Nothing from it is assumed
-in this state record.
-
 ### Known limitations
 
 - iOS: no build or runtime validation yet (early dev-build gate in Slice 2.1, full validation in the dedicated iOS Validation slice).
@@ -91,13 +132,12 @@ in this state record.
 - `AudioCueService` is a silent stub; whistle assets come in Slice 2.1.
 - Supabase: client wired, offline-only; no project/schema/RLS yet.
 - Players / Exercises / Quick Training / History are placeholders.
-- Code on `main` still maps every `MeasurementType` to a fixed direction (`MADE_ATTEMPTS`, `DISTANCE`, `DURATION`, `RATING` treated as higher-is-better); ARCHITECTURE §9 documents the approved comparison-policy rule, and the code fix is only in the unverified hardening patch.
-- `AppProvider` fires `audio.preload()` without rejection handling (silent stub cannot reject today; fixed only in the unverified hardening branch).
+- Comparison policies exist in the domain, but PB rules (shooting minimum sample, manual-timer significance threshold) are open product decisions and not implemented.
 - Android may follow system dark mode (`userInterfaceStyle: "light"` is not enforced on Android without `expo-system-ui`). Theme behaviour is an open product decision — **DEFERRED** to UI/theme work.
 
 ### Next proposed action
 
-**Review the Phase 0 hardening patch (slice 0.H).** Slice 1.0 (Localization / RTL) is not started and requires explicit owner approval.
+**Slice 1.0 — Localization / RTL**, only after explicit owner approval. Not started.
 
 ---
 
