@@ -10,14 +10,22 @@ import {
 } from '@/domain/basketball/profile';
 import { PlayerDataError, PlayerNotFoundError } from '@/data/local/players/errors';
 import type { PlayerProfileInput, SavePlayerResult } from '@/data/local/players/playerRepository';
+import { useApp } from '@/features/AppProvider';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
+import { localCalendarDateFromEpoch } from '@/services/clock/localCalendarDate';
 import { BigButton } from '@/ui/BigButton';
 import { ChoiceChips } from '@/ui/ChoiceChips';
+import { DateOfBirthPicker } from '@/ui/DateOfBirthPicker';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing } from '@/ui/theme';
 
-import { formValuesToInput, type PlayerFormValues } from './playerFormValues';
+import {
+  formValuesToInput,
+  pickerInitialDate,
+  withDateOfBirth,
+  type PlayerFormValues,
+} from './playerFormValues';
 import {
   fieldMessages,
   handLabel,
@@ -55,6 +63,7 @@ function saveErrorMessage(e: unknown): TranslationKey {
  */
 export function PlayerForm({ initialValues, onSave, onSaved, onCancel }: Props) {
   const { t } = useI18n();
+  const { services } = useApp();
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<PlayerFieldMessages>({});
   const [saveError, setSaveError] = useState<TranslationKey | null>(null);
@@ -63,6 +72,8 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel }: Props) 
   const saveInProgress = useRef(false);
 
   const basketballLocked = initialValues.basketballSelected;
+  // Device-local today: the picker's upper bound. The domain still validates on save.
+  const today = localCalendarDateFromEpoch(services.clock.wallNow());
 
   const set =
     <K extends keyof PlayerFormValues>(key: K) =>
@@ -141,6 +152,12 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel }: Props) 
               onChangeText={set('year')}
               keyboardType="number-pad"
               numeric
+            />
+            <DateOfBirthPicker
+              testID="player-dob-picker"
+              initialDate={pickerInitialDate(values, today)}
+              maximumDate={today}
+              onSelect={(date) => setValues((current) => withDateOfBirth(current, date))}
             />
           </View>
           {errors.dateOfBirth ? (
@@ -238,7 +255,7 @@ const styles = StyleSheet.create({
   hint: { fontSize: 14, color: colors.inkMuted, textAlign: 'auto', marginTop: -spacing.md },
   group: { gap: spacing.xs },
   groupLabel: { fontSize: 14, fontWeight: '600', color: colors.ink, textAlign: 'auto' },
-  dateRow: { flexDirection: 'row', gap: spacing.sm },
+  dateRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
   error: { fontSize: 13, color: colors.danger },
   saveError: { fontSize: 15, color: colors.danger, fontWeight: '600' },
 });

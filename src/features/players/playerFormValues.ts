@@ -1,4 +1,5 @@
 import type { DominantHand, PrimaryPosition, SecondaryPosition } from '@/domain/basketball/profile';
+import { calendarDate, compareCalendarDates, type CalendarDate } from '@/domain/calendarDate';
 import type { PlayerProfile, PlayerProfileInput } from '@/data/local/players/playerRepository';
 
 /**
@@ -85,4 +86,25 @@ export function formValuesToInput(values: PlayerFormValues): PlayerProfileInput 
         }
       : null,
   };
+}
+
+const DIGITS = /^\d+$/;
+
+/**
+ * Where the date picker opens: the typed date when the three fields form a
+ * real date that is not after today, otherwise today. Nothing is guessed from
+ * partial or invalid input (no inferred age, no partial interpretation).
+ */
+export function pickerInitialDate(values: PlayerFormValues, today: CalendarDate): CalendarDate {
+  const day = values.day.trim();
+  const month = values.month.trim();
+  const year = values.year.trim();
+  if (!DIGITS.test(day) || !DIGITS.test(month) || !DIGITS.test(year)) return today;
+  const typed = calendarDate(Number(year), Number(month), Number(day));
+  return typed && compareCalendarDates(typed, today) <= 0 ? typed : today;
+}
+
+/** A picker selection fills the same three fields the user can type in. */
+export function withDateOfBirth(values: PlayerFormValues, date: CalendarDate): PlayerFormValues {
+  return { ...values, day: String(date.day), month: String(date.month), year: String(date.year) };
 }

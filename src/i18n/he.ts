@@ -51,6 +51,7 @@ export const he = {
       year: 'שנה',
       height: 'גובה',
       heightUnit: 'ס״מ',
+      chooseDateOfBirth: 'בחירת תאריך לידה',
       primaryPosition: 'עמדה ראשית',
       secondaryPosition: 'עמדה משנית',
       dominantHand: 'יד דומיננטית',

@@ -33,3 +33,16 @@ jest.mock('expo-splash-screen', () => ({
   hideAsync: jest.fn(async () => {}),
   setOptions: jest.fn(),
 }));
+
+// The native date picker is replaced by a plain View that keeps its props,
+// so tests can read value / maximumDate and fire onValueChange / onDismiss.
+jest.mock('@react-native-community/datetimepicker', () => {
+  const { createElement } = require('react');
+  const { View } = require('react-native');
+  const MockDateTimePicker = (props: object) => createElement(View, props);
+  return {
+    __esModule: true,
+    default: MockDateTimePicker,
+    DateTimePickerAndroid: { open: jest.fn(), dismiss: jest.fn() },
+  };
+});

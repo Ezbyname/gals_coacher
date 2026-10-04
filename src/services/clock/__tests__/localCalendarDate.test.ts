@@ -46,3 +46,16 @@ describe('localCalendarDateFromEpoch', () => {
     });
   });
 });
+
+describe('localDateToCalendarDate / calendarDateToLocalNoon', () => {
+  it('reads local components and round-trips at local noon', () => {
+    const { localDateToCalendarDate, calendarDateToLocalNoon } = jest.requireActual('../localCalendarDate');
+    expect(localDateToCalendarDate(new Date(2015, 6, 9, 0, 1))).toEqual({ year: 2015, month: 7, day: 9 });
+    expect(localDateToCalendarDate(new Date(2015, 6, 9, 23, 59))).toEqual({ year: 2015, month: 7, day: 9 });
+    const noon = calendarDateToLocalNoon({ year: 2024, month: 2, day: 29 });
+    expect([noon.getFullYear(), noon.getMonth() + 1, noon.getDate(), noon.getHours()]).toEqual([
+      2024, 2, 29, 12,
+    ]);
+    expect(localDateToCalendarDate(noon)).toEqual({ year: 2024, month: 2, day: 29 });
+  });
+});

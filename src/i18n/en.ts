@@ -49,6 +49,7 @@ export const en = {
       year: 'Year',
       height: 'Height',
       heightUnit: 'cm',
+      chooseDateOfBirth: 'Choose date of birth',
       primaryPosition: 'Primary position',
       secondaryPosition: 'Secondary position',
       dominantHand: 'Dominant hand',
