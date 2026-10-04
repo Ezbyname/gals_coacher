@@ -77,7 +77,7 @@ Every platform capability is consumed through an interface:
 | `Clock` | `services/clock/Clock.ts` | `performance.now()` (monotonic) + `Date.now()` (wall). |
 | `IdService.newUuid()` | `services/ids/IdService.ts` | `expo-crypto.randomUUID()`, validated as a UUID before use. Tests inject `createSequentialIdService()` for deterministic ids. |
 | `DirectionService` (`isRTL`, `apply`, `reload`) | `services/direction/DirectionService.ts` | `I18nManager` (Hebrew: `allowRTL(true)` + `forceRTL(true)`; English: `forceRTL(false)` + `allowRTL(false)`) and `reloadAppAsync()` from `expo`. |
-| Notifications | — | Calendar + Notifications slice. |
+| Notifications | — | Notifications slice. |
 
 Services are composed in `services/index.ts` (`createServices`) and provided
 via `AppProvider` (which also accepts injected `services` for tests). Tests
@@ -173,8 +173,28 @@ Parent account → pairing code → child device
   `player_id, sport`); `basketball_player_profiles` (PK `player_id`, `sport`
   fixed to `BASKETBALL`, FK `(player_id, sport)` → `player_sports`). SQL
   enforces structure only (keys, FKs, non-blank name, date shape, positive
-  height); code lists are validated in the domain. A Player, its BASKETBALL
-  assignment and its profile are written in one transaction.
+  height); code lists are validated in the domain.
+- **Sport assignment contract (revised 2026-10-04; repository change pending
+  in Slice 1.1, no schema change).** `player_sports` holds zero or more rows
+  per player. A sport profile row exists only for a matching assignment and
+  is written in the same transaction as that assignment. Reading Basketball,
+  the assignment and the profile are each LEFT JOINed from `players`
+  independently, so every state is observable:
+
+  | BASKETBALL assignment | Basketball profile | Result |
+  |---|---|---|
+  | absent | absent | valid player without Basketball (`basketball: null`) |
+  | present | present | valid Basketball player |
+  | present | absent | corrupt → `PlayerDataError` |
+  | absent | present | corrupt → `PlayerDataError` (`INVALID_RELATIONSHIP`); normally prevented by the FK |
+
+  Nothing is repaired on read. Basketball may be added to an existing player
+  (assignment + profile inserted atomically with the player update).
+  Removing a persisted Basketball assignment is **not supported in Slice
+  1.1**: the repository rejects it with a typed `SportRemovalNotSupportedError`
+  and writes nothing. The `experience` and `weekly_frequency` columns stay
+  (nullable); the V1 UI no longer collects them, and updates preserve stored
+  values.
 - expo-sqlite's `withTransactionAsync` is not exclusive (a concurrent BEGIN
   failure rolls back the other open transaction), and
   `withExclusiveTransactionAsync` opens a new connection without
@@ -195,8 +215,9 @@ Parent account → pairing code → child device
 ## 9. Domain model (target, filled in by phases)
 
 ```
-Parent (auth user) ─┬─ Family ─── Player (a child; dateOfBirth, profile, active)
-                    │                ├── PlayerSport (sport)
+Parent (auth user) ─┬─ Family ─── Player (a child; name, dateOfBirth, height)
+                    │                ├── PlayerSport (sport) 0..n
+                    │                │     └── <Sport>Profile (only for its assignment; V1: BasketballProfile)
                     │                └── SelfAssessment (takenAt) ── SelfAssessmentRating (category, 1–5)
 Sport (key) ─── Exercise (category, measurementType, comparisonPolicy?, defaults, tutorialUrl, isCustom)
 WorkoutTemplate (purpose) ── TemplateItem (exercise, sets, target, rest, order)
@@ -207,9 +228,17 @@ WorkoutSession (player, sport, purpose, template?, startedAt, endedAt)
 
 - "Child" in PRODUCT_SPEC and "Player" here are the same entity; code uses
   `Player` / `player_id`.
-- Player profile fields (PRODUCT_SPEC §65): name, dateOfBirth, primary and
-  optional secondary position, dominant hand, experience, weekly training
-  frequency, height. **No weight column** in V1 (§66).
+- Player (generic, PRODUCT_SPEC §65): name, dateOfBirth, height. A player
+  may have no sport. **No weight column** in V1 (§66).
+- `PlayerSport` stays minimal: `(player_id, sport)`. No surrogate id, status,
+  start date or primary flag until they have precise business semantics.
+- `BasketballProfile`: primary position, secondary position, dominant hand
+  (V1 UI); `experience` and `weekly_frequency` remain as dormant nullable
+  columns (not collected by the V1 UI, preserved when present).
+- Future direction (not implemented): `Exercise` stays generic and is linked
+  to sports through an `ExerciseSport` association (one exercise can serve
+  several sports, e.g. 10m Sprint; others one, e.g. Free Throw). No
+  `BasketballExercise` core entity. Designed in Slice 2.0.
 - `SelfAssessment` is subjective data and lives in its own tables. It never
   writes to, or is derived from, the result pipeline (§12 below).
 
@@ -253,7 +282,7 @@ testing** — the engine must accept them as configuration, not hard-code a numb
   runtime path (navigation, SQLite, timer, audio cue, haptics) on iOS.
 - **Full iOS validation: the dedicated iOS Validation slice** — the
   accumulated product on iOS, plus notifications on Android + iPhone in the
-  Calendar + Notifications slice.
+  Notifications slice.
 - No iOS build or iOS runtime check has been run yet.
 - iOS builds run on EAS (no Mac required): `npm run build:ios:dev` (needs an
   Apple Developer account for device builds) or `npm run build:ios:sim`.
@@ -341,3 +370,29 @@ testing** — the engine must accept them as configuration, not hard-code a numb
   transaction as the first Player; a pointer to a missing Family is a data
   error, never silently replaced.
 - No sync is built until its slice.
+
+## 14. Planning: facts, calendar and AI (approved 2026-10-04 — not implemented)
+
+- **`CalendarEvent ≠ TrainingSession`.** A calendar event is what was
+  *planned* in time (e.g. Personal Training, Wednesday 17:00); a training
+  session is what *happened* (actual start/end, exercises, results). They are
+  separate entities, optionally linked, so planned + completed, planned +
+  skipped and unplanned + completed are all representable. Calendar work never
+  writes results; the Training Engine never edits the plan.
+- **Layers, in one direction only:**
+  1. **Facts** (authoritative): school, team practice, game, personal
+     training, unavailable time, sleep, actual training results.
+  2. **Deterministic calculations** from facts: free time, recovery gap,
+     weekly volume, training load.
+  3. **Recommendations** derived from 1 and 2 (e.g. "a 30-minute shooting
+     session may fit").
+  4. **AI** explains, offers alternatives, summarizes progress.
+- **AI is never the source of truth** for schedule, availability, game times,
+  player identity, training results or recovery facts, and never writes them.
+- **Available time is not appropriate training time** (PRODUCT_SPEC §71): a
+  free slot is an input to the calculation and recommendation layers, never a
+  recommendation by itself.
+- Future calendar types (Team Training, Personal Training, Game, School,
+  Unavailable, Other), recurrence and exceptions are designed in the Calendar
+  Foundation slice. Nothing in the Player model blocks them: events reference
+  `player_id` and, where relevant, `sport`.

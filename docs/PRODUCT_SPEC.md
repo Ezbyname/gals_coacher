@@ -270,9 +270,11 @@ AI לא dependency של V1. רק אחרי שיש training history, results, cons
 
 הילד רואה בעיקר: Today's Training, Upcoming Practice, Personal Records, Progress, Coach Message. פחות: Admin, Settings, Workout construction.
 
-## 51. Schedule — later
+## 51. Schedule / Calendar
 
 Team Practice, Personal Workout, Game, Recovery Day, recurring events.
+
+**Part of the True MVP (approved 2026-10-04):** Calendar Foundation and a usable Calendar UI with Calendar ↔ Training integration (see §71 and ROADMAP). Not "later" any more; notifications (§52) stay later.
 
 ## 52. Notifications — later
 
@@ -300,6 +302,8 @@ See [ROADMAP.md](./ROADMAP.md).
 ## 56. True MVP
 
 `Child → Basketball Exercise → Quick Training → 5-4-3-2-1 → Whistle → Timer OR Shooting → Result → Edit → Save → History → Graph` — זה כבר מוצר שאפשר לקחת למגרש.
+
+**Revised 2026-10-04:** the True MVP is defined by capabilities, not slice numbers, in Hebrew and English. Required MVP product capabilities: Player Profile, Self-Assessment, Calendar Foundation, Exercise Model / Library, Training Engine, usable Calendar UI + Calendar ↔ Training, Basketball Measurements & Shooting, Quick Training, Baseline, Reassessment, Basic Progress. Required enabling infrastructure (not a user-facing capability): Cloud Foundation. The authoritative lists are in ROADMAP ("True MVP").
 
 ## 57. What we are not building yet
 
@@ -354,18 +358,31 @@ Coach: "16/20. יפה. ארבע הזריקות החסרות רשומות לאי�
 - Sports measurements stay naturally readable in Hebrew: `18/20`, `80%`, `4.38`, `00:45`, `20m` keep their left-to-right logical order inside RTL text.
 - RTL must be validated on a physical Android device; iOS inherits the same localization architecture.
 
-## 65. Player profile — basketball V1
+## 65. Player profile — V1 (revised 2026-10-04)
 
-Fields (V1 target):
+**Principle:** create the athlete quickly. The profile records *who the athlete is* and *which sport(s) they play*; detailed performance information comes later from Self-Assessment (§67), Baseline (§68) and real training results — Player creation is never an assessment.
 
-- Name
-- Date of birth (source of truth) → calculated age (never stored as the truth — §13)
-- Primary position; optional secondary position — Point Guard, Shooting Guard, Small Forward, Power Forward, Center, Multiple, Not sure
-- Dominant hand
-- Basketball experience
-- Approximate weekly training frequency
-- Height
-- Sport assignment: Basketball
+**Personal information (every player):**
+
+- Name — required
+- Date of birth — required; source of truth → calculated age (never stored as the truth — §13). Entered manually as day / month / year, or with a native date picker that fills the same day / month / year fields (one value, not two). Future dates are not allowed.
+- Height — optional, whole centimetres, current value only
+
+**Sport:**
+
+- A player **may exist without any sport.** Sport assignment is optional and can be added later.
+- Basketball is currently the only selectable sport. No other sport is offered, listed or advertised until it has a real implemented experience. (The data model may support several sports before the product exposes them.)
+- Once Basketball has been saved for a player it cannot be removed in Slice 1.1 (no sport removal / archive workflow yet).
+
+**Basketball details** (only when Basketball is selected; every field optional; "You can update these details later"):
+
+- Primary position — PG · רכז, SG · קלע, SF · סמול פורוורד, PF · פאוור פורוורד, C · סנטר, כמה עמדות (Multiple), לא בטוח (Not sure)
+- Secondary position — shown only when the primary is PG, SG, SF, PF or C; choices are PG, SG, SF, PF, C plus an explicit **ללא / None** (= no secondary position, stored as empty — not a separate code). When the primary becomes empty, Multiple or Not sure, the secondary is cleared and hidden. It must differ from the primary.
+- Dominant hand — Right / Left / Both
+
+**Not collected by the V1 Player form:** Basketball experience and approximate weekly training frequency (removed 2026-10-04; weekly training is expected to come from the future Calendar, experience from Self-Assessment / Baseline). Values already stored by earlier builds are preserved, not deleted. Also not in V1: weight (§66), avatar and active/inactive (§12; deferred).
+
+**Known limitation:** the native date picker follows the device language, not the app language. Accepted for V1.
 
 ## 66. Weight — not collected in V1
 
@@ -410,3 +427,9 @@ Not decided yet — implementation must keep these configurable and ask the owne
 - Shooting PB minimum attempt volume (§27).
 - Sprint / manual-timer PB significance threshold (§24).
 - App theme behaviour (light only / dark / follow system).
+
+## 71. Planning around real life (approved 2026-10-04 — not implemented)
+
+- **Available time is not automatically appropriate training time.** Gals Coacher plans around the athlete's real life: school, team practices, games, personal training, unavailable time, sleep / recovery and training load are inputs to planning — not just empty calendar slots. A free slot alone must never imply "do a hard workout now"; this matters especially for young athletes.
+- **What was planned is not what happened.** A calendar entry (planned) and a training session (actual) are different things: planned + completed, planned + skipped and unplanned + completed must all be representable.
+- **Facts come first.** Recommendations and any future AI explain, suggest and summarize; they never redefine facts such as the schedule, game times, availability, the player's identity or recorded results.
