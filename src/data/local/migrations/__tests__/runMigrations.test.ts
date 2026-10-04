@@ -69,4 +69,11 @@ describe('runMigrations', () => {
   it('ships a valid migration list', () => {
     expect(() => assertValidMigrations(migrations)).not.toThrow();
   });
+
+  it('ships exactly versions 1..2', () => {
+    expect(migrations.map((m) => [m.version, m.name])).toEqual([
+      [1, 'app_meta'],
+      [2, 'players'],
+    ]);
+  });
 });

@@ -30,9 +30,12 @@ export function openNodeSqlite(path = ':memory:') {
     getFirstAsync: async <T,>(sql: string, params: Params = []) =>
       (raw.prepare(sql).get(...params) as T | undefined) ?? null,
     getAllAsync: async <T,>(sql: string, params: Params = []) => raw.prepare(sql).all(...params) as T[],
+    // Mirrors expo-sqlite 57's SQLiteDatabase.withTransactionAsync exactly
+    // (BEGIN inside the try), including its non-exclusive behaviour: a BEGIN
+    // that fails because another transaction is open runs ROLLBACK on it.
     withTransactionAsync: async (task: () => Promise<void>) => {
-      raw.exec('BEGIN');
       try {
+        raw.exec('BEGIN');
         await task();
         raw.exec('COMMIT');
       } catch (e) {

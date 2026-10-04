@@ -14,8 +14,14 @@ encouraged) to be basketball-specific**.
 - Basketball lives in data (exercise library rows with `sport = BASKETBALL`)
   and in UX (a Shooting screen with giant MADE / MISS buttons).
 - Forbidden: tables or types such as `basketball_results`,
-  `free_throw_results`. A free-throw set is `Exercise(MADE_ATTEMPTS) → Set →
-  Attempt → Measurement { made, attempts }`.
+  `free_throw_results`, `basketball_sessions`. A free-throw set is
+  `Exercise(MADE_ATTEMPTS) → Set → Attempt → Measurement { made, attempts }`.
+- Approved exception (Slice 1.1): sport-specific **player profile
+  attributes** (e.g. basketball position) live in a per-sport profile table
+  (`basketball_player_profiles`, types in `src/domain/basketball/`) that hangs
+  off the generic `player_sports` assignment. `Player` and `player_sports`
+  stay generic; sessions, sets, attempts, results and measurements never get
+  sport-specific types or tables.
 - Not building: a sport plugin engine, a universal everything system, a generic
   measurement form as the primary UX.
 
@@ -162,6 +168,18 @@ Parent account → pairing code → child device
   and migration rollback.
 - Domain tables arrive with their slice (1.1 family/players, 1.2
   self-assessment, 2.0 exercises, 2.1 sessions/results/outbox).
+- v2 (Slice 1.1): `families (id)`; `players` (generic: name, date_of_birth
+  `YYYY-MM-DD`, height_cm, created_at/updated_at); `player_sports` (PK
+  `player_id, sport`); `basketball_player_profiles` (PK `player_id`, `sport`
+  fixed to `BASKETBALL`, FK `(player_id, sport)` → `player_sports`). SQL
+  enforces structure only (keys, FKs, non-blank name, date shape, positive
+  height); code lists are validated in the domain. A Player, its BASKETBALL
+  assignment and its profile are written in one transaction.
+- expo-sqlite's `withTransactionAsync` is not exclusive (a concurrent BEGIN
+  failure rolls back the other open transaction), and
+  `withExclusiveTransactionAsync` opens a new connection without
+  `foreign_keys`. Repository operations therefore run one at a time per
+  connection through `data/local/connectionQueue.ts` (`runSerialized`).
 
 ## 8. Cloud (Supabase)
 
@@ -318,4 +336,8 @@ testing** — the engine must accept them as configuration, not hard-code a numb
   (UUID) is created on first use and every `Player` references it, so
   attaching the family to a cloud account later is an ownership hand-over,
   not a schema migration.
+- The local Family is identified by the `app_meta` row `local_family_id`
+  (its primary key makes it a singleton). It is created in the same
+  transaction as the first Player; a pointer to a missing Family is a data
+  error, never silently replaced.
 - No sync is built until its slice.

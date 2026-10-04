@@ -9,6 +9,7 @@ import { openNodeSqlite } from '@/test-support/nodeSqlite';
 import { openLocalDatabase } from '../database';
 import { migrations } from '../migrations';
 import { runMigrations } from '../migrations/runMigrations';
+import type { PlayerDb } from '../players/playerDb';
 
 /**
  * Runs the app's real startup path (open → PRAGMAs → migrations) against a
@@ -18,18 +19,31 @@ import { runMigrations } from '../migrations/runMigrations';
 describe('local database on real SQLite', () => {
   let dir: string;
   let file: string;
+  /** Every handle opened on the temp file, by the app or by a test. */
+  let handles: ReturnType<typeof openNodeSqlite>[];
+  const openTracked = (path: string) => {
+    const handle = openNodeSqlite(path);
+    handles.push(handle);
+    return handle;
+  };
 
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'gals-db-'));
     file = join(dir, 'gals_coacher.db');
-    (openDatabaseAsync as jest.Mock).mockImplementation(async () => openNodeSqlite(file));
+    handles = [];
+    (openDatabaseAsync as jest.Mock).mockImplementation(async () => openTracked(file));
   });
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  afterEach(() => {
+    // An open handle makes Windows refuse to delete the directory (EPERM).
+    // Assert it here so the leak fails deterministically on every OS.
+    expect(handles.filter((h) => h.raw.isOpen)).toHaveLength(0);
+    rmSync(dir, { recursive: true, force: true });
+  });
 
   it('first launch applies the migrations once', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 0, to: migrations.length, applied: ['app_meta'] });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 1 });
+    expect(migration).toEqual({ from: 0, to: 2, applied: ['app_meta', 'players'] });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 2 });
     expect(await db.getFirstAsync("SELECT name FROM sqlite_master WHERE name = 'app_meta'")).toEqual({
       name: 'app_meta',
     });
@@ -42,7 +56,7 @@ describe('local database on real SQLite', () => {
     await first.db.closeAsync();
 
     const second = await openLocalDatabase();
-    expect(second.migration).toEqual({ from: 1, to: 1, applied: [] });
+    expect(second.migration).toEqual({ from: 2, to: 2, applied: [] });
     expect(await second.db.getFirstAsync('SELECT value FROM app_meta WHERE key = ?', ['probe'])).toEqual({
       value: 'kept',
     });
@@ -57,7 +71,7 @@ describe('local database on real SQLite', () => {
   });
 
   it('rolls back a failing migration without bumping the schema version', async () => {
-    const db = openNodeSqlite(file);
+    const db = openTracked(file);
     await expect(
       runMigrations(db, [
         { version: 1, name: 'ok', sql: 'CREATE TABLE a (id TEXT);' },
@@ -67,5 +81,130 @@ describe('local database on real SQLite', () => {
     expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 1 });
     expect(await db.getFirstAsync("SELECT name FROM sqlite_master WHERE name = 'b'")).toBeNull();
     await db.closeAsync();
+  });
+
+  describe('migration v2 (players)', () => {
+    const V2_TABLES = ['basketball_player_profiles', 'families', 'player_sports', 'players'];
+    const v2Tables = async (db: Pick<PlayerDb, 'getAllAsync'>) =>
+      (
+        await db.getAllAsync<{ name: string }>(
+          `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (?, ?, ?, ?) ORDER BY name`,
+          V2_TABLES,
+        )
+      ).map((r) => r.name);
+    const schema = (db: Pick<PlayerDb, 'getAllAsync'>) =>
+      db.getAllAsync(
+        "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name",
+        [],
+      );
+
+    /** A real v1 database file, as shipped in Slice 1.0, with app data in it. */
+    async function createV1Database() {
+      const v1 = openTracked(file);
+      await runMigrations(v1, migrations.slice(0, 1));
+      await v1.runAsync('INSERT INTO app_meta (key, value) VALUES (?, ?)', ['probe', 'kept']);
+      expect(await v1.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 1 });
+      await v1.closeAsync();
+    }
+
+    it('upgrades an existing v1 database once and keeps app_meta data', async () => {
+      await createV1Database();
+      const { db, migration } = await openLocalDatabase();
+      expect(migration).toEqual({ from: 1, to: 2, applied: ['players'] });
+      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 2 });
+      expect(await v2Tables(db)).toEqual(V2_TABLES);
+      expect(await db.getAllAsync('SELECT key, value FROM app_meta')).toEqual([{ key: 'probe', value: 'kept' }]);
+      await db.closeAsync();
+
+      const reopened = await openLocalDatabase();
+      expect(reopened.migration).toEqual({ from: 2, to: 2, applied: [] });
+      await reopened.db.closeAsync();
+    });
+
+    it('produces the same schema on a fresh install as on an upgraded v1 database', async () => {
+      await createV1Database();
+      const upgraded = await openLocalDatabase();
+      const upgradedSchema = await schema(upgraded.db);
+      await upgraded.db.closeAsync();
+
+      const fresh = openNodeSqlite(':memory:');
+      expect(await runMigrations(fresh, migrations)).toEqual({ from: 0, to: 2, applied: ['app_meta', 'players'] });
+      expect(await schema(fresh)).toEqual(upgradedSchema);
+      expect(upgradedSchema).toHaveLength(6); // 5 tables + players_family_id index
+      await fresh.closeAsync();
+    });
+
+    it('rolls back a v2 that fails part-way: no v2 tables, user_version stays 1, app_meta intact', async () => {
+      await createV1Database();
+      const db = openTracked(file);
+      await db.execAsync('PRAGMA foreign_keys = ON');
+      const broken = { ...migrations[1]!, sql: `${migrations[1]!.sql}\nNOT VALID SQL;` };
+      await expect(runMigrations(db, [migrations[0]!, broken])).rejects.toThrow();
+      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 1 });
+      expect(await v2Tables(db)).toEqual([]);
+      expect(await db.getAllAsync('SELECT key, value FROM app_meta')).toEqual([{ key: 'probe', value: 'kept' }]);
+      await db.closeAsync();
+
+      // The next launch applies the real v2 normally.
+      const relaunch = await openLocalDatabase();
+      expect(relaunch.migration).toEqual({ from: 1, to: 2, applied: ['players'] });
+      await relaunch.db.closeAsync();
+    });
+
+    it('still refuses to open a newer schema (downgrade)', async () => {
+      const newer = openTracked(file);
+      await newer.execAsync('PRAGMA user_version = 3');
+      await newer.closeAsync();
+      await expect(openLocalDatabase()).rejects.toThrow(/v3 .* only knows v2\. Refusing to downgrade/);
+    });
+  });
+
+  describe('initialization failure closes the connection', () => {
+    /** The next app open returns this handle, so the test can observe it. */
+    function nextAppHandle() {
+      const handle = openTracked(file);
+      (openDatabaseAsync as jest.Mock).mockImplementationOnce(async () => handle);
+      return { handle, close: jest.spyOn(handle, 'closeAsync') };
+    }
+
+    it('closes the opened database before rethrowing a migration failure (downgrade refusal)', async () => {
+      const newer = openTracked(file);
+      await newer.execAsync('PRAGMA user_version = 3');
+      await newer.closeAsync();
+
+      const { handle, close } = nextAppHandle();
+      await expect(openLocalDatabase()).rejects.toThrow(/Refusing to downgrade/);
+      expect(close).toHaveBeenCalledTimes(1);
+      expect(handle.raw.isOpen).toBe(false);
+    });
+
+    it('closes the opened database before rethrowing a PRAGMA setup failure', async () => {
+      const { handle, close } = nextAppHandle();
+      jest.spyOn(handle, 'execAsync').mockRejectedValueOnce(new Error('disk I/O error'));
+      await expect(openLocalDatabase()).rejects.toThrow('disk I/O error');
+      expect(close).toHaveBeenCalledTimes(1);
+      expect(handle.raw.isOpen).toBe(false);
+    });
+
+    it('rethrows the setup error, not a close error, when closing also fails', async () => {
+      const { handle, close } = nextAppHandle();
+      jest.spyOn(handle, 'execAsync').mockRejectedValueOnce(new Error('disk I/O error'));
+      close.mockImplementationOnce(async () => {
+        handle.raw.close();
+        throw new Error('close failed');
+      });
+      await expect(openLocalDatabase()).rejects.toThrow('disk I/O error');
+      expect(close).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not close a successfully opened database', async () => {
+      const { handle, close } = nextAppHandle();
+      const { db } = await openLocalDatabase();
+      expect(db).toBe(handle);
+      expect(close).not.toHaveBeenCalled();
+      expect(handle.raw.isOpen).toBe(true);
+      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 2 });
+      await db.closeAsync();
+    });
   });
 });

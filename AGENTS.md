@@ -14,7 +14,7 @@ TypeScript + Expo Router, SQLite on device, Supabase in the cloud.
 
 1. Work one roadmap phase at a time: **Implement → Test → Run → Prove → Update PROJECT_STATE.md → STOP.** Never start the next phase automatically.
 2. Proof first. Never report "works". Report counts and evidence (e.g. `Unit tests: 18/18 PASS`, `Android: verified on device`). Say plainly what was *not* verified.
-3. **Generic domain, specialized UX.** No sport-specific tables/types in the domain or storage (`basketball_results` is forbidden). Basketball-specific screens are encouraged.
+3. **Generic domain, specialized UX.** Core entities stay sport-neutral: `Player`, the `player_sports` assignment, sessions, sets, attempts, results and measurements. Basketball-specific screens are encouraged. The only exception: sport-specific *player profile attributes* may use a per-sport profile type/table that hangs off the generic `player_sports` assignment (`src/domain/basketball/profile.ts`, `basketball_player_profiles`). Still forbidden: `basketball_results`, `free_throw_results`, `basketball_sessions`, or any other sport-specific session/attempt/result/measurement storage. See ARCHITECTURE §1.
 4. **Cross-platform.** Use platform capabilities only through the interfaces in `src/services/`. No Android-only code where a cross-platform option exists.
 5. **Local-first.** Training never needs the network. Generate UUIDs on device (via `services.ids` / `IdService`) before the first write. SQLite is the operational source of truth; Supabase is canonical after sync.
 6. **Timers** derive elapsed time from timestamps (`Clock`), never from counting intervals.
