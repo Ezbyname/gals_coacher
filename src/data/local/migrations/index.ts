@@ -57,4 +57,29 @@ export const migrations: readonly Migration[] = [
       );
     `,
   },
+  {
+    // Slice 1.2. Generic self-assessment storage (subjective; not results). SQL
+    // guards structure and the 1–5 range; category codes are validated in the
+    // domain, not with CHECK lists. Rows are never updated or deleted.
+    version: 3,
+    name: 'self_assessments',
+    sql: `
+      CREATE TABLE self_assessments (
+        id TEXT PRIMARY KEY NOT NULL,
+        player_id TEXT NOT NULL,
+        sport TEXT NOT NULL,
+        taken_at INTEGER NOT NULL CHECK (typeof(taken_at) = 'integer'),
+        FOREIGN KEY (player_id, sport) REFERENCES player_sports (player_id, sport)
+      );
+
+      CREATE INDEX self_assessments_history ON self_assessments (player_id, sport, taken_at);
+
+      CREATE TABLE self_assessment_ratings (
+        assessment_id TEXT NOT NULL REFERENCES self_assessments (id),
+        category TEXT NOT NULL,
+        rating INTEGER NOT NULL CHECK (typeof(rating) = 'integer' AND rating BETWEEN 1 AND 5),
+        PRIMARY KEY (assessment_id, category)
+      );
+    `,
+  },
 ];

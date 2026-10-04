@@ -70,10 +70,11 @@ describe('runMigrations', () => {
     expect(() => assertValidMigrations(migrations)).not.toThrow();
   });
 
-  it('ships exactly versions 1..2', () => {
+  it('ships exactly versions 1..3', () => {
     expect(migrations.map((m) => [m.version, m.name])).toEqual([
       [1, 'app_meta'],
       [2, 'players'],
+      [3, 'self_assessments'],
     ]);
   });
 });

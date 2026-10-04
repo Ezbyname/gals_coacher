@@ -42,8 +42,8 @@ describe('local database on real SQLite', () => {
 
   it('first launch applies the migrations once', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 0, to: 2, applied: ['app_meta', 'players'] });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 2 });
+    expect(migration).toEqual({ from: 0, to: 3, applied: ['app_meta', 'players', 'self_assessments'] });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 3 });
     expect(await db.getFirstAsync("SELECT name FROM sqlite_master WHERE name = 'app_meta'")).toEqual({
       name: 'app_meta',
     });
@@ -56,7 +56,7 @@ describe('local database on real SQLite', () => {
     await first.db.closeAsync();
 
     const second = await openLocalDatabase();
-    expect(second.migration).toEqual({ from: 2, to: 2, applied: [] });
+    expect(second.migration).toEqual({ from: 3, to: 3, applied: [] });
     expect(await second.db.getFirstAsync('SELECT value FROM app_meta WHERE key = ?', ['probe'])).toEqual({
       value: 'kept',
     });
@@ -110,14 +110,14 @@ describe('local database on real SQLite', () => {
     it('upgrades an existing v1 database once and keeps app_meta data', async () => {
       await createV1Database();
       const { db, migration } = await openLocalDatabase();
-      expect(migration).toEqual({ from: 1, to: 2, applied: ['players'] });
-      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 2 });
+      expect(migration).toEqual({ from: 1, to: 3, applied: ['players', 'self_assessments'] });
+      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 3 });
       expect(await v2Tables(db)).toEqual(V2_TABLES);
       expect(await db.getAllAsync('SELECT key, value FROM app_meta')).toEqual([{ key: 'probe', value: 'kept' }]);
       await db.closeAsync();
 
       const reopened = await openLocalDatabase();
-      expect(reopened.migration).toEqual({ from: 2, to: 2, applied: [] });
+      expect(reopened.migration).toEqual({ from: 3, to: 3, applied: [] });
       await reopened.db.closeAsync();
     });
 
@@ -128,9 +128,13 @@ describe('local database on real SQLite', () => {
       await upgraded.db.closeAsync();
 
       const fresh = openNodeSqlite(':memory:');
-      expect(await runMigrations(fresh, migrations)).toEqual({ from: 0, to: 2, applied: ['app_meta', 'players'] });
+      expect(await runMigrations(fresh, migrations)).toEqual({
+        from: 0,
+        to: 3,
+        applied: ['app_meta', 'players', 'self_assessments'],
+      });
       expect(await schema(fresh)).toEqual(upgradedSchema);
-      expect(upgradedSchema).toHaveLength(6); // 5 tables + players_family_id index
+      expect(upgradedSchema).toHaveLength(9); // 7 tables + players_family_id + self_assessments_history indexes
       await fresh.closeAsync();
     });
 
@@ -147,15 +151,15 @@ describe('local database on real SQLite', () => {
 
       // The next launch applies the real v2 normally.
       const relaunch = await openLocalDatabase();
-      expect(relaunch.migration).toEqual({ from: 1, to: 2, applied: ['players'] });
+      expect(relaunch.migration).toEqual({ from: 1, to: 3, applied: ['players', 'self_assessments'] });
       await relaunch.db.closeAsync();
     });
 
     it('still refuses to open a newer schema (downgrade)', async () => {
       const newer = openTracked(file);
-      await newer.execAsync('PRAGMA user_version = 3');
+      await newer.execAsync('PRAGMA user_version = 4');
       await newer.closeAsync();
-      await expect(openLocalDatabase()).rejects.toThrow(/v3 .* only knows v2\. Refusing to downgrade/);
+      await expect(openLocalDatabase()).rejects.toThrow(/v4 .* only knows v3\. Refusing to downgrade/);
     });
   });
 
@@ -169,7 +173,7 @@ describe('local database on real SQLite', () => {
 
     it('closes the opened database before rethrowing a migration failure (downgrade refusal)', async () => {
       const newer = openTracked(file);
-      await newer.execAsync('PRAGMA user_version = 3');
+      await newer.execAsync('PRAGMA user_version = 4');
       await newer.closeAsync();
 
       const { handle, close } = nextAppHandle();
@@ -203,7 +207,7 @@ describe('local database on real SQLite', () => {
       expect(db).toBe(handle);
       expect(close).not.toHaveBeenCalled();
       expect(handle.raw.isOpen).toBe(true);
-      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 2 });
+      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 3 });
       await db.closeAsync();
     });
   });
