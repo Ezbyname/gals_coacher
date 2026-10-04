@@ -177,6 +177,83 @@ describe('entry from Edit Player', () => {
   });
 });
 
+describe('navigation through the real route stack (physical-gate defect)', () => {
+  /** Players → Edit → History → New, exactly as a user taps through. */
+  async function walkToNew(language: 'he' | 'en') {
+    await prepare(language);
+    const app = renderRouter(routes, { initialUrl: '/children' });
+    fireEvent.press(await screen.findByTestId(`player-row-${gal}`));
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}`));
+    fireEvent.press(await screen.findByTestId('self-assessment-open'));
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/self-assessments`));
+    fireEvent.press(await screen.findByTestId('self-assessment-new'));
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/self-assessments/new`));
+    await screen.findByTestId('self-assessment-save');
+    return app;
+  }
+
+  it.each(['he', 'en'] as const)(
+    '%s: Edit → History → New → Save lands on History (not Edit), showing the new assessment',
+    async (language) => {
+      const app = await walkToNew(language);
+      const back = jest.spyOn(router, 'back');
+      const dismissTo = jest.spyOn(router, 'dismissTo');
+      const replace = jest.spyOn(router, 'replace');
+      chooseAll([3, 4, 2, 5, 1, 3]);
+      fireEvent.press(screen.getByTestId('self-assessment-save'));
+      await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/self-assessments`));
+      // One plain step back (the native stack pops exactly New) — no pop-to or replace.
+      expect(back).toHaveBeenCalledTimes(1);
+      expect(dismissTo).not.toHaveBeenCalled();
+      expect(replace).not.toHaveBeenCalled();
+      back.mockRestore();
+      expect(await screen.findAllByTestId(/^self-assessment-entry-/)).toHaveLength(1);
+      expect(screen.queryByTestId('player-name')).toBeNull();
+      expect(await assessmentCount()).toBe(1);
+      // One step back from History is Edit: New was replaced, not left on the stack.
+      act(() => router.back());
+      await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}`));
+    },
+  );
+
+  it('Edit → History → New → Cancel lands on History; nothing written', async () => {
+    const app = await walkToNew('he');
+    const back = jest.spyOn(router, 'back');
+    fireEvent.press(screen.getByTestId('self-assessment-cancel'));
+    await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
+    back.mockRestore();
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/self-assessments`));
+    expect(await assessmentCount()).toBe(0);
+    act(() => router.back());
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}`));
+  });
+
+  it('opened without History underneath (deep link): Save replaces New with History', async () => {
+    const app = await openNew('he');
+    const back = jest.spyOn(router, 'back');
+    chooseAll([2, 2, 2, 2, 2, 2]);
+    fireEvent.press(screen.getByTestId('self-assessment-save'));
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/self-assessments`));
+    expect(back).not.toHaveBeenCalled();
+    expect(await screen.findAllByTestId(/^self-assessment-entry-/)).toHaveLength(1);
+  });
+
+  it('a second assessment from the same walk also lands on History, newest first', async () => {
+    const app = await walkToNew('en');
+    chooseAll([1, 1, 1, 1, 1, 1]);
+    fireEvent.press(screen.getByTestId('self-assessment-save'));
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/self-assessments`));
+    fireEvent.press(await screen.findByTestId('self-assessment-new'));
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/self-assessments/new`));
+    chooseAll([5, 5, 5, 5, 5, 5]);
+    fireEvent.press(await screen.findByTestId('self-assessment-save'));
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/self-assessments`));
+    await waitFor(() => expect(screen.getAllByTestId(/^self-assessment-entry-/)).toHaveLength(2));
+    act(() => router.back());
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}`));
+  });
+});
+
 describe('history', () => {
   it('empty: a clean empty state and a way to take the first one', async () => {
     await prepare('he');
@@ -423,7 +500,8 @@ describe('new self-assessment', () => {
     const app = await openNew('he');
     const newPath = `/children/${gal}/self-assessments/new`;
     chooseAll([2, 2, 2, 2, 2, 2]);
-    const dismissTo = jest.spyOn(router, 'dismissTo');
+    // Opened directly (no History underneath): leaving replaces this screen with History.
+    const replace = jest.spyOn(router, 'replace');
     fireEvent.press(screen.getByTestId('self-assessment-save'));
     await waitFor(() => expect(screen.getByText('שומר...')).toBeTruthy());
 
@@ -435,12 +513,12 @@ describe('new self-assessment', () => {
     fireEvent.press(screen.getByTestId('self-assessment-cancel'));
     await act(async () => {});
     expect(app.getPathname()).toBe(newPath);
-    expect(dismissTo).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
     expect(create).toHaveBeenCalledTimes(1);
 
     await act(async () => release());
     await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/self-assessments`));
-    expect(dismissTo).toHaveBeenCalledTimes(1);
+    expect(replace).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledTimes(1);
     expect(await assessmentCount()).toBe(1);
     expect(await ratingCount()).toBe(6);

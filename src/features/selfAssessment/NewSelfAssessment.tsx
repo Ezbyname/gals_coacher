@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { useRef, useState } from 'react';
 import { StyleSheet, Text } from 'react-native';
 
@@ -25,6 +25,10 @@ type Answers = Readonly<Record<string, SelfRating | null>>;
 const NO_ANSWERS: Answers = Object.fromEntries(CATEGORIES.map((category) => [category, null]));
 
 export const historyPath = (playerId: string) => `/children/${playerId}/self-assessments` as const;
+/** The History route's name in the root stack (src/app/children/[id]/self-assessments/index.tsx). */
+const HISTORY_ROUTE = 'children/[id]/self-assessments/index';
+
+type StackState = { index: number; routes: { name: string; params?: object }[] };
 
 /**
  * One scrolling screen with all six categories. Every category needs an
@@ -43,7 +47,18 @@ export function NewSelfAssessment({ playerId }: { playerId: string }) {
   const saveInProgress = useRef(false);
 
   const answered = CATEGORIES.filter((category) => answers[category] !== null).length;
-  const back = () => router.dismissTo(historyPath(playerId));
+  const navigation = useNavigation();
+  // Leave for this player's History. In the normal flow (History → New) that is
+  // one plain step back — the same action as the header back button, so the
+  // native stack pops exactly this screen. Without History underneath (e.g. a
+  // deep link), History replaces this screen instead.
+  const back = () => {
+    const state = navigation.getState() as StackState | undefined;
+    const below = state?.routes[state.index - 1];
+    const params = below?.params as { id?: string } | undefined;
+    if (below?.name === HISTORY_ROUTE && params?.id === playerId) router.back();
+    else router.replace(historyPath(playerId));
+  };
 
   const choose = (category: string) => (rating: SelfRating) => {
     setAnswers((current) => ({ ...current, [category]: rating }));
