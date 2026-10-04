@@ -41,7 +41,9 @@ function AppStack() {
       }}>
       <Stack.Screen name="index" options={{ title: t('app.name') }} />
       <Stack.Screen name="quick-training" options={{ title: t('nav.quickTraining') }} />
-      <Stack.Screen name="children" options={{ title: t('nav.players') }} />
+      <Stack.Screen name="children/index" options={{ title: t('nav.players') }} />
+      <Stack.Screen name="children/new" options={{ title: t('players.form.createTitle') }} />
+      <Stack.Screen name="children/[id]" options={{ title: t('players.form.editTitle') }} />
       <Stack.Screen name="exercises" options={{ title: t('nav.exercises') }} />
       <Stack.Screen name="history" options={{ title: t('nav.history') }} />
       <Stack.Screen name="settings" options={{ title: t('nav.settings') }} />

@@ -50,4 +50,16 @@ describe('translation parity', () => {
     expect(he.app.name).toBe('Gals Coacher');
     expect(en.app.name).toBe('Gals Coacher');
   });
+
+  it('uses the approved Hebrew basketball position labels', () => {
+    expect(he.basketball.position).toEqual({
+      PG: 'רכז',
+      SG: 'קלע',
+      SF: 'סמול פורוורד',
+      PF: 'פאוור פורוורד',
+      C: 'סנטר',
+      MULTIPLE: 'כמה עמדות',
+      NOT_SURE: 'לא בטוח',
+    });
+  });
 });

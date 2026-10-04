@@ -5,7 +5,9 @@ import { Alert, I18nManager } from 'react-native';
 import { stripBidi } from '@/i18n/bidi';
 import { prepareApp } from '@/test-support/prepareApp';
 
-import ChildrenScreen from '../children';
+import EditPlayerScreen from '../children/[id]';
+import PlayersScreen from '../children/index';
+import NewPlayerScreen from '../children/new';
 import DiagnosticsScreen from '../diagnostics';
 import ExercisesScreen from '../exercises';
 import HistoryScreen from '../history';
@@ -18,7 +20,9 @@ const routes = {
   _layout: RootLayout,
   index: HomeScreen,
   'quick-training': QuickTrainingScreen,
-  children: ChildrenScreen,
+  'children/index': PlayersScreen,
+  'children/new': NewPlayerScreen,
+  'children/[id]': EditPlayerScreen,
   exercises: ExercisesScreen,
   history: HistoryScreen,
   settings: SettingsScreen,
@@ -42,8 +46,15 @@ describe('navigation — Hebrew (default)', () => {
     expect(screen.queryByText(/Phase|ROADMAP/)).toBeNull();
   });
 
+  it('opens Players from Home (no longer a placeholder)', async () => {
+    const app = renderRouter(routes, { initialUrl: '/' });
+    fireEvent.press(await screen.findByText('שחקנים'));
+    await waitFor(() => expect(app.getPathname()).toBe('/children'));
+    expect(await screen.findByText('עדיין אין שחקנים')).toBeTruthy();
+    expect(screen.queryByText('בקרוב')).toBeNull();
+  });
+
   it.each([
-    ['/children', 'שחקנים'],
     ['/exercises', 'ספריית תרגילים'],
     ['/history', 'היסטוריה'],
   ])('shows the Hebrew placeholder on %s', async (url, title) => {
