@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -47,6 +47,8 @@ type Props = {
   /** Called once after a successful save (navigates away). */
   onSaved: () => void;
   onCancel: () => void;
+  /** Rendered after Save / Cancel, outside the profile fields (e.g. Edit's self-assessment entry). */
+  footer?: ReactNode;
 };
 
 /** Storage errors on save → localized message; raw details are only logged. */
@@ -62,7 +64,7 @@ function saveErrorMessage(e: unknown): TranslationKey {
  * is selected). A Basketball that is already saved is shown locked: removing
  * a sport is not supported in Slice 1.1.
  */
-export function PlayerForm({ initialValues, onSave, onSaved, onCancel }: Props) {
+export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }: Props) {
   const { t } = useI18n();
   const { services } = useApp();
   const [values, setValues] = useState(initialValues);
@@ -248,6 +250,7 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel }: Props) 
         label={t('players.form.cancel')}
         onPress={onCancel}
       />
+      {footer}
     </SafeAreaScrollView>
   );
 }

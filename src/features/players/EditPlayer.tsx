@@ -10,6 +10,8 @@ import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
 import { colors, spacing } from '@/ui/theme';
 
+import { SelfAssessmentSection } from '@/features/selfAssessment/SelfAssessmentSection';
+
 import { PlayerForm } from './PlayerForm';
 import { formValuesFromProfile } from './playerFormValues';
 
@@ -85,6 +87,8 @@ export function EditPlayer({ playerId }: { playerId: string }) {
       }}
       onSaved={backToPlayers}
       onCancel={backToPlayers}
+      // Self-assessment is Basketball-only and separate from the profile fields.
+      footer={state.profile.basketball !== null ? <SelfAssessmentSection playerId={playerId} /> : null}
     />
   );
 }

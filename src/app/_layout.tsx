@@ -44,6 +44,14 @@ function AppStack() {
       <Stack.Screen name="children/index" options={{ title: t('nav.players') }} />
       <Stack.Screen name="children/new" options={{ title: t('players.form.createTitle') }} />
       <Stack.Screen name="children/[id]" options={{ title: t('players.form.editTitle') }} />
+      <Stack.Screen
+        name="children/[id]/self-assessments/index"
+        options={{ title: t('selfAssessment.title') }}
+      />
+      <Stack.Screen
+        name="children/[id]/self-assessments/new"
+        options={{ title: t('selfAssessment.newTitle') }}
+      />
       <Stack.Screen name="exercises" options={{ title: t('nav.exercises') }} />
       <Stack.Screen name="history" options={{ title: t('nav.history') }} />
       <Stack.Screen name="settings" options={{ title: t('nav.settings') }} />
