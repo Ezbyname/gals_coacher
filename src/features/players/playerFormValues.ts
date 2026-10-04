@@ -1,10 +1,11 @@
-import type {
-  BasketballProfile,
-  DominantHand,
-  ExperienceLevel,
-  PrimaryPosition,
-  SecondaryPosition,
-  WeeklyFrequency,
+import {
+  EMPTY_BASKETBALL_PROFILE,
+  type BasketballProfile,
+  type DominantHand,
+  type ExperienceLevel,
+  type PrimaryPosition,
+  type SecondaryPosition,
+  type WeeklyFrequency,
 } from '@/domain/basketball/profile';
 import type { PlayerProfile, PlayerProfileInput } from '@/data/local/players/playerRepository';
 
@@ -42,7 +43,9 @@ export function formValuesFromProfile({ player, basketball }: PlayerProfile): Pl
     month: String(player.dateOfBirth.month),
     year: String(player.dateOfBirth.year),
     height: player.heightCm === null ? '' : String(player.heightCm),
-    ...basketball,
+    // The current form edits every player as a Basketball player (UI unchanged
+    // in this commit); a player without Basketball starts from empty answers.
+    ...(basketball ?? EMPTY_BASKETBALL_PROFILE),
   };
 }
 

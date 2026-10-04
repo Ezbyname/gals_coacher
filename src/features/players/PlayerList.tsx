@@ -113,7 +113,7 @@ export function PlayerList() {
             <Text style={styles.detail} testID={`player-age-${player.id}`}>
               {t('players.list.age', { age })}
             </Text>
-            {basketball.primaryPosition ? (
+            {basketball?.primaryPosition ? (
               <Text style={styles.detail} testID={`player-position-${player.id}`}>
                 {positionLabel(t, basketball.primaryPosition)}
               </Text>

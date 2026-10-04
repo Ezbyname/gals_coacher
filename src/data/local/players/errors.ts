@@ -11,7 +11,6 @@ export type PlayerDataField =
   | 'heightCm'
   | 'createdAt'
   | 'updatedAt'
-  | 'basketballAssignment'
   | 'basketballProfile'
   | 'primaryPosition'
   | 'secondaryPosition'
@@ -36,6 +35,23 @@ export class PlayerDataError extends Error {
     this.field = field;
     this.reason = reason;
     this.playerId = playerId;
+  }
+}
+
+/**
+ * An update asked to remove a persisted sport assignment (e.g. `basketball:
+ * null` for a Basketball player). Not supported in Slice 1.1; nothing was
+ * written.
+ */
+export class SportRemovalNotSupportedError extends Error {
+  readonly playerId: string;
+  readonly sport: string;
+
+  constructor(playerId: string, sport: string) {
+    super(`Removing sport ${sport} from player ${playerId} is not supported`);
+    this.name = 'SportRemovalNotSupportedError';
+    this.playerId = playerId;
+    this.sport = sport;
   }
 }
 

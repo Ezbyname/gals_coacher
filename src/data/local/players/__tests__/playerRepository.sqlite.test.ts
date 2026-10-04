@@ -11,7 +11,7 @@ import { createSequentialIdService, type IdService } from '@/services/ids/IdServ
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
 
 import { openLocalDatabase } from '../../database';
-import { PlayerDataError, PlayerNotFoundError } from '../errors';
+import { PlayerDataError, PlayerNotFoundError, SportRemovalNotSupportedError } from '../errors';
 import { LOCAL_FAMILY_META_KEY } from '../localFamily';
 import type { PlayerDb } from '../playerDb';
 import {
@@ -310,6 +310,9 @@ describe('player repository on real SQLite', () => {
           ...EMPTY_BASKETBALL_PROFILE,
           primaryPosition: 'NOT_SURE',
           dominantHand: 'BOTH',
+          // Not in the input, so kept (no longer collected by the V1 UI).
+          experience: 'ONE_TO_TWO_YEARS',
+          weeklyFrequency: 'TWO_TO_THREE',
         },
       });
       expect(await getPlayer(db, created.player.id)).toEqual(updated);
@@ -342,10 +345,16 @@ describe('player repository on real SQLite', () => {
       expect((await getPlayer(db, created.player.id))!.player.heightCm).toBeNull();
     });
 
-    it('removes all basketball values', async () => {
+    it('clears every basketball value when each is given as empty', async () => {
       const created = await create(full);
+      // Dormant fields are cleared only when explicitly given as null.
       const updated = expectOk(
-        await updatePlayer(db, created.player.id, { ...full, basketball: {} }, { clock }),
+        await updatePlayer(
+          db,
+          created.player.id,
+          { ...full, basketball: { experience: null, weeklyFrequency: null } },
+          { clock },
+        ),
       );
       expect(updated.basketball).toEqual(EMPTY_BASKETBALL_PROFILE);
       expect((await getPlayer(db, created.player.id))!.basketball).toEqual(EMPTY_BASKETBALL_PROFILE);
@@ -612,16 +621,19 @@ describe('player repository on real SQLite', () => {
       await expect(listPlayers(db)).rejects.toMatchObject(expected);
     });
 
-    it('detects a missing BASKETBALL assignment (foreign keys bypassed)', async () => {
+    it('detects a Basketball profile without its assignment (case 4, foreign keys bypassed)', async () => {
       const created = await create();
       await db.execAsync('PRAGMA foreign_keys = OFF');
       await db.runAsync('DELETE FROM player_sports');
       await db.execAsync('PRAGMA foreign_keys = ON');
+      expect(await count('basketball_player_profiles')).toBe(1); // the orphan profile is really there
       await expect(getPlayer(db, created.player.id)).rejects.toMatchObject({
         name: 'PlayerDataError',
-        field: 'basketballAssignment',
-        reason: 'MISSING_ROW',
+        field: 'basketballProfile',
+        reason: 'INVALID_RELATIONSHIP',
+        playerId: created.player.id,
       });
+      await expect(listPlayers(db)).rejects.toMatchObject({ reason: 'INVALID_RELATIONSHIP' });
     });
 
     it('detects a malformed player id', async () => {
@@ -718,7 +730,11 @@ describe('player repository on real SQLite', () => {
         createPlayer(db, named('New', full), { ids, clock }),
       ]);
       expect(await getPlayer(db, existing.player.id)).toEqual(expectOk(updated));
-      expect(expectOk(updated).basketball).toEqual(EMPTY_BASKETBALL_PROFILE);
+      expect(expectOk(updated).basketball).toEqual({
+        ...EMPTY_BASKETBALL_PROFILE,
+        experience: 'ONE_TO_TWO_YEARS', // dormant fields kept (not in the input)
+        weeklyFrequency: 'TWO_TO_THREE',
+      });
       expect(await getPlayer(db, expectOk(created).player.id)).toEqual(expectOk(created));
       await expectStructurallyValid(2);
     });
@@ -755,6 +771,239 @@ describe('player repository on real SQLite', () => {
       const [created, listed] = await Promise.all([createPlayer(db, full, { ids, clock }), listPlayers(db)]);
       expect(expectOk(created).player.name).toBe('נועה');
       expect(listed).toHaveLength(1);
+    });
+  });
+
+  describe('optional Basketball (revised Slice 1.1 contract)', () => {
+    const noSport: PlayerProfileInput = {
+      player: { name: 'Omer', dateOfBirth: { year: 2016, month: 4, day: 2 } },
+      basketball: null,
+    };
+    const named = (name: string, input: PlayerProfileInput): PlayerProfileInput => ({
+      ...input,
+      player: { ...input.player, name },
+    });
+
+    describe('create', () => {
+      it('creates a player without Basketball: no sport rows, local family as usual', async () => {
+        const created = await create(noSport);
+        expect(created.basketball).toBeNull();
+        expect(await counts()).toEqual({
+          families: 1,
+          players: 1,
+          player_sports: 0,
+          basketball_player_profiles: 0,
+          pointer: 1,
+        });
+        expect(await pointer()).toBe(created.player.familyId);
+        expect(await getPlayer(db, created.player.id)).toEqual(created);
+      });
+
+      it('reuses the same local family for players with and without Basketball', async () => {
+        const first = await create(noSport);
+        const second = await create(full);
+        const third = await create(noSport);
+        expect(second.player.familyId).toBe(first.player.familyId);
+        expect(third.player.familyId).toBe(first.player.familyId);
+        expect(await count('families')).toBe(1);
+        expect(await counts()).toMatchObject({ players: 3, player_sports: 1, basketball_player_profiles: 1 });
+      });
+
+      it('rolls back a failed first create without Basketball, family and pointer included', async () => {
+        const failing = failingOn(db, /INSERT INTO players/);
+        await expect(createPlayer(failing, noSport, { ids, clock })).rejects.toThrow('injected failure');
+        expect(await counts()).toEqual({
+          families: 0,
+          players: 0,
+          player_sports: 0,
+          basketball_player_profiles: 0,
+          pointer: 0,
+        });
+      });
+    });
+
+    describe('read', () => {
+      it('lists players with and without Basketball together, in creation order', async () => {
+        const a = await create(noSport);
+        clock.advance(1);
+        const b = await create(full);
+        clock.advance(1);
+        const c = await create(named('Lia', noSport));
+        expect(await listPlayers(db)).toEqual([a, b, c]);
+        expect((await listPlayers(db)).map((p) => p.basketball === null)).toEqual([true, false, true]);
+      });
+    });
+
+    describe('update', () => {
+      it('updates personal fields of a player without Basketball and writes no sport rows', async () => {
+        const created = await create(noSport);
+        clock.advance(1000);
+        const updated = expectOk(
+          await updatePlayer(db, created.player.id, named('Omer Levi', noSport), { clock }),
+        );
+        expect(updated).toEqual({
+          player: { ...created.player, name: 'Omer Levi', updatedAt: created.player.updatedAt + 1000 },
+          basketball: null,
+        });
+        expect(await counts()).toMatchObject({ player_sports: 0, basketball_player_profiles: 0 });
+      });
+
+      it('adds Basketball later: assignment and profile written with the update', async () => {
+        const created = await create(noSport);
+        clock.advance(1000);
+        const updated = expectOk(
+          await updatePlayer(
+            db,
+            created.player.id,
+            { ...noSport, basketball: { primaryPosition: 'PG', dominantHand: 'LEFT' } },
+            { clock },
+          ),
+        );
+        expect(updated.player).toEqual({ ...created.player, updatedAt: created.player.updatedAt + 1000 });
+        expect(updated.basketball).toEqual({
+          ...EMPTY_BASKETBALL_PROFILE,
+          primaryPosition: 'PG',
+          dominantHand: 'LEFT',
+        });
+        expect(await db.getAllAsync('SELECT player_id, sport FROM player_sports')).toEqual([
+          { player_id: created.player.id, sport: 'BASKETBALL' },
+        ]);
+        expect(await count('basketball_player_profiles')).toBe(1);
+        expect(await getPlayer(db, created.player.id)).toEqual(updated);
+      });
+
+      it('rolls back adding Basketball completely when the profile insert fails', async () => {
+        const created = await create(noSport);
+        clock.advance(1000);
+        const failing = failingOn(db, /INSERT INTO basketball_player_profiles/);
+        await expect(
+          updatePlayer(
+            failing,
+            created.player.id,
+            { player: { ...noSport.player, name: 'Changed' }, basketball: { primaryPosition: 'C' } },
+            { clock },
+          ),
+        ).rejects.toThrow('injected failure');
+        expect(await getPlayer(db, created.player.id)).toEqual(created); // name and updatedAt unchanged
+        expect(await counts()).toMatchObject({ player_sports: 0, basketball_player_profiles: 0 });
+      });
+
+      it('preserves stored experience and weekly frequency when the input omits them', async () => {
+        const created = await create(full);
+        await updatePlayer(
+          db,
+          created.player.id,
+          { ...full, basketball: { primaryPosition: 'C', dominantHand: 'RIGHT' } },
+          { clock },
+        );
+        expect(
+          await db.getFirstAsync(
+            'SELECT primary_position, dominant_hand, experience, weekly_frequency FROM basketball_player_profiles',
+          ),
+        ).toEqual({
+          primary_position: 'C',
+          dominant_hand: 'RIGHT',
+          experience: 'ONE_TO_TWO_YEARS',
+          weekly_frequency: 'TWO_TO_THREE',
+        });
+      });
+
+      /** Every row of every player table, for zero-write proofs. */
+      const snapshot = async () => ({
+        families: await db.getAllAsync('SELECT * FROM families'),
+        players: await db.getAllAsync('SELECT * FROM players'),
+        sports: await db.getAllAsync('SELECT * FROM player_sports'),
+        profiles: await db.getAllAsync('SELECT * FROM basketball_player_profiles'),
+        meta: await db.getAllAsync('SELECT * FROM app_meta'),
+      });
+
+      it('rejects an update of a player with an assignment but no profile, before any write', async () => {
+        const created = await create(full);
+        await db.runAsync('DELETE FROM basketball_player_profiles WHERE player_id = ?', [created.player.id]);
+        const before = await snapshot();
+        clock.advance(1000);
+        const error = await updatePlayer(
+          db,
+          created.player.id,
+          { player: { ...full.player, name: 'Changed' }, basketball: null },
+          { clock },
+        ).catch((e: unknown) => e);
+        expect(error).toBeInstanceOf(PlayerDataError);
+        expect(error).toMatchObject({
+          field: 'basketballProfile',
+          reason: 'MISSING_ROW',
+          playerId: created.player.id,
+        });
+        expect(await snapshot()).toEqual(before);
+      });
+
+      it('rejects an update of a player with a profile but no assignment, before any write', async () => {
+        const created = await create(full);
+        await db.execAsync('PRAGMA foreign_keys = OFF');
+        await db.runAsync('DELETE FROM player_sports WHERE player_id = ?', [created.player.id]);
+        await db.execAsync('PRAGMA foreign_keys = ON');
+        const before = await snapshot();
+        clock.advance(1000);
+        const error = await updatePlayer(
+          db,
+          created.player.id,
+          { player: { ...full.player, name: 'Changed' }, basketball: { primaryPosition: 'C' } },
+          { clock },
+        ).catch((e: unknown) => e);
+        expect(error).toBeInstanceOf(PlayerDataError); // not a raw SQLite constraint error
+        expect(error).toMatchObject({
+          field: 'basketballProfile',
+          reason: 'INVALID_RELATIONSHIP',
+          playerId: created.player.id,
+        });
+        expect(await snapshot()).toEqual(before);
+      });
+
+      it('rejects removing a stored Basketball (basketball: null) with zero writes', async () => {
+        const created = await create(full);
+        const before = {
+          players: await db.getAllAsync('SELECT * FROM players'),
+          sports: await db.getAllAsync('SELECT * FROM player_sports'),
+          profiles: await db.getAllAsync('SELECT * FROM basketball_player_profiles'),
+        };
+        clock.advance(1000);
+        const error = await updatePlayer(
+          db,
+          created.player.id,
+          { player: { ...full.player, name: 'Changed' }, basketball: null },
+          { clock },
+        ).catch((e: unknown) => e);
+        expect(error).toBeInstanceOf(SportRemovalNotSupportedError);
+        expect(error).toMatchObject({ playerId: created.player.id, sport: 'BASKETBALL' });
+        expect({
+          players: await db.getAllAsync('SELECT * FROM players'),
+          sports: await db.getAllAsync('SELECT * FROM player_sports'),
+          profiles: await db.getAllAsync('SELECT * FROM basketball_player_profiles'),
+        }).toEqual(before);
+      });
+    });
+
+    it('adding Basketball runs safely alongside a concurrent create', async () => {
+      const existing = await create(noSport);
+      const [added, created] = await Promise.all([
+        updatePlayer(
+          db,
+          existing.player.id,
+          { ...noSport, basketball: { primaryPosition: 'SG' } },
+          { clock },
+        ),
+        createPlayer(db, named('New', noSport), { ids, clock }),
+      ]);
+      expect(expectOk(added).basketball?.primaryPosition).toBe('SG');
+      expect(expectOk(created).basketball).toBeNull();
+      expect(await counts()).toEqual({
+        families: 1,
+        players: 2,
+        player_sports: 1,
+        basketball_player_profiles: 1,
+        pointer: 1,
+      });
+      expect(await listPlayers(db)).toEqual([expectOk(added), expectOk(created)]);
     });
   });
 

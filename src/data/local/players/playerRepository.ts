@@ -20,19 +20,35 @@ import type { IdService } from '@/services/ids/IdService';
 
 import { runSerialized } from '../connectionQueue';
 
-import { PlayerDataError, PlayerNotFoundError, type PlayerDataField } from './errors';
+import {
+  PlayerDataError,
+  PlayerNotFoundError,
+  SportRemovalNotSupportedError,
+  type PlayerDataField,
+} from './errors';
 import { ensureLocalFamily } from './localFamily';
 import type { PlayerDb } from './playerDb';
 
-/** A generic Player with its Basketball profile (the only sport in V1). */
+/**
+ * A generic Player and, when the player has a Basketball assignment, its
+ * Basketball profile (Basketball is the only sport in V1). `basketball: null`
+ * means no Basketball assignment — a valid player.
+ */
 export interface PlayerProfile {
   readonly player: Player;
-  readonly basketball: BasketballProfile;
+  readonly basketball: BasketballProfile | null;
 }
 
+/**
+ * `basketball: null` = Basketball not selected. On update, the V1 fields
+ * (positions, dominant hand) are always written (omitted = cleared), while
+ * `experience` / `weeklyFrequency` — no longer collected by the V1 UI — keep
+ * their stored value unless the input provides them, so they are never
+ * silently cleared.
+ */
 export interface PlayerProfileInput {
   readonly player: PlayerCoreInput;
-  readonly basketball: BasketballProfileInput;
+  readonly basketball: BasketballProfileInput | null;
 }
 
 export type PlayerProfileErrors = {
@@ -46,16 +62,17 @@ export type SavePlayerResult =
   | { readonly ok: false; readonly errors: PlayerProfileErrors };
 
 const BASKETBALL: SportKey = 'BASKETBALL';
+const NO_BASKETBALL = { ok: true, value: null } as const;
 
 /** `today` comes from the single timestamp of this operation. */
 function validateInput(
   input: PlayerProfileInput,
   now: number,
 ):
-  | { ok: true; core: PlayerCore; basketball: BasketballProfile }
+  | { ok: true; core: PlayerCore; basketball: BasketballProfile | null }
   | { ok: false; errors: PlayerProfileErrors } {
   const core = validatePlayerCore(input.player, localCalendarDateFromEpoch(now));
-  const basketball = validateBasketballProfile(input.basketball);
+  const basketball = input.basketball === null ? NO_BASKETBALL : validateBasketballProfile(input.basketball);
   if (core.ok && basketball.ok) return { ok: true, core: core.value, basketball: basketball.value };
   const errors: PlayerProfileErrors = {};
   if (!core.ok) errors.player = core.errors;
@@ -64,9 +81,11 @@ function validateInput(
 }
 
 /**
- * Creates a Player, its BASKETBALL assignment and its Basketball profile (a
- * profile row exists even when every field is empty) in one transaction,
- * creating the local Family on first use. Any failure rolls back all of it.
+ * Creates a Player in one transaction, creating the local Family on first use.
+ * With Basketball selected, the BASKETBALL assignment and its profile (a
+ * profile row exists even when every field is empty) are written in the same
+ * transaction; without it, no sport rows are written. Any failure rolls back
+ * all of it.
  */
 export async function createPlayer(
   db: PlayerDb,
@@ -94,13 +113,7 @@ export async function createPlayer(
         now,
       ],
     );
-    await db.runAsync('INSERT INTO player_sports (player_id, sport) VALUES (?, ?)', [id, BASKETBALL]);
-    await db.runAsync(
-      `INSERT INTO basketball_player_profiles
-         (player_id, sport, primary_position, secondary_position, dominant_hand, experience, weekly_frequency)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [id, BASKETBALL, ...profileParams(valid.basketball)],
-    );
+    if (valid.basketball !== null) await insertBasketball(db, id, valid.basketball);
   });
   if (familyId === undefined) throw new Error('createPlayer: transaction finished without a family id');
 
@@ -114,9 +127,13 @@ export async function createPlayer(
 }
 
 /**
- * Updates a Player's generic fields and Basketball profile in one transaction.
- * id, family, createdAt and the BASKETBALL assignment are preserved. Throws
- * PlayerNotFoundError for an unknown id (never creates a Player).
+ * Updates a Player in one transaction; id, family and createdAt are preserved.
+ * Basketball, read inside the transaction:
+ * - none stored, `basketball: null` → personal fields only;
+ * - none stored, Basketball given → assignment + profile are added;
+ * - stored, Basketball given → the profile is updated (omitted dormant fields kept);
+ * - stored, `basketball: null` → SportRemovalNotSupportedError, nothing written.
+ * Throws PlayerNotFoundError for an unknown id (never creates a Player).
  */
 export async function updatePlayer(
   db: PlayerDb,
@@ -130,20 +147,24 @@ export async function updatePlayer(
 
   let updated = null as PlayerProfile | null;
   await writeTransaction(db, async () => {
-    const existing = await db.getFirstAsync<{ id: string }>('SELECT id FROM players WHERE id = ?', [id]);
+    // Authoritative read of the full stored state before any write: a missing or
+    // orphaned profile (or any other malformed value) fails with PlayerDataError
+    // here, so nothing is written and no raw constraint error can surface.
+    const existing = await readPlayer(db, id);
     if (existing === null) throw new PlayerNotFoundError(id);
+    const hasBasketball = existing.basketball !== null;
+    // Only for a valid stored state: removal is not supported in Slice 1.1.
+    if (hasBasketball && valid.basketball === null) throw new SportRemovalNotSupportedError(id, BASKETBALL);
+
     await db.runAsync(
       'UPDATE players SET name = ?, date_of_birth = ?, height_cm = ?, updated_at = ? WHERE id = ?',
       [valid.core.name, formatCalendarDate(valid.core.dateOfBirth), valid.core.heightCm, now, id],
     );
-    await db.runAsync(
-      `UPDATE basketball_player_profiles
-         SET primary_position = ?, secondary_position = ?, dominant_hand = ?, experience = ?, weekly_frequency = ?
-       WHERE player_id = ?`,
-      [...profileParams(valid.basketball), id],
-    );
-    // Re-read inside the transaction: a missing assignment/profile or another
-    // malformed stored value fails the whole update (rolled back).
+    if (valid.basketball !== null && input.basketball !== null) {
+      if (hasBasketball) await updateBasketballProfile(db, id, valid.basketball, input.basketball);
+      else await insertBasketball(db, id, valid.basketball);
+    }
+    // Re-read inside the transaction: the saved result is parsed like any read.
     updated = await readPlayer(db, id);
   });
   if (updated === null) throw new PlayerNotFoundError(id);
@@ -177,16 +198,57 @@ async function readPlayer(db: PlayerDb, id: string): Promise<PlayerProfile | nul
   return row === null ? null : parsePlayerRow(row);
 }
 
-function profileParams(profile: BasketballProfile): (string | null)[] {
-  return [
-    profile.primaryPosition,
-    profile.secondaryPosition,
-    profile.dominantHand,
-    profile.experience,
-    profile.weeklyFrequency,
-  ];
+/** The BASKETBALL assignment and its profile; always written together. */
+async function insertBasketball(db: PlayerDb, id: string, profile: BasketballProfile): Promise<void> {
+  await db.runAsync('INSERT INTO player_sports (player_id, sport) VALUES (?, ?)', [id, BASKETBALL]);
+  await db.runAsync(
+    `INSERT INTO basketball_player_profiles
+       (player_id, sport, primary_position, secondary_position, dominant_hand, experience, weekly_frequency)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      BASKETBALL,
+      profile.primaryPosition,
+      profile.secondaryPosition,
+      profile.dominantHand,
+      profile.experience,
+      profile.weeklyFrequency,
+    ],
+  );
 }
 
+const PROFILE_COLUMNS = {
+  primaryPosition: 'primary_position',
+  secondaryPosition: 'secondary_position',
+  dominantHand: 'dominant_hand',
+  experience: 'experience',
+  weeklyFrequency: 'weekly_frequency',
+} as const satisfies Record<keyof BasketballProfile, string>;
+
+/** Fields no longer collected by the V1 UI: kept unless the input provides them. */
+const DORMANT_FIELDS = new Set<keyof BasketballProfile>(['experience', 'weeklyFrequency']);
+
+/** Writes the V1 fields always and the dormant fields only when the input provides them. */
+async function updateBasketballProfile(
+  db: PlayerDb,
+  id: string,
+  profile: BasketballProfile,
+  input: BasketballProfileInput,
+): Promise<void> {
+  const fields = (Object.keys(PROFILE_COLUMNS) as (keyof BasketballProfile)[]).filter(
+    (field) => !DORMANT_FIELDS.has(field) || input[field] !== undefined,
+  );
+  // Column names come from the fixed PROFILE_COLUMNS map, never from input.
+  await db.runAsync(
+    `UPDATE basketball_player_profiles SET ${fields.map((f) => `${PROFILE_COLUMNS[f]} = ?`).join(', ')}
+     WHERE player_id = ?`,
+    [...fields.map((f) => profile[f]), id],
+  );
+}
+
+// The BASKETBALL assignment and the Basketball profile are each LEFT JOINed
+// from players on their own, so all four combinations are observable (none,
+// both, assignment only, profile only).
 const SELECT_PLAYERS = `
   SELECT p.id, p.family_id, p.name, p.date_of_birth, p.height_cm, p.created_at, p.updated_at,
          ps.sport AS assignment_sport,
@@ -251,8 +313,12 @@ function parsePlayerRow(row: PlayerRow): PlayerProfile {
   if (typeof updatedAt !== 'number' || !Number.isSafeInteger(updatedAt))
     throw fail('updatedAt', 'INVALID_VALUE');
 
-  if (row.assignment_sport !== BASKETBALL) throw fail('basketballAssignment', 'MISSING_ROW');
-  if (row.profile_player_id === null) throw fail('basketballProfile', 'MISSING_ROW');
+  const player: Player = { id: rawId, familyId, name, dateOfBirth, heightCm, createdAt, updatedAt };
+  const hasAssignment = row.assignment_sport !== null;
+  const hasProfile = row.profile_player_id !== null;
+  if (!hasAssignment && !hasProfile) return { player, basketball: null };
+  if (!hasProfile) throw fail('basketballProfile', 'MISSING_ROW');
+  if (!hasAssignment) throw fail('basketballProfile', 'INVALID_RELATIONSHIP');
   if (row.profile_sport !== BASKETBALL) throw fail('basketballProfile', 'INVALID_VALUE');
 
   const codes = {
@@ -272,16 +338,5 @@ function parsePlayerRow(row: PlayerRow): PlayerProfile {
     throw fail(field, code === 'UNKNOWN_CODE' ? 'UNKNOWN_CODE' : 'INVALID_RELATIONSHIP');
   }
 
-  return {
-    player: {
-      id: rawId,
-      familyId,
-      name,
-      dateOfBirth,
-      heightCm,
-      createdAt,
-      updatedAt,
-    },
-    basketball: basketball.value,
-  };
+  return { player, basketball: basketball.value };
 }
