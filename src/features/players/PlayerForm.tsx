@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import {
   DOMINANT_HANDS,
@@ -17,6 +17,7 @@ import { localCalendarDateFromEpoch } from '@/services/clock/localCalendarDate';
 import { BigButton } from '@/ui/BigButton';
 import { ChoiceChips } from '@/ui/ChoiceChips';
 import { DateOfBirthPicker } from '@/ui/DateOfBirthPicker';
+import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing } from '@/ui/theme';
 
@@ -115,7 +116,10 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel }: Props) 
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <SafeAreaScrollView
+      testID="player-form-scroll"
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled">
       <View style={styles.section} testID="player-section-personal">
         <Text style={styles.sectionTitle}>{t('players.form.personalSection')}</Text>
         <TextField
@@ -244,7 +248,7 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel }: Props) 
         label={t('players.form.cancel')}
         onPress={onCancel}
       />
-    </ScrollView>
+    </SafeAreaScrollView>
   );
 }
 
