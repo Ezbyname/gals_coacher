@@ -36,6 +36,10 @@ export const en = {
       loading: 'Loading…',
     },
     form: {
+      personalSection: 'Personal information',
+      sportSection: 'Sport',
+      basketballSection: 'Basketball details',
+      detailsLaterHint: 'You can update these details later.',
       createTitle: 'Add Player',
       editTitle: 'Edit Player',
       name: 'Name',
@@ -48,8 +52,6 @@ export const en = {
       primaryPosition: 'Primary position',
       secondaryPosition: 'Secondary position',
       dominantHand: 'Dominant hand',
-      experience: 'Basketball experience',
-      weeklyFrequency: 'Weekly basketball frequency',
       save: 'Save',
       saving: 'Saving…',
       cancel: 'Cancel',
@@ -71,12 +73,14 @@ export const en = {
     },
   },
   basketball: {
-    positionWithCode: '{code} — {name}',
+    sportName: 'Basketball',
+    secondaryNone: 'None',
+    positionWithCode: '{code} · {name}',
     position: {
-      PG: 'Point guard',
-      SG: 'Shooting guard',
-      SF: 'Small forward',
-      PF: 'Power forward',
+      PG: 'Point Guard',
+      SG: 'Shooting Guard',
+      SF: 'Small Forward',
+      PF: 'Power Forward',
       C: 'Center',
       MULTIPLE: 'Multiple positions',
       NOT_SURE: 'Not sure',
@@ -85,17 +89,6 @@ export const en = {
       RIGHT: 'Right',
       LEFT: 'Left',
       BOTH: 'Both',
-    },
-    experience: {
-      LESS_THAN_ONE_YEAR: 'Less than one year',
-      ONE_TO_TWO_YEARS: '1–2 years',
-      THREE_PLUS_YEARS: '3+ years',
-    },
-    frequency: {
-      ZERO_TO_ONE: '0–1',
-      TWO_TO_THREE: '2–3',
-      FOUR_TO_FIVE: '4–5',
-      SIX_PLUS: '6+',
     },
   },
   language: {
@@ -122,6 +115,7 @@ export const en = {
     directionValue: 'actual: {actual} · expected: {expected}',
     directionMismatch: 'Layout direction mismatch',
     rtlSample: 'Measurement sample',
-    rtlSampleValue: 'shots {shots} · percent {percent} · sprint {sprint} s · rest {rest} · distance {distance}',
+    rtlSampleValue:
+      'shots {shots} · percent {percent} · sprint {sprint} s · rest {rest} · distance {distance}',
   },
 } satisfies Messages;

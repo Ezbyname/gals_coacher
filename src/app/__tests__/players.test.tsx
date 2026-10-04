@@ -5,7 +5,7 @@ import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
 import * as repository from '@/data/local/players/playerRepository';
 import type { PlayerProfileInput } from '@/data/local/players/playerRepository';
-import { FSI, LRI, PDI, stripBidi } from '@/i18n/bidi';
+import { FSI, PDI, stripBidi } from '@/i18n/bidi';
 import { systemClock } from '@/services/clock/Clock';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
@@ -65,6 +65,12 @@ const selected = (testID: string) => screen.getByTestId(testID).props.accessibil
 const type = (testID: string, value: string) => fireEvent.changeText(screen.getByTestId(testID), value);
 const playerCount = async () =>
   (await db.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM players'))!.n;
+const sportRowCounts = async () => ({
+  player_sports: (await db.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM player_sports'))!.n,
+  profiles: (await db.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM basketball_player_profiles'))!
+    .n,
+});
+const selectBasketball = () => fireEvent.press(screen.getByTestId('player-sport-BASKETBALL'));
 
 function fillDate(day: string, month: string, year: string) {
   type('player-dob-day', day);
@@ -101,22 +107,22 @@ describe('Players — Hebrew (RTL)', () => {
     expect(screen.getByText('מוסיפים שחקן ואפשר להתחיל להתאמן.')).toBeTruthy();
     fireEvent.press(screen.getByTestId('players-add'));
     await waitFor(() => expect(app.getPathname()).toBe('/children/new'));
-    for (const label of [
-      'שם',
-      'תאריך לידה',
-      'יום',
-      'חודש',
-      'שנה',
-      'גובה',
-      'ס״מ',
-      'עמדה ראשית',
-      'עמדה משנית',
-    ]) {
+    for (const label of ['פרטים אישיים', 'שם', 'תאריך לידה', 'יום', 'חודש', 'שנה', 'גובה', 'ס״מ']) {
       expect(screen.getByText(label)).toBeTruthy();
     }
-    for (const label of ['יד דומיננטית', 'ניסיון בכדורסל', 'אימוני כדורסל בשבוע', 'שמירה', 'ביטול']) {
+    for (const label of ['ענף ספורט', 'כדורסל', 'שמירה', 'ביטול']) {
       expect(screen.getByText(label)).toBeTruthy();
     }
+    // Basketball starts unselected: its details are hidden.
+    expect(selected('player-sport-BASKETBALL')).toBe(false);
+    expect(screen.queryByTestId('player-section-basketball')).toBeNull();
+    selectBasketball();
+    for (const label of ['פרטי כדורסל', 'אפשר לעדכן את הפרטים האלה בהמשך', 'עמדה ראשית', 'יד דומיננטית']) {
+      expect(screen.getByText(label)).toBeTruthy();
+    }
+    // Removed from the Player UI.
+    expect(screen.queryByText(/ניסיון|אימוני כדורסל בשבוע/)).toBeNull();
+    expect(screen.queryByTestId(/^player-(experience|frequency)/)).toBeNull();
   });
 
   it('keeps day, month, year in that logical order (mirrored by RTL layout, never reordered)', async () => {
@@ -147,13 +153,9 @@ describe('Players — Hebrew (RTL)', () => {
       dateOfBirth: { year: 2015, month: 7, day: 9 },
       heightCm: null,
     });
-    expect(stored!.basketball).toEqual({
-      primaryPosition: null,
-      secondaryPosition: null,
-      dominantHand: null,
-      experience: null,
-      weeklyFrequency: null,
-    });
+    // Basketball was never selected: a player without a sport.
+    expect(stored!.basketball).toBeNull();
+    expect(await sportRowCounts()).toEqual({ player_sports: 0, profiles: 0 });
   });
 
   it('creates a player with every field; the list shows the position with its abbreviation intact', async () => {
@@ -162,11 +164,11 @@ describe('Players — Hebrew (RTL)', () => {
     type('player-name', 'נועה');
     fillDate('4', '10', '2012');
     type('player-height', '151');
+    selectBasketball();
+    expect(screen.getByTestId('player-section-basketball')).toBeTruthy();
     fireEvent.press(screen.getByTestId('player-primary-SF'));
     fireEvent.press(screen.getByTestId('player-secondary-PF'));
     fireEvent.press(screen.getByTestId('player-hand-LEFT'));
-    fireEvent.press(screen.getByTestId('player-experience-THREE_PLUS_YEARS'));
-    fireEvent.press(screen.getByTestId('player-frequency-SIX_PLUS'));
     fireEvent.press(screen.getByTestId('player-save'));
 
     await waitFor(() => expect(app.getPathname()).toBe('/children'));
@@ -177,14 +179,15 @@ describe('Players — Hebrew (RTL)', () => {
         primaryPosition: 'SF',
         secondaryPosition: 'PF',
         dominantHand: 'LEFT',
-        experience: 'THREE_PLUS_YEARS',
-        weeklyFrequency: 'SIX_PLUS',
+        experience: null,
+        weeklyFrequency: null,
       },
     });
+    expect(await sportRowCounts()).toEqual({ player_sports: 1, profiles: 1 });
     const id = stored!.player.id;
     // Birthday is tomorrow (4 Oct): still 13 today.
     expect(plain(`player-age-${id}`)).toBe('גיל 13');
-    expect(plain(`player-position-${id}`)).toBe('SF — סמול פורוורד');
+    expect(plain(`player-position-${id}`)).toBe('SF · סמול פורוורד');
     expect(text(`player-position-${id}`)).toContain(`${FSI}SF${PDI}`);
   });
 
@@ -193,7 +196,11 @@ describe('Players — Hebrew (RTL)', () => {
     const noa = await seed(NOA);
     const plainPlayer = await seed({
       player: { name: 'עומר', dateOfBirth: { year: 2016, month: 10, day: 3 } },
-      basketball: {},
+      basketball: {}, // Basketball with every answer empty
+    });
+    const noSport = await seed({
+      player: { name: 'ליה', dateOfBirth: { year: 2017, month: 1, day: 1 } },
+      basketball: null,
     });
     renderRouter(routes, { initialUrl: '/children' });
     expect(await screen.findByText('גל')).toBeTruthy();
@@ -202,9 +209,13 @@ describe('Players — Hebrew (RTL)', () => {
     expect(plain(`player-age-${gal.player.id}`)).toBe('גיל 11');
     expect(plain(`player-age-${noa.player.id}`)).toBe('גיל 13');
     expect(plain(`player-age-${plainPlayer.player.id}`)).toBe('גיל 10'); // birthday today
-    expect(plain(`player-position-${gal.player.id}`)).toBe('PG — רכז');
-    expect(plain(`player-position-${noa.player.id}`)).toBe('C — סנטר');
+    expect(plain(`player-position-${gal.player.id}`)).toBe('PG · רכז');
+    expect(plain(`player-position-${noa.player.id}`)).toBe('C · סנטר');
     expect(screen.queryByTestId(`player-position-${plainPlayer.player.id}`)).toBeNull();
+    // Without a sport: name and age only.
+    expect(screen.getByText('ליה')).toBeTruthy();
+    expect(plain(`player-age-${noSport.player.id}`)).toBe('גיל 9');
+    expect(screen.queryByTestId(`player-position-${noSport.player.id}`)).toBeNull();
   });
 
   it('opens Edit prefilled, saves changes, and the list refreshes on return', async () => {
@@ -221,11 +232,10 @@ describe('Players — Hebrew (RTL)', () => {
     ]);
     expect(valueOf('player-height')).toBe('142');
     for (const chip of [
+      'player-sport-BASKETBALL',
       'player-primary-PG',
       'player-secondary-SG',
       'player-hand-RIGHT',
-      'player-experience-ONE_TO_TWO_YEARS',
-      'player-frequency-TWO_TO_THREE',
     ]) {
       expect(selected(chip)).toBe(true);
     }
@@ -233,10 +243,8 @@ describe('Players — Hebrew (RTL)', () => {
     type('player-name', 'גל כהן');
     fillDate('1', '1', '2014');
     type('player-height', '150');
-    fireEvent.press(screen.getByTestId('player-primary-PG')); // clear primary
-    fireEvent.press(screen.getByTestId('player-secondary-SG')); // clear secondary
+    fireEvent.press(screen.getByTestId('player-primary-PG')); // clear primary (secondary cleared + hidden)
     fireEvent.press(screen.getByTestId('player-hand-BOTH')); // change
-    fireEvent.press(screen.getByTestId('player-frequency-TWO_TO_THREE')); // clear
     fireEvent.press(screen.getByTestId('player-save'));
 
     await waitFor(() => expect(app.getPathname()).toBe('/children'));
@@ -254,8 +262,9 @@ describe('Players — Hebrew (RTL)', () => {
         primaryPosition: null,
         secondaryPosition: null,
         dominantHand: 'BOTH',
+        // Not shown any more and not sent: the stored values are kept.
         experience: 'ONE_TO_TWO_YEARS',
-        weeklyFrequency: null,
+        weeklyFrequency: 'TWO_TO_THREE',
       },
     });
   });
@@ -333,26 +342,17 @@ describe('Players — Hebrew (RTL)', () => {
       expect(valueOf('player-height')).toBe(height);
     });
 
-    it('rejects a secondary position without a specific primary', async () => {
+    it('still lets the domain reject a secondary position equal to the primary', async () => {
       await submitNew(() => {
         type('player-name', 'גל');
         fillDate('9', '7', '2015');
-        fireEvent.press(screen.getByTestId('player-primary-MULTIPLE'));
-        fireEvent.press(screen.getByTestId('player-secondary-SG'));
-      });
-      expect(text('player-secondary-error')).toBe('עמדה משנית אפשר לבחור רק אחרי עמדה ראשית מסוימת.');
-      expect(selected('player-primary-MULTIPLE')).toBe(true);
-      expect(selected('player-secondary-SG')).toBe(true);
-    });
-
-    it('rejects a secondary position equal to the primary', async () => {
-      await submitNew(() => {
-        type('player-name', 'גל');
-        fillDate('9', '7', '2015');
+        selectBasketball();
         fireEvent.press(screen.getByTestId('player-primary-PF'));
-        fireEvent.press(screen.getByTestId('player-secondary-PF'));
+        fireEvent.press(screen.getByTestId('player-secondary-PF')); // the primary is not removed from the list
       });
       expect(text('player-secondary-error')).toBe('העמדה המשנית צריכה להיות שונה מהעמדה הראשית.');
+      expect(selected('player-primary-PF')).toBe(true);
+      expect(selected('player-secondary-PF')).toBe(true);
     });
 
     it('never shows internal codes', async () => {
@@ -509,14 +509,189 @@ describe('Players — Hebrew (RTL)', () => {
     });
   });
 
-  it('keeps sport values readable: abbreviations and ranges are isolated left-to-right', async () => {
+  describe('sport selection', () => {
+    it('select → fill → unselect before saving persists no Basketball data', async () => {
+      const save = jest.spyOn(repository, 'createPlayer');
+      const app = renderRouter(routes, { initialUrl: '/children/new' });
+      await screen.findByTestId('player-name');
+      type('player-name', 'גל');
+      fillDate('9', '7', '2015');
+      selectBasketball();
+      fireEvent.press(screen.getByTestId('player-primary-PG'));
+      fireEvent.press(screen.getByTestId('player-hand-LEFT'));
+      selectBasketball(); // unselect
+      expect(screen.queryByTestId('player-section-basketball')).toBeNull();
+      expect(valueOf('player-name')).toBe('גל'); // personal fields untouched
+      fireEvent.press(screen.getByTestId('player-save'));
+      await waitFor(() => expect(app.getPathname()).toBe('/children'));
+      expect(save.mock.calls[0]![1].basketball).toBeNull();
+      expect((await repository.listPlayers(db))[0]!.basketball).toBeNull();
+      expect(await sportRowCounts()).toEqual({ player_sports: 0, profiles: 0 });
+    });
+
+    it('keeps hidden Basketball answers locally: re-selecting before saving restores them', async () => {
+      renderRouter(routes, { initialUrl: '/children/new' });
+      await screen.findByTestId('player-name');
+      selectBasketball();
+      fireEvent.press(screen.getByTestId('player-primary-SG'));
+      fireEvent.press(screen.getByTestId('player-secondary-SF'));
+      fireEvent.press(screen.getByTestId('player-hand-BOTH'));
+      selectBasketball(); // hide
+      selectBasketball(); // show again
+      expect(selected('player-primary-SG')).toBe(true);
+      expect(selected('player-secondary-SF')).toBe(true);
+      expect(selected('player-hand-BOTH')).toBe(true);
+    });
+
+    it('adds Basketball to a player without a sport through Edit', async () => {
+      const omer = await seed({
+        player: { name: 'עומר', dateOfBirth: { year: 2016, month: 4, day: 2 } },
+        basketball: null,
+      });
+      const app = renderRouter(routes, { initialUrl: `/children/${omer.player.id}` });
+      await screen.findByDisplayValue('עומר');
+      expect(selected('player-sport-BASKETBALL')).toBe(false);
+      expect(screen.getByTestId('player-sport-BASKETBALL').props.accessibilityState.disabled).toBe(false);
+      expect(screen.queryByTestId('player-section-basketball')).toBeNull();
+      selectBasketball();
+      fireEvent.press(screen.getByTestId('player-primary-C'));
+      fireEvent.press(screen.getByTestId('player-save'));
+      await waitFor(() => expect(app.getPathname()).toBe('/children'));
+      expect((await repository.getPlayer(db, omer.player.id))!.basketball).toMatchObject({
+        primaryPosition: 'C',
+      });
+      expect(await sportRowCounts()).toEqual({ player_sports: 1, profiles: 1 });
+      expect(plain(`player-position-${omer.player.id}`)).toBe('C · סנטר');
+    });
+
+    it('shows a saved Basketball selected and locked; its details stay editable', async () => {
+      const gal = await seed(GAL);
+      const update = jest.spyOn(repository, 'updatePlayer');
+      const app = renderRouter(routes, { initialUrl: `/children/${gal.player.id}` });
+      await screen.findByDisplayValue('גל');
+      const chip = screen.getByTestId('player-sport-BASKETBALL');
+      expect(chip.props.accessibilityState).toMatchObject({ selected: true, disabled: true });
+      fireEvent.press(chip); // locked: nothing happens
+      expect(selected('player-sport-BASKETBALL')).toBe(true);
+      expect(screen.getByTestId('player-section-basketball')).toBeTruthy();
+      fireEvent.press(screen.getByTestId('player-hand-LEFT'));
+      fireEvent.press(screen.getByTestId('player-save'));
+      await waitFor(() => expect(app.getPathname()).toBe('/children'));
+      expect(update.mock.calls[0]![2].basketball).not.toBeNull();
+      expect((await repository.getPlayer(db, gal.player.id))!.basketball).toMatchObject({
+        dominantHand: 'LEFT',
+      });
+    });
+
+    it('editing through the new form keeps stored experience and weekly frequency unchanged', async () => {
+      const gal = await seed(GAL); // stored ONE_TO_TWO_YEARS / TWO_TO_THREE (earlier app version)
+      const stored = () =>
+        db.getFirstAsync(
+          'SELECT experience, weekly_frequency FROM basketball_player_profiles WHERE player_id = ?',
+          [gal.player.id],
+        );
+      const before = await stored();
+      expect(before).toEqual({ experience: 'ONE_TO_TWO_YEARS', weekly_frequency: 'TWO_TO_THREE' });
+      const update = jest.spyOn(repository, 'updatePlayer');
+      const app = renderRouter(routes, { initialUrl: `/children/${gal.player.id}` });
+      await screen.findByDisplayValue('גל');
+      type('player-name', 'גל לוי');
+      fireEvent.press(screen.getByTestId('player-primary-SF')); // secondary stays SG
+      fireEvent.press(screen.getByTestId('player-save'));
+      await waitFor(() => expect(app.getPathname()).toBe('/children'));
+      // The form sends only primary / secondary / dominant hand — never experience or frequency.
+      const sent = update.mock.calls[0]![2].basketball!;
+      expect(Object.keys(sent).sort()).toEqual(['dominantHand', 'primaryPosition', 'secondaryPosition']);
+      expect(sent).not.toHaveProperty('experience');
+      expect(sent).not.toHaveProperty('weeklyFrequency');
+      expect(await stored()).toEqual(before);
+    });
+  });
+
+  describe('secondary position', () => {
+    async function openBasketballForm() {
+      renderRouter(routes, { initialUrl: '/children/new' });
+      await screen.findByTestId('player-name');
+      selectBasketball();
+    }
+
+    it('is hidden until a concrete primary position is chosen', async () => {
+      await openBasketballForm();
+      expect(screen.queryByTestId('player-secondary')).toBeNull();
+      for (const primary of ['PG', 'SG', 'SF', 'PF', 'C']) {
+        fireEvent.press(screen.getByTestId(`player-primary-${primary}`));
+        expect(screen.getByTestId('player-secondary')).toBeTruthy();
+      }
+      // The selected primary stays available in the secondary list.
+      expect(screen.getByTestId('player-secondary-C')).toBeTruthy();
+      expect(text('player-secondary-none-label')).toBe('ללא');
+    });
+
+    it.each([
+      ['MULTIPLE', 'player-primary-MULTIPLE'],
+      ['NOT_SURE', 'player-primary-NOT_SURE'],
+      ['no primary', 'player-primary-PG'],
+    ])('is cleared and hidden when the primary becomes %s', async (_label, press) => {
+      const save = jest.spyOn(repository, 'createPlayer');
+      await openBasketballForm();
+      type('player-name', 'גל');
+      fillDate('9', '7', '2015');
+      fireEvent.press(screen.getByTestId('player-primary-PG'));
+      fireEvent.press(screen.getByTestId('player-secondary-SG'));
+      fireEvent.press(screen.getByTestId(press)); // MULTIPLE / NOT_SURE, or PG again = clear
+      expect(screen.queryByTestId('player-secondary')).toBeNull();
+      fireEvent.press(screen.getByTestId('player-primary-PG')); // shown again: the old choice is gone
+      expect(selected('player-secondary-none')).toBe(true);
+      expect(selected('player-secondary-SG')).toBe(false);
+      fireEvent.press(screen.getByTestId(press));
+      fireEvent.press(screen.getByTestId('player-save'));
+      await waitFor(() => expect(save).toHaveBeenCalled());
+      expect(save.mock.calls[0]![1].basketball!.secondaryPosition).toBeNull();
+    });
+
+    it('"None" saves no secondary position (null)', async () => {
+      const save = jest.spyOn(repository, 'createPlayer');
+      await openBasketballForm();
+      type('player-name', 'גל');
+      fillDate('9', '7', '2015');
+      fireEvent.press(screen.getByTestId('player-primary-PG'));
+      fireEvent.press(screen.getByTestId('player-secondary-SF'));
+      fireEvent.press(screen.getByTestId('player-secondary-none'));
+      expect(selected('player-secondary-none')).toBe(true);
+      fireEvent.press(screen.getByTestId('player-save'));
+      await waitFor(() => expect(save).toHaveBeenCalled());
+      expect(save.mock.calls[0]![1].basketball!.secondaryPosition).toBeNull();
+      await waitFor(async () => expect(await playerCount()).toBe(1));
+      expect((await repository.listPlayers(db))[0]!.basketball).toMatchObject({
+        primaryPosition: 'PG',
+        secondaryPosition: null,
+      });
+    });
+  });
+
+  it('shows the height unit as a suffix and stores only the number', async () => {
+    const app = renderRouter(routes, { initialUrl: '/children/new' });
+    await screen.findByTestId('player-name');
+    expect(text('player-height-unit')).toBe('ס״מ');
+    type('player-name', 'גל');
+    fillDate('9', '7', '2015');
+    type('player-height', '147');
+    fireEvent.press(screen.getByTestId('player-save'));
+    await waitFor(() => expect(app.getPathname()).toBe('/children'));
+    expect(await db.getFirstAsync('SELECT height_cm, typeof(height_cm) AS t FROM players')).toEqual({
+      height_cm: 147,
+      t: 'integer',
+    });
+  });
+
+  it('keeps position abbreviations readable: isolated left-to-right, with the · separator', async () => {
     renderRouter(routes, { initialUrl: '/children/new' });
     await screen.findByTestId('player-name');
+    selectBasketball();
     const chipText = (testID: string) => text(`${testID}-label`);
-    expect(chipText('player-primary-PG')).toBe(`${FSI}PG${PDI} — ${FSI}רכז${PDI}`);
+    expect(chipText('player-primary-PG')).toBe(`${FSI}PG${PDI} · ${FSI}רכז${PDI}`);
     expect(chipText('player-primary-MULTIPLE')).toBe('כמה עמדות');
-    expect(chipText('player-frequency-ZERO_TO_ONE')).toBe(`${LRI}0–1${PDI}`);
-    expect(chipText('player-frequency-SIX_PLUS')).toBe(`${LRI}6+${PDI}`);
+    expect(chipText('player-primary-NOT_SURE')).toBe('לא בטוח');
   });
 });
 
@@ -528,27 +703,23 @@ describe('Players — English (LTR)', () => {
     expect(await screen.findByText('No players yet')).toBeTruthy();
     fireEvent.press(screen.getByTestId('players-add'));
     await waitFor(() => expect(app.getPathname()).toBe('/children/new'));
-    for (const label of [
-      'Name',
-      'Date of birth',
-      'Day',
-      'Month',
-      'Year',
-      'Height',
-      'cm',
-      'Primary position',
-    ]) {
+    for (const label of ['Personal information', 'Name', 'Date of birth', 'Day', 'Month', 'Year', 'Height']) {
       expect(screen.getByText(label)).toBeTruthy();
     }
-    for (const label of [
-      'Secondary position',
-      'Dominant hand',
-      'Basketball experience',
-      'Weekly basketball frequency',
-    ]) {
+    expect(text('player-height-unit')).toBe('cm');
+    expect(screen.getByText('Sport')).toBeTruthy();
+    expect(screen.queryByTestId('player-section-basketball')).toBeNull();
+    selectBasketball();
+    for (const label of ['Basketball details', 'You can update these details later.', 'Primary position']) {
       expect(screen.getByText(label)).toBeTruthy();
     }
-    expect(plain('player-primary-PG-label')).toBe('PG — Point guard');
+    expect(screen.getByText('Dominant hand')).toBeTruthy();
+    expect(plain('player-primary-PG-label')).toBe('PG · Point Guard');
+    expect(plain('player-primary-SG-label')).toBe('SG · Shooting Guard');
+    expect(plain('player-primary-C-label')).toBe('C · Center');
+    fireEvent.press(screen.getByTestId('player-primary-SF'));
+    expect(text('player-secondary-none-label')).toBe('None');
+    expect(screen.queryByText(/experience|frequency/i)).toBeNull();
   });
 
   it('a future stored date of birth shows the English data message', async () => {
@@ -567,13 +738,16 @@ describe('Players — English (LTR)', () => {
     type('player-dob-month', '2');
     type('player-dob-year', '2025');
     type('player-height', '-1');
-    fireEvent.press(screen.getByTestId('player-primary-NOT_SURE'));
+    selectBasketball();
+    fireEvent.press(screen.getByTestId('player-primary-C'));
     fireEvent.press(screen.getByTestId('player-secondary-C'));
     fireEvent.press(screen.getByTestId('player-save'));
     expect(await screen.findByText('Please enter a name.')).toBeTruthy();
     expect(text('player-dob-error')).toBe('That date does not exist. Check the day, month and year.');
     expect(text('player-height-error')).toBe('Height is a whole number of centimetres above 0.');
-    expect(text('player-secondary-error')).toBe('Choose a specific primary position before a secondary one.');
+    expect(text('player-secondary-error')).toBe(
+      'The secondary position must differ from the primary position.',
+    );
     expect(await playerCount()).toBe(0);
   });
 
@@ -582,6 +756,7 @@ describe('Players — English (LTR)', () => {
     await screen.findByTestId('player-name');
     type('player-name', 'Gal');
     fillDate('9', '7', '2015');
+    selectBasketball();
     fireEvent.press(screen.getByTestId('player-primary-C'));
     fireEvent.press(screen.getByTestId('player-save'));
     await waitFor(() => expect(app.getPathname()).toBe('/children'));
@@ -589,7 +764,7 @@ describe('Players — English (LTR)', () => {
     const id = stored!.player.id;
     expect(await screen.findByText('Gal')).toBeTruthy();
     expect(plain(`player-age-${id}`)).toBe('Age 11');
-    expect(plain(`player-position-${id}`)).toBe('C — Center');
+    expect(plain(`player-position-${id}`)).toBe('C · Center');
 
     fireEvent.press(screen.getByTestId(`player-row-${id}`));
     expect(await screen.findByDisplayValue('Gal')).toBeTruthy();

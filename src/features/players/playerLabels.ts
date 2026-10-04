@@ -1,29 +1,22 @@
-import type {
-  BasketballProfileErrors,
-  DominantHand,
-  ExperienceLevel,
-  PrimaryPosition,
-  WeeklyFrequency,
-} from '@/domain/basketball/profile';
+import type { BasketballProfileErrors, DominantHand, PrimaryPosition } from '@/domain/basketball/profile';
 import type { PlayerCoreErrors } from '@/domain/player';
 import type { PlayerProfileErrors } from '@/data/local/players/playerRepository';
-import { ltr } from '@/i18n/bidi';
 import type { TranslationKey, TranslationParams } from '@/i18n/types';
 
 type T = (key: TranslationKey, params?: TranslationParams) => string;
 
-const SPECIFIC_POSITIONS = new Set<string>(['PG', 'SG', 'SF', 'PF', 'C']);
+const SPECIFIC_POSITIONS = new Set<PrimaryPosition | null>(['PG', 'SG', 'SF', 'PF', 'C']);
 
-/** `PG — רכז`: the abbreviation stays an isolated left-to-right run; MULTIPLE/NOT_SURE have none. */
+/** A concrete position (PG–C): only these can have a secondary position. */
+export const isSpecificPosition = (code: PrimaryPosition | null): boolean => SPECIFIC_POSITIONS.has(code);
+
+/** `PG · רכז`: the abbreviation stays an isolated left-to-right run; MULTIPLE/NOT_SURE have none. */
 export function positionLabel(t: T, code: PrimaryPosition): string {
   const name = t(`basketball.position.${code}`);
-  return SPECIFIC_POSITIONS.has(code) ? t('basketball.positionWithCode', { code, name }) : name;
+  return isSpecificPosition(code) ? t('basketball.positionWithCode', { code, name }) : name;
 }
 
 export const handLabel = (t: T, code: DominantHand) => t(`basketball.hand.${code}`);
-export const experienceLabel = (t: T, code: ExperienceLevel) => t(`basketball.experience.${code}`);
-/** Ranges such as `0–1` and `6+` would reorder inside RTL text, so they are isolated LTR. */
-export const frequencyLabel = (t: T, code: WeeklyFrequency) => ltr(t(`basketball.frequency.${code}`));
 
 // Domain error code → message. Exhaustive: a new domain code fails to compile until mapped.
 const NAME: Record<NonNullable<PlayerCoreErrors['name']>, TranslationKey> = {
@@ -45,20 +38,13 @@ const SECONDARY: Record<NonNullable<BasketballProfileErrors['secondaryPosition']
 const UNKNOWN_CODE: Record<'UNKNOWN_CODE', TranslationKey> = { UNKNOWN_CODE: 'players.errors.choiceInvalid' };
 
 export type PlayerFieldMessages = Partial<
-  Record<
-    | 'name'
-    | 'dateOfBirth'
-    | 'height'
-    | 'primaryPosition'
-    | 'secondaryPosition'
-    | 'dominantHand'
-    | 'experience'
-    | 'weeklyFrequency',
-    string
-  >
+  Record<'name' | 'dateOfBirth' | 'height' | 'primaryPosition' | 'secondaryPosition' | 'dominantHand', string>
 >;
 
-/** Localized message per form field for the domain's validation errors. */
+/**
+ * Localized message per form field for the domain's validation errors. The
+ * form never sends experience / weeklyFrequency, so those cannot fail here.
+ */
 export function fieldMessages(t: T, errors: PlayerProfileErrors): PlayerFieldMessages {
   const { player = {}, basketball = {} } = errors;
   const out: PlayerFieldMessages = {};
@@ -68,7 +54,5 @@ export function fieldMessages(t: T, errors: PlayerProfileErrors): PlayerFieldMes
   if (basketball.primaryPosition) out.primaryPosition = t(UNKNOWN_CODE[basketball.primaryPosition]);
   if (basketball.secondaryPosition) out.secondaryPosition = t(SECONDARY[basketball.secondaryPosition]);
   if (basketball.dominantHand) out.dominantHand = t(UNKNOWN_CODE[basketball.dominantHand]);
-  if (basketball.experience) out.experience = t(UNKNOWN_CODE[basketball.experience]);
-  if (basketball.weeklyFrequency) out.weeklyFrequency = t(UNKNOWN_CODE[basketball.weeklyFrequency]);
   return out;
 }

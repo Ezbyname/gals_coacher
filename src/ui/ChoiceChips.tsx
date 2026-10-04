@@ -13,11 +13,21 @@ type Props<T extends string> = {
   onChange: (value: T | null) => void;
   /** Translated error shown under the chips. */
   error?: string;
+  /** The current choice is fixed: chips show it but cannot be pressed. */
+  locked?: boolean;
   testID: string;
 };
 
 /** Single choice from a short list. Chips flow from the start edge, so they mirror in RTL. */
-export function ChoiceChips<T extends string>({ label, choices, value, onChange, error, testID }: Props<T>) {
+export function ChoiceChips<T extends string>({
+  label,
+  choices,
+  value,
+  onChange,
+  error,
+  locked = false,
+  testID,
+}: Props<T>) {
   return (
     <View style={styles.field} testID={testID}>
       <Text style={styles.label}>{label}</Text>
@@ -29,7 +39,8 @@ export function ChoiceChips<T extends string>({ label, choices, value, onChange,
               key={choice.value}
               testID={`${testID}-${choice.value}`}
               accessibilityRole="button"
-              accessibilityState={{ selected }}
+              accessibilityState={{ selected, disabled: locked }}
+              disabled={locked}
               onPress={() => onChange(selected ? null : choice.value)}
               style={[styles.chip, selected && styles.chipSelected]}>
               <Text

@@ -1,26 +1,22 @@
-import {
-  EMPTY_BASKETBALL_PROFILE,
-  type BasketballProfile,
-  type DominantHand,
-  type ExperienceLevel,
-  type PrimaryPosition,
-  type SecondaryPosition,
-  type WeeklyFrequency,
-} from '@/domain/basketball/profile';
+import type { DominantHand, PrimaryPosition, SecondaryPosition } from '@/domain/basketball/profile';
 import type { PlayerProfile, PlayerProfileInput } from '@/data/local/players/playerRepository';
 
-/** What the form edits: raw text for typed fields, codes for chip fields. */
+/**
+ * What the form edits: raw text for typed fields, codes for chip fields, and
+ * whether Basketball is selected. The Basketball answers stay in this state
+ * while Basketball is unselected (so re-selecting restores them) but are only
+ * sent when it is selected.
+ */
 export type PlayerFormValues = {
   name: string;
   day: string;
   month: string;
   year: string;
   height: string;
+  basketballSelected: boolean;
   primaryPosition: PrimaryPosition | null;
   secondaryPosition: SecondaryPosition | null;
   dominantHand: DominantHand | null;
-  experience: ExperienceLevel | null;
-  weeklyFrequency: WeeklyFrequency | null;
 };
 
 export const EMPTY_FORM_VALUES: PlayerFormValues = {
@@ -29,11 +25,10 @@ export const EMPTY_FORM_VALUES: PlayerFormValues = {
   month: '',
   year: '',
   height: '',
+  basketballSelected: false,
   primaryPosition: null,
   secondaryPosition: null,
   dominantHand: null,
-  experience: null,
-  weeklyFrequency: null,
 };
 
 export function formValuesFromProfile({ player, basketball }: PlayerProfile): PlayerFormValues {
@@ -43,9 +38,10 @@ export function formValuesFromProfile({ player, basketball }: PlayerProfile): Pl
     month: String(player.dateOfBirth.month),
     year: String(player.dateOfBirth.year),
     height: player.heightCm === null ? '' : String(player.heightCm),
-    // The current form edits every player as a Basketball player (UI unchanged
-    // in this commit); a player without Basketball starts from empty answers.
-    ...(basketball ?? EMPTY_BASKETBALL_PROFILE),
+    basketballSelected: basketball !== null,
+    primaryPosition: basketball?.primaryPosition ?? null,
+    secondaryPosition: basketball?.secondaryPosition ?? null,
+    dominantHand: basketball?.dominantHand ?? null,
   };
 }
 
@@ -59,22 +55,20 @@ function numberFrom(text: string): number | null {
 }
 
 /**
- * Converts form text to the domain input. This only reads the text; every
- * rule (required, real date, not in the future, positive whole height, code
- * relationships) is decided by the domain validation in the repository.
+ * Converts form state to the repository input. This only reads the form;
+ * every rule (required, real date, not in the future, positive whole height,
+ * position relationships) is decided by the domain validation.
+ *
+ * - Basketball not selected → `basketball: null` (hidden answers are dropped).
+ * - Basketball selected → only primary, secondary and dominant hand. The
+ *   no-longer-collected `experience` / `weeklyFrequency` are omitted (never
+ *   sent as null), so the repository keeps any stored values.
  */
 export function formValuesToInput(values: PlayerFormValues): PlayerProfileInput {
   const day = numberFrom(values.day);
   const month = numberFrom(values.month);
   const year = numberFrom(values.year);
   const noDate = day === null && month === null && year === null;
-  const basketball: BasketballProfile = {
-    primaryPosition: values.primaryPosition,
-    secondaryPosition: values.secondaryPosition,
-    dominantHand: values.dominantHand,
-    experience: values.experience,
-    weeklyFrequency: values.weeklyFrequency,
-  };
   return {
     player: {
       name: values.name,
@@ -83,6 +77,12 @@ export function formValuesToInput(values: PlayerFormValues): PlayerProfileInput 
         : { year: year ?? Number.NaN, month: month ?? Number.NaN, day: day ?? Number.NaN },
       heightCm: numberFrom(values.height),
     },
-    basketball,
+    basketball: values.basketballSelected
+      ? {
+          primaryPosition: values.primaryPosition,
+          secondaryPosition: values.secondaryPosition,
+          dominantHand: values.dominantHand,
+        }
+      : null,
   };
 }

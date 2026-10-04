@@ -38,6 +38,10 @@ export const he = {
       loading: 'טוען…',
     },
     form: {
+      personalSection: 'פרטים אישיים',
+      sportSection: 'ענף ספורט',
+      basketballSection: 'פרטי כדורסל',
+      detailsLaterHint: 'אפשר לעדכן את הפרטים האלה בהמשך',
       createTitle: 'הוספת שחקן',
       editTitle: 'עריכת שחקן',
       name: 'שם',
@@ -50,8 +54,6 @@ export const he = {
       primaryPosition: 'עמדה ראשית',
       secondaryPosition: 'עמדה משנית',
       dominantHand: 'יד דומיננטית',
-      experience: 'ניסיון בכדורסל',
-      weeklyFrequency: 'אימוני כדורסל בשבוע',
       save: 'שמירה',
       saving: 'שומר...',
       cancel: 'ביטול',
@@ -73,7 +75,9 @@ export const he = {
     },
   },
   basketball: {
-    positionWithCode: '{code} — {name}',
+    sportName: 'כדורסל',
+    secondaryNone: 'ללא',
+    positionWithCode: '{code} · {name}',
     position: {
       PG: 'רכז',
       SG: 'קלע',
@@ -87,17 +91,6 @@ export const he = {
       RIGHT: 'ימין',
       LEFT: 'שמאל',
       BOTH: 'שתיהן',
-    },
-    experience: {
-      LESS_THAN_ONE_YEAR: 'פחות משנה',
-      ONE_TO_TWO_YEARS: 'שנה עד שנתיים',
-      THREE_PLUS_YEARS: '3 שנים ומעלה',
-    },
-    frequency: {
-      ZERO_TO_ONE: '0–1',
-      TWO_TO_THREE: '2–3',
-      FOUR_TO_FIVE: '4–5',
-      SIX_PLUS: '6+',
     },
   },
   language: {

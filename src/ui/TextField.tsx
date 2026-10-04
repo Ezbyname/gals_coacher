@@ -9,7 +9,7 @@ type Props = {
   onChangeText: (text: string) => void;
   /** Translated error shown under the field. */
   error?: string;
-  /** Translated unit shown after the input (e.g. cm). */
+  /** Translated unit shown inside the field, after the value (e.g. cm). Display only. */
   unit?: string;
   keyboardType?: KeyboardTypeOptions;
   /** Numbers stay left-to-right inside Hebrew screens. */
@@ -22,16 +22,20 @@ export function TextField({ label, value, onChangeText, error, unit, keyboardTyp
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
-      <View style={styles.row}>
+      <View style={[styles.box, !!error && styles.boxError]}>
         <TextInput
           testID={testID}
           accessibilityLabel={label}
           value={value}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
-          style={[styles.input, numeric && styles.numeric, !!error && styles.inputError]}
+          style={[styles.input, numeric && styles.numeric]}
         />
-        {unit ? <Text style={styles.unit}>{unit}</Text> : null}
+        {unit ? (
+          <Text style={styles.unit} testID={testID ? `${testID}-unit` : undefined}>
+            {unit}
+          </Text>
+        ) : null}
       </View>
       {error ? (
         <Text style={styles.error} testID={testID ? `${testID}-error` : undefined}>
@@ -45,20 +49,21 @@ export function TextField({ label, value, onChangeText, error, unit, keyboardTyp
 const styles = StyleSheet.create({
   field: { flex: 1, gap: spacing.xs },
   label: { fontSize: 14, fontWeight: '600', color: colors.ink, textAlign: 'auto' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  input: {
-    flex: 1,
+  // The input and its unit share one bordered box, so the unit reads as a suffix.
+  box: {
+    flexDirection: 'row',
+    alignItems: 'center',
     minHeight: 48,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 12,
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
-    fontSize: 17,
-    color: colors.ink,
+    gap: spacing.sm,
   },
+  boxError: { borderColor: colors.danger },
+  input: { flex: 1, minHeight: 46, fontSize: 17, color: colors.ink },
   numeric: { writingDirection: 'ltr', textAlign: 'center' },
-  inputError: { borderColor: colors.danger },
   unit: { fontSize: 15, color: colors.inkMuted },
   error: { fontSize: 13, color: colors.danger },
 });
