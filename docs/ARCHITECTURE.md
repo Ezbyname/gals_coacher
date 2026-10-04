@@ -220,6 +220,35 @@ Parent account → pairing code → child device
   per player **and sport** (`listSelfAssessments(db, playerId, sport)`),
   ordered `taken_at DESC, id DESC`; malformed stored data fails the read
   as a whole and is never repaired.
+- **v4 (Slice 1.3, approved 2026-10-04 — not implemented): calendar events.**
+  One generic table; no sport-specific calendar table, no type CHECK list
+  (type codes are validated in the domain).
+
+  `calendar_events`: `id TEXT PRIMARY KEY` (client UUID),
+  `player_id TEXT NOT NULL → players (id)`, `type TEXT NOT NULL`,
+  `sport TEXT` (nullable), `start_at INTEGER NOT NULL` (integer CHECK),
+  `end_at INTEGER` (nullable; integer and `> start_at` CHECK),
+  `title TEXT` and `notes TEXT` (nullable; non-blank CHECK when present),
+  `created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer')`,
+  `updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer')`
+  (safe-integer semantics enforced by the domain),
+  `FOREIGN KEY (player_id, sport) → player_sports (player_id, sport)` (only
+  enforced when `sport` is set — SQLite skips a composite FK with a NULL
+  column), index `(player_id, start_at)`. No status, timezone, recurrence /
+  series, source / creator, location, reminder, `deleted_at` or sync columns.
+
+  Appended as migration v4; v1–v3 are not altered. Repository operations
+  (create / get / list / update / delete, all Player-scoped) validate before
+  writing, run one at a time per connection (`runSerialized`) in one
+  transaction, verify the Player and any sport assignment, re-read and
+  re-validate the persisted row, and fail closed on malformed stored data
+  (including a missing Player / sport relationship). Update never changes
+  `id`, `player_id` or `created_at` and sets `updated_at`; delete is a hard
+  delete in this local-only, single-writer stage (tombstones only when cloud
+  sync requires them). Repository list order: `start_at ASC, id ASC`
+  (canonical); the screen derives the two sections from it — Current &
+  upcoming `start_at ASC, id ASC` (nearest first), Past `start_at DESC,
+  id DESC` (most recent first). The visible order is the contract.
 - expo-sqlite's `withTransactionAsync` is not exclusive (a concurrent BEGIN
   failure rolls back the other open transaction), and
   `withExclusiveTransactionAsync` opens a new connection without
@@ -435,7 +464,21 @@ testing** — the engine must accept them as configuration, not hard-code a numb
 - **Available time is not appropriate training time** (PRODUCT_SPEC §71): a
   free slot is an input to the calculation and recommendation layers, never a
   recommendation by itself.
-- Future calendar types (Team Training, Personal Training, Game, School,
-  Unavailable, Other), recurrence and exceptions are designed in the Calendar
-  Foundation slice. Nothing in the Player model blocks them: events reference
-  `player_id` and, where relevant, `sport`.
+- **Calendar Foundation (Slice 1.3, approved 2026-10-04 — not implemented):**
+  one-off `CalendarEvent`s owned by a Player; types `TEAM_TRAINING`,
+  `PERSONAL_TRAINING`, `GAME`, `GYM`, `RECOVERY`, `OTHER` (stable codes,
+  labels in i18n; `SCHOOL` / `UNAVAILABLE` deferred); `sport` optional and
+  independent of type; `startAt` + optional `endAt` stored as epoch
+  milliseconds (absolute instants), entered as device-local date / time
+  (a non-existent DST-gap time is rejected; an ambiguous overlap time
+  resolves as the platform `Date` does, documented and tested), displayed
+  in the device's current timezone and the active app language — no stored
+  timezone, no all-day events. Current & upcoming vs Past is decided from
+  `Clock.wallNow()`: `endAt >= now`, or `startAt >= now` without an end.
+  Current & upcoming is ordered `startAt` ascending then `id` ascending;
+  Past `startAt` descending then `id` descending.
+  Events reference `player_id` and, where relevant, `sport`.
+- **Recurrence and occurrence exceptions move to 2.2** (Calendar UI +
+  Calendar ↔ Training). Wall-clock recurrence needs a stored timezone, so
+  that slice reopens the timezone contract; the recurrence schema shape is
+  not decided.

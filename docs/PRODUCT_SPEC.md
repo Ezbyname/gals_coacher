@@ -276,6 +276,17 @@ Team Practice, Personal Workout, Game, Recovery Day, recurring events.
 
 **Part of the True MVP (approved 2026-10-04):** Calendar Foundation and a usable Calendar UI with Calendar ↔ Training integration (see §71 and ROADMAP). Not "later" any more; notifications (§52) stay later.
 
+### Slice 1.3 — Calendar Foundation contract (approved 2026-10-04 — not implemented)
+
+- **Each Player has their own schedule** of one-off events, with or without a sport. A calendar event is a plan, never a training session or result (§71): it does not create, complete or skip training.
+- **Event types:** Team training, Personal training, Game, Gym, Recovery, Other (stable codes `TEAM_TRAINING`, `PERSONAL_TRAINING`, `GAME`, `GYM`, `RECOVERY`, `OTHER`; labels in Hebrew / English). School and Unavailable time come later.
+- **Sport** is optional and independent of the type (e.g. a gym session may have none); only a sport the Player is assigned to (today Basketball).
+- **Time:** a start date and time, and an optional end time after the start. Entered and shown in the device's local time, in the active app language; times keep their left-to-right order in Hebrew. No all-day events yet.
+- **Title** is optional — the type name is shown instead — except for **Other**, which needs a title. **Notes** are optional.
+- **Create, view, edit and delete** (delete asks for confirmation).
+- **Where:** from Player Edit, a Schedule section opens the Player's list: **Current & upcoming** (an event stays here until it ends, or until it starts when it has no end), nearest first, and **Past**, most recent first.
+- **Not yet:** recurring events and their exceptions (with the Calendar UI in 2.2), month / week / day views, reminders, Coach views or sharing, the phone's own calendar.
+
 ## 52. Notifications — later
 
 - 07:30 — "🏀 יש היום אימון ב־18:00."
