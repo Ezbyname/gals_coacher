@@ -82,4 +82,31 @@ export const migrations: readonly Migration[] = [
       );
     `,
   },
+  {
+    // Slice 1.3. One-off calendar events owned by a Player (plans, never
+    // training sessions). Generic table: type codes are validated in the
+    // domain, not with a CHECK list. The composite sport FK only applies when
+    // sport is set (SQLite skips a composite FK with a NULL column). Blank text
+    // checks strip ASCII whitespace (plain trim() strips spaces only); the
+    // domain stays the authority and the read rejects anything not normalized.
+    version: 4,
+    name: 'calendar_events',
+    sql: `
+      CREATE TABLE calendar_events (
+        id TEXT PRIMARY KEY NOT NULL,
+        player_id TEXT NOT NULL REFERENCES players (id),
+        type TEXT NOT NULL,
+        sport TEXT,
+        start_at INTEGER NOT NULL CHECK (typeof(start_at) = 'integer'),
+        end_at INTEGER CHECK (end_at IS NULL OR (typeof(end_at) = 'integer' AND end_at > start_at)),
+        title TEXT CHECK (title IS NULL OR length(trim(title, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        notes TEXT CHECK (notes IS NULL OR length(trim(notes, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer'),
+        FOREIGN KEY (player_id, sport) REFERENCES player_sports (player_id, sport)
+      );
+
+      CREATE INDEX calendar_events_player_start ON calendar_events (player_id, start_at);
+    `,
+  },
 ];

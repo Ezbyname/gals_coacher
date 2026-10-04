@@ -15,7 +15,7 @@ function fakeDb(startVersion = 0) {
         version = Number(m[1]);
       }
     },
-    getFirstAsync: async <T,>() => ({ user_version: version }) as T,
+    getFirstAsync: async <T>() => ({ user_version: version }) as T,
     withTransactionAsync: async (task) => {
       inTx = true;
       try {
@@ -70,11 +70,12 @@ describe('runMigrations', () => {
     expect(() => assertValidMigrations(migrations)).not.toThrow();
   });
 
-  it('ships exactly versions 1..3', () => {
+  it('ships exactly versions 1..4', () => {
     expect(migrations.map((m) => [m.version, m.name])).toEqual([
       [1, 'app_meta'],
       [2, 'players'],
       [3, 'self_assessments'],
+      [4, 'calendar_events'],
     ]);
   });
 });
