@@ -7,7 +7,9 @@
 **Phase 0 — Foundation: CLOSED / VERIFIED** (2026-10-02).
 **Phase 0.H — Hardening: CLOSED / VERIFIED** (2026-10-03).
 **Slice 1.0 — Localization / RTL / Startup Splash: CLOSED / VERIFIED** (2026-10-03).
-All verified by the owner on a physical Android device. iOS bundle export validated; no physical iOS device/runtime validation or native iOS build has been performed.
+All verified by the owner on a physical Android device.
+**Slice 1.1 — Player Profile: IMPLEMENTED** with strong automated / native verification and **PARTIAL** physical Android acceptance (2026-10-04) — not fully physically accepted; one known UI defect carried forward into Slice 1.2 (see below).
+**Slice 1.2 — Self-Assessment: contract APPROVED (2026-10-04), NOT implemented.** iOS bundle export validated; no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
 |---|---|
@@ -15,56 +17,108 @@ All verified by the owner on a physical Android device. iOS bundle export valida
 | EAS | Project linked (`owner: ezbyname`, `extra.eas.projectId: 80ab62ce-99fc-494d-bb5c-a41877158a18`) |
 | Android | **Verified on a physical device** (preview/internal APK, see below) |
 | iOS | Configuration prepared; **iOS bundle export validated (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.** Early iOS dev-build gate: Slice 2.1; full iOS validation: dedicated iOS Validation slice (ROADMAP) |
-| Controlled docs | PRODUCT_SPEC, ARCHITECTURE and ROADMAP aligned with the owner decisions of 2026-10-02, corrected after the 2026-10-03 patch review (languages/RTL, player profile, no weight in V1, self-assessment, baseline as a Training Engine use case, one result pipeline, new slice order). **Slice 1.0 decisions (Hebrew/English, Hebrew default, RTL/LTR, measurement display) are implemented and verified on Android. Self-Assessment, Baseline/Reassessment, the one-result-pipeline Training Engine and the Cloud Foundation position remain roadmap/product decisions — not implemented.** Player Profile: see Slice 1.1 (in progress). **2026-10-04:** Slice 1.1 profile contract revised (optional sport, Basketball details, DOB picker), Calendar Foundation added to ROADMAP, Cloud Foundation position approved, True MVP redefined by capabilities (including Calendar Foundation and Calendar UI; Cloud Foundation as required enabling infrastructure; Hebrew and English first-class), planning principles recorded (PRODUCT_SPEC §65, §71; ARCHITECTURE §7, §9, §14) — **approved, not yet implemented**. |
+| Controlled docs | PRODUCT_SPEC, ARCHITECTURE and ROADMAP aligned with the owner decisions of 2026-10-02, corrected after the 2026-10-03 patch review (languages/RTL, player profile, no weight in V1, self-assessment, baseline as a Training Engine use case, one result pipeline, new slice order). **Slice 1.0 decisions (Hebrew/English, Hebrew default, RTL/LTR, measurement display) are implemented and verified on Android. Self-Assessment, Baseline/Reassessment, the one-result-pipeline Training Engine and the Cloud Foundation position remain roadmap/product decisions — not implemented.** Player Profile: see Slice 1.1 (implemented; partial physical acceptance). **2026-10-04 — Slice 1.1 profile contract revised and now IMPLEMENTED** (optional sport, Basketball profile details, native DOB picker; PRODUCT_SPEC §65, ARCHITECTURE §7 / §9; commits `389fbca`, `a0932b0`, `19441f1`; physical Android acceptance partial — see Slice 1.1). **2026-10-04 — approved, NOT implemented (future work):** Calendar Foundation (Slice 1.3) and the later Calendar UI (2.2) added to ROADMAP, Cloud Foundation position approved (slice C), True MVP redefined by capabilities (including Calendar Foundation and Calendar UI; Cloud Foundation as required enabling infrastructure; Hebrew and English first-class), planning principles recorded (PRODUCT_SPEC §71; ARCHITECTURE §14). **2026-10-04 (Slice 1.2):** Self-Assessment contract recorded (PRODUCT_SPEC §67, §70; ARCHITECTURE §7 schema v3, §9) — **approved, not implemented**. |
 | Phase 0 hardening (slice 0.H) | **CLOSED / VERIFIED** — merged as `13a09c9`, 40/40 tests on the owner's machine, physical Android device verified (see below) |
 | Cloud Foundation position | **APPROVED (2026-10-04):** after 1.3 Calendar Foundation, before 2.0 (see Proposals) |
 | Slice 1.0 (Localization / RTL + startup splash) | **CLOSED / VERIFIED** — 123/123 tests, 20/20 suites; physical Android Preview APK verified (see below) |
-| Slice 1.1 (Player Profile) | **IN PROGRESS / NOT VERIFIED** — see below |
-| Slices after 1.1 | **Not started** |
+| Slice 1.1 (Player Profile) | **IMPLEMENTED** — 312/312 tests, 28/28 suites on the owner's machine; native checks pass; **PARTIAL** physical Android acceptance; known carry-forward defect (see below) |
+| Slice 1.2 (Self-Assessment) | **Contract approved, NOT implemented** — see below |
+| Slices after 1.2 | **Not started** |
 
 ---
 
-## Slice 1.1 — Player Profile: IN PROGRESS / NOT VERIFIED (2026-10-04)
+## Slice 1.2 — Self-Assessment: CONTRACT APPROVED, NOT IMPLEMENTED (2026-10-04)
 
-### Implemented so far (owner's local branch, on top of `823cdc7`; not on `main`)
+The owner approved the Slice 1.2 contract on 2026-10-04 (recorded in
+PRODUCT_SPEC §67 / §70 and ARCHITECTURE §7 / §9). **No application code,
+no migration v3 and no UI exist yet.**
+
+Approved decisions, in short:
+
+- Six subjective Basketball categories: `SHOOTING` קליעה / Shooting, `BALL_HANDLING` כדרור / Ball Handling, `PASSING` מסירות / Passing, `FINISHING` סיומת ליד הסל / Finishing, `DEFENSE` הגנה / Defense, `SPEED` מהירות ותנועה / Speed & Movement.
+- Every category required; whole numbers 1–5; 0 / empty invalid; no "Not sure"; a partial assessment is never saved (gentle message, chosen ratings kept, nothing written).
+- Numeric row `1 2 3 4 5` left-to-right in both languages; end anchors only (1: "יש לי הרבה מקום להשתפר" / "Lots of room to improve"; 5: "זו אחת החוזקות שלי" / "One of my strengths"); gender-neutral first-person copy.
+- Entry from the Player Edit screen, in a separate section, for Basketball players only; nothing shown for a player without Basketball; no post-create prompt.
+- Immutable assessments (no edit / delete); several per day allowed; history newest first with local date **and time**; each category as `n/5`; no total, average, grade, arrows, colours, comparison or AI.
+- Schema v3: generic `self_assessments (id, player_id, sport, taken_at)` with FK `(player_id, sport)` → `player_sports`, and `self_assessment_ratings (assessment_id, category, rating 1–5)`; `listSelfAssessments(db, playerId, sport)` ordered `taken_at DESC, id DESC`.
+- Self-assessment is perception, never `MeasurementType.RATING`, a result, a grade or a score.
+- Out of scope: player deletion, cloud / sync, non-Basketball assessments.
+
+### Planned commits (one at a time, owner review after each)
+
+1. `docs(self-assessment): define Slice 1.2 contract` — this document change.
+2. `fix(players): respect bottom safe-area inset in player form` — the Slice 1.1 carry-forward (small `SafeAreaScrollView` helper on the existing `react-native-safe-area-context`; no new dependency).
+3. `feat(self-assessment): add domain model and validation`.
+4. `feat(self-assessment): add local persistence` — migration v3 + repository.
+5. `feat(self-assessment): add self-assessment screens`.
+
+Then one Preview APK covering Slice 1.2, the safe-area fix and the still-unevidenced Slice 1.1 checks (below).
+
+---
+
+## Slice 1.1 — Player Profile: IMPLEMENTED, PARTIAL PHYSICAL ACCEPTANCE (2026-10-04)
+
+**Status:** implemented with strong automated / native verification and
+**partial** physical Android acceptance. **Not** fully physically accepted.
+Not on `origin/main` (owner's local `main`, 7 commits ahead of `823cdc7`).
+
+### Commits (owner hashes)
 
 | Commit | Content |
 |---|---|
 | `670b184` feat(players): add player domain and age calculation | `CalendarDate`, `ageOn` (29 Feb → 1 Mar), `validatePlayerCore`, Basketball profile codes and validation |
 | `01df7d4` feat(players): add local family and player persistence | Migration v2 (`families`, `players`, `player_sports`, `basketball_player_profiles`), `app_meta.local_family_id` singleton, repository with one-operation-at-a-time queue, `PlayerDataError`, DB closed on init failure |
 | `c7928d6` feat(players): add player list and profile form | `/children`, `/children/new`, `/children/[id]`, shared form, Hebrew/English copy, save protection |
+| `b52c6be` docs(players): revise Slice 1.1 profile contract | Optional sport, Basketball details, DOB picker, Calendar Foundation, True MVP by capabilities |
+| `389fbca` refactor(players): make basketball assignment optional | `basketball: null` = no sport; four read states (corrupt states → `PlayerDataError`, never repaired); `SportRemovalNotSupportedError` (zero writes); authoritative re-read before writes; dormant `experience` / `weekly_frequency` preserved |
+| `a0932b0` refactor(players): separate personal and sport profile UI | Personal / Sport / Basketball sections; Basketball chip locked once saved; secondary position only for PG–C with explicit None; Experience / Frequency removed from the UI; height `cm` suffix |
+| `19441f1` feat(players): add native date picker | `@react-native-community/datetimepicker` 9.1.0 (SDK 57 compatible; no config plugin); calendar button fills the same day / month / year; opens on a valid typed date else local today; maximum = local today; local-only date conversion (child-process timezone proofs in Asia/Jerusalem and America/Los_Angeles) |
 
-**As implemented today, every player is a Basketball player** (assignment + profile always created) and the form still contains Experience and Weekly Frequency. This does **not** match the revised contract below yet.
+Schema: **v2** (no change after `01df7d4`).
 
-**Automated evidence (local, after `c7928d6`):** 26/26 suites, 268/268 tests PASS, 0 failed, 0 skipped; TypeScript PASS; lint PASS; Android/iOS export and prebuild PASS (no `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS` present, `supportsRtl="true"`). Commit `01df7d4` database lifecycle suite verified 3× consecutively on the owner's Windows machine (no EPERM).
+### Automated / native evidence (owner's machine, after `19441f1`)
 
-**Physical Android observations so far (partial acceptance, owner):** ~5 s splash, no white flash, no startup crash, Hebrew default, RTL, Diagnostics schema v2, Players empty state, Add Player form opens. The physical inspection of the form triggered the contract revision below. **Not accepted.**
+| Check | Result |
+|---|---|
+| `npm ci` | ✅ |
+| `npm ls` | ✅ datetimepicker 9.1.0 |
+| `npm run check` | ✅ **28/28 suites, 312/312 tests PASS, 0 failed** |
+| `expo config` | ✅ (no datetimepicker config plugin) |
+| Android clean prebuild | ✅ package `com.ezbyname.galscoacher`; autolinking resolves `@react-native-community/datetimepicker` (`RNDateTimePickerPackage`) |
+| Android manifest permissions | ✅ INTERNET, MODIFY_AUDIO_SETTINGS, READ_EXTERNAL_STORAGE (maxSdkVersion 32), WRITE_EXTERNAL_STORAGE (maxSdkVersion 32), SYSTEM_ALERT_WINDOW, VIBRATE — none added by the date picker; no RECORD_AUDIO, CAMERA, location, POST_NOTIFICATIONS or contacts |
+| Android / iOS export | ✅ |
+| EAS Preview APK | ✅ built (`d318602d-88c7-496a-8ede-cc98db7d52d8`) |
 
-### Revised contract — approved 2026-10-04, NOT yet implemented
+### Physical Android evidence (owner, Preview APK above)
 
-Recorded in PRODUCT_SPEC §65 / §71, ARCHITECTURE §7 / §9 / §14 and ROADMAP:
+| Check | Result |
+|---|---|
+| App starts without crash; splash | ✅ |
+| Create new players | ✅ |
+| Basketball profile section | ✅ works sufficiently to create players |
+| Upgrade persistence of an existing player | ⚠️ **not performed** — no player existed before the upgrade |
 
-- A player may exist without a sport; Basketball is optional, can be added later, and cannot be removed in Slice 1.1 (`SportRemovalNotSupportedError`, zero writes).
-- Basketball profile only for a Basketball assignment; assignment without profile and profile without assignment are both corrupt (`PlayerDataError`), never repaired on read.
-- V1 Basketball form fields: primary position, secondary position (shown only for PG/SG/SF/PF/C, explicit None = null), dominant hand. Position labels `PG · רכז` etc.
-- Experience and Weekly Frequency removed from the UI; columns kept; stored values preserved on update.
-- DOB: manual day/month/year + native date picker filling the same fields (opens on the typed date if valid, otherwise today; maximum = local today). **Known limitation:** the picker follows the device language.
-- No migration expected (schema stays v2).
+### Known carry-forward defect (owner decision: fix in Slice 1.2, no standalone APK)
 
-### Planned commits (additive; `670b184`, `01df7d4`, `c7928d6` are not rewritten)
+With Basketball selected the Player form is longer; on physical Android
+with the system navigation area visible, Save is visible but **Cancel (the
+last control) is partially covered by the navigation area.** Cause: the
+app draws edge-to-edge and the form's scroll content does not add the
+bottom safe-area inset. Fix planned as Slice 1.2 commit 2 (actual inset,
+no fixed device constant, Save / Cancel stay in normal flow).
 
-1. `docs(players): revise Slice 1.1 profile contract` — this document change.
-2. `refactor(players): make basketball assignment optional` — repository + types + tests (+ minimal null-safe screen fixes so the build stays green).
-3. `refactor(players): separate personal and sport profile UI`.
-4. `feat(players): add native date picker` — native dependency; new APK required.
+### Still unevidenced Slice 1.1 checks — repeat on the next APK
 
-Then physical Android acceptance on one final APK; only if it passes: `docs: close verified Slice 1.1 gate`.
+Edit an existing player · add Basketball later · manual DOB · native DOB
+picker · persistence after restart · Hebrew · English. (Create a player on
+the current APK *before* installing the next one, so upgrade persistence
+can be checked.)
 
-### Not verified / not started
+### Known gaps / limitations
 
-- Revised contract (commits 2–4 above): not implemented.
-- Physical Android acceptance of Slice 1.1: not done.
-- iOS: no native build or device validation; the date picker on iOS stays unverified until the iOS gate.
+- **No way to delete a player** — recorded product gap; out of scope for Slice 1.2 unless the owner approves it.
+- Native date picker follows the device language (accepted, PRODUCT_SPEC §65).
+- iOS: export only; no native build or device validation; the iOS date-picker presentation is unverified.
 
 ---
 

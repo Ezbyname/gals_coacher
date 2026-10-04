@@ -394,11 +394,43 @@ Possible future optional metric: wingspan (not in V1).
 
 ## 67. Self-assessment
 
-- After the player profile, the player completes a **short** structured self-assessment: about 5–6 basketball categories. Initial candidates: Shooting, Ball Handling, Passing, Finishing, Defense, Athleticism / Speed (final list is an open decision).
+- After the player profile, the player completes a **short** structured self-assessment: about 5–6 basketball categories. Initial candidates: Shooting, Ball Handling, Passing, Finishing, Defense, Athleticism / Speed (final list decided 2026-10-04, below).
 - Each category rated **1–5** with large radio/button-style choices. No free text in V1.
 - Meaning: **how the player sees themselves.** It is not objective performance and is stored separately from measured results.
 - **Repeatable:** taken again at reassessment, history preserved (e.g. Ball Handling 2/5 → 4/5) and may be shown *alongside* measured improvement.
 - Never: automatic performance scores from self-assessment, converting objective measurements to 1–5, or a "gap score" between self-view and measurements.
+
+### Slice 1.2 contract (approved 2026-10-04 — not implemented)
+
+**Categories** (Basketball, subjective; never objective measurements):
+
+| Code | Hebrew | English |
+|---|---|---|
+| `SHOOTING` | קליעה | Shooting |
+| `BALL_HANDLING` | כדרור | Ball Handling |
+| `PASSING` | מסירות | Passing |
+| `FINISHING` | סיומת ליד הסל | Finishing |
+| `DEFENSE` | הגנה | Defense |
+| `SPEED` | מהירות ותנועה | Speed & Movement |
+
+**Answers:**
+
+- Every category must be answered. The scale is exactly **1–5** (whole numbers); 0 and an empty answer are not valid. No "Not sure" option in Slice 1.2.
+- A partially completed assessment is **never saved.** Saving with unanswered categories shows a gentle localized message, keeps every rating already chosen and writes nothing.
+
+**Scale and wording:**
+
+- Large, accessible buttons `1 2 3 4 5`. The numeric row stays **left-to-right in both languages** (1 on the left, 5 on the right), like other sports values (§64); the rest of a Hebrew screen stays RTL. Accessibility reads the category, the selected rating and the maximum.
+- Explanatory anchors at the two ends only — 1: "יש לי הרבה מקום להשתפר" / "Lots of room to improve"; 5: "זו אחת החוזקות שלי" / "One of my strengths".
+- The athlete is addressed in gender-neutral first person where possible (e.g. "הקליעה שלי"), not masculine/feminine second person. Never "bad", "weak", "beginner", body comparison or shame-based wording (§69).
+
+**Entry point:** the existing Player Edit screen. A Basketball player gets a separate Self-Assessment section, outside the personal and sport profile fields. A player without Basketball sees no Self-Assessment at all (no disabled placeholder, no non-Basketball categories). No "take the assessment now?" prompt after creating a player in Slice 1.2.
+
+**Saved assessments are immutable:** no edit, no delete. Taking another assessment creates a new one; older ones never change. Several assessments on the same day are allowed, so a mistaken one is followed by a new one and history is kept.
+
+**History:** newest first; each assessment shows its **local date and local time** (device timezone, never UTC) and every category with its `n/5`. No total, average, overall grade, arrows, good/bad colours, side-by-side comparison or AI interpretation in Slice 1.2 — comparison belongs to later Progress work.
+
+**Not in Slice 1.2:** player deletion (a recorded product gap), cloud / sync, non-Basketball assessments.
 
 ## 68. Baseline and reassessment
 
@@ -421,12 +453,13 @@ Never encourage: shame, punishment, body comparison, sibling ranking, extreme tr
 
 Not decided yet — implementation must keep these configurable and ask the owner:
 
-- Final 5–6 self-assessment categories (and their Hebrew/English wording).
 - Exact Baseline V1 exercises, attempt counts and rest.
 - Baseline split rules by age (when to split across sessions; per-age variations).
 - Shooting PB minimum attempt volume (§27).
 - Sprint / manual-timer PB significance threshold (§24).
 - App theme behaviour (light only / dark / follow system).
+
+Decided 2026-10-04 (moved out of this list): final self-assessment categories and their Hebrew/English wording (§67).
 
 ## 71. Planning around real life (approved 2026-10-04 — not implemented)
 

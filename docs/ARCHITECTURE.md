@@ -174,8 +174,9 @@ Parent account → pairing code → child device
   fixed to `BASKETBALL`, FK `(player_id, sport)` → `player_sports`). SQL
   enforces structure only (keys, FKs, non-blank name, date shape, positive
   height); code lists are validated in the domain.
-- **Sport assignment contract (revised 2026-10-04; repository change pending
-  in Slice 1.1, no schema change).** `player_sports` holds zero or more rows
+- **Sport assignment contract (revised 2026-10-04; implemented in Slice 1.1
+  by `389fbca`, `a0932b0` and `19441f1`, no schema change; physical Android
+  acceptance of Slice 1.1 is partial — see PROJECT_STATE).** `player_sports` holds zero or more rows
   per player. A sport profile row exists only for a matching assignment and
   is written in the same transaction as that assignment. Reading Basketball,
   the assignment and the profile are each LEFT JOINed from `players`
@@ -195,6 +196,30 @@ Parent account → pairing code → child device
   and writes nothing. The `experience` and `weekly_frequency` columns stay
   (nullable); the V1 UI no longer collects them, and updates preserve stored
   values.
+- **v3 (Slice 1.2, approved 2026-10-04 — not implemented): self-assessment.**
+  Generic tables; no Basketball-specific persistence table.
+
+  `self_assessments` — one row per completed assessment:
+  `id TEXT PRIMARY KEY` (client UUID), `player_id TEXT NOT NULL`,
+  `sport TEXT NOT NULL`, `taken_at INTEGER NOT NULL` (epoch ms, device wall
+  clock at save), `FOREIGN KEY (player_id, sport) → player_sports (player_id,
+  sport)`, and an index on `(player_id, sport, taken_at)` for history. No
+  `created_at` (an assessment is persisted at the moment it is taken), no
+  `updated_at`, no status.
+
+  `self_assessment_ratings` — one row per answered category:
+  `assessment_id TEXT NOT NULL → self_assessments (id)`,
+  `category TEXT NOT NULL`, `rating INTEGER NOT NULL` with the structural
+  `CHECK (typeof(rating) = 'integer' AND rating BETWEEN 1 AND 5)`,
+  `PRIMARY KEY (assessment_id, category)`. Category codes are validated in
+  the domain, not with a SQL enum CHECK.
+
+  Appended as migration v3; v1 and v2 are not altered. An assessment and its
+  ratings are written in one transaction; a partial assessment is never
+  persisted. Rows are never updated or deleted in Slice 1.2. History is read
+  per player **and sport** (`listSelfAssessments(db, playerId, sport)`),
+  ordered `taken_at DESC, id DESC`; malformed stored data fails the read
+  as a whole and is never repaired.
 - expo-sqlite's `withTransactionAsync` is not exclusive (a concurrent BEGIN
   failure rolls back the other open transaction), and
   `withExclusiveTransactionAsync` opens a new connection without
@@ -218,7 +243,7 @@ Parent account → pairing code → child device
 Parent (auth user) ─┬─ Family ─── Player (a child; name, dateOfBirth, height)
                     │                ├── PlayerSport (sport) 0..n
                     │                │     └── <Sport>Profile (only for its assignment; V1: BasketballProfile)
-                    │                └── SelfAssessment (takenAt) ── SelfAssessmentRating (category, 1–5)
+                    │                └── SelfAssessment (sport, takenAt) ── SelfAssessmentRating (category, 1–5)
 Sport (key) ─── Exercise (category, measurementType, comparisonPolicy?, defaults, tutorialUrl, isCustom)
 WorkoutTemplate (purpose) ── TemplateItem (exercise, sets, target, rest, order)
 WorkoutSession (player, sport, purpose, template?, startedAt, endedAt)
@@ -241,6 +266,24 @@ WorkoutSession (player, sport, purpose, template?, startedAt, endedAt)
   `BasketballExercise` core entity. Designed in Slice 2.0.
 - `SelfAssessment` is subjective data and lives in its own tables. It never
   writes to, or is derived from, the result pipeline (§12 below).
+- **Self-assessment contract (approved 2026-10-04 — not implemented):**
+  - A `SelfAssessment` carries its `sport` and belongs to a player's sport
+    assignment (`(player_id, sport)` → `player_sports`), so a multi-sport
+    player's histories never mix. Basketball is the only self-assessment
+    sport today.
+  - The generic part (assessment, rating 1–5, completeness and validation)
+    is sport-neutral domain code; the category **list** is Basketball data
+    (`SHOOTING`, `BALL_HANDLING`, `PASSING`, `FINISHING`, `DEFENSE`, `SPEED`;
+    PRODUCT_SPEC §67), looked up per sport. Adding a sport adds a category
+    list, not tables or Player changes.
+  - A self-rating is the athlete's perception. It is **not**
+    `MeasurementType.RATING`, an exercise result, an objective measurement,
+    a performance grade or a deterministic score. No total, average, overall
+    score or gap score is calculated. Later Progress may show subjective and
+    objective histories together while keeping their meaning separate; any
+    future AI may use self-assessments only as context about
+    self-perception (§14 layer 1 facts), never as measurements.
+  - Assessments are immutable; a new one never changes an older one.
 
 **Measurement type = WHAT was measured. Comparison policy = HOW improvement
 is evaluated.** They are separate (`domain/measurement.ts`,
