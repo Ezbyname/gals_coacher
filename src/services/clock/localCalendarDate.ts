@@ -26,3 +26,51 @@ export function localCalendarDateFromEpoch(epochMs: number): CalendarDate {
 export function calendarDateToLocalNoon(date: CalendarDate): Date {
   return new Date(date.year, date.month - 1, date.day, 12, 0, 0, 0);
 }
+
+/** A wall-clock date and time on this device (month 1–12, hour 0–23, minute 0–59). */
+export interface LocalDateTime {
+  readonly year: number;
+  readonly month: number;
+  readonly day: number;
+  readonly hour: number;
+  readonly minute: number;
+}
+
+/**
+ * The instant (epoch ms) at which this device's clock shows `value`, built
+ * with the LOCAL `Date` constructor. Returns null when that local time does
+ * not exist: an impossible date or time (31 February, hour 24, minute 60, a
+ * two-digit year that `Date` would move to 19xx) or a time skipped by a DST
+ * change (spring forward) — detected by reading the local components back,
+ * so nothing is silently normalized. A wall time that occurs twice (DST fall
+ * back) resolves as the platform `Date` does; on V8 / Node that is the
+ * earlier instant (proven in localCalendarDate.timezone.test.ts).
+ */
+export function localDateTimeToEpoch(value: LocalDateTime): number | null {
+  const { year, month, day, hour, minute } = value;
+  if (![year, month, day, hour, minute].every(Number.isInteger)) return null;
+  const date = new Date(year, month - 1, day, hour, minute, 0, 0);
+  const epochMs = date.getTime();
+  if (!Number.isSafeInteger(epochMs)) return null;
+  const back = epochToLocalDateTime(epochMs);
+  const same =
+    back.year === year &&
+    back.month === month &&
+    back.day === day &&
+    back.hour === hour &&
+    back.minute === minute;
+  return same ? epochMs : null;
+}
+
+/** The wall-clock date and time this device shows at `epochMs` (e.g. to prefill a picker). */
+export function epochToLocalDateTime(epochMs: number): LocalDateTime {
+  if (!Number.isSafeInteger(epochMs)) throw new RangeError(`Not a whole-millisecond timestamp: ${epochMs}`);
+  const date = new Date(epochMs);
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+    hour: date.getHours(),
+    minute: date.getMinutes(),
+  };
+}

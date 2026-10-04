@@ -59,3 +59,42 @@ describe('localDateToCalendarDate / calendarDateToLocalNoon', () => {
     expect(localDateToCalendarDate(noon)).toEqual({ year: 2024, month: 2, day: 29 });
   });
 });
+
+describe('localDateTimeToEpoch / epochToLocalDateTime (any machine timezone)', () => {
+  const { localDateTimeToEpoch, epochToLocalDateTime } = jest.requireActual('../localCalendarDate');
+  const valid = { year: 2026, month: 10, day: 6, hour: 18, minute: 30 };
+
+  it('builds the local instant and reads it back unchanged', () => {
+    const epoch = localDateTimeToEpoch(valid);
+    expect(epoch).toBe(new Date(2026, 9, 6, 18, 30).getTime());
+    expect(epochToLocalDateTime(epoch)).toEqual(valid);
+  });
+
+  it.each([
+    ['31 February', { ...valid, month: 2, day: 31 }],
+    ['29 February in a non-leap year', { ...valid, year: 2026, month: 2, day: 29 }],
+    ['month 13', { ...valid, month: 13 }],
+    ['month 0', { ...valid, month: 0 }],
+    ['day 0', { ...valid, day: 0 }],
+    ['hour 24', { ...valid, hour: 24 }],
+    ['hour -1', { ...valid, hour: -1 }],
+    ['minute 60', { ...valid, minute: 60 }],
+    ['fractional minute', { ...valid, minute: 30.5 }],
+    ['NaN day', { ...valid, day: Number.NaN }],
+    ['two-digit year (Date would move it to 1999)', { ...valid, year: 99 }],
+  ])('rejects %s', (_label, value) => {
+    expect(localDateTimeToEpoch(value)).toBeNull();
+  });
+
+  it('accepts 29 February in a leap year and the last minute of a day', () => {
+    expect(localDateTimeToEpoch({ year: 2028, month: 2, day: 29, hour: 23, minute: 59 })).toBe(
+      new Date(2028, 1, 29, 23, 59).getTime(),
+    );
+  });
+
+  it('epochToLocalDateTime rejects a non-whole-millisecond timestamp', () => {
+    for (const bad of [Number.NaN, Infinity, 1.5, Number.MAX_SAFE_INTEGER + 2]) {
+      expect(() => epochToLocalDateTime(bad)).toThrow(RangeError);
+    }
+  });
+});
