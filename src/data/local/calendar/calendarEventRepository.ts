@@ -65,7 +65,9 @@ export async function createCalendarEvent(
 }
 
 /**
- * Replaces the user fields of one of this Player's events. `id`, `playerId`
+ * Replaces the user fields of one of this Player's events. A title longer
+ * than CALENDAR_TITLE_MAX_LENGTH is accepted only when it is the stored title,
+ * unchanged (history saved before the limit is never truncated). `id`, `playerId`
  * and `createdAt` never change; `updatedAt = clock.wallNow()`. Validated
  * first; then, in one transaction, the event must exist for this Player
  * (CalendarEventNotFoundError — never created) and be readable, and any sport
@@ -79,14 +81,24 @@ export async function updateCalendarEvent(
   deps: { clock: Clock },
 ): Promise<SaveCalendarEventResult> {
   const now = deps.clock.wallNow();
-  const valid = validateCalendarEvent(input);
-  if (!valid.ok) return valid;
+  // Every field rule first (nothing is read or written for invalid input) —
+  // except the title length, which depends on the stored title (below).
+  const typedTitle = typeof input.title === 'string' ? input.title.trim() : null;
+  const fields = validateCalendarEvent(input, { storedTitle: typedTitle });
+  if (!fields.ok) return fields;
 
   let updated = null as CalendarEvent | null;
+  let rejected = null as SaveCalendarEventResult | null;
   await writeTransaction(db, async () => {
     // Authoritative read of the stored event before any write (fails closed when malformed).
     const existing = await readEvent(db, playerId, eventId);
     if (existing === null) throw new CalendarEventNotFoundError(playerId, eventId);
+    // A title over the limit is accepted only when it is the stored one, unchanged.
+    const valid = validateCalendarEvent(input, { storedTitle: existing.title });
+    if (!valid.ok) {
+      rejected = valid;
+      return; // nothing written
+    }
     // The event may keep the sport it already has, even if that sport is now inactive.
     await assertPlayerAndSport(db, playerId, valid.value, existing.sport);
     const v = valid.value;
@@ -98,6 +110,7 @@ export async function updateCalendarEvent(
     );
     updated = await readEvent(db, playerId, eventId);
   });
+  if (rejected !== null) return rejected;
   if (updated === null) throw new CalendarEventNotFoundError(playerId, eventId);
   return { ok: true, event: updated };
 }

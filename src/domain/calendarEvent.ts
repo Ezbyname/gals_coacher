@@ -68,7 +68,7 @@ export type CalendarEventErrors = {
   sport?: 'UNSUPPORTED_SPORT';
   startAt?: 'INVALID_TIMESTAMP';
   endAt?: 'INVALID_TIMESTAMP' | 'NOT_AFTER_START';
-  title?: 'INVALID_VALUE' | 'REQUIRED_FOR_OTHER';
+  title?: 'INVALID_VALUE' | 'REQUIRED_FOR_OTHER' | 'TOO_LONG';
   notes?: 'INVALID_VALUE';
   createdAt?: 'INVALID_TIMESTAMP';
   updatedAt?: 'INVALID_TIMESTAMP';
@@ -96,14 +96,37 @@ function readSport(value: unknown): SportKey | null | typeof INVALID {
     : INVALID;
 }
 
+/** The longest title a user may enter (characters, counted after trimming). */
+export const CALENDAR_TITLE_MAX_LENGTH = 35;
+
 /**
  * Validates what the user entered. Nothing is clamped or normalized except
  * trimming text (blank → null). Timestamps must be whole milliseconds (safe
  * integers); an end, when given, must be after the start. OTHER needs a
- * non-blank title; every other type may leave it empty. The input is never
- * modified.
+ * non-blank title; every other type may leave it empty. A title has at most
+ * CALENDAR_TITLE_MAX_LENGTH characters — except that an edit may keep the
+ * title already stored (`storedTitle`) unchanged: a longer title saved before
+ * the limit existed is never truncated or rejected just for being kept. The
+ * input is never modified.
  */
-export function validateCalendarEvent(input: CalendarEventInput): CalendarEventValidation {
+export function validateCalendarEvent(
+  input: CalendarEventInput,
+  options: { readonly storedTitle?: string | null } = {},
+): CalendarEventValidation {
+  const fields = validateFields(input);
+  const title = readText(input.title);
+  const tooLong =
+    typeof title === 'string' &&
+    title.length > CALENDAR_TITLE_MAX_LENGTH &&
+    title !== (options.storedTitle ?? null);
+  if (!tooLong) return fields;
+  const errors: CalendarEventErrors = fields.ok ? {} : { ...fields.errors };
+  if (errors.title === undefined) errors.title = 'TOO_LONG';
+  return { ok: false, errors };
+}
+
+/** The field rules shared by user input and stored records (no title-length limit). */
+function validateFields(input: CalendarEventInput): CalendarEventValidation {
   const errors: CalendarEventErrors = {};
 
   const type = isCalendarEventType(input.type) ? input.type : null;
@@ -146,11 +169,15 @@ export type CalendarEventRecordValidation =
   | { readonly ok: true; readonly value: CalendarEventCore & { createdAt: number; updatedAt: number } }
   | { readonly ok: false; readonly errors: CalendarEventErrors };
 
-/** `validateCalendarEvent` plus `createdAt` / `updatedAt`, which must be whole milliseconds. */
+/**
+ * A STORED event's fields plus `createdAt` / `updatedAt` (whole milliseconds).
+ * Stored data is not held to the input-only title limit: history saved before
+ * the limit existed stays readable.
+ */
 export function validateCalendarEventRecord(
   input: CalendarEventInput & { readonly createdAt: number; readonly updatedAt: number },
 ): CalendarEventRecordValidation {
-  const fields = validateCalendarEvent(input);
+  const fields = validateFields(input);
   const errors: CalendarEventErrors = fields.ok ? {} : { ...fields.errors };
   if (!Number.isSafeInteger(input.createdAt)) errors.createdAt = 'INVALID_TIMESTAMP';
   if (!Number.isSafeInteger(input.updatedAt)) errors.updatedAt = 'INVALID_TIMESTAMP';

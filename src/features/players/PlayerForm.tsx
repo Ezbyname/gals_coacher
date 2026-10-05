@@ -11,6 +11,8 @@ import {
 import { PlayerDataError, PlayerNotFoundError } from '@/data/local/players/errors';
 import type { PlayerProfileInput, SavePlayerResult } from '@/data/local/players/playerRepository';
 import { useApp } from '@/features/AppProvider';
+import { isFormDirty } from '@/features/navigation/formDirty';
+import { useUnsavedChangesGuard } from '@/features/navigation/unsavedChanges';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
 import { localCalendarDateFromEpoch } from '@/services/clock/localCalendarDate';
@@ -75,6 +77,8 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }:
   const [saving, setSaving] = useState(false);
   // A ref, not state: a second press in the same frame must see the guard immediately.
   const saveInProgress = useRef(false);
+  // Leaving with unsaved changes asks first (NAV-DIRTY-001).
+  const guard = useUnsavedChangesGuard(isFormDirty(values, initialValues));
 
   // Basketball is active in storage: unselecting it needs a confirmation.
   const basketballActive = initialValues.basketballSelected;
@@ -108,6 +112,7 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }:
     try {
       const result = await onSave(formValuesToInput(values));
       if (result.ok) {
+        guard.release(); // saved: leaving is safe
         onSaved(); // stays guarded: the form is leaving
         return;
       }
@@ -264,7 +269,10 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }:
         testID="player-cancel"
         variant="secondary"
         label={t('players.form.cancel')}
-        onPress={onCancel}
+        onPress={() => {
+          guard.release(); // Cancel discards on purpose (unchanged behaviour)
+          onCancel();
+        }}
       />
       {footer}
     </SafeAreaScrollView>

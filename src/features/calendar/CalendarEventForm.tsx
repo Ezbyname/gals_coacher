@@ -4,6 +4,7 @@ import { Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } fr
 import type { SaveCalendarEventResult } from '@/data/local/calendar/calendarEventRepository';
 import {
   CALENDAR_EVENT_TYPES,
+  CALENDAR_TITLE_MAX_LENGTH,
   type CalendarEvent,
   type CalendarEventErrors,
   type CalendarEventInput,
@@ -11,6 +12,8 @@ import {
 } from '@/domain/calendarEvent';
 import type { SportKey } from '@/domain/sport';
 import { ltr } from '@/i18n/bidi';
+import { isFormDirty } from '@/features/navigation/formDirty';
+import { useUnsavedChangesGuard } from '@/features/navigation/unsavedChanges';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
 import { calendarDateToLocalNoon, type LocalDateTime } from '@/services/clock/localCalendarDate';
@@ -45,7 +48,9 @@ function fieldErrors(errors: CalendarEventErrors): FieldErrors {
     out.title =
       errors.title === 'REQUIRED_FOR_OTHER'
         ? 'calendar.errors.titleRequiredForOther'
-        : 'calendar.errors.invalidValue';
+        : errors.title === 'TOO_LONG'
+          ? 'calendar.errors.titleTooLong'
+          : 'calendar.errors.invalidValue';
   }
   if (errors.notes) out.notes = 'calendar.errors.invalidValue';
   return out;
@@ -74,6 +79,11 @@ type Props = {
 export function CalendarEventForm({ initialValues, sports, onSave, onSaved, onCancel }: Props) {
   const { t, language } = useI18n();
   const [values, setValues] = useState<CalendarFormValues>(initialValues);
+  // Leaving with unsaved changes asks first (NAV-DIRTY-001); loaded / default values are clean.
+  const guard = useUnsavedChangesGuard(isFormDirty(values, initialValues));
+  // New titles stop at the limit; a longer title stored before the limit is shown in full
+  // (never cut by the field) and may be kept or shortened (the domain decides on Save).
+  const titleMaxLength = Math.max(CALENDAR_TITLE_MAX_LENGTH, initialValues.title.length);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saveError, setSaveError] = useState<TranslationKey | null>(null);
   const [saving, setSaving] = useState(false);
@@ -148,6 +158,7 @@ export function CalendarEventForm({ initialValues, sports, onSave, onSaved, onCa
       } else {
         const result = await onSave(prepared.input);
         if (result.ok) {
+          guard.release(); // saved: leaving is safe
           onSaved(result.event); // stays guarded: the screen is leaving
           return;
         }
@@ -301,6 +312,7 @@ export function CalendarEventForm({ initialValues, sports, onSave, onSaved, onCa
                   values.type === 'OTHER' ? t('calendar.field.titleRequired') : t('calendar.field.title')
                 }
                 value={values.title}
+                maxLength={titleMaxLength}
                 onChangeText={(title) => change('title', title, ['title'])}
                 error={message(errors.title)}
               />
@@ -314,6 +326,8 @@ export function CalendarEventForm({ initialValues, sports, onSave, onSaved, onCa
                 value={values.notes}
                 onChangeText={(notes) => change('notes', notes, ['notes'])}
                 multiline
+                // At most four lines visible; longer notes scroll inside the field.
+                visibleLines={4}
                 error={message(errors.notes)}
               />
             </View>
@@ -334,7 +348,10 @@ export function CalendarEventForm({ initialValues, sports, onSave, onSaved, onCa
               testID="event-cancel"
               variant="secondary"
               label={t('calendar.cancel')}
-              onPress={onCancel}
+              onPress={() => {
+                guard.release(); // Cancel discards on purpose (unchanged behaviour)
+                onCancel();
+              }}
               // A started save cannot be cancelled: no second navigation while it runs.
               disabled={saving}
             />

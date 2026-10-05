@@ -27,6 +27,7 @@ import * as localTime from '@/services/clock/localCalendarDate';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
 import { appRoutes, routeName } from '@/test-support/appRoutes';
+import { expectBottomInsetOnMainNavOnly } from '@/test-support/mainNav';
 import { prepareApp } from '@/test-support/prepareApp';
 import * as keyboardReveal from '@/ui/keyboardReveal';
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
@@ -1022,6 +1023,8 @@ describe('language', () => {
   });
 });
 
+// With the main navigation (NAV-001) the bar below the screens carries the device inset;
+// each screen's own scroll content then adds none (no doubled gap).
 describe('safe area (a 48dp bottom inset)', () => {
   const scrollOf = (testID: string) => {
     expect(screen.UNSAFE_getAllByType(SafeAreaScrollView).some((n) => n.props.testID === testID)).toBe(true);
@@ -1034,7 +1037,7 @@ describe('safe area (a 48dp bottom inset)', () => {
       .getAllByTestId(pattern)
       .map((n) => n.props.testID);
 
-  it('agenda: the bottom inset is added below the last past event', async () => {
+  it('agenda: the last past event stays clear of the bottom inset', async () => {
     await prepare('he');
     const past = await seedEvent({ type: 'GAME', startAt: at(1, 10) });
     mockInsets = { top: 0, left: 0, right: 0, bottom: 48 };
@@ -1042,8 +1045,9 @@ describe('safe area (a 48dp bottom inset)', () => {
     await screen.findByTestId(`schedule-event-${past.id}`);
     expect(scrollOf('schedule-scroll')).toMatchObject({
       padding: spacing.lg,
-      paddingBottom: spacing.lg + 48,
+      paddingBottom: spacing.lg,
     });
+    expectBottomInsetOnMainNavOnly(48);
     expect(lastIds('schedule-scroll', /^(schedule-add|schedule-event-[0-9a-f-]+)$/).slice(-1)).toEqual([
       `schedule-event-${past.id}`,
     ]);
@@ -1056,8 +1060,9 @@ describe('safe area (a 48dp bottom inset)', () => {
     await screen.findByTestId('event-save');
     expect(scrollOf('event-form-scroll')).toMatchObject({
       padding: spacing.lg,
-      paddingBottom: spacing.lg + 48,
+      paddingBottom: spacing.lg,
     });
+    expectBottomInsetOnMainNavOnly(48);
     expect(lastIds('event-form-scroll', /^event-(type|notes|save|cancel)$/).slice(-2)).toEqual([
       'event-save',
       'event-cancel',
@@ -1070,7 +1075,8 @@ describe('safe area (a 48dp bottom inset)', () => {
     mockInsets = { top: 0, left: 0, right: 0, bottom: 48 };
     renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}/edit` });
     await screen.findByTestId('event-save');
-    expect(scrollOf('event-form-scroll')).toMatchObject({ paddingBottom: spacing.lg + 48 });
+    expect(scrollOf('event-form-scroll')).toMatchObject({ paddingBottom: spacing.lg });
+    expectBottomInsetOnMainNavOnly(48);
     expect(lastIds('event-form-scroll', /^event-(type|notes|save|cancel)$/).slice(-2)).toEqual([
       'event-save',
       'event-cancel',
@@ -1083,7 +1089,8 @@ describe('safe area (a 48dp bottom inset)', () => {
     mockInsets = { top: 0, left: 0, right: 0, bottom: 48 };
     renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}` });
     await screen.findByTestId('event-delete');
-    expect(scrollOf('event-details-scroll')).toMatchObject({ paddingBottom: spacing.lg + 48 });
+    expect(scrollOf('event-details-scroll')).toMatchObject({ paddingBottom: spacing.lg });
+    expectBottomInsetOnMainNavOnly(48);
     expect(
       lastIds('event-details-scroll', /^event-(details-type|details-notes-section|edit|delete)$/).slice(-2),
     ).toEqual(['event-edit', 'event-delete']);
@@ -1210,8 +1217,9 @@ describe('keyboard (CAL-KEY-001; wiring only — the real keyboard is verified o
     keyboardWrapper();
     expect(StyleSheet.flatten(formScroll().props.contentContainerStyle)).toMatchObject({
       padding: spacing.lg,
-      paddingBottom: spacing.lg + 34,
+      paddingBottom: spacing.lg,
     });
+    expectBottomInsetOnMainNavOnly(34);
   });
 
   it('edit uses the same keyboard-aware form', async () => {

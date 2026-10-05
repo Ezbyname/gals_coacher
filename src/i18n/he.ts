@@ -8,6 +8,8 @@ export const he = {
     name: 'Gals Coacher',
   },
   nav: {
+    home: 'בית',
+    main: 'ניווט ראשי',
     quickTraining: 'אימון מהיר',
     players: 'שחקנים',
     exercises: 'תרגילים',
@@ -24,6 +26,12 @@ export const he = {
     libraryTitle: 'ספריית תרגילים',
   },
   common: {
+    unsaved: {
+      title: 'לצאת בלי לשמור?',
+      body: 'יש שינויים שלא נשמרו. יציאה מהמסך תמחק אותם.',
+      stay: 'להישאר',
+      leave: 'לצאת בלי לשמור',
+    },
     comingSoon: 'בקרוב',
     unknown: 'לא ידוע',
     cancel: 'ביטול',
@@ -205,6 +213,7 @@ export const he = {
     },
     errors: {
       typeRequired: 'יש לבחור סוג אירוע.',
+      titleTooLong: 'הכותרת יכולה להכיל עד 35 תווים.',
       titleRequiredForOther: 'לאירוע מסוג "אחר" צריך כותרת.',
       endAfterStart: 'הסיום צריך להיות אחרי ההתחלה.',
       timeDoesNotExist: 'השעה הזו לא קיימת במכשיר בגלל מעבר שעון. אפשר לבחור שעה אחרת.',

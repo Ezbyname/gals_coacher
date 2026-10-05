@@ -8,6 +8,7 @@ import * as repository from '@/data/local/players/playerRepository';
 import { systemClock } from '@/services/clock/Clock';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
+import { expectBottomInsetOnMainNavOnly } from '@/test-support/mainNav';
 import { prepareApp } from '@/test-support/prepareApp';
 import { spacing } from '@/ui/theme';
 
@@ -83,7 +84,9 @@ describe.each(['he', 'en'] as const)('Player form bottom safe area (%s)', (langu
 
     // Collapsed (no sport).
     expect(screen.queryByTestId('player-section-basketball')).toBeNull();
-    expect(formContentStyle()).toMatchObject({ padding: spacing.lg, paddingBottom: spacing.lg + bottom });
+    // The main navigation bar below the form carries the inset (NAV-001); the form adds none.
+    expect(formContentStyle()).toMatchObject({ padding: spacing.lg, paddingBottom: spacing.lg });
+    expectBottomInsetOnMainNavOnly(bottom);
     expectSaveAndCancelLastInFlow();
 
     // Expanded (the long form that hid Cancel on the device).
@@ -94,12 +97,13 @@ describe.each(['he', 'en'] as const)('Player form bottom safe area (%s)', (langu
     expect(formContentStyle()).toMatchObject({
       padding: spacing.lg,
       gap: spacing.xl,
-      paddingBottom: spacing.lg + bottom,
+      paddingBottom: spacing.lg,
     });
+    expectBottomInsetOnMainNavOnly(bottom);
     expectSaveAndCancelLastInFlow();
   });
 
-  it('Edit of an existing Basketball player (expanded, locked) gets the inset too', async () => {
+  it('Edit of an existing Basketball player (expanded) is kept clear of the inset too', async () => {
     await prepare(language, 48);
     const result = await repository.createPlayer(
       db!,
@@ -113,7 +117,8 @@ describe.each(['he', 'en'] as const)('Player form bottom safe area (%s)', (langu
     renderRouter(routes, { initialUrl: `/children/${result.profile.player.id}` });
     expect(await screen.findByDisplayValue('Gal')).toBeTruthy();
     expect(screen.getByTestId('player-section-basketball')).toBeTruthy();
-    expect(formContentStyle()).toMatchObject({ padding: spacing.lg, paddingBottom: spacing.lg + 48 });
+    expect(formContentStyle()).toMatchObject({ padding: spacing.lg, paddingBottom: spacing.lg });
+    expectBottomInsetOnMainNavOnly(48);
     expectSaveAndCancelLastInFlow();
   });
 });

@@ -6,6 +6,8 @@ export const en = {
     name: 'Gals Coacher',
   },
   nav: {
+    home: 'Home',
+    main: 'Main navigation',
     quickTraining: 'Quick Training',
     players: 'Players',
     exercises: 'Exercises',
@@ -22,6 +24,12 @@ export const en = {
     libraryTitle: 'Exercise Library',
   },
   common: {
+    unsaved: {
+      title: 'Leave without saving?',
+      body: 'You have unsaved changes. Leaving this screen will discard them.',
+      stay: 'Stay',
+      leave: 'Leave without saving',
+    },
     comingSoon: 'Coming soon',
     unknown: 'unknown',
     cancel: 'Cancel',
@@ -205,6 +213,7 @@ export const en = {
     },
     errors: {
       typeRequired: 'Choose an event type.',
+      titleTooLong: 'The title can have up to 35 characters.',
       titleRequiredForOther: 'An event of type Other needs a title.',
       endAfterStart: 'The end must be after the start.',
       timeDoesNotExist:

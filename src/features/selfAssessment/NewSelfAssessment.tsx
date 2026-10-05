@@ -5,6 +5,7 @@ import { StyleSheet, Text } from 'react-native';
 import { createSelfAssessment } from '@/data/local/selfAssessments/selfAssessmentRepository';
 import { SELF_RATINGS, type SelfRating } from '@/domain/selfAssessment';
 import { useApp } from '@/features/AppProvider';
+import { useUnsavedChangesGuard } from '@/features/navigation/unsavedChanges';
 import { ltr } from '@/i18n/bidi';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
@@ -40,6 +41,8 @@ export function NewSelfAssessment({ playerId }: { playerId: string }) {
   const { boot, services } = useApp();
   const { t } = useI18n();
   const [answers, setAnswers] = useState<Answers>(NO_ANSWERS);
+  // Leaving with chosen answers asks first (NAV-DIRTY-001); clearing every answer is clean again.
+  const guard = useUnsavedChangesGuard(CATEGORIES.some((category) => answers[category] !== null));
   const [missing, setMissing] = useState<ReadonlySet<string>>(new Set());
   const [saveError, setSaveError] = useState<TranslationKey | null>(null);
   const [saving, setSaving] = useState(false);
@@ -85,6 +88,7 @@ export function NewSelfAssessment({ playerId }: { playerId: string }) {
         { ids: services.ids, clock: services.clock },
       );
       if (result.ok) {
+        guard.release(); // saved: leaving is safe
         back(); // stays guarded: the screen is leaving
         return;
       }
@@ -151,7 +155,10 @@ export function NewSelfAssessment({ playerId }: { playerId: string }) {
         testID="self-assessment-cancel"
         variant="secondary"
         label={t('selfAssessment.cancel')}
-        onPress={back}
+        onPress={() => {
+          guard.release(); // Cancel discards on purpose (unchanged behaviour)
+          back();
+        }}
         // A started save cannot be cancelled: no second navigation while it runs.
         disabled={saving}
       />

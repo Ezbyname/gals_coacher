@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View, type KeyboardTypeOptions } from 'react-native';
 
 import { colors, spacing } from './theme';
@@ -16,6 +17,14 @@ type Props = {
   numeric?: boolean;
   /** Several lines of free text (e.g. notes). */
   multiline?: boolean;
+  /**
+   * Multiline only: the field shows at most this many lines and scrolls inside
+   * itself (the text is never cut); when it loses focus it shows its first
+   * line again.
+   */
+  visibleLines?: number;
+  /** The most characters that can be typed (UTF-16 code units, as React Native counts). */
+  maxLength?: number;
   onFocus?: () => void;
   onBlur?: () => void;
   testID?: string;
@@ -31,24 +40,43 @@ export function TextField({
   keyboardType,
   numeric,
   multiline,
+  visibleLines,
+  maxLength,
   onFocus,
   onBlur,
   testID,
 }: Props) {
+  // A bounded multiline field is re-created on blur: a fresh native input
+  // starts at its first line. The value is untouched (it is the prop).
+  const [instance, setInstance] = useState(0);
+  const bounded = multiline && visibleLines !== undefined;
+  const handleBlur = () => {
+    onBlur?.();
+    if (bounded) setInstance((n) => n + 1);
+  };
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.box, !!error && styles.boxError]}>
         <TextInput
+          key={instance}
           testID={testID}
           accessibilityLabel={label}
           value={value}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
           multiline={multiline}
+          maxLength={maxLength}
+          numberOfLines={bounded ? visibleLines : undefined}
+          scrollEnabled={multiline ? true : undefined}
           onFocus={onFocus}
-          onBlur={onBlur}
-          style={[styles.input, numeric && styles.numeric, multiline && styles.multiline]}
+          onBlur={handleBlur}
+          style={[
+            styles.input,
+            numeric && styles.numeric,
+            multiline && styles.multiline,
+            bounded && { height: visibleLines * LINE_HEIGHT + 2 * spacing.sm, minHeight: 0 },
+          ]}
         />
         {unit ? (
           <Text style={styles.unit} testID={testID ? `${testID}-unit` : undefined}>
@@ -64,6 +92,9 @@ export function TextField({
     </View>
   );
 }
+
+/** One text line of a multiline field (fontSize 17). */
+const LINE_HEIGHT = 22;
 
 const styles = StyleSheet.create({
   field: { flex: 1, gap: spacing.xs },
@@ -83,7 +114,12 @@ const styles = StyleSheet.create({
   boxError: { borderColor: colors.danger },
   input: { flex: 1, minHeight: 46, fontSize: 17, color: colors.ink },
   numeric: { writingDirection: 'ltr', textAlign: 'center' },
-  multiline: { minHeight: 96, textAlignVertical: 'top', paddingVertical: spacing.sm },
+  multiline: {
+    minHeight: 96,
+    lineHeight: LINE_HEIGHT,
+    textAlignVertical: 'top',
+    paddingVertical: spacing.sm,
+  },
   unit: { fontSize: 15, color: colors.inkMuted },
   error: { fontSize: 13, color: colors.danger },
 });

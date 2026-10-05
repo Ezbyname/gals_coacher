@@ -134,7 +134,7 @@ describe('Players — Hebrew (RTL)', () => {
 
   it('creates a player with only name and date of birth; the list shows the trimmed name and derived age', async () => {
     const app = renderRouter(routes, { initialUrl: '/' });
-    fireEvent.press(await screen.findByText('שחקנים'));
+    fireEvent.press(await screen.findByTestId('home-players')); // Home's button (the nav bar has one too)
     fireEvent.press(await screen.findByTestId('players-add'));
     await screen.findByTestId('player-name');
     type('player-name', '  גל  ');

@@ -1,6 +1,8 @@
-import type { Ref } from 'react';
+import { useContext, type Ref } from 'react';
 import { ScrollView, StyleSheet, type ScrollViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { BottomInsetHandledContext } from './bottomInset';
 
 /** The bottom padding the caller asked for (padding → paddingVertical → paddingBottom, last wins). */
 function callerBottomPadding(style: ScrollViewProps['contentContainerStyle']): number {
@@ -24,12 +26,15 @@ export function SafeAreaScrollView({
   ...props
 }: ScrollViewProps & { ref?: Ref<ScrollView> }) {
   const insets = useSafeAreaInsets();
+  // Below the main navigation bar, the bar keeps clear of the system area instead.
+  const bottomHandled = useContext(BottomInsetHandledContext);
+  const bottomInset = bottomHandled ? 0 : insets.bottom;
   return (
     <ScrollView
       {...props}
       contentContainerStyle={[
         contentContainerStyle,
-        { paddingBottom: callerBottomPadding(contentContainerStyle) + insets.bottom },
+        { paddingBottom: callerBottomPadding(contentContainerStyle) + bottomInset },
       ]}
     />
   );

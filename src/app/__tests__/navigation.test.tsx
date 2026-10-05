@@ -48,7 +48,7 @@ describe('navigation — Hebrew (default)', () => {
 
   it('opens Players from Home (no longer a placeholder)', async () => {
     const app = renderRouter(routes, { initialUrl: '/' });
-    fireEvent.press(await screen.findByText('שחקנים'));
+    fireEvent.press(await screen.findByTestId('home-players')); // Home's button (the nav bar has one too)
     await waitFor(() => expect(app.getPathname()).toBe('/children'));
     expect(await screen.findByText('עדיין אין שחקנים')).toBeTruthy();
     expect(screen.queryByText('בקרוב')).toBeNull();

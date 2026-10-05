@@ -1,13 +1,17 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import { AppProvider } from '@/features/AppProvider';
+import { MainNavBar } from '@/features/navigation/MainNavBar';
+import { UnsavedChangesProvider } from '@/features/navigation/unsavedChanges';
 import { keepNativeSplash } from '@/features/startup/nativeSplash';
 import { StartupReadySignal } from '@/features/startup/StartupReadySignal';
 import { StartupSplash } from '@/features/startup/StartupSplash';
 import { I18nProvider, useI18n } from '@/i18n/I18nProvider';
 import { createServices } from '@/services';
+import { BottomInsetHandledContext } from '@/ui/bottomInset';
 import { colors } from '@/ui/theme';
 
 // Keep the native splash up until the app-level coach splash is ready (module
@@ -30,7 +34,22 @@ export default function RootLayout() {
   );
 }
 
+/** The screens, with the main navigation below them (NAV-001); unsaved changes are guarded app-wide. */
 function AppStack() {
+  return (
+    <UnsavedChangesProvider>
+      <View style={styles.shell}>
+        {/* The navigation bar keeps clear of the bottom system area, so screens do not. */}
+        <BottomInsetHandledContext.Provider value={true}>
+          <ScreenStack />
+        </BottomInsetHandledContext.Provider>
+        <MainNavBar />
+      </View>
+    </UnsavedChangesProvider>
+  );
+}
+
+function ScreenStack() {
   const { t } = useI18n();
   return (
     <Stack
@@ -69,3 +88,7 @@ function AppStack() {
     </Stack>
   );
 }
+
+const styles = StyleSheet.create({
+  shell: { flex: 1, backgroundColor: colors.background },
+});

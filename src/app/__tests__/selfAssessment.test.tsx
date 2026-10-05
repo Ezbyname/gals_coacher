@@ -17,6 +17,7 @@ import { LRI, PDI, stripBidi } from '@/i18n/bidi';
 import { systemClock } from '@/services/clock/Clock';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
+import { expectBottomInsetOnMainNavOnly } from '@/test-support/mainNav';
 import { prepareApp } from '@/test-support/prepareApp';
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { spacing } from '@/ui/theme';
@@ -560,10 +561,12 @@ describe('new self-assessment', () => {
     expect(await assessmentCount()).toBe(0);
   });
 
-  it('scrolls in SafeAreaScrollView: the real bottom inset is added below Save / Cancel', async () => {
-    await openNew('he');
-    mockInsets = { top: 0, left: 0, right: 0, bottom: 48 };
-    act(() => choose('SHOOTING', 1)); // re-render with the new inset
+  it('scrolls in SafeAreaScrollView: Save / Cancel stay clear of the real bottom inset (main nav carries it)', async () => {
+    await prepare('he');
+    mockInsets = { top: 0, left: 0, right: 0, bottom: 48 }; // the device inset, before the first render
+    renderRouter(routes, { initialUrl: `/children/${gal}/self-assessments/new` });
+    await screen.findByTestId('self-assessment-save');
+    act(() => choose('SHOOTING', 1));
     const scroll = screen
       .UNSAFE_getAllByType(ScrollView)
       .find((n) => n.props.testID === 'self-assessment-scroll')!;
@@ -572,8 +575,9 @@ describe('new self-assessment', () => {
     ).toBe(true);
     expect(StyleSheet.flatten(scroll.props.contentContainerStyle)).toMatchObject({
       padding: spacing.lg,
-      paddingBottom: spacing.lg + 48,
+      paddingBottom: spacing.lg,
     });
+    expectBottomInsetOnMainNavOnly(48);
     const order = screen
       .getAllByTestId(/^self-assessment-(SHOOTING|SPEED|save|cancel)$/)
       .map((n) => n.props.testID);
