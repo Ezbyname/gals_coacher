@@ -61,6 +61,7 @@ describe('form values ↔ repository input', () => {
     notes: null,
     createdAt: 1,
     updatedAt: 2,
+    completion: null,
   };
 
   it('a saved event round-trips through its local wall times unchanged', () => {

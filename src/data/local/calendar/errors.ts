@@ -13,7 +13,9 @@ export type CalendarEventDataField =
   | 'title'
   | 'notes'
   | 'createdAt'
-  | 'updatedAt';
+  | 'updatedAt'
+  | 'completedAt'
+  | 'completionSource';
 
 export type CalendarEventDataReason = 'INVALID_VALUE' | 'UNKNOWN_CODE' | 'INVALID_RELATIONSHIP';
 

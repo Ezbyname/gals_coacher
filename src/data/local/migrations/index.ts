@@ -122,4 +122,24 @@ export const migrations: readonly Migration[] = [
         CHECK (typeof(active) = 'integer' AND active IN (0, 1));
     `,
   },
+  {
+    // CAL-COMP-001. Explicit, manual completion of a calendar event — never
+    // inferred from time. Additive: existing events upgrade as not completed
+    // (both NULL). The pair is all-or-nothing; the source code (who marked it)
+    // is validated in the domain, like the event type. Being columns of the
+    // event row, completion is removed with the event (no orphan).
+    version: 6,
+    name: 'calendar_event_completion',
+    sql: `
+      ALTER TABLE calendar_events
+        ADD COLUMN completed_at INTEGER
+        CHECK (completed_at IS NULL OR typeof(completed_at) = 'integer');
+      ALTER TABLE calendar_events
+        ADD COLUMN completion_source TEXT
+        CHECK (
+          (completion_source IS NULL) = (completed_at IS NULL)
+          AND (completion_source IS NULL OR length(trim(completion_source)) > 0)
+        );
+    `,
+  },
 ];

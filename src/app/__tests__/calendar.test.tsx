@@ -854,6 +854,8 @@ describe('edit', () => {
         notes: 'Easy day',
         created_at: event.createdAt,
         updated_at: NOW,
+        completed_at: null,
+        completion_source: null,
       },
     ]);
     // Details reloads on focus with the new values.
@@ -1275,6 +1277,281 @@ describe('accessibility', () => {
     );
     expect(stripBidi(screen.getByTestId('event-end-time').props.accessibilityLabel)).toBe('שעת סיום: 18:15');
     expect(screen.getByTestId('event-remove-end').props.accessibilityRole).toBe('button');
+  });
+});
+
+describe('completion (CAL-COMP-001: explicit, manual, undoable)', () => {
+  const completionRow = (eventId: string) =>
+    db!.getFirstAsync('SELECT completed_at, completion_source FROM calendar_events WHERE id = ?', [eventId]);
+  /** Every stored column except the two completion ones: what marking must never change. */
+  const scheduleRow = async (eventId: string) => {
+    const {
+      completed_at: _a,
+      completion_source: _s,
+      ...rest
+    } = (await rows()).find((r) => r.id === eventId)!;
+    return rest;
+  };
+  async function openDetails(
+    language: 'he' | 'en',
+    input: CalendarEventInput = { type: 'GAME', startAt: at(7, 10) },
+  ) {
+    await prepare(language);
+    const event = await seedEvent(input);
+    const app = renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}` });
+    await screen.findByTestId('event-completion-section');
+    return { app, event };
+  }
+  const markInRepo = (eventId: string, when = NOW - 2 * HOUR) =>
+    calendar.markCalendarEventCompleted(db!, gal, eventId, {
+      clock: { wallNow: () => when, monotonicNow: () => 0 },
+    });
+
+  it('Hebrew: Mark as completed stores it at once (no dialog), shows ✓ Completed + time and Undo', async () => {
+    const { app, event } = await openDetails('he');
+    const alert = jest.spyOn(Alert, 'alert');
+    const before = await scheduleRow(event.id);
+    expect(within(screen.getByTestId('event-complete')).getByText('סימון כהושלם')).toBeTruthy();
+    expect(screen.queryByTestId('event-completion-status')).toBeNull();
+    expect(screen.queryByTestId('event-uncomplete')).toBeNull();
+
+    press('event-complete');
+    expect(await screen.findByTestId('event-completion-status')).toBeTruthy();
+    expect(text('event-completion-status')).toBe('✓ הושלם'); // a symbol and a word, not colour alone
+    expect(plain('event-completed-at')).toBe('סומן כהושלם: 5 באוק׳ 2026 · 18:10');
+    expect(within(screen.getByTestId('event-uncomplete')).getByText('ביטול הסימון')).toBeTruthy();
+    expect(screen.queryByTestId('event-complete')).toBeNull();
+    expect(alert).not.toHaveBeenCalled();
+    expect(app.getPathname()).toBe(`/children/${gal}/schedule/${event.id}`);
+    expect(await completionRow(event.id)).toEqual({ completed_at: NOW, completion_source: 'LOCAL_USER' });
+    // The schedule, type, sport, text and updatedAt are untouched.
+    expect(await scheduleRow(event.id)).toEqual(before);
+  });
+
+  it('English: Undo completion clears it at once (no dialog); Mark is offered again', async () => {
+    const { event } = await openDetails('en');
+    const alert = jest.spyOn(Alert, 'alert');
+    const before = await scheduleRow(event.id);
+    expect(within(screen.getByTestId('event-complete')).getByText('Mark as completed')).toBeTruthy();
+    press('event-complete');
+    await screen.findByTestId('event-uncomplete');
+    expect(text('event-completion-status')).toBe('✓ Completed');
+    expect(plain('event-completed-at')).toBe('Marked completed: 5 Oct 2026 · 18:10');
+    expect(within(screen.getByTestId('event-uncomplete')).getByText('Undo completion')).toBeTruthy();
+
+    press('event-uncomplete');
+    await screen.findByTestId('event-complete');
+    expect(screen.queryByTestId('event-completion-status')).toBeNull();
+    expect(screen.queryByTestId('event-completed-at')).toBeNull();
+    expect(alert).not.toHaveBeenCalled();
+    expect(await completionRow(event.id)).toEqual({ completed_at: null, completion_source: null });
+    expect(await scheduleRow(event.id)).toEqual(before);
+  });
+
+  it('a past event is NOT shown as completed until the user marks it (time infers nothing)', async () => {
+    const { event } = await openDetails('en', {
+      type: 'TEAM_TRAINING',
+      startAt: at(1, 17),
+      endAt: at(1, 19),
+    });
+    expect(screen.getByTestId('event-complete')).toBeTruthy();
+    expect(screen.queryByTestId('event-completion-status')).toBeNull();
+    expect(screen.queryByText(/Completed/)).toBeNull();
+    expect(await completionRow(event.id)).toEqual({ completed_at: null, completion_source: null });
+  });
+
+  it('a stored completion is shown on a fresh open (survives leaving and restarting the screen)', async () => {
+    await prepare('en');
+    const event = await seedEvent({ type: 'GYM', startAt: at(4, 9) });
+    await markInRepo(event.id, at(4, 11, 5));
+    renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}` });
+    expect(await screen.findByTestId('event-completion-status')).toBeTruthy();
+    expect(plain('event-completed-at')).toBe('Marked completed: 4 Oct 2026 · 11:05');
+    expect(screen.getByTestId('event-uncomplete')).toBeTruthy();
+  });
+
+  it('a failed mark stays on details, shows a safe message, never shows Completed; retry works', async () => {
+    const { app, event } = await openDetails('he');
+    const mark = jest
+      .spyOn(calendar, 'markCalendarEventCompleted')
+      .mockRejectedValueOnce(new Error('SQLITE_FULL'));
+    press('event-complete');
+    expect(await screen.findByTestId('event-completion-error')).toBeTruthy();
+    expect(text('event-completion-error')).toBe('שמירת הסימון לא הצליחה. לא השתנה דבר, אפשר לנסות שוב.');
+    expect(screen.queryByText(/SQLITE/)).toBeNull();
+    expect(screen.queryByTestId('event-completion-status')).toBeNull();
+    expect(screen.queryByTestId('event-uncomplete')).toBeNull();
+    expect(isDisabled('event-complete')).toBe(false);
+    expect(app.getPathname()).toBe(`/children/${gal}/schedule/${event.id}`);
+    expect(await completionRow(event.id)).toEqual({ completed_at: null, completion_source: null });
+
+    press('event-complete'); // retry
+    expect(await screen.findByTestId('event-completion-status')).toBeTruthy();
+    expect(screen.queryByTestId('event-completion-error')).toBeNull();
+    expect(mark).toHaveBeenCalledTimes(2);
+    expect(await completionRow(event.id)).toEqual({ completed_at: NOW, completion_source: 'LOCAL_USER' });
+  });
+
+  it('a failed undo keeps Completed with a safe message (English); retry works', async () => {
+    await prepare('en');
+    const event = await seedEvent({ type: 'GAME', startAt: at(7, 10) });
+    await markInRepo(event.id);
+    renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}` });
+    await screen.findByTestId('event-uncomplete');
+    jest.spyOn(calendar, 'undoCalendarEventCompletion').mockRejectedValueOnce(new Error('SQLITE_BUSY'));
+    press('event-uncomplete');
+    expect(await screen.findByTestId('event-completion-error')).toBeTruthy();
+    expect(text('event-completion-error')).toBe(
+      'Saving the completion did not work. Nothing changed; you can try again.',
+    );
+    expect(text('event-completion-status')).toBe('✓ Completed');
+    expect(await completionRow(event.id)).toEqual({
+      completed_at: NOW - 2 * HOUR,
+      completion_source: 'LOCAL_USER',
+    });
+    press('event-uncomplete');
+    await screen.findByTestId('event-complete');
+    expect(screen.queryByTestId('event-completion-error')).toBeNull();
+    expect(await completionRow(event.id)).toEqual({ completed_at: null, completion_source: null });
+  });
+
+  it('while a change is pending its buttons are disabled; a double tap writes once', async () => {
+    const { event } = await openDetails('en');
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const original = calendar.markCalendarEventCompleted; // captured before the spy replaces it
+    const mark = jest
+      .spyOn(calendar, 'markCalendarEventCompleted')
+      .mockImplementation(async (...args) => (await gate, original(...args)));
+    press('event-complete');
+    press('event-complete');
+    await waitFor(() => expect(isDisabled('event-complete')).toBe(true));
+    expect(within(screen.getByTestId('event-complete')).getByText('Saving…')).toBeTruthy();
+    expect(isDisabled('event-edit')).toBe(true);
+    expect(isDisabled('event-delete')).toBe(true);
+    await act(async () => release());
+    await screen.findByTestId('event-uncomplete');
+    expect(mark).toHaveBeenCalledTimes(1);
+    expect(isDisabled('event-edit')).toBe(false);
+    expect(await eventCount()).toBe(1);
+    expect(await completionRow(event.id)).toEqual({ completed_at: NOW, completion_source: 'LOCAL_USER' });
+  });
+
+  it('every event type can be completed (a titled OTHER too)', async () => {
+    await prepare('en');
+    for (const type of calendarDomain.CALENDAR_EVENT_TYPES) {
+      const event = await seedEvent({
+        type,
+        startAt: at(8, 9),
+        title: type === 'OTHER' ? 'Photo day' : undefined,
+      });
+      const view = renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}` });
+      await screen.findByTestId('event-complete');
+      press('event-complete');
+      expect(await screen.findByTestId('event-completion-status')).toBeTruthy();
+      expect(await completionRow(event.id)).toEqual({ completed_at: NOW, completion_source: 'LOCAL_USER' });
+      view.unmount();
+    }
+  });
+
+  it('a historical event of a now-inactive sport can be completed and undone', async () => {
+    await prepare('en');
+    const event = await seedEvent({ type: 'TEAM_TRAINING', sport: 'BASKETBALL', startAt: at(2, 17) });
+    const off = await players.updatePlayer(
+      db!,
+      gal,
+      { player: { name: 'Gal', dateOfBirth: { year: 2015, month: 7, day: 9 } }, basketball: null },
+      { clock: seedClock },
+    );
+    expect(off.ok).toBe(true);
+    renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}` });
+    await screen.findByTestId('event-complete');
+    press('event-complete');
+    expect(await screen.findByTestId('event-completion-status')).toBeTruthy();
+    expect(screen.queryByTestId('event-completion-error')).toBeNull();
+    press('event-uncomplete');
+    await screen.findByTestId('event-complete');
+    expect(await completionRow(event.id)).toEqual({ completed_at: null, completion_source: null });
+  });
+
+  it('editing a completed event keeps it completed (same time); the form has no completion control', async () => {
+    await prepare('en');
+    const event = await seedEvent({ type: 'GAME', startAt: at(7, 10), title: 'Cup' });
+    await markInRepo(event.id);
+    const app = renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}` });
+    await screen.findByTestId('event-uncomplete');
+    press('event-edit');
+    await screen.findByTestId('event-save');
+    expect(screen.queryByTestId(/^event-(complete|uncomplete|completion)/)).toBeNull();
+    fireEvent.changeText(screen.getByTestId('event-title'), 'Cup final');
+    press('event-save');
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/schedule/${event.id}`));
+    await waitFor(() => expect(text('event-details-title')).toBe('Cup final'));
+    expect(text('event-completion-status')).toBe('✓ Completed');
+    expect(await completionRow(event.id)).toEqual({
+      completed_at: NOW - 2 * HOUR,
+      completion_source: 'LOCAL_USER',
+    });
+  });
+
+  it('agenda: a completed card shows ✓ + word and says so to a screen reader; nothing moves', async () => {
+    await prepare('en');
+    const live = await seedEvent({ type: 'TEAM_TRAINING', startAt: at(5, 17, 30), endAt: at(5, 19) });
+    const future = await seedEvent({ type: 'GAME', startAt: at(7, 10) });
+    const later = await seedEvent({ type: 'GYM', startAt: at(8, 10) });
+    const past = await seedEvent({ type: 'RECOVERY', startAt: at(3, 9) });
+    const older = await seedEvent({ type: 'GYM', startAt: at(2, 9) });
+    const cardIds = (section: string) =>
+      within(screen.getByTestId(section))
+        .getAllByTestId(/^schedule-event-[^-]+-[^-]+-[^-]+-[^-]+-[^-]+$/)
+        .map((n) => n.props.testID.replace('schedule-event-', ''));
+    const first = renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule` });
+    await screen.findByTestId('schedule-upcoming');
+    const sections = { up: cardIds('schedule-upcoming'), past: cardIds('schedule-past') };
+    expect(sections).toEqual({ up: [live.id, future.id, later.id], past: [past.id, older.id] });
+    expect(screen.queryAllByTestId(/-completed$/)).toHaveLength(0);
+    first.unmount();
+
+    // A future, an in-progress and a past event marked; one past left unmarked.
+    for (const e of [future, live, past]) await markInRepo(e.id);
+    renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule` });
+    await screen.findByTestId('schedule-upcoming');
+    expect({ up: cardIds('schedule-upcoming'), past: cardIds('schedule-past') }).toEqual(sections);
+    expect(screen.getAllByTestId(/-completed$/).map((n) => n.props.testID)).toEqual([
+      `schedule-event-${live.id}-completed`,
+      `schedule-event-${future.id}-completed`,
+      `schedule-event-${past.id}-completed`,
+    ]);
+    expect(text(`schedule-event-${future.id}-completed`)).toBe('✓ Completed');
+    const label = (e: { id: string }) =>
+      stripBidi(screen.getByTestId(`schedule-event-${e.id}`).props.accessibilityLabel);
+    expect(label(future)).toBe('Game, 7 Oct 2026 · 10:00, completed');
+    expect(label(live)).toBe('Team training, now, 5 Oct 2026 · 17:30–19:00, completed');
+    expect(label(older)).toBe('Gym, 2 Oct 2026 · 09:00'); // not completed: unchanged
+    expect(text(`schedule-event-${live.id}-now`)).toBe('Now'); // still current
+  });
+
+  it('agenda (Hebrew): the completed badge and screen-reader text are localized', async () => {
+    await prepare('he');
+    const event = await seedEvent({ type: 'GAME', startAt: at(7, 10) });
+    await markInRepo(event.id);
+    renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule` });
+    await screen.findByTestId(`schedule-event-${event.id}-completed`);
+    expect(text(`schedule-event-${event.id}-completed`)).toBe('✓ הושלם');
+    expect(stripBidi(screen.getByTestId(`schedule-event-${event.id}`).props.accessibilityLabel)).toMatch(
+      /^משחק, .*, הושלם$/,
+    );
+  });
+
+  it('the completion controls are big buttons (≥ 56dp) with a button role', async () => {
+    await openDetails('en');
+    const mark = screen.getByTestId('event-complete');
+    expect(mark.props.accessibilityRole).toBe('button');
+    expect(StyleSheet.flatten(mark.props.style).minHeight).toBeGreaterThanOrEqual(touch.buttonMinHeight);
+    press('event-complete');
+    const undo = await screen.findByTestId('event-uncomplete');
+    expect(undo.props.accessibilityRole).toBe('button');
+    expect(StyleSheet.flatten(undo.props.style).minHeight).toBeGreaterThanOrEqual(touch.buttonMinHeight);
   });
 });
 

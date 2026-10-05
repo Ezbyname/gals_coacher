@@ -211,6 +211,16 @@ export const he = {
       confirm: 'מחיקה',
       cancel: 'השארת האירוע',
     },
+    // Explicit manual completion: only the user marks it; time passing never does.
+    completion: {
+      mark: 'סימון כהושלם',
+      saving: 'שומר...',
+      // A symbol and a word: completion is never shown by colour alone.
+      badge: '✓ הושלם',
+      completedOn: 'סומן כהושלם: {when}',
+      undo: 'ביטול הסימון',
+      eventA11y: '{label}, הושלם',
+    },
     errors: {
       typeRequired: 'יש לבחור סוג אירוע.',
       titleTooLong: 'הכותרת יכולה להכיל עד 35 תווים.',
@@ -222,6 +232,7 @@ export const he = {
       sportInactive: 'הענף הזה לא פעיל לשחקן.',
       saveFailed: 'השמירה לא הצליחה. הפרטים נשארו, אפשר לנסות שוב.',
       deleteFailed: 'המחיקה לא הצליחה. האירוע עדיין כאן, אפשר לנסות שוב.',
+      completionFailed: 'שמירת הסימון לא הצליחה. לא השתנה דבר, אפשר לנסות שוב.',
       loadFailed: 'לא הצלחנו לטעון את לוח הזמנים. אפשר לנסות שוב מאוחר יותר.',
       dataInvalid: 'חלק מנתוני לוח הזמנים שמורים בצורה לא תקינה ולא ניתן להציג אותם.',
       playerNotFound: 'השחקן לא נמצא.',

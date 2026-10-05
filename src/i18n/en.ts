@@ -211,6 +211,14 @@ export const en = {
       confirm: 'Delete',
       cancel: 'Keep event',
     },
+    completion: {
+      mark: 'Mark as completed',
+      saving: 'Saving…',
+      badge: '✓ Completed',
+      completedOn: 'Marked completed: {when}',
+      undo: 'Undo completion',
+      eventA11y: '{label}, completed',
+    },
     errors: {
       typeRequired: 'Choose an event type.',
       titleTooLong: 'The title can have up to 35 characters.',
@@ -223,6 +231,7 @@ export const en = {
       sportInactive: 'This sport is inactive for this player.',
       saveFailed: 'Saving did not work. Your details are still here; you can try again.',
       deleteFailed: 'Deleting did not work. The event is still here; you can try again.',
+      completionFailed: 'Saving the completion did not work. Nothing changed; you can try again.',
       loadFailed: 'The schedule could not be loaded. Please try again later.',
       dataInvalid: 'Some stored schedule data is not valid and cannot be shown.',
       playerNotFound: 'This player was not found.',

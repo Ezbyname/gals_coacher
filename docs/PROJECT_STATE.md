@@ -11,7 +11,8 @@ All verified by the owner on a physical Android device.
 **Slice 1.1 — Player Profile: IMPLEMENTED; carried-forward physical items PASSED** (owner-reported, Preview APK `302bbd33…`, gate G33: 33/33 PASS, 2026-10-05) — including the PlayerForm safe-area fix `35c7158`. The "Basketball cannot be removed" rule is superseded by SPORT-LIFE-001 (below).
 **Slice 1.2 — Self-Assessment: IMPLEMENTED; carried-forward physical items PASSED** (owner-reported, gate G33), including the post-Save navigation fix `e181fba`.
 **Slice 1.3 — Calendar Foundation: IMPLEMENTED.** Commits A–D physically PASSED (gate G33, schema v4 upgrade over the previous APK). The UI polish `143fa3e`: **automated PASS, PHYSICAL ACCEPTANCE FAIL** (gate NB, build `d20190fb…`: 17 PASS / 2 FAIL — NB-02, NB-03 keyboard; open as CAL-KEY-001).
-**CAL-KEY-001 (keyboard) and SPORT-LIFE-001 (Basketball active / inactive): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING** (next Preview APK; plan below). Schema is now **v5**.
+**CAL-KEY-001 (keyboard) and SPORT-LIFE-001 (Basketball active / inactive): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING** (next Preview APK; plan below).
+**CAL-COMP-001 (explicit manual calendar event completion): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v6**.
 **iOS (project baseline):** the current pre-Calendar application has passed iOS bundle export (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
@@ -29,6 +30,7 @@ All verified by the owner on a physical Android device.
 | Slice 1.3 (Calendar Foundation) | **IMPLEMENTED**; A–D physical **PASS** (G33); UI polish physical **FAIL** (NB-02 / NB-03) → CAL-KEY-001 |
 | CAL-KEY-001 (Calendar keyboard) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING** (NB-02 / NB-03 / NB-04 next build) |
 | SPORT-LIFE-001 (Basketball active / inactive) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v5** |
+| CAL-COMP-001 (manual event completion) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v6** |
 | Slices after 1.3 (C, 2.x …) | **Not started** |
 
 ---
@@ -74,6 +76,17 @@ player / add Basketball), 25 (player without Basketball), 28 (optional
 sport), 29–31 (positions, clear secondary, persistence).
 
 ---
+
+## CAL-COMP-001 — Explicit manual calendar event completion: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-05)
+
+- **Schema v6 (additive):** `calendar_events.completed_at INTEGER` and `completion_source TEXT`, both NULL = not completed; SQL CHECKs keep them set / cleared together, the time an integer, the source non-blank. Existing events upgrade as **not completed**. Source codes are validated in the domain (`LOCAL_USER` only today; room for later provenance without a schema change).
+- **Explicit only:** completion never follows from time; agenda sections and order stay schedule-based (`splitAgenda` unchanged). A completed event is not a training session, result or self-assessment; nothing else is written.
+- **Repository API:** `markCalendarEventCompleted` / `undoCalendarEventCompletion` — idempotent (a second mark keeps the first time), scoped to the Player, transactional, fail closed on malformed data; they never change the schedule, type, sport, title, notes or `updatedAt`. Edit keeps the completion; delete removes it with the row. Allowed for history of an inactive sport. Undo clears the current state (no history of marks is kept).
+- **UI:** Event Details — *Mark as completed* / *סימון כהושלם*; when completed, *✓ Completed* / *✓ הושלם* with the time it was marked and *Undo completion* / *ביטול הסימון*; no confirmation; a failure stays on Details with a safe message and allows retry. Agenda cards show a *✓ Completed* badge (symbol + word, not colour alone) and the screen-reader label ends with "completed"; cards never move.
+
+**Automated evidence (authoring environment):** `npm run check` exit 0 — 54/54 suites, 939/939 tests; Android bundle export exit 0. Focused: v6 migration 11/11, repository completion 20/20, agenda classification 14/14, UI completion 13/13 (HE / EN); mutation gate 14/14 killed (all compiled, restored byte-identical).
+
+**Physical (next Preview APK, install over the previous one):** CC-01 upgrade → Diagnostics schema v6, every earlier event shown as not completed · CC-02 Mark / Undo on Details (HE + EN), no dialog · CC-03 completed state survives a full restart · CC-04 the agenda badge and TalkBack text; cards do not move · CC-05 Edit a completed event keeps it completed · CC-06 a past Basketball event while Basketball is inactive can be marked and undone · CC-07 Mark / Undo buttons are easy to tap; nothing under the navigation bar.
 
 ## SPORT-LIFE-001 — Basketball active / inactive: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-05)
 

@@ -23,6 +23,29 @@ export function isCalendarEventType(value: unknown): value is CalendarEventType 
   return typeof value === 'string' && (CALENDAR_EVENT_TYPES as readonly string[]).includes(value);
 }
 
+/**
+ * Who explicitly marked an event completed (CAL-COMP-001). Today only the
+ * person using this device; later sources (e.g. a Coach, an import) are new
+ * codes, not a new model. Stable codes, persisted as-is.
+ */
+export const CALENDAR_COMPLETION_SOURCES = ['LOCAL_USER'] as const;
+export type CalendarCompletionSource = (typeof CALENDAR_COMPLETION_SOURCES)[number];
+
+export function isCalendarCompletionSource(value: unknown): value is CalendarCompletionSource {
+  return typeof value === 'string' && (CALENDAR_COMPLETION_SOURCES as readonly string[]).includes(value);
+}
+
+/**
+ * An explicit "this happened" mark on a planned event. Separate from the
+ * schedule: it never changes startAt / endAt (or any other field), and the
+ * passing of time never sets it. Not a TrainingSession and not a result.
+ */
+export interface CalendarCompletion {
+  /** Epoch milliseconds when the user marked it (not when the event took place). */
+  readonly completedAt: number;
+  readonly source: CalendarCompletionSource;
+}
+
 export interface CalendarEvent {
   readonly id: Uuid;
   readonly playerId: Uuid;
@@ -39,8 +62,10 @@ export interface CalendarEvent {
   readonly notes: string | null;
   /** Epoch milliseconds; set once. */
   readonly createdAt: number;
-  /** Epoch milliseconds; set on create and on every edit. */
+  /** Epoch milliseconds; set on create and on every edit (not by completion). */
   readonly updatedAt: number;
+  /** null: not completed. Only an explicit user action sets or clears it. */
+  readonly completion: CalendarCompletion | null;
 }
 
 /** What the user enters (unchecked codes; text not yet trimmed). */

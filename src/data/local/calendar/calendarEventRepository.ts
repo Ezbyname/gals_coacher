@@ -1,5 +1,8 @@
 import {
+  isCalendarCompletionSource,
   validateCalendarEvent,
+  type CalendarCompletion,
+  type CalendarCompletionSource,
   validateCalendarEventRecord,
   type CalendarEvent,
   type CalendarEventCore,
@@ -131,6 +134,74 @@ export async function deleteCalendarEvent(db: PlayerDb, playerId: string, eventI
   });
 }
 
+/**
+ * Marks one of this Player's events as completed, explicitly (CAL-COMP-001):
+ * stores when (`clock.wallNow()`) and who (`source`). Nothing else changes —
+ * not the schedule, the type, sport, text, nor `updatedAt` (completion is not
+ * an edit of the event). Idempotent: an already-completed event is left as it
+ * is (its original completion time is kept). Works whatever the current state
+ * of the event's sport (history stays usable after SPORT-LIFE-001).
+ * Throws CalendarEventNotFoundError / CalendarEventDataError; writes nothing then.
+ */
+export async function markCalendarEventCompleted(
+  db: PlayerDb,
+  playerId: string,
+  eventId: string,
+  deps: { clock: Clock },
+  source: CalendarCompletionSource = 'LOCAL_USER',
+): Promise<CalendarEvent> {
+  const now = deps.clock.wallNow();
+  return setCompletion(db, playerId, eventId, (existing) =>
+    existing.completion !== null
+      ? null // already completed: nothing to write
+      : { sql: 'completed_at = ?, completion_source = ?', params: [now, source] },
+  );
+}
+
+/**
+ * Undoes an explicit completion: the event is NOT completed again and its
+ * current state no longer carries a completion time or source (no history of
+ * marks is kept in this version). The schedule and every other field are
+ * untouched. Idempotent: an event that is not completed is left as it is.
+ */
+export async function undoCalendarEventCompletion(
+  db: PlayerDb,
+  playerId: string,
+  eventId: string,
+): Promise<CalendarEvent> {
+  return setCompletion(db, playerId, eventId, (existing) =>
+    existing.completion === null
+      ? null
+      : { sql: 'completed_at = NULL, completion_source = NULL', params: [] },
+  );
+}
+
+/** Reads the event (fails closed), applies the completion change if any, re-reads it. */
+async function setCompletion(
+  db: PlayerDb,
+  playerId: string,
+  eventId: string,
+  change: (existing: CalendarEvent) => { sql: string; params: (string | number)[] } | null,
+): Promise<CalendarEvent> {
+  let result = null as CalendarEvent | null;
+  await writeTransaction(db, async () => {
+    const existing = await readEvent(db, playerId, eventId);
+    if (existing === null) throw new CalendarEventNotFoundError(playerId, eventId);
+    const update = change(existing);
+    if (update !== null) {
+      // Only the completion columns; scoped to this Player's event.
+      await db.runAsync(`UPDATE calendar_events SET ${update.sql} WHERE id = ? AND player_id = ?`, [
+        ...update.params,
+        eventId,
+        playerId,
+      ]);
+    }
+    result = await readEvent(db, playerId, eventId);
+  });
+  if (result === null) throw new CalendarEventNotFoundError(playerId, eventId);
+  return result;
+}
+
 /** One of this Player's events, or null. A malformed stored event fails with CalendarEventDataError. */
 export function getCalendarEvent(
   db: PlayerDb,
@@ -198,7 +269,7 @@ async function readEvent(db: PlayerDb, playerId: string, eventId: string): Promi
 // players.id and the player_sports key are unique, so rows never multiply.
 const SELECT_EVENTS = `
   SELECT e.id, e.player_id, e.type, e.sport, e.start_at, e.end_at, e.title, e.notes,
-         e.created_at, e.updated_at,
+         e.created_at, e.updated_at, e.completed_at, e.completion_source,
          p.id AS owner_player_id, ps.player_id AS assignment_player_id
   FROM calendar_events e
   LEFT JOIN players p ON p.id = e.player_id
@@ -216,6 +287,8 @@ type EventRow = {
   notes: unknown;
   created_at: unknown;
   updated_at: unknown;
+  completed_at: unknown;
+  completion_source: unknown;
   owner_player_id: unknown;
   assignment_player_id: unknown;
 };
@@ -282,5 +355,20 @@ function parseEventRow(row: EventRow): CalendarEvent {
   if (valid.value.title !== row.title) throw fail('title', 'INVALID_VALUE');
   if (valid.value.notes !== row.notes) throw fail('notes', 'INVALID_VALUE');
 
-  return { id: rawId, playerId, ...valid.value };
+  return { id: rawId, playerId, ...valid.value, completion: parseCompletion(row, fail) };
+}
+
+/** Both NULL = not completed; otherwise a whole-millisecond time and a known source, together. */
+function parseCompletion(
+  row: EventRow,
+  fail: (field: CalendarEventDataField, reason: CalendarEventDataReason) => CalendarEventDataError,
+): CalendarCompletion | null {
+  const { completed_at: completedAt, completion_source: source } = row;
+  if (completedAt === null && source === null) return null;
+  if (typeof completedAt !== 'number' || !Number.isSafeInteger(completedAt)) {
+    throw fail('completedAt', 'INVALID_VALUE');
+  }
+  if (typeof source !== 'string') throw fail('completionSource', 'INVALID_VALUE');
+  if (!isCalendarCompletionSource(source)) throw fail('completionSource', 'UNKNOWN_CODE');
+  return { completedAt, source };
 }

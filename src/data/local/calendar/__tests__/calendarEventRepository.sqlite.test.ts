@@ -128,6 +128,7 @@ describe('calendar event repository on real SQLite', () => {
         notes: null,
         createdAt: T0,
         updatedAt: T0,
+        completion: null,
       });
       expect(await eventRows()).toEqual([
         {
@@ -141,6 +142,8 @@ describe('calendar event repository on real SQLite', () => {
           notes: null,
           created_at: T0,
           updated_at: T0,
+          completed_at: null,
+          completion_source: null,
         },
       ]);
       expect(await getCalendarEvent(db, gal, saved.id)).toEqual(saved);
@@ -282,6 +285,7 @@ describe('calendar event repository on real SQLite', () => {
         notes: null,
         createdAt: T0,
         updatedAt: T0 + 60_000,
+        completion: null,
       });
       expect(await getCalendarEvent(db, gal, original.id)).toEqual(updated);
       expect(await getCalendarEvent(db, gal, other.id)).toEqual(other);
@@ -666,13 +670,15 @@ describe('calendar persistence boundaries', () => {
     },
   );
 
-  it('exports exactly create, get, list, update and delete', () => {
+  it('exports exactly create, get, list, update, delete and the explicit completion pair', () => {
     const exported = Object.keys(jest.requireActual('../calendarEventRepository'));
     expect(exported.sort()).toEqual([
       'createCalendarEvent',
       'deleteCalendarEvent',
       'getCalendarEvent',
       'listCalendarEvents',
+      'markCalendarEventCompleted',
+      'undoCalendarEventCompletion',
       'updateCalendarEvent',
     ]);
   });

@@ -2,7 +2,12 @@ import { router, useFocusEffect, useNavigation } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
-import { deleteCalendarEvent, getCalendarEvent } from '@/data/local/calendar/calendarEventRepository';
+import {
+  deleteCalendarEvent,
+  getCalendarEvent,
+  markCalendarEventCompleted,
+  undoCalendarEventCompletion,
+} from '@/data/local/calendar/calendarEventRepository';
 import type { CalendarEvent } from '@/domain/calendarEvent';
 import { useApp } from '@/features/AppProvider';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -25,16 +30,21 @@ type DetailsState =
  * One event as the user entered it — only the fields that are set, no
  * internal ids or timestamps; explicit Start / End rows, each time with its date. Edit opens the shared form; Delete asks for
  * confirmation, then removes the event for good and returns to the schedule.
- * Reloads on focus, so a saved edit shows on return.
+ * Completion is an explicit user action only: Mark as completed / Undo
+ * completion, no confirmation, never inferred from time. Reloads on focus, so
+ * a saved edit shows on return.
  */
 export function CalendarEventDetails({ playerId, eventId }: { playerId: string; eventId: string }) {
-  const { boot } = useApp();
+  const { boot, services } = useApp();
   const { t, language } = useI18n();
   const navigation = useNavigation();
   const [loaded, setState] = useState<DetailsState>({ status: 'loading' });
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<TranslationKey | null>(null);
   const deleteInProgress = useRef(false);
+  const [completing, setCompleting] = useState(false);
+  const [completionError, setCompletionError] = useState<TranslationKey | null>(null);
+  const completionInProgress = useRef(false);
   const state: DetailsState =
     boot.status === 'error' ? { status: 'error', message: 'calendar.errors.loadFailed' } : loaded;
 
@@ -87,6 +97,26 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
     setDeleting(false);
   };
 
+  /** Marks or undoes completion; the screen shows only what storage returned. */
+  const changeCompletion = async (complete: boolean) => {
+    if (completionInProgress.current) return;
+    completionInProgress.current = true;
+    setCompleting(true);
+    setCompletionError(null);
+    try {
+      if (boot.status !== 'ready') throw new Error('database not ready');
+      const updated = complete
+        ? await markCalendarEventCompleted(boot.db, playerId, eventId, { clock: services.clock })
+        : await undoCalendarEventCompletion(boot.db, playerId, eventId);
+      setState({ status: 'ready', event: updated });
+    } catch (e) {
+      console.warn('[calendar] completion failed', e);
+      setCompletionError(calendarErrorMessage(e, 'calendar.errors.completionFailed'));
+    }
+    completionInProgress.current = false;
+    setCompleting(false);
+  };
+
   const confirmDelete = () =>
     Alert.alert(t('calendar.deleteConfirm.title'), t('calendar.deleteConfirm.body'), [
       { text: t('calendar.deleteConfirm.cancel'), style: 'cancel' },
@@ -137,6 +167,42 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
         </View>
       ) : null}
 
+      <View style={styles.card} testID="event-completion-section">
+        {event.completion !== null ? (
+          <>
+            <Text style={styles.completed} testID="event-completion-status">
+              {t('calendar.completion.badge')}
+            </Text>
+            <Text style={styles.muted} testID="event-completed-at">
+              {t('calendar.completion.completedOn', {
+                when: formatDateTime(event.completion.completedAt, language),
+              })}
+            </Text>
+          </>
+        ) : null}
+        {completionError ? (
+          <Text style={styles.error} testID="event-completion-error">
+            {t(completionError)}
+          </Text>
+        ) : null}
+        {event.completion === null ? (
+          <BigButton
+            testID="event-complete"
+            label={completing ? t('calendar.completion.saving') : t('calendar.completion.mark')}
+            onPress={() => void changeCompletion(true)}
+            disabled={completing || deleting}
+          />
+        ) : (
+          <BigButton
+            testID="event-uncomplete"
+            variant="secondary"
+            label={completing ? t('calendar.completion.saving') : t('calendar.completion.undo')}
+            onPress={() => void changeCompletion(false)}
+            disabled={completing || deleting}
+          />
+        )}
+      </View>
+
       {deleteError ? (
         <Text style={styles.error} testID="event-delete-error">
           {t(deleteError)}
@@ -147,14 +213,14 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
         testID="event-edit"
         label={t('calendar.edit')}
         onPress={() => router.push(editEventPath(playerId, eventId))}
-        disabled={deleting}
+        disabled={deleting || completing}
       />
       <BigButton
         testID="event-delete"
         variant="secondary"
         label={deleting ? t('calendar.deleting') : t('calendar.delete')}
         onPress={confirmDelete}
-        disabled={deleting}
+        disabled={deleting || completing}
       />
     </SafeAreaScrollView>
   );
@@ -175,5 +241,6 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: '600', color: colors.inkMuted, textAlign: 'auto' },
   line: { fontSize: 16, color: colors.ink, textAlign: 'auto' },
   muted: { fontSize: 15, color: colors.inkMuted, textAlign: 'auto' },
+  completed: { fontSize: 17, fontWeight: '800', color: colors.success, textAlign: 'auto' },
   error: { fontSize: 15, color: colors.danger, fontWeight: '600', textAlign: 'auto' },
 });

@@ -130,14 +130,17 @@ function EventCard({ event, now, playerId }: { event: CalendarEvent; now: number
   const inProgress = isInProgress(event, now);
   const subtitle = eventSubtitle(t, event);
   const lines = eventTimeLines(event, language);
+  const label = t(inProgress ? 'calendar.eventA11yInProgress' : 'calendar.eventA11y', {
+    event: eventName(t, event),
+    when: stripBidi(formatEventWhen(t, event, language)),
+  });
+  // Completion is shown, never used to move the card: sections stay schedule-based.
+  const completed = event.completion !== null;
   return (
     <Pressable
       testID={id}
       accessibilityRole="button"
-      accessibilityLabel={t(inProgress ? 'calendar.eventA11yInProgress' : 'calendar.eventA11y', {
-        event: eventName(t, event),
-        when: stripBidi(formatEventWhen(t, event, language)),
-      })}
+      accessibilityLabel={completed ? t('calendar.completion.eventA11y', { label }) : label}
       onPress={() => router.push(eventPath(playerId, event.id))}
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.8 }]}>
       <View style={styles.cardTop}>
@@ -147,6 +150,11 @@ function EventCard({ event, now, playerId }: { event: CalendarEvent; now: number
         {inProgress ? (
           <Text style={styles.now} testID={`${id}-now`}>
             {t('calendar.inProgress')}
+          </Text>
+        ) : null}
+        {completed ? (
+          <Text style={styles.completed} testID={`${id}-completed`}>
+            {t('calendar.completion.badge')}
           </Text>
         ) : null}
       </View>
@@ -205,6 +213,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     overflow: 'hidden',
   },
+  completed: { fontSize: 13, fontWeight: '800', color: colors.success },
   cardLine: { fontSize: 15, color: colors.ink, textAlign: 'auto' },
   cardMuted: { fontSize: 14, color: colors.inkMuted, textAlign: 'auto' },
 });
