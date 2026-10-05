@@ -1,5 +1,4 @@
-import { readdirSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import { openDatabaseAsync } from 'expo-sqlite';
@@ -14,26 +13,11 @@ import type { Uuid } from '@/domain/ids';
 import { systemClock } from '@/services/clock/Clock';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
+import { appRoutes } from '@/test-support/appRoutes';
 import { prepareApp } from '@/test-support/prepareApp';
 
-/** The real route tree: every screen file under src/app (tests excluded). */
-function appRoutes(): Record<string, unknown> {
-  const appDir = resolve(__dirname, '..');
-  const walk = (dir: string): string[] =>
-    readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
-      entry.name === '__tests__'
-        ? []
-        : entry.isDirectory()
-          ? walk(join(dir, entry.name))
-          : [join(dir, entry.name)],
-    );
-  return Object.fromEntries(
-    walk(appDir)
-      .filter((file) => file.endsWith('.tsx'))
-      .map((file) => [relative(appDir, file).replace(/\.tsx$/, ''), jest.requireActual(file).default]),
-  );
-}
-const routes = appRoutes() as never;
+/** The real route tree (every screen file under src/app), as Expo Router names it. */
+const routes = appRoutes(resolve(__dirname, '..')) as never;
 
 const NOW = new Date(2026, 9, 6, 12).getTime();
 const START = new Date(2026, 9, 10, 17).getTime();

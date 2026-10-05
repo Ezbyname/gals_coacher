@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import path, { join, resolve } from 'node:path';
 
 import { router } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
@@ -26,6 +26,7 @@ import { systemClock } from '@/services/clock/Clock';
 import * as localTime from '@/services/clock/localCalendarDate';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
+import { appRoutes, routeName } from '@/test-support/appRoutes';
 import { prepareApp } from '@/test-support/prepareApp';
 import * as keyboardReveal from '@/ui/keyboardReveal';
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
@@ -38,28 +39,8 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => mockInsets,
 }));
 
-/**
- * The REAL route tree: every screen file under src/app (tests excluded), keyed
- * by its file path exactly as Expo Router names it — so a missing or misnamed
- * route, or a wrong stack, shows up here.
- */
-function appRoutes(): Record<string, unknown> {
-  const appDir = resolve(__dirname, '..');
-  const walk = (dir: string): string[] =>
-    readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
-      entry.name === '__tests__'
-        ? []
-        : entry.isDirectory()
-          ? walk(join(dir, entry.name))
-          : [join(dir, entry.name)],
-    );
-  return Object.fromEntries(
-    walk(appDir)
-      .filter((file) => file.endsWith('.tsx'))
-      .map((file) => [relative(appDir, file).replace(/\.tsx$/, ''), jest.requireActual(file).default]),
-  );
-}
-const routes = appRoutes();
+/** The real route tree (every screen file under src/app), as Expo Router names it. */
+const routes = appRoutes(resolve(__dirname, '..'));
 
 const HOUR = 3_600_000;
 /** A local wall time in October 2026 (timezone-independent). */
@@ -157,7 +138,7 @@ function answerAlerts(answer: 'confirm' | 'cancel') {
 }
 
 describe('route tree', () => {
-  it('the four schedule screens exist under the Player route', () => {
+  it('the four schedule screens exist under the Player route, named with `/` on every OS', () => {
     expect(
       Object.keys(routes)
         .filter((r) => r.includes('schedule'))
@@ -168,6 +149,15 @@ describe('route tree', () => {
       'children/[id]/schedule/index',
       'children/[id]/schedule/new',
     ]);
+    // Route names use Expo `/` separators on every OS (path.relative gives `\\` on Windows).
+    expect(Object.keys(routes).every((name) => !name.includes('\\'))).toBe(true);
+    const appDir = 'C:\\Codes\\gals_coacher\\src\\app';
+    expect(routeName(appDir, `${appDir}\\children\\[id]\\schedule\\[eventId]\\edit.tsx`, path.win32)).toBe(
+      'children/[id]/schedule/[eventId]/edit',
+    );
+    expect(routeName('/repo/src/app', '/repo/src/app/children/[id]/schedule/index.tsx', path.posix)).toBe(
+      'children/[id]/schedule/index',
+    );
   });
 });
 

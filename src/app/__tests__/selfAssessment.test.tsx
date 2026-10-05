@@ -584,7 +584,16 @@ describe('new self-assessment', () => {
 describe('persistence across an app restart', () => {
   let dir: string;
   beforeEach(() => (dir = mkdtempSync(join(tmpdir(), 'gals-sa-ui-'))));
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  // This describe's afterEach runs BEFORE the file-level one, so the reopened
+  // database must be closed here: Windows cannot delete a directory that holds
+  // an open SQLite file (EPERM); Linux / macOS allowed it, which hid the leak.
+  afterEach(async () => {
+    const open = db;
+    await db?.closeAsync();
+    db = null;
+    expect(open?.raw.isOpen ?? false).toBe(false);
+    rmSync(dir, { recursive: true, force: true });
+  });
 
   it('a saved assessment is still shown after closing and reopening the database', async () => {
     const file = join(dir, 'gals_coacher.db');
@@ -602,7 +611,7 @@ describe('persistence across an app restart', () => {
     await reopened.execAsync('PRAGMA foreign_keys = ON');
     expect((await runMigrations(reopened, migrations)).applied).toEqual([]);
     (openDatabaseAsync as jest.Mock).mockImplementation(async () => reopened);
-    renderRouter(routes, { initialUrl: `/children/${gal}/self-assessments` });
+    const relaunched = renderRouter(routes, { initialUrl: `/children/${gal}/self-assessments` });
     const entries = await screen.findAllByTestId(/^self-assessment-entry-/);
     expect(entries).toHaveLength(1);
     expect(
@@ -610,6 +619,7 @@ describe('persistence across an app restart', () => {
         .getAllByText(/\/5/)
         .map((n) => stripBidi(String(n.props.children))),
     ).toEqual(['1/5', '2/5', '3/5', '4/5', '5/5', '3/5']);
+    relaunched.unmount(); // nothing may use the database once afterEach closes it
   });
 });
 
