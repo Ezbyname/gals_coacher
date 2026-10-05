@@ -11,9 +11,9 @@ import { BigButton } from '@/ui/BigButton';
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { colors, spacing } from '@/ui/theme';
 
-import { calendarErrorMessage, eventTypeLabel, sportLabel } from './calendarLabels';
+import { calendarErrorMessage, eventSubtitle, eventTypeLabel, sportLabel } from './calendarLabels';
 import { SCHEDULE_ROUTE, editEventPath, leaveTo, schedulePath } from './calendarNavigation';
-import { formatEventDate, formatEventTime } from './formatEventTime';
+import { formatDateTime } from './formatEventTime';
 import { ErrorScreen, LoadingScreen } from './StatusScreen';
 
 type DetailsState =
@@ -23,7 +23,7 @@ type DetailsState =
 
 /**
  * One event as the user entered it — only the fields that are set, no
- * internal ids or timestamps. Edit opens the shared form; Delete asks for
+ * internal ids or timestamps; explicit Start / End rows, each time with its date. Edit opens the shared form; Delete asks for
  * confirmation, then removes the event for good and returns to the schedule.
  * Reloads on focus, so a saved edit shows on return.
  */
@@ -94,23 +94,33 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
     ]);
 
   const { event } = state;
+  // The type under a title, unless it is OTHER (then the title alone says what it is).
+  const subtitle = eventSubtitle(t, event);
   return (
     <SafeAreaScrollView testID="event-details-scroll" contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.type} testID="event-details-type">
-          {eventTypeLabel(t, event.type)}
-        </Text>
         {event.title !== null ? (
           <Text style={styles.title} testID="event-details-title">
             {event.title}
           </Text>
+        ) : (
+          <Text style={styles.title} testID="event-details-type">
+            {eventTypeLabel(t, event.type)}
+          </Text>
+        )}
+        {subtitle !== null ? (
+          <Text style={styles.type} testID="event-details-type">
+            {subtitle}
+          </Text>
         ) : null}
-        <Text style={styles.line} testID="event-details-date">
-          {formatEventDate(event.startAt, language)}
+        <Text style={styles.line} testID="event-details-start">
+          {t('calendar.startRow', { when: formatDateTime(event.startAt, language) })}
         </Text>
-        <Text style={styles.line} testID="event-details-time">
-          {formatEventTime(t, event, language)}
-        </Text>
+        {event.endAt !== null ? (
+          <Text style={styles.line} testID="event-details-end">
+            {t('calendar.endRow', { when: formatDateTime(event.endAt, language) })}
+          </Text>
+        ) : null}
         {event.sport !== null ? (
           <Text style={styles.muted} testID="event-details-sport">
             {sportLabel(t, event.sport)}

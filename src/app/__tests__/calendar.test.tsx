@@ -4,7 +4,14 @@ import { join, relative, resolve } from 'node:path';
 import { router } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import { openDatabaseAsync } from 'expo-sqlite';
-import { Alert, Platform, ScrollView, StyleSheet, type AlertButton } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  type AlertButton,
+} from 'react-native';
 
 import * as calendar from '@/data/local/calendar/calendarEventRepository';
 import { migrations } from '@/data/local/migrations';
@@ -193,7 +200,13 @@ describe('entry from Edit Player', () => {
     await seedEvent({ type: 'OTHER', title: 'Photo day', startAt: at(6, 10) });
     renderRouter(routes as never, { initialUrl: `/children/${gal}` });
     expect(await screen.findByTestId('schedule-next')).toBeTruthy();
-    expect(plain('schedule-next')).toBe('Next: Photo day · Tuesday, 6 October 2026, 10:00');
+    // OTHER: the title alone (no "Other"), then the date and time.
+    expect(plain('schedule-next')).toBe('Next: Photo day');
+    expect(plain('schedule-next-when')).toBe('6 Oct 2026 · 10:00');
+    expect(stripBidi(screen.getByTestId('schedule-next-event').props.accessibilityLabel)).toBe(
+      'Next: Photo day, 6 Oct 2026 · 10:00',
+    );
+    expect(screen.queryByText(/Other/)).toBeNull();
     expect(screen.queryByTestId(/^schedule-event-/)).toBeNull();
   });
 
@@ -202,8 +215,32 @@ describe('entry from Edit Player', () => {
     await seedEvent({ type: 'TEAM_TRAINING', startAt: at(5, 17, 30), endAt: at(5, 19) });
     renderRouter(routes as never, { initialUrl: `/children/${gal}` });
     expect(await screen.findByTestId('schedule-next')).toBeTruthy();
-    expect(plain('schedule-next')).toBe('עכשיו: אימון קבוצתי · יום שני, 5 באוקטובר 2026, 17:30–19:00');
-    expect(text('schedule-next')).toContain(`${LRI}17:30–19:00${PDI}`);
+    // No title: the type is the heading; the second line is only the date and time.
+    expect(plain('schedule-next')).toBe('עכשיו: אימון קבוצתי');
+    expect(text('schedule-next-when')).toBe(`5 באוק׳ 2026 · ${LRI}17:30–19:00${PDI}`);
+  });
+
+  it('a title keeps its meaningful type: title, then type · date and time (Hebrew, read as one item)', async () => {
+    await prepare('he');
+    await seedEvent({ type: 'GYM', title: 'אימון כוח', startAt: at(6, 18), endAt: at(6, 19) });
+    renderRouter(routes as never, { initialUrl: `/children/${gal}` });
+    expect(await screen.findByTestId('schedule-next')).toBeTruthy();
+    expect(plain('schedule-next')).toBe('הבא: אימון כוח');
+    expect(plain('schedule-next-when')).toBe('חדר כושר · 6 באוק׳ 2026 · 18:00–19:00');
+    expect(text('schedule-next-when')).toContain(`${LRI}18:00–19:00${PDI}`);
+    const summary = screen.getByTestId('schedule-next-event');
+    expect(summary.props.accessible).toBe(true);
+    expect(stripBidi(summary.props.accessibilityLabel)).toBe(
+      'הבא: אימון כוח, חדר כושר, 6 באוק׳ 2026 · 18:00–19:00',
+    );
+  });
+
+  it('a summary of an event ending on a later day keeps each time with its own date', async () => {
+    await prepare('en');
+    await seedEvent({ type: 'PERSONAL_TRAINING', startAt: at(6, 23), endAt: at(7, 1) });
+    renderRouter(routes as never, { initialUrl: `/children/${gal}` });
+    expect(await screen.findByTestId('schedule-next-when')).toBeTruthy();
+    expect(plain('schedule-next-when')).toBe('6 Oct 2026 · 23:00 – 7 Oct 2026 · 01:00');
   });
 });
 
@@ -258,17 +295,22 @@ describe('agenda', () => {
     renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule` });
     await screen.findByTestId('schedule-upcoming');
     const id = (event: { id: string }, part: string) => `schedule-event-${event.id}-${part}`;
-    // A title is the heading, with the type under it; without a title the type is the heading.
+    // Without a title the type is the heading; OTHER never shows "Other" (its title says it).
     expect(text(id(e.photo, 'heading'))).toBe('Photo day');
-    expect(text(id(e.photo, 'type'))).toBe('Other');
+    expect(screen.queryByTestId(id(e.photo, 'type'))).toBeNull();
+    expect(screen.queryByText('Other')).toBeNull();
     expect(text(id(e.gym, 'heading'))).toBe('Gym');
     expect(screen.queryByTestId(id(e.gym, 'type'))).toBeNull();
-    expect(text(id(e.photo, 'date'))).toBe('Tuesday, 6 October 2026');
-    expect(text(id(e.photo, 'time'))).toBe(`${LRI}10:00${PDI}`);
-    expect(text(id(e.game, 'time'))).toBe(`${LRI}17:00–19:00${PDI}`);
-    expect(plain(id(e.overnight, 'time'))).toBe('19:00 – 10 October, 01:00');
-    expect(text(id(e.overnight, 'time'))).toContain(`${LRI}19:00${PDI}`);
-    expect(text(id(e.overnight, 'time'))).toContain(`${LRI}01:00${PDI}`);
+    // No end / same day: one line, the time right after its date.
+    expect(text(id(e.photo, 'when'))).toBe(`6 Oct 2026 · ${LRI}10:00${PDI}`);
+    expect(text(id(e.game, 'when'))).toBe(`3 Oct 2026 · ${LRI}17:00–19:00${PDI}`);
+    // Ends on a later day: Start and End rows, each time with its own date.
+    expect(screen.queryByTestId(id(e.overnight, 'when'))).toBeNull();
+    expect(plain(id(e.overnight, 'start'))).toBe('Start: 9 Oct 2026 · 19:00');
+    expect(plain(id(e.overnight, 'end'))).toBe('End: 10 Oct 2026 · 01:00');
+    expect(text(id(e.overnight, 'start'))).toContain(`${LRI}19:00${PDI}`);
+    expect(text(id(e.overnight, 'end'))).toContain(`${LRI}01:00${PDI}`);
+    expect(screen.queryByTestId(id(e.game, 'start'))).toBeNull();
     expect(text(id(e.game, 'sport'))).toBe('Basketball');
     expect(screen.getAllByTestId(/-sport$/)).toHaveLength(1);
     expect(screen.queryByText(/null|undefined|NaN/)).toBeNull();
@@ -346,15 +388,37 @@ describe('create', () => {
     ]);
   });
 
-  it('a Basketball player can choose No sport (default) or Basketball', async () => {
+  it('one assignable sport: a single optional Basketball chip, off for a new event (no "No sport")', async () => {
     await openNew('en');
     expect(
       within(screen.getByTestId('event-sport'))
         .getAllByTestId(/-label$/)
         .map((n) => String(n.props.children)),
-    ).toEqual(['No sport', 'Basketball']);
-    expect(isSelected('event-sport-NONE')).toBe(true);
+    ).toEqual(['Basketball']);
+    expect(screen.getByText('Sport (optional)')).toBeTruthy();
+    expect(screen.queryByTestId('event-sport-NONE')).toBeNull();
+    expect(screen.queryByText('No sport')).toBeNull();
     expect(isSelected('event-sport-BASKETBALL')).toBe(false);
+  });
+
+  it('never auto-assigns the sport: a Basketball player saves a sport-less event by default', async () => {
+    const app = await openNew('he');
+    press('event-type-TEAM_TRAINING');
+    press('event-save');
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/schedule`));
+    expect((await rows())[0]).toMatchObject({ type: 'TEAM_TRAINING', sport: null });
+  });
+
+  it('tapping Basketball selects it; tapping again clears it (saved as no sport)', async () => {
+    const app = await openNew('he');
+    press('event-type-GAME');
+    press('event-sport-BASKETBALL');
+    expect(isSelected('event-sport-BASKETBALL')).toBe(true);
+    press('event-sport-BASKETBALL');
+    expect(isSelected('event-sport-BASKETBALL')).toBe(false);
+    press('event-save');
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/schedule`));
+    expect((await rows())[0]).toMatchObject({ type: 'GAME', sport: null });
   });
 
   it('a player without a sport sees no sport choice at all', async () => {
@@ -417,7 +481,6 @@ describe('create', () => {
     press('event-type-GYM');
     press('event-sport-BASKETBALL');
     expect(isSelected('event-sport-BASKETBALL')).toBe(true);
-    expect(isSelected('event-sport-NONE')).toBe(false);
     press('event-save');
     await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/schedule`));
     expect((await rows())[0]).toMatchObject({ type: 'GYM', sport: 'BASKETBALL' });
@@ -440,8 +503,9 @@ describe('create', () => {
     await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/schedule`));
     const [row] = await rows();
     expect(row).toMatchObject({ start_at: at(9, 19, 30), end_at: at(10, 1) });
-    expect(await screen.findByTestId(`schedule-event-${row!.id}-time`)).toBeTruthy();
-    expect(plain(`schedule-event-${row!.id}-time`)).toBe('19:30 – 10 October, 01:00');
+    expect(await screen.findByTestId(`schedule-event-${row!.id}-start`)).toBeTruthy();
+    expect(plain(`schedule-event-${row!.id}-start`)).toBe('Start: 9 Oct 2026 · 19:30');
+    expect(plain(`schedule-event-${row!.id}-end`)).toBe('End: 10 Oct 2026 · 01:00');
   });
 
   it('a native picker dismissed without a choice changes nothing', async () => {
@@ -611,10 +675,12 @@ describe('details', () => {
     });
     renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}` });
     expect(await screen.findByTestId('event-details-type')).toBeTruthy();
-    expect(text('event-details-type')).toBe('Game');
+    // The title is the heading; the meaningful type under it.
     expect(text('event-details-title')).toBe('Cup final');
-    expect(text('event-details-date')).toBe('Tuesday, 6 October 2026');
-    expect(text('event-details-time')).toBe(`${LRI}18:00–19:30${PDI}`);
+    expect(text('event-details-type')).toBe('Game');
+    // With an end: explicit Start and End rows, each time with its own date (even on the same day).
+    expect(text('event-details-start')).toBe(`Start: ⁨6 Oct 2026 · ${LRI}18:00${PDI}⁩`);
+    expect(plain('event-details-end')).toBe('End: 6 Oct 2026 · 19:30');
     expect(text('event-details-sport')).toBe('Basketball');
     expect(text('event-details-notes')).toBe('Bring water');
     expect(screen.getByText('Notes')).toBeTruthy();
@@ -623,15 +689,34 @@ describe('details', () => {
     expect(screen.queryByText(/BASKETBALL|GAME/)).toBeNull(); // labels, never stored codes
   });
 
+  it('OTHER with a title: the title only, never "Other"; an overnight end has its own date', async () => {
+    await prepare('en');
+    const event = await seedEvent({ type: 'OTHER', title: 'Photo day', startAt: at(6, 23), endAt: at(7, 1) });
+    renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}` });
+    expect(await screen.findByTestId('event-details-title')).toBeTruthy();
+    expect(text('event-details-title')).toBe('Photo day');
+    expect(screen.queryByTestId('event-details-type')).toBeNull();
+    expect(screen.queryByText('Other')).toBeNull();
+    expect(plain('event-details-start')).toBe('Start: 6 Oct 2026 · 23:00');
+    expect(plain('event-details-end')).toBe('End: 7 Oct 2026 · 01:00');
+    expect((await rows())[0]).toMatchObject({ type: 'OTHER' }); // the stored classification is kept
+  });
+
   it('Hebrew minimal event: only type, date and time', async () => {
     await prepare('he');
     const event = await seedEvent({ type: 'RECOVERY', startAt: at(6, 7, 5) });
     renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}` });
     expect(await screen.findByTestId('event-details-type')).toBeTruthy();
     expect(text('event-details-type')).toBe('התאוששות');
-    expect(text('event-details-date')).toBe('יום שלישי, 6 באוקטובר 2026');
-    expect(text('event-details-time')).toBe(`${LRI}07:05${PDI}`);
-    for (const id of ['event-details-title', 'event-details-sport', 'event-details-notes-section']) {
+    // No end: a Start row only, its time an LTR run inside Hebrew.
+    expect(plain('event-details-start')).toBe('התחלה: 6 באוק׳ 2026 · 07:05');
+    expect(text('event-details-start')).toContain(`${LRI}07:05${PDI}`);
+    for (const id of [
+      'event-details-title',
+      'event-details-end',
+      'event-details-sport',
+      'event-details-notes-section',
+    ]) {
       expect(screen.queryByTestId(id)).toBeNull();
     }
   });
@@ -751,8 +836,10 @@ describe('edit', () => {
     });
     const create = jest.spyOn(calendar, 'createCalendarEvent');
     const back = jest.spyOn(router, 'back');
+    // Edit shows the stored sport; tapping it clears it.
+    expect(isSelected('event-sport-BASKETBALL')).toBe(true);
     press('event-type-RECOVERY');
-    press('event-sport-NONE');
+    press('event-sport-BASKETBALL');
     await pick('event-start-date', new Date(2026, 9, 12, 12));
     await pick('event-start-time', new Date(2026, 0, 1, 8, 0));
     press('event-remove-end');
@@ -778,7 +865,8 @@ describe('edit', () => {
     ]);
     // Details reloads on focus with the new values.
     await waitFor(() => expect(text('event-details-type')).toBe('Recovery'));
-    expect(text('event-details-time')).toBe(`${LRI}08:00${PDI}`);
+    expect(plain('event-details-start')).toBe('Start: 12 Oct 2026 · 08:00');
+    expect(screen.queryByTestId('event-details-end')).toBeNull();
     expect(screen.queryByTestId('event-details-title')).toBeNull();
   });
 
@@ -935,9 +1023,8 @@ describe('language', () => {
     expect(await screen.findByTestId(`schedule-event-${event.id}-heading`)).toBeTruthy();
     expect(text(`schedule-event-${event.id}-heading`)).toBe('אימון קבוצתי');
     expect(text(`schedule-event-${event.id}-sport`)).toBe('כדורסל');
-    expect(text(`schedule-event-${event.id}-date`)).toBe('יום שלישי, 6 באוקטובר 2026');
-    // 24-hour time range, isolated LTR inside Hebrew.
-    expect(text(`schedule-event-${event.id}-time`)).toBe(`${LRI}18:00–19:30${PDI}`);
+    // 24-hour time range, isolated LTR inside Hebrew, right after its date.
+    expect(text(`schedule-event-${event.id}-when`)).toBe(`6 באוק׳ 2026 · ${LRI}18:00–19:30${PDI}`);
     expect(await rows()).toEqual(before);
     expect(before[0]).toMatchObject({ type: 'TEAM_TRAINING', sport: 'BASKETBALL' });
   });
@@ -1011,19 +1098,68 @@ describe('safe area (a 48dp bottom inset)', () => {
   });
 });
 
+describe('keyboard (structure only — the real keyboard is verified on a device)', () => {
+  /** The keyboard wrapper around the form's scroll view, and the scroll view inside it. */
+  const keyboardWrapper = () => {
+    const wrappers = screen.UNSAFE_getAllByType(KeyboardAvoidingView);
+    expect(wrappers).toHaveLength(1);
+    const wrapper = wrappers[0]!;
+    expect(wrapper.props.testID).toBe('event-form-keyboard');
+    expect(within(screen.getByTestId('event-form-keyboard')).getByTestId('event-form-scroll')).toBeTruthy();
+    return wrapper;
+  };
+
+  it('Android: the form scroll sits in a KeyboardAvoidingView with no extra behavior; Title / Notes inside it', async () => {
+    await openNew('he');
+    const wrapper = keyboardWrapper();
+    expect(wrapper.props.behavior).toBeUndefined();
+    expect(wrapper.props.keyboardVerticalOffset).toBe(0);
+    for (const id of ['event-title', 'event-notes', 'event-save', 'event-cancel']) {
+      expect(within(screen.getByTestId('event-form-scroll')).getByTestId(id)).toBeTruthy();
+    }
+    expect(screen.getByTestId('event-form-scroll').props.keyboardShouldPersistTaps).toBe('handled');
+  });
+
+  it('iOS: padding behavior; the safe-area bottom padding is unchanged (no double gap)', async () => {
+    await prepare('en', 'ios');
+    mockInsets = { top: 0, left: 0, right: 0, bottom: 34 };
+    renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/new` });
+    await screen.findByTestId('event-save');
+    expect(keyboardWrapper().props.behavior).toBe('padding');
+    const scroll = screen
+      .UNSAFE_getAllByType(ScrollView)
+      .find((n) => n.props.testID === 'event-form-scroll')!;
+    expect(StyleSheet.flatten(scroll.props.contentContainerStyle)).toMatchObject({
+      padding: spacing.lg,
+      paddingBottom: spacing.lg + 34,
+    });
+  });
+
+  it('edit uses the same keyboard-aware form', async () => {
+    await prepare('en');
+    const event = await seedEvent({ type: 'GAME', startAt: at(6, 18) });
+    renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}/edit` });
+    await screen.findByTestId('event-save');
+    keyboardWrapper();
+  });
+});
+
 describe('accessibility', () => {
   it('an event card is a button whose label says type, title, date and time (and Now)', async () => {
     await prepare('en');
     const live = await seedEvent({ type: 'TEAM_TRAINING', startAt: at(5, 17, 30), endAt: at(5, 19) });
     const photo = await seedEvent({ type: 'OTHER', title: 'Photo day', startAt: at(6, 10) });
+    const gym = await seedEvent({ type: 'GYM', title: 'Strength', startAt: at(6, 23), endAt: at(7, 1) });
     renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule` });
     const card = await screen.findByTestId(`schedule-event-${live.id}`);
     expect(card.props.accessibilityRole).toBe('button');
-    expect(stripBidi(card.props.accessibilityLabel)).toBe(
-      'Team training, now, Monday, 5 October 2026, 17:30–19:00',
-    );
+    expect(stripBidi(card.props.accessibilityLabel)).toBe('Team training, now, 5 Oct 2026 · 17:30–19:00');
+    // OTHER: the title only; a meaningful type follows a title.
     expect(stripBidi(screen.getByTestId(`schedule-event-${photo.id}`).props.accessibilityLabel)).toBe(
-      'Photo day, Other, Tuesday, 6 October 2026, 10:00',
+      'Photo day, 6 Oct 2026 · 10:00',
+    );
+    expect(stripBidi(screen.getByTestId(`schedule-event-${gym.id}`).props.accessibilityLabel)).toBe(
+      'Strength, Gym, 6 Oct 2026 · 23:00 – 7 Oct 2026 · 01:00',
     );
     expect(StyleSheet.flatten(card.props.style).minHeight).toBeGreaterThanOrEqual(touch.buttonMinHeight);
   });
@@ -1033,7 +1169,9 @@ describe('accessibility', () => {
     press('event-type-GYM');
     expect(screen.getByTestId('event-type-GYM').props.accessibilityState).toMatchObject({ selected: true });
     expect(screen.getByTestId('event-type-GAME').props.accessibilityState).toMatchObject({ selected: false });
-    expect(screen.getByTestId('event-sport-NONE').props.accessibilityState).toMatchObject({ selected: true });
+    expect(screen.getByTestId('event-sport-BASKETBALL').props.accessibilityState).toMatchObject({
+      selected: false,
+    });
     const date = screen.getByTestId('event-start-date');
     expect(date.props.accessibilityRole).toBe('button');
     expect(stripBidi(date.props.accessibilityLabel)).toBe('תאריך: יום שני, 5 באוקטובר 2026');

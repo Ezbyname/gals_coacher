@@ -13,9 +13,9 @@ import { BigButton } from '@/ui/BigButton';
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { colors, spacing, touch } from '@/ui/theme';
 
-import { calendarErrorMessage, eventHeading, eventTypeLabel, sportLabel } from './calendarLabels';
+import { calendarErrorMessage, eventHeading, eventName, eventSubtitle, sportLabel } from './calendarLabels';
 import { eventPath, newEventPath } from './calendarNavigation';
-import { formatEventDate, formatEventTime, formatEventWhen, isInProgress } from './formatEventTime';
+import { eventTimeLines, formatEventWhen, isInProgress } from './formatEventTime';
 import { ErrorScreen, LoadingScreen } from './StatusScreen';
 
 type AgendaState =
@@ -119,19 +119,23 @@ export function CalendarAgenda({ playerId }: { playerId: string }) {
   );
 }
 
-/** One event in the list: a button that opens its details. Only fields that are set are shown. */
+/**
+ * One event in the list: a button that opens its details. Only fields that are
+ * set are shown; the type is shown under a title unless it is OTHER; every
+ * time sits next to its own date.
+ */
 function EventCard({ event, now, playerId }: { event: CalendarEvent; now: number; playerId: string }) {
   const { t, language } = useI18n();
   const id = `schedule-event-${event.id}`;
   const inProgress = isInProgress(event, now);
-  const typeLabel = eventTypeLabel(t, event.type);
-  const name = event.title === null ? typeLabel : `${event.title}, ${typeLabel}`;
+  const subtitle = eventSubtitle(t, event);
+  const lines = eventTimeLines(event, language);
   return (
     <Pressable
       testID={id}
       accessibilityRole="button"
       accessibilityLabel={t(inProgress ? 'calendar.eventA11yInProgress' : 'calendar.eventA11y', {
-        event: name,
+        event: eventName(t, event),
         when: stripBidi(formatEventWhen(t, event, language)),
       })}
       onPress={() => router.push(eventPath(playerId, event.id))}
@@ -146,17 +150,25 @@ function EventCard({ event, now, playerId }: { event: CalendarEvent; now: number
           </Text>
         ) : null}
       </View>
-      {event.title !== null ? (
+      {subtitle !== null ? (
         <Text style={styles.cardLine} testID={`${id}-type`}>
-          {typeLabel}
+          {subtitle}
         </Text>
       ) : null}
-      <Text style={styles.cardLine} testID={`${id}-date`}>
-        {formatEventDate(event.startAt, language)}
-      </Text>
-      <Text style={styles.cardLine} testID={`${id}-time`}>
-        {formatEventTime(t, event, language)}
-      </Text>
+      {lines.kind === 'day' ? (
+        <Text style={styles.cardLine} testID={`${id}-when`}>
+          {lines.text}
+        </Text>
+      ) : (
+        <>
+          <Text style={styles.cardLine} testID={`${id}-start`}>
+            {t('calendar.startRow', { when: lines.start })}
+          </Text>
+          <Text style={styles.cardLine} testID={`${id}-end`}>
+            {t('calendar.endRow', { when: lines.end })}
+          </Text>
+        </>
+      )}
       {event.sport !== null ? (
         <Text style={styles.cardMuted} testID={`${id}-sport`}>
           {sportLabel(t, event.sport)}

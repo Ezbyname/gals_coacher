@@ -13,10 +13,11 @@ const LOCALES: Record<Language, string> = { he: 'he-IL', en: 'en-GB' };
  * Presentation only: stored instants (epoch ms) are formatted on the device's
  * LOCAL calendar and clock, in the active app language. No timeZone option
  * (never UTC), 24-hour times, and every numeric time is wrapped in an LTR
- * isolate so `18:00–19:30` keeps its order inside Hebrew text.
+ * isolate so `18:00–19:30` keeps its order inside Hebrew text. Every time is
+ * shown next to its own date.
  */
 
-/** e.g. "Tuesday 6 October 2026" / "יום שלישי, 6 באוקטובר 2026". */
+/** e.g. "Tuesday, 6 October 2026" / "יום שלישי, 6 באוקטובר 2026" (the form's date fields). */
 export function formatEventDate(epochMs: number, language: Language): string {
   return new Intl.DateTimeFormat(LOCALES[language], {
     weekday: 'long',
@@ -26,12 +27,16 @@ export function formatEventDate(epochMs: number, language: Language): string {
   }).format(epochMs);
 }
 
-/** e.g. "7 October" — the end date of an event that ends on a later day. */
-function formatShortDate(epochMs: number, language: Language): string {
-  return new Intl.DateTimeFormat(LOCALES[language], { day: 'numeric', month: 'long' }).format(epochMs);
+/** e.g. "5 Oct 2026" / "5 באוק׳ 2026": the date a time belongs to on cards and details. */
+export function formatShortDate(epochMs: number, language: Language): string {
+  return new Intl.DateTimeFormat(LOCALES[language], {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(epochMs);
 }
 
-/** A 24-hour local time without an isolate, e.g. "18:00" (for accessibility labels and pickers). */
+/** A 24-hour local time without an isolate, e.g. "18:00". */
 export function plainTime(epochMs: number, language: Language): string {
   return new Intl.DateTimeFormat(LOCALES[language], {
     hour: '2-digit',
@@ -46,33 +51,45 @@ const sameLocalDay = (a: number, b: number) => {
   return x.year === y.year && x.month === y.month && x.day === y.day;
 };
 
-/**
- * The event's time: `18:00`, `18:00–19:30` (one isolated LTR run), or, when it
- * ends on a later local day, `18:00 – 7 October, 01:00`.
- */
-export function formatEventTime(
-  t: T,
-  event: Pick<CalendarEvent, 'startAt' | 'endAt'>,
-  language: Language,
-): string {
-  const start = plainTime(event.startAt, language);
-  if (event.endAt === null) return ltr(start);
-  const end = plainTime(event.endAt, language);
-  if (sameLocalDay(event.startAt, event.endAt)) return ltr(`${start}–${end}`);
-  return t('calendar.timeRangeUntil', {
-    start: ltr(start),
-    endDate: formatShortDate(event.endAt, language),
-    end: ltr(end),
-  });
+/** `5 Oct 2026 · 23:00`: a time always next to its own date (the time is an LTR run). */
+export function formatDateTime(epochMs: number, language: Language): string {
+  return `${formatShortDate(epochMs, language)} · ${ltr(plainTime(epochMs, language))}`;
 }
 
-/** Date and time together, e.g. for a one-line summary or an accessibility label. */
+/**
+ * When an event happens, as lines that keep every time with its own date:
+ * - `day`: one line — `5 Oct 2026 · 18:00`, or `5 Oct 2026 · 18:00–19:00`
+ *   when it ends the same local day (the range is one LTR run);
+ * - `span`: it ends on a later local day — a start line and an end line,
+ *   each `date · time` (the caller labels them Start / End).
+ */
+export type EventTimeLines = { kind: 'day'; text: string } | { kind: 'span'; start: string; end: string };
+
+export function eventTimeLines(
+  event: Pick<CalendarEvent, 'startAt' | 'endAt'>,
+  language: Language,
+): EventTimeLines {
+  const date = formatShortDate(event.startAt, language);
+  const start = plainTime(event.startAt, language);
+  if (event.endAt === null) return { kind: 'day', text: `${date} · ${ltr(start)}` };
+  if (sameLocalDay(event.startAt, event.endAt)) {
+    return { kind: 'day', text: `${date} · ${ltr(`${start}–${plainTime(event.endAt, language)}`)}` };
+  }
+  return {
+    kind: 'span',
+    start: formatDateTime(event.startAt, language),
+    end: formatDateTime(event.endAt, language),
+  };
+}
+
+/** The same, on one line (summaries and accessibility labels). */
 export function formatEventWhen(
   t: T,
   event: Pick<CalendarEvent, 'startAt' | 'endAt'>,
   language: Language,
 ): string {
-  return `${formatEventDate(event.startAt, language)}, ${formatEventTime(t, event, language)}`;
+  const lines = eventTimeLines(event, language);
+  return lines.kind === 'day' ? lines.text : t('calendar.span', { start: lines.start, end: lines.end });
 }
 
 /** Shown as "Now" while an event with an end is under way. Computed from timestamps only. */

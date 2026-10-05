@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 
 import type { SaveCalendarEventResult } from '@/data/local/calendar/calendarEventRepository';
 import {
@@ -78,6 +78,8 @@ export function CalendarEventForm({ initialValues, sports, onSave, onSaved, onCa
   const [saving, setSaving] = useState(false);
   // A ref, not state: a second press in the same frame must see the guard immediately.
   const saveInProgress = useRef(false);
+  const formView = useRef<View>(null);
+  const [topInWindow, setTopInWindow] = useState(0);
 
   const change = <K extends keyof CalendarFormValues>(
     key: K,
@@ -125,135 +127,163 @@ export function CalendarEventForm({ initialValues, sports, onSave, onSaved, onCa
   const message = (key: TranslationKey | undefined) => (key ? t(key) : undefined);
 
   return (
-    <SafeAreaScrollView
-      testID="event-form-scroll"
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled">
-      <ChoiceChips<CalendarEventType>
-        testID="event-type"
-        label={t('calendar.field.type')}
-        choices={CALENDAR_EVENT_TYPES.map((type) => ({ value: type, label: eventTypeLabel(t, type) }))}
-        value={values.type}
-        // A type is always required: pressing the chosen chip keeps it.
-        onChange={(type) => type !== null && change('type', type, ['type', 'title'])}
-        error={message(errors.type)}
-      />
-
-      {sports.length > 0 ? (
-        <ChoiceChips<string>
-          testID="event-sport"
-          label={t('calendar.field.sport')}
-          choices={[
-            { value: NO_SPORT, label: t('calendar.field.noSport') },
-            ...sports.map((sport) => ({ value: sport, label: sportLabel(t, sport) })),
-          ]}
-          value={values.sport ?? NO_SPORT}
-          onChange={(choice) => {
-            if (choice === null) return;
-            const sport = sports.find((s) => s === choice) ?? null;
-            change('sport', sport, ['sport']);
-          }}
-          error={message(errors.sport)}
-        />
-      ) : null}
-
-      <View style={styles.group} testID="event-start">
-        <DateTimeField
-          testID="event-start-date"
-          label={t('calendar.field.date')}
-          mode="date"
-          value={values.start}
-          displayValue={dateText(values.start)}
-          onSelect={(start) => change('start', start, ['start', 'end'])}
-        />
-        <DateTimeField
-          testID="event-start-time"
-          label={t('calendar.field.startTime')}
-          mode="time"
-          value={values.start}
-          displayValue={timeText(values.start)}
-          onSelect={(start) => change('start', start, ['start', 'end'])}
-          error={message(errors.start)}
-        />
-      </View>
-
-      {values.end === null ? (
-        <BigButton
-          testID="event-add-end"
-          variant="secondary"
-          label={t('calendar.field.addEnd')}
-          // Starts from the start date and time; the user picks the real end.
-          onPress={() => change('end', values.start, ['end'])}
-        />
-      ) : (
-        <View style={styles.group} testID="event-end">
-          <DateTimeField
-            testID="event-end-date"
-            label={t('calendar.field.endDate')}
-            mode="date"
-            value={values.end}
-            displayValue={dateText(values.end)}
-            onSelect={(end) => change('end', end, ['end'])}
+    // Keeps the focused Title / Notes above the keyboard. iOS: padding by the
+    // keyboard's overlap, offset by where this form starts in the window (below
+    // the header — measured, not hard-coded). Android: no extra behavior; the
+    // window itself adjusts for the keyboard.
+    <View
+      style={styles.keyboard}
+      ref={formView}
+      onLayout={() => formView.current?.measureInWindow((_x, y) => setTopInWindow(y))}>
+      <KeyboardAvoidingView
+        testID="event-form-keyboard"
+        style={styles.keyboard}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? topInWindow : 0}>
+        <SafeAreaScrollView
+          testID="event-form-scroll"
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled">
+          <ChoiceChips<CalendarEventType>
+            testID="event-type"
+            label={t('calendar.field.type')}
+            choices={CALENDAR_EVENT_TYPES.map((type) => ({ value: type, label: eventTypeLabel(t, type) }))}
+            value={values.type}
+            // A type is always required: pressing the chosen chip keeps it.
+            onChange={(type) => type !== null && change('type', type, ['type', 'title'])}
+            error={message(errors.type)}
           />
-          <DateTimeField
-            testID="event-end-time"
-            label={t('calendar.field.endTime')}
-            mode="time"
-            value={values.end}
-            displayValue={timeText(values.end)}
-            onSelect={(end) => change('end', end, ['end'])}
-            error={message(errors.end)}
+
+          {sports.length === 1 ? (
+            // One assignable sport: a single optional chip (off = no sport). Pressing
+            // it again clears it; nothing is ever chosen for the user.
+            <ChoiceChips<SportKey>
+              testID="event-sport"
+              label={t('calendar.field.sport')}
+              choices={sports.map((sport) => ({ value: sport, label: sportLabel(t, sport) }))}
+              value={values.sport}
+              onChange={(sport) => change('sport', sport, ['sport'])}
+              error={message(errors.sport)}
+            />
+          ) : null}
+          {sports.length > 1 ? (
+            <ChoiceChips<string>
+              testID="event-sport"
+              label={t('calendar.field.sport')}
+              choices={[
+                { value: NO_SPORT, label: t('calendar.field.noSport') },
+                ...sports.map((sport) => ({ value: sport, label: sportLabel(t, sport) })),
+              ]}
+              value={values.sport ?? NO_SPORT}
+              onChange={(choice) => {
+                if (choice === null) return;
+                const sport = sports.find((s) => s === choice) ?? null;
+                change('sport', sport, ['sport']);
+              }}
+              error={message(errors.sport)}
+            />
+          ) : null}
+
+          <View style={styles.group} testID="event-start">
+            <DateTimeField
+              testID="event-start-date"
+              label={t('calendar.field.date')}
+              mode="date"
+              value={values.start}
+              displayValue={dateText(values.start)}
+              onSelect={(start) => change('start', start, ['start', 'end'])}
+            />
+            <DateTimeField
+              testID="event-start-time"
+              label={t('calendar.field.startTime')}
+              mode="time"
+              value={values.start}
+              displayValue={timeText(values.start)}
+              onSelect={(start) => change('start', start, ['start', 'end'])}
+              error={message(errors.start)}
+            />
+          </View>
+
+          {values.end === null ? (
+            <BigButton
+              testID="event-add-end"
+              variant="secondary"
+              label={t('calendar.field.addEnd')}
+              // Starts from the start date and time; the user picks the real end.
+              onPress={() => change('end', values.start, ['end'])}
+            />
+          ) : (
+            <View style={styles.group} testID="event-end">
+              <DateTimeField
+                testID="event-end-date"
+                label={t('calendar.field.endDate')}
+                mode="date"
+                value={values.end}
+                displayValue={dateText(values.end)}
+                onSelect={(end) => change('end', end, ['end'])}
+              />
+              <DateTimeField
+                testID="event-end-time"
+                label={t('calendar.field.endTime')}
+                mode="time"
+                value={values.end}
+                displayValue={timeText(values.end)}
+                onSelect={(end) => change('end', end, ['end'])}
+                error={message(errors.end)}
+              />
+              <BigButton
+                testID="event-remove-end"
+                variant="secondary"
+                label={t('calendar.field.removeEnd')}
+                onPress={() => change('end', null, ['end'])}
+              />
+            </View>
+          )}
+
+          <TextField
+            testID="event-title"
+            label={values.type === 'OTHER' ? t('calendar.field.titleRequired') : t('calendar.field.title')}
+            value={values.title}
+            onChangeText={(title) => change('title', title, ['title'])}
+            error={message(errors.title)}
+          />
+          <TextField
+            testID="event-notes"
+            label={t('calendar.field.notes')}
+            value={values.notes}
+            onChangeText={(notes) => change('notes', notes, ['notes'])}
+            multiline
+            error={message(errors.notes)}
+          />
+
+          {saveError ? (
+            <Text style={styles.error} testID="event-save-error">
+              {t(saveError)}
+            </Text>
+          ) : null}
+
+          <BigButton
+            testID="event-save"
+            label={saving ? t('calendar.saving') : t('calendar.save')}
+            onPress={save}
+            disabled={saving}
           />
           <BigButton
-            testID="event-remove-end"
+            testID="event-cancel"
             variant="secondary"
-            label={t('calendar.field.removeEnd')}
-            onPress={() => change('end', null, ['end'])}
+            label={t('calendar.cancel')}
+            onPress={onCancel}
+            // A started save cannot be cancelled: no second navigation while it runs.
+            disabled={saving}
           />
-        </View>
-      )}
-
-      <TextField
-        testID="event-title"
-        label={values.type === 'OTHER' ? t('calendar.field.titleRequired') : t('calendar.field.title')}
-        value={values.title}
-        onChangeText={(title) => change('title', title, ['title'])}
-        error={message(errors.title)}
-      />
-      <TextField
-        testID="event-notes"
-        label={t('calendar.field.notes')}
-        value={values.notes}
-        onChangeText={(notes) => change('notes', notes, ['notes'])}
-        multiline
-        error={message(errors.notes)}
-      />
-
-      {saveError ? (
-        <Text style={styles.error} testID="event-save-error">
-          {t(saveError)}
-        </Text>
-      ) : null}
-
-      <BigButton
-        testID="event-save"
-        label={saving ? t('calendar.saving') : t('calendar.save')}
-        onPress={save}
-        disabled={saving}
-      />
-      <BigButton
-        testID="event-cancel"
-        variant="secondary"
-        label={t('calendar.cancel')}
-        onPress={onCancel}
-        // A started save cannot be cancelled: no second navigation while it runs.
-        disabled={saving}
-      />
-    </SafeAreaScrollView>
+        </SafeAreaScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboard: { flex: 1 },
   container: { padding: spacing.lg, gap: spacing.lg },
   group: { gap: spacing.md },
   error: { fontSize: 15, color: colors.danger, fontWeight: '600', textAlign: 'auto' },

@@ -15,9 +15,24 @@ export function eventTypeLabel(t: T, type: CalendarEventType): string {
   return t(`calendar.type.${type}`);
 }
 
-/** What an event is called in a list: its title, or its type when it has none. */
+/** What an event is called: its title, or its type when it has none. */
 export function eventHeading(t: T, event: Pick<CalendarEvent, 'type' | 'title'>): string {
   return event.title ?? eventTypeLabel(t, event.type);
+}
+
+/**
+ * The type shown next to a title, or null when it adds nothing: no title
+ * (the type is already the heading) or OTHER (an input classification only —
+ * the title says what it is). The stored type is never changed.
+ */
+export function eventSubtitle(t: T, event: Pick<CalendarEvent, 'type' | 'title'>): string | null {
+  return event.title === null || event.type === 'OTHER' ? null : eventTypeLabel(t, event.type);
+}
+
+/** Heading plus meaningful type, for one-line text such as accessibility labels. */
+export function eventName(t: T, event: Pick<CalendarEvent, 'type' | 'title'>): string {
+  const subtitle = eventSubtitle(t, event);
+  return subtitle === null ? eventHeading(t, event) : `${eventHeading(t, event)}, ${subtitle}`;
 }
 
 /** Storage / data errors → a localized, user-safe message (raw details are only logged). */

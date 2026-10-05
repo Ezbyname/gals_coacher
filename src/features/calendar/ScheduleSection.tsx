@@ -10,7 +10,9 @@ import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
 import { colors, spacing } from '@/ui/theme';
 
-import { calendarErrorMessage, eventHeading } from './calendarLabels';
+import { stripBidi } from '@/i18n/bidi';
+
+import { calendarErrorMessage, eventHeading, eventName, eventSubtitle } from './calendarLabels';
 import { schedulePath } from './calendarNavigation';
 import { formatEventWhen, isInProgress } from './formatEventTime';
 
@@ -26,7 +28,7 @@ type Next =
  */
 export function ScheduleSection({ playerId }: { playerId: string }) {
   const { boot, services } = useApp();
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const [state, setState] = useState<Next>({ status: 'loading' });
 
   useFocusEffect(
@@ -55,12 +57,7 @@ export function ScheduleSection({ playerId }: { playerId: string }) {
       <Text style={styles.title}>{t('calendar.title')}</Text>
       <Text style={styles.muted}>{t('calendar.about')}</Text>
       {state.status === 'ready' && state.next !== null ? (
-        <Text style={styles.status} testID="schedule-next">
-          {t(isInProgress(state.next, state.now) ? 'calendar.happeningNow' : 'calendar.next', {
-            event: eventHeading(t, state.next),
-            when: formatEventWhen(t, state.next, language),
-          })}
-        </Text>
+        <NextEvent event={state.next} now={state.now} />
       ) : null}
       {state.status === 'ready' && state.next === null ? (
         <Text style={styles.status} testID="schedule-none">
@@ -78,6 +75,30 @@ export function ScheduleSection({ playerId }: { playerId: string }) {
         label={t('calendar.open')}
         onPress={() => router.push(schedulePath(playerId))}
       />
+    </View>
+  );
+}
+
+/**
+ * The next event in two lines: its title (or type), then its meaningful type
+ * (never OTHER) with the date and time. Read as one item by screen readers.
+ */
+function NextEvent({ event, now }: { event: CalendarEvent; now: number }) {
+  const { t, language } = useI18n();
+  const prefix = isInProgress(event, now) ? 'calendar.happeningNow' : 'calendar.next';
+  const when = formatEventWhen(t, event, language);
+  const subtitle = eventSubtitle(t, event);
+  return (
+    <View
+      accessible
+      testID="schedule-next-event"
+      accessibilityLabel={stripBidi(`${t(prefix, { event: eventName(t, event) })}, ${when}`)}>
+      <Text style={styles.status} testID="schedule-next">
+        {t(prefix, { event: eventHeading(t, event) })}
+      </Text>
+      <Text style={styles.muted} testID="schedule-next-when">
+        {subtitle === null ? when : t('calendar.summaryDetail', { type: subtitle, when })}
+      </Text>
     </View>
   );
 }
