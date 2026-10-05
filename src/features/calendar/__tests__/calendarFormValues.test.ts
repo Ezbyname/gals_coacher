@@ -103,9 +103,16 @@ describe('form values ↔ repository input', () => {
     });
   });
 
-  it('sports a Player can pick: only its own assignments', () => {
-    expect(sportsOf({ basketball: { primaryPosition: 'PG' } })).toEqual(['BASKETBALL']);
-    expect(sportsOf({ basketball: null })).toEqual([]);
+  it('sports a new event can carry: only ACTIVE assignments; an edited event keeps its own sport', () => {
+    const active = { sports: [{ sport: 'BASKETBALL' as const, active: true }] };
+    const inactive = { sports: [{ sport: 'BASKETBALL' as const, active: false }] };
+    expect(sportsOf(active)).toEqual(['BASKETBALL']);
+    expect(sportsOf({ sports: [] })).toEqual([]);
+    expect(sportsOf(inactive)).toEqual([]);
+    // Editing a historical Basketball event: Basketball stays offered (keep or clear).
+    expect(sportsOf(inactive, 'BASKETBALL')).toEqual(['BASKETBALL']);
+    expect(sportsOf(active, 'BASKETBALL')).toEqual(['BASKETBALL']); // never twice
+    expect(sportsOf(inactive, null)).toEqual([]);
   });
 });
 

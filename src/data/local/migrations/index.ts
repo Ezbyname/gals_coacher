@@ -109,4 +109,17 @@ export const migrations: readonly Migration[] = [
       CREATE INDEX calendar_events_player_start ON calendar_events (player_id, start_at);
     `,
   },
+  {
+    // SPORT-LIFE-001. A sport assignment can become inactive without losing
+    // anything: the row stays (profiles, self-assessments and calendar events
+    // keep referencing it); only its lifecycle changes. Additive: every
+    // existing assignment upgrades as active.
+    version: 5,
+    name: 'player_sports_active',
+    sql: `
+      ALTER TABLE player_sports
+        ADD COLUMN active INTEGER NOT NULL DEFAULT 1
+        CHECK (typeof(active) = 'integer' AND active IN (0, 1));
+    `,
+  },
 ];

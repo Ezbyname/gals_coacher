@@ -3,7 +3,12 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { PlayerDataError } from '@/data/local/players/errors';
-import { getPlayer, updatePlayer, type PlayerProfile } from '@/data/local/players/playerRepository';
+import {
+  getPlayer,
+  isSportActive,
+  updatePlayer,
+  type PlayerProfile,
+} from '@/data/local/players/playerRepository';
 import { useApp } from '@/features/AppProvider';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
@@ -88,11 +93,14 @@ export function EditPlayer({ playerId }: { playerId: string }) {
       }}
       onSaved={backToPlayers}
       onCancel={backToPlayers}
-      // Separate from the profile fields: Self-assessment for Basketball players
-      // only, then the Schedule for every player.
+      // Separate from the profile fields: Self-assessment for players with
+      // Basketball (history only while it is inactive), then the Schedule for
+      // every player.
       footer={
         <>
-          {state.profile.basketball !== null ? <SelfAssessmentSection playerId={playerId} /> : null}
+          {state.profile.basketball !== null ? (
+            <SelfAssessmentSection playerId={playerId} active={isSportActive(state.profile, 'BASKETBALL')} />
+          ) : null}
           <ScheduleSection playerId={playerId} />
         </>
       }

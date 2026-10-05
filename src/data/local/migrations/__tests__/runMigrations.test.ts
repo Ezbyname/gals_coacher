@@ -70,12 +70,13 @@ describe('runMigrations', () => {
     expect(() => assertValidMigrations(migrations)).not.toThrow();
   });
 
-  it('ships exactly versions 1..4', () => {
+  it('ships exactly versions 1..5', () => {
     expect(migrations.map((m) => [m.version, m.name])).toEqual([
       [1, 'app_meta'],
       [2, 'players'],
       [3, 'self_assessments'],
       [4, 'calendar_events'],
+      [5, 'player_sports_active'],
     ]);
   });
 });

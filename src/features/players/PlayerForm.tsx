@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import {
   DOMINANT_HANDS,
@@ -61,8 +61,10 @@ function saveErrorMessage(e: unknown): TranslationKey {
 /**
  * The one Player Profile form, used for both Add and Edit: personal
  * information, sport selection, and Basketball details (only while Basketball
- * is selected). A Basketball that is already saved is shown locked: removing
- * a sport is not supported in Slice 1.1.
+ * is selected). Unselecting an ACTIVE Basketball asks first (default: keep it
+ * active); confirmed, it becomes inactive on Save — nothing is deleted, and
+ * Cancel discards the change. Selecting an inactive Basketball again
+ * reactivates it with its stored details (SPORT-LIFE-001).
  */
 export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }: Props) {
   const { t } = useI18n();
@@ -74,7 +76,8 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }:
   // A ref, not state: a second press in the same frame must see the guard immediately.
   const saveInProgress = useRef(false);
 
-  const basketballLocked = initialValues.basketballSelected;
+  // Basketball is active in storage: unselecting it needs a confirmation.
+  const basketballActive = initialValues.basketballSelected;
   // Device-local today: the picker's upper bound. The domain still validates on save.
   const today = localCalendarDateFromEpoch(services.clock.wallNow());
 
@@ -191,8 +194,21 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }:
           label={t('players.form.sportSection')}
           choices={[{ value: BASKETBALL, label: t('basketball.sportName') }]}
           value={values.basketballSelected ? BASKETBALL : null}
-          onChange={(sport) => set('basketballSelected')(sport !== null)}
-          locked={basketballLocked}
+          onChange={(sport) => {
+            if (sport !== null || !basketballActive) {
+              set('basketballSelected')(sport !== null);
+              return;
+            }
+            // The safe choice (cancel) keeps Basketball active; nothing is saved until Save.
+            Alert.alert(t('players.form.deactivate.title'), t('players.form.deactivate.body'), [
+              { text: t('players.form.deactivate.keep'), style: 'cancel' },
+              {
+                text: t('players.form.deactivate.confirm'),
+                style: 'destructive',
+                onPress: () => set('basketballSelected')(false),
+              },
+            ]);
+          }}
         />
       </View>
 

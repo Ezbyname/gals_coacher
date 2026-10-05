@@ -2,7 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { getPlayer } from '@/data/local/players/playerRepository';
+import { getPlayer, isSportActive } from '@/data/local/players/playerRepository';
 import { listSelfAssessments } from '@/data/local/selfAssessments/selfAssessmentRepository';
 import type { SelfAssessment } from '@/domain/selfAssessment';
 import { useApp } from '@/features/AppProvider';
@@ -22,7 +22,7 @@ import {
 
 type HistoryState =
   | { status: 'loading' }
-  | { status: 'ready'; playerName: string; assessments: SelfAssessment[] }
+  | { status: 'ready'; playerName: string; active: boolean; assessments: SelfAssessment[] }
   | { status: 'error'; message: TranslationKey };
 
 /**
@@ -30,6 +30,7 @@ type HistoryState =
  * local date and time, then every category with its own n/5. Read-only
  * facts — no totals, averages, trends or comparison. Reloads on focus, so a
  * new assessment appears first on return. Corrupt history fails as a whole.
+ * While Basketball is inactive the history is read-only (no new assessment).
  */
 export function SelfAssessmentHistory({ playerId }: { playerId: string }) {
   const { boot } = useApp();
@@ -50,7 +51,8 @@ export function SelfAssessmentHistory({ playerId }: { playerId: string }) {
           return { status: 'error', message: 'selfAssessment.errors.noBasketball' } as const;
         }
         const assessments = await listSelfAssessments(boot.db, playerId, SELF_ASSESSMENT_SPORT);
-        return { status: 'ready', playerName: profile.player.name, assessments } as const;
+        const active = isSportActive(profile, SELF_ASSESSMENT_SPORT);
+        return { status: 'ready', playerName: profile.player.name, active, assessments } as const;
       })()
         .then((next) => {
           if (active) setState(next);
@@ -114,7 +116,14 @@ export function SelfAssessmentHistory({ playerId }: { playerId: string }) {
         </View>
       ) : null}
 
-      {takeNew}
+      {state.active ? (
+        takeNew
+      ) : (
+        // Inactive Basketball: the history stays, read-only; nothing new until reactivated.
+        <Text style={styles.muted} testID="self-assessment-history-inactive">
+          {t('selfAssessment.inactive')}
+        </Text>
+      )}
 
       {state.assessments.map((assessment) => (
         <View key={assessment.id} style={styles.entry} testID={`self-assessment-entry-${assessment.id}`}>

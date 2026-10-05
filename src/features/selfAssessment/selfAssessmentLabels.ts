@@ -6,7 +6,7 @@ import {
   SelfAssessmentDataError,
   SelfAssessmentSportNotAssignedError,
 } from '@/data/local/selfAssessments/errors';
-import { PlayerNotFoundError } from '@/data/local/players/errors';
+import { PlayerNotFoundError, SportInactiveError } from '@/data/local/players/errors';
 import { ltr } from '@/i18n/bidi';
 import type { TranslationKey, TranslationParams } from '@/i18n/types';
 
@@ -31,6 +31,7 @@ export function ratingText(rating: number): string {
 export function selfAssessmentErrorMessage(e: unknown, fallback: TranslationKey): TranslationKey {
   if (e instanceof PlayerNotFoundError) return 'selfAssessment.errors.playerNotFound';
   if (e instanceof SelfAssessmentSportNotAssignedError) return 'selfAssessment.errors.noBasketball';
+  if (e instanceof SportInactiveError) return 'selfAssessment.errors.inactive';
   if (e instanceof SelfAssessmentDataError) return 'selfAssessment.errors.dataInvalid';
   return fallback;
 }

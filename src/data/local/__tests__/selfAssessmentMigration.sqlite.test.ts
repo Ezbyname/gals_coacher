@@ -4,17 +4,15 @@ import { join } from 'node:path';
 
 import { openDatabaseAsync } from 'expo-sqlite';
 
-import type { Clock } from '@/services/clock/Clock';
-import { createSequentialIdService } from '@/services/ids/IdService';
+import { seedV2Players } from '@/test-support/legacyFixtures';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
 
 import { openLocalDatabase } from '../database';
 import { migrations } from '../migrations';
 import { runMigrations } from '../migrations/runMigrations';
-import { createPlayer, listPlayers, type PlayerProfileInput } from '../players/playerRepository';
+import { listPlayers } from '../players/playerRepository';
 
 type Db = ReturnType<typeof openNodeSqlite>;
-const clock: Clock = { wallNow: () => new Date(2026, 9, 3, 12).getTime(), monotonicNow: () => 0 };
 const V3_TABLES = ['self_assessment_ratings', 'self_assessments'];
 
 /** Every user table's full content, for "unchanged" proofs. */
@@ -22,7 +20,10 @@ async function dumpPlayerData(db: Db) {
   return {
     families: await db.getAllAsync('SELECT * FROM families ORDER BY id'),
     players: await db.getAllAsync('SELECT * FROM players ORDER BY id'),
-    player_sports: await db.getAllAsync('SELECT * FROM player_sports ORDER BY player_id, sport'),
+    // The columns v2 knew (v5 adds `active`, proven in sportLifecycleMigration).
+    player_sports: await db.getAllAsync(
+      'SELECT player_id, sport FROM player_sports ORDER BY player_id, sport',
+    ),
     basketball_player_profiles: await db.getAllAsync(
       'SELECT * FROM basketball_player_profiles ORDER BY player_id',
     ),
@@ -39,21 +40,6 @@ const v3Objects = async (db: Db) =>
       "SELECT name FROM sqlite_master WHERE name LIKE 'self_assessment%' ORDER BY name",
     )
   ).map((r) => r.name);
-
-const NO_SPORT: PlayerProfileInput = {
-  player: { name: 'Noa', dateOfBirth: { year: 2016, month: 1, day: 2 } },
-  basketball: null,
-};
-const BASKETBALL_WITH_DORMANT: PlayerProfileInput = {
-  player: { name: 'Gal', dateOfBirth: { year: 2015, month: 7, day: 9 }, heightCm: 142 },
-  basketball: {
-    primaryPosition: 'SG',
-    secondaryPosition: 'SF',
-    dominantHand: 'LEFT',
-    experience: 'ONE_TO_TWO_YEARS',
-    weeklyFrequency: 'TWO_TO_THREE',
-  },
-};
 
 describe('migration v3 (self-assessments) on real SQLite', () => {
   let dir: string;
@@ -82,21 +68,17 @@ describe('migration v3 (self-assessments) on real SQLite', () => {
     await v2.execAsync('PRAGMA foreign_keys = ON');
     await runMigrations(v2, migrations.slice(0, 2));
     expect(await v2.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 2 });
-    const ids = createSequentialIdService();
-    for (const input of [NO_SPORT, BASKETBALL_WITH_DORMANT]) {
-      const result = await createPlayer(v2, input, { ids, clock });
-      if (!result.ok) throw new Error('seed failed');
-    }
-    const players = await listPlayers(v2);
+    // Raw v2 rows (as Slice 1.1 stored them): today's repository reads v5 columns.
+    await seedV2Players(v2);
     const data = await dumpPlayerData(v2);
     await v2.closeAsync();
-    return { players, data };
+    return { data };
   }
 
   it('fresh install: v3 creates exactly the two generic tables and the history index', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(4);
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 4 });
+    expect(migration.to).toBe(5);
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 5 });
     expect(await v3Objects(db as unknown as Db)).toEqual([
       'self_assessment_ratings',
       'self_assessments',
@@ -141,18 +123,43 @@ describe('migration v3 (self-assessments) on real SQLite', () => {
     await db.closeAsync();
   });
 
-  it('upgrades a v2 database with players: player data unchanged, new tables empty, schema v4 (via v3)', async () => {
+  it('upgrades a v2 database with players: player data unchanged, new tables empty, schema v5 (via v3)', async () => {
     const before = await createV2DatabaseWithPlayers();
-    expect(before.players.map((p) => p.basketball === null)).toEqual([true, false]);
     expect(before.data.basketball_player_profiles).toEqual([
       expect.objectContaining({ experience: 'ONE_TO_TWO_YEARS', weekly_frequency: 'TWO_TO_THREE' }),
     ]);
 
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 2, to: 4, applied: ['self_assessments', 'calendar_events'] });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 4 });
+    expect(migration).toEqual({
+      from: 2,
+      to: 5,
+      applied: ['self_assessments', 'calendar_events', 'player_sports_active'],
+    });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 5 });
     expect(await dumpPlayerData(db as unknown as Db)).toEqual(before.data);
-    expect(await listPlayers(db)).toEqual(before.players);
+    // Read back through today's repository: both players intact, Basketball active.
+    expect(
+      (await listPlayers(db)).map(({ player, basketball, sports }) => ({
+        name: player.name,
+        heightCm: player.heightCm,
+        basketball,
+        sports,
+      })),
+    ).toEqual([
+      { name: 'Noa', heightCm: null, basketball: null, sports: [] },
+      {
+        name: 'Gal',
+        heightCm: 142,
+        basketball: {
+          primaryPosition: 'SG',
+          secondaryPosition: 'SF',
+          dominantHand: 'LEFT',
+          experience: 'ONE_TO_TWO_YEARS',
+          weeklyFrequency: 'TWO_TO_THREE',
+        },
+        sports: [{ sport: 'BASKETBALL', active: true }],
+      },
+    ]);
     for (const table of V3_TABLES) {
       expect(await db.getFirstAsync(`SELECT count(*) AS n FROM ${table}`)).toEqual({ n: 0 });
     }
@@ -162,10 +169,10 @@ describe('migration v3 (self-assessments) on real SQLite', () => {
 
     // Idempotent: the next launch applies nothing; schema and data are identical.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 4, to: 4, applied: [] });
+    expect(again.migration).toEqual({ from: 5, to: 5, applied: [] });
     expect(await schema(again.db as unknown as Db)).toEqual(upgradedSchema);
     expect(await dumpPlayerData(again.db as unknown as Db)).toEqual(before.data);
-    expect(await again.db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 4 });
+    expect(await again.db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 5 });
     await again.db.closeAsync();
 
     // An upgraded database has the same schema as a fresh install.
@@ -189,8 +196,16 @@ describe('migration v3 (self-assessments) on real SQLite', () => {
 
     // The next launch applies the real v3 normally.
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 2, to: 4, applied: ['self_assessments', 'calendar_events'] });
-    expect(await listPlayers(relaunch.db)).toEqual(before.players);
+    expect(relaunch.migration).toEqual({
+      from: 2,
+      to: 5,
+      applied: ['self_assessments', 'calendar_events', 'player_sports_active'],
+    });
+    expect((await listPlayers(relaunch.db)).map((p) => [p.player.name, p.sports])).toEqual([
+      ['Noa', []],
+      ['Gal', [{ sport: 'BASKETBALL', active: true }]],
+    ]);
+    expect(await dumpPlayerData(relaunch.db as unknown as Db)).toEqual(before.data);
     await relaunch.db.closeAsync();
   });
 });

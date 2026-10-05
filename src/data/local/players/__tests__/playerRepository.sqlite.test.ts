@@ -11,7 +11,7 @@ import { createSequentialIdService, type IdService } from '@/services/ids/IdServ
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
 
 import { openLocalDatabase } from '../../database';
-import { PlayerDataError, PlayerNotFoundError, SportRemovalNotSupportedError } from '../errors';
+import { PlayerDataError, PlayerNotFoundError } from '../errors';
 import { LOCAL_FAMILY_META_KEY } from '../localFamily';
 import type { PlayerDb } from '../playerDb';
 import {
@@ -133,6 +133,7 @@ describe('player repository on real SQLite', () => {
           updatedAt: clock.wallNow(),
         },
         basketball: EMPTY_BASKETBALL_PROFILE,
+        sports: [{ sport: 'BASKETBALL', active: true }],
       });
       expect(await counts()).toEqual({
         families: 1,
@@ -314,6 +315,7 @@ describe('player repository on real SQLite', () => {
           experience: 'ONE_TO_TWO_YEARS',
           weeklyFrequency: 'TWO_TO_THREE',
         },
+        sports: [{ sport: 'BASKETBALL', active: true }],
       });
       expect(await getPlayer(db, created.player.id)).toEqual(updated);
       expect(await db.getAllAsync('SELECT player_id, sport FROM player_sports')).toEqual([
@@ -844,6 +846,7 @@ describe('player repository on real SQLite', () => {
         expect(updated).toEqual({
           player: { ...created.player, name: 'Omer Levi', updatedAt: created.player.updatedAt + 1000 },
           basketball: null,
+          sports: [],
         });
         expect(await counts()).toMatchObject({ player_sports: 0, basketball_player_profiles: 0 });
       });
@@ -959,27 +962,30 @@ describe('player repository on real SQLite', () => {
         expect(await snapshot()).toEqual(before);
       });
 
-      it('rejects removing a stored Basketball (basketball: null) with zero writes', async () => {
+      // SPORT-LIFE-001 superseded "removal is rejected": `basketball: null` now
+      // makes a stored Basketball INACTIVE — and still deletes nothing.
+      it('unselecting a stored Basketball makes it inactive: no row deleted, profile untouched', async () => {
         const created = await create(full);
         const before = {
-          players: await db.getAllAsync('SELECT * FROM players'),
           sports: await db.getAllAsync('SELECT * FROM player_sports'),
           profiles: await db.getAllAsync('SELECT * FROM basketball_player_profiles'),
         };
         clock.advance(1000);
-        const error = await updatePlayer(
-          db,
-          created.player.id,
-          { player: { ...full.player, name: 'Changed' }, basketball: null },
-          { clock },
-        ).catch((e: unknown) => e);
-        expect(error).toBeInstanceOf(SportRemovalNotSupportedError);
-        expect(error).toMatchObject({ playerId: created.player.id, sport: 'BASKETBALL' });
-        expect({
-          players: await db.getAllAsync('SELECT * FROM players'),
-          sports: await db.getAllAsync('SELECT * FROM player_sports'),
-          profiles: await db.getAllAsync('SELECT * FROM basketball_player_profiles'),
-        }).toEqual(before);
+        const updated = expectOk(
+          await updatePlayer(
+            db,
+            created.player.id,
+            { player: { ...full.player, name: 'Changed' }, basketball: null },
+            { clock },
+          ),
+        );
+        expect(updated.player.name).toBe('Changed');
+        expect(updated.basketball).toEqual(created.basketball);
+        expect(updated.sports).toEqual([{ sport: 'BASKETBALL', active: false }]);
+        expect(await db.getAllAsync('SELECT * FROM player_sports')).toEqual(
+          (before.sports as Record<string, unknown>[]).map((row) => ({ ...row, active: 0 })),
+        );
+        expect(await db.getAllAsync('SELECT * FROM basketball_player_profiles')).toEqual(before.profiles);
       });
     });
 

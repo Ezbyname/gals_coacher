@@ -4,26 +4,31 @@ import { join } from 'node:path';
 
 import { openDatabaseAsync } from 'expo-sqlite';
 
-import type { Clock } from '@/services/clock/Clock';
-import { createSequentialIdService } from '@/services/ids/IdService';
+import {
+  LEGACY,
+  LEGACY_CATEGORIES,
+  seedV2Players,
+  seedV3SelfAssessment,
+} from '@/test-support/legacyFixtures';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
 
 import { openLocalDatabase } from '../database';
 import { migrations } from '../migrations';
 import { runMigrations } from '../migrations/runMigrations';
-import { createPlayer, listPlayers, type PlayerProfileInput } from '../players/playerRepository';
-import { createSelfAssessment, listSelfAssessments } from '../selfAssessments/selfAssessmentRepository';
+import { listPlayers } from '../players/playerRepository';
+import { listSelfAssessments } from '../selfAssessments/selfAssessmentRepository';
 
 type Db = ReturnType<typeof openNodeSqlite>;
-const clock: Clock = { wallNow: () => new Date(2026, 9, 3, 12).getTime(), monotonicNow: () => 0 };
-const CATEGORIES = ['SHOOTING', 'BALL_HANDLING', 'PASSING', 'FINISHING', 'DEFENSE', 'SPEED'];
 
 /** Every pre-v4 user table, in full, for "unchanged" proofs. */
 async function dumpV3Data(db: Db) {
   return {
     families: await db.getAllAsync('SELECT * FROM families ORDER BY id'),
     players: await db.getAllAsync('SELECT * FROM players ORDER BY id'),
-    player_sports: await db.getAllAsync('SELECT * FROM player_sports ORDER BY player_id, sport'),
+    // The columns v3 knew (v5 adds `active`, proven in sportLifecycleMigration).
+    player_sports: await db.getAllAsync(
+      'SELECT player_id, sport FROM player_sports ORDER BY player_id, sport',
+    ),
     basketball_player_profiles: await db.getAllAsync(
       'SELECT * FROM basketball_player_profiles ORDER BY player_id',
     ),
@@ -62,21 +67,6 @@ const v4Objects = async (db: Db) =>
     )
   ).map((r) => r.name);
 
-const NO_SPORT: PlayerProfileInput = {
-  player: { name: 'Noa', dateOfBirth: { year: 2016, month: 1, day: 2 } },
-  basketball: null,
-};
-const BASKETBALL: PlayerProfileInput = {
-  player: { name: 'Gal', dateOfBirth: { year: 2015, month: 7, day: 9 }, heightCm: 142 },
-  basketball: {
-    primaryPosition: 'SG',
-    secondaryPosition: 'SF',
-    dominantHand: 'LEFT',
-    experience: 'ONE_TO_TWO_YEARS',
-    weeklyFrequency: 'TWO_TO_THREE',
-  },
-};
-
 describe('migration v4 (calendar events) on real SQLite', () => {
   let dir: string;
   let file: string;
@@ -104,27 +94,11 @@ describe('migration v4 (calendar events) on real SQLite', () => {
     await v3.execAsync('PRAGMA foreign_keys = ON');
     await runMigrations(v3, migrations.slice(0, 3));
     expect(await v3.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 3 });
-    const ids = createSequentialIdService();
-    const created = [];
-    for (const input of [NO_SPORT, BASKETBALL]) {
-      const result = await createPlayer(v3, input, { ids, clock });
-      if (!result.ok) throw new Error('seed failed');
-      created.push(result.profile.player.id);
-    }
-    const gal = created[1]!;
-    const assessment = await createSelfAssessment(
-      v3,
-      gal,
-      'BASKETBALL',
-      CATEGORIES.map((category, i) => ({ category, rating: (i % 5) + 1 })),
-      { ids, clock },
-    );
-    if (!assessment.ok) throw new Error('seed failed');
-    const before = {
-      players: await listPlayers(v3),
-      selfAssessments: await listSelfAssessments(v3, gal, 'BASKETBALL'),
-      data: await dumpV3Data(v3),
-    };
+    // Raw v2/v3 rows (as Slices 1.1–1.2 stored them): today's repository reads v5 columns.
+    await seedV2Players(v3);
+    await seedV3SelfAssessment(v3);
+    const gal = LEGACY.gal;
+    const before = { data: await dumpV3Data(v3) };
     expect(before.data.self_assessment_ratings).toHaveLength(6);
     expect(before.data.basketball_player_profiles).toEqual([
       expect.objectContaining({ experience: 'ONE_TO_TWO_YEARS', weekly_frequency: 'TWO_TO_THREE' }),
@@ -135,8 +109,8 @@ describe('migration v4 (calendar events) on real SQLite', () => {
 
   it('fresh install: v4 creates exactly calendar_events and its (player_id, start_at) index', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(4);
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 4 });
+    expect(migration.to).toBe(5);
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 5 });
     expect(await v4Objects(db as unknown as Db)).toEqual(['calendar_events', 'calendar_events_player_start']);
     const s = await calendarStructure(db as unknown as Db);
     expect(s.columns.map((c) => c.name)).toEqual([
@@ -184,11 +158,25 @@ describe('migration v4 (calendar events) on real SQLite', () => {
     const before = await createV3Database();
 
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 3, to: 4, applied: ['calendar_events'] });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 4 });
+    expect(migration).toEqual({ from: 3, to: 5, applied: ['calendar_events', 'player_sports_active'] });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 5 });
     expect(await dumpV3Data(db as unknown as Db)).toEqual(before.data);
-    expect(await listPlayers(db)).toEqual(before.players);
-    expect(await listSelfAssessments(db, before.gal, 'BASKETBALL')).toEqual(before.selfAssessments);
+    // Read back through today's repository: players, Basketball (active) and the assessment intact.
+    expect(
+      (await listPlayers(db)).map((p) => [p.player.name, p.basketball?.experience ?? null, p.sports]),
+    ).toEqual([
+      ['Noa', null, []],
+      ['Gal', 'ONE_TO_TWO_YEARS', [{ sport: 'BASKETBALL', active: true }]],
+    ]);
+    expect(
+      (await listSelfAssessments(db, before.gal, 'BASKETBALL')).map((a) => [a.id, a.takenAt, a.ratings]),
+    ).toEqual([
+      [
+        LEGACY.assessment,
+        LEGACY.takenAt,
+        LEGACY_CATEGORIES.map((category, i) => ({ category, rating: (i % 5) + 1 })),
+      ],
+    ]);
     expect(await db.getFirstAsync('SELECT count(*) AS n FROM calendar_events')).toEqual({ n: 0 });
     expect(await db.getFirstAsync('PRAGMA foreign_key_check')).toBeNull();
     const upgraded = await calendarStructure(db as unknown as Db);
@@ -199,8 +187,8 @@ describe('migration v4 (calendar events) on real SQLite', () => {
 
     // Idempotent: the next launch applies nothing; schema, data and version unchanged.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 4, to: 4, applied: [] });
-    expect(await again.db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 4 });
+    expect(again.migration).toEqual({ from: 5, to: 5, applied: [] });
+    expect(await again.db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 5 });
     expect(
       await again.db.getAllAsync(
         "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name",
@@ -230,16 +218,21 @@ describe('migration v4 (calendar events) on real SQLite', () => {
 
     // The next launch applies the real v4 normally.
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 3, to: 4, applied: ['calendar_events'] });
-    expect(await listPlayers(relaunch.db)).toEqual(before.players);
+    expect(relaunch.migration).toEqual({
+      from: 3,
+      to: 5,
+      applied: ['calendar_events', 'player_sports_active'],
+    });
+    expect(await dumpV3Data(relaunch.db as unknown as Db)).toEqual(before.data);
+    expect((await listPlayers(relaunch.db)).map((p) => p.player.name)).toEqual(['Noa', 'Gal']);
     await relaunch.db.closeAsync();
   });
 
-  it('refuses a newer schema (v5)', async () => {
+  it('refuses a newer schema (v6)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 5');
+    await newer.execAsync('PRAGMA user_version = 6');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v5 .* only knows v4\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v6 .* only knows v5\. Refusing to downgrade/);
   });
 });
 

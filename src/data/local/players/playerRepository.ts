@@ -20,27 +20,39 @@ import type { IdService } from '@/services/ids/IdService';
 
 import { runSerialized } from '../connectionQueue';
 
-import {
-  PlayerDataError,
-  PlayerNotFoundError,
-  SportRemovalNotSupportedError,
-  type PlayerDataField,
-} from './errors';
+import { PlayerDataError, PlayerNotFoundError, type PlayerDataField } from './errors';
 import { ensureLocalFamily } from './localFamily';
 import type { PlayerDb } from './playerDb';
 
 /**
- * A generic Player and, when the player has a Basketball assignment, its
- * Basketball profile (Basketball is the only sport in V1). `basketball: null`
- * means no Basketball assignment — a valid player.
+ * A sport the Player is (or was) assigned to. An inactive assignment keeps
+ * its history (profile, self-assessments, calendar events) but is not the
+ * Player's current sport (SPORT-LIFE-001).
+ */
+export interface PlayerSportAssignment {
+  readonly sport: SportKey;
+  readonly active: boolean;
+}
+
+/**
+ * A generic Player, its sport assignments, and — when the Player has a
+ * Basketball assignment, active or not — the stored Basketball profile
+ * (Basketball is the only sport in V1). `basketball: null` means the Player
+ * never had Basketball. Whether Basketball is CURRENT is `isSportActive`.
  */
 export interface PlayerProfile {
   readonly player: Player;
   readonly basketball: BasketballProfile | null;
+  readonly sports: readonly PlayerSportAssignment[];
+}
+
+/** True when the Player's assignment to `sport` exists and is active. */
+export function isSportActive(profile: Pick<PlayerProfile, 'sports'>, sport: SportKey): boolean {
+  return profile.sports.some((assignment) => assignment.sport === sport && assignment.active);
 }
 
 /**
- * `basketball: null` = Basketball not selected. On update, the V1 fields
+ * `basketball: null` = Basketball not selected (not active). On update, the V1 fields
  * (positions, dominant hand) are always written (omitted = cleared), while
  * `experience` / `weeklyFrequency` — no longer collected by the V1 UI — keep
  * their stored value unless the input provides them, so they are never
@@ -122,6 +134,7 @@ export async function createPlayer(
     profile: {
       player: { id, familyId, ...valid.core, createdAt: now, updatedAt: now },
       basketball: valid.basketball,
+      sports: valid.basketball === null ? [] : [{ sport: BASKETBALL, active: true }],
     },
   };
 }
@@ -131,8 +144,12 @@ export async function createPlayer(
  * Basketball, read inside the transaction:
  * - none stored, `basketball: null` → personal fields only;
  * - none stored, Basketball given → assignment + profile are added;
- * - stored, Basketball given → the profile is updated (omitted dormant fields kept);
- * - stored, `basketball: null` → SportRemovalNotSupportedError, nothing written.
+ * - active, Basketball given → the profile is updated (omitted dormant fields kept);
+ * - active, `basketball: null` → the assignment becomes INACTIVE. Nothing is
+ *   deleted: the profile, self-assessments and calendar events are not touched;
+ * - inactive, `basketball: null` → personal fields only (profile untouched);
+ * - inactive, Basketball given → REACTIVATED: the same assignment and the same
+ *   profile row are reused (the profile updated as above); never a duplicate.
  * Throws PlayerNotFoundError for an unknown id (never creates a Player).
  */
 export async function updatePlayer(
@@ -152,17 +169,22 @@ export async function updatePlayer(
     // here, so nothing is written and no raw constraint error can surface.
     const existing = await readPlayer(db, id);
     if (existing === null) throw new PlayerNotFoundError(id);
-    const hasBasketball = existing.basketball !== null;
-    // Only for a valid stored state: removal is not supported in Slice 1.1.
-    if (hasBasketball && valid.basketball === null) throw new SportRemovalNotSupportedError(id, BASKETBALL);
+    const stored = existing.sports.find((assignment) => assignment.sport === BASKETBALL) ?? null;
 
     await db.runAsync(
       'UPDATE players SET name = ?, date_of_birth = ?, height_cm = ?, updated_at = ? WHERE id = ?',
       [valid.core.name, formatCalendarDate(valid.core.dateOfBirth), valid.core.heightCm, now, id],
     );
     if (valid.basketball !== null && input.basketball !== null) {
-      if (hasBasketball) await updateBasketballProfile(db, id, valid.basketball, input.basketball);
-      else await insertBasketball(db, id, valid.basketball);
+      if (stored === null) {
+        await insertBasketball(db, id, valid.basketball);
+      } else {
+        await updateBasketballProfile(db, id, valid.basketball, input.basketball);
+        if (!stored.active) await setSportActive(db, id, BASKETBALL, true);
+      }
+    } else if (stored?.active) {
+      // Deactivation is a lifecycle change only: never a DELETE.
+      await setSportActive(db, id, BASKETBALL, false);
     }
     // Re-read inside the transaction: the saved result is parsed like any read.
     updated = await readPlayer(db, id);
@@ -217,6 +239,15 @@ async function insertBasketball(db: PlayerDb, id: string, profile: BasketballPro
   );
 }
 
+/** Changes only the assignment's lifecycle; the row and everything referencing it stay. */
+async function setSportActive(db: PlayerDb, id: string, sport: SportKey, active: boolean): Promise<void> {
+  await db.runAsync('UPDATE player_sports SET active = ? WHERE player_id = ? AND sport = ?', [
+    active ? 1 : 0,
+    id,
+    sport,
+  ]);
+}
+
 const PROFILE_COLUMNS = {
   primaryPosition: 'primary_position',
   secondaryPosition: 'secondary_position',
@@ -251,7 +282,7 @@ async function updateBasketballProfile(
 // both, assignment only, profile only).
 const SELECT_PLAYERS = `
   SELECT p.id, p.family_id, p.name, p.date_of_birth, p.height_cm, p.created_at, p.updated_at,
-         ps.sport AS assignment_sport,
+         ps.sport AS assignment_sport, ps.active AS assignment_active,
          b.player_id AS profile_player_id, b.sport AS profile_sport,
          b.primary_position, b.secondary_position, b.dominant_hand, b.experience, b.weekly_frequency
   FROM players p
@@ -268,6 +299,7 @@ type PlayerRow = {
   created_at: unknown;
   updated_at: unknown;
   assignment_sport: unknown;
+  assignment_active: unknown;
   profile_player_id: unknown;
   profile_sport: unknown;
   primary_position: unknown;
@@ -316,10 +348,13 @@ function parsePlayerRow(row: PlayerRow): PlayerProfile {
   const player: Player = { id: rawId, familyId, name, dateOfBirth, heightCm, createdAt, updatedAt };
   const hasAssignment = row.assignment_sport !== null;
   const hasProfile = row.profile_player_id !== null;
-  if (!hasAssignment && !hasProfile) return { player, basketball: null };
+  if (!hasAssignment && !hasProfile) return { player, basketball: null, sports: [] };
   if (!hasProfile) throw fail('basketballProfile', 'MISSING_ROW');
   if (!hasAssignment) throw fail('basketballProfile', 'INVALID_RELATIONSHIP');
   if (row.profile_sport !== BASKETBALL) throw fail('basketballProfile', 'INVALID_VALUE');
+  // The lifecycle flag is exactly 0 or 1 (the CHECK guards it; a bypass fails the read).
+  if (row.assignment_active !== 0 && row.assignment_active !== 1) throw fail('sportActive', 'INVALID_VALUE');
+  const sports = [{ sport: BASKETBALL, active: row.assignment_active === 1 }];
 
   const codes = {
     primaryPosition: row.primary_position,
@@ -338,5 +373,5 @@ function parsePlayerRow(row: PlayerRow): PlayerProfile {
     throw fail(field, code === 'UNKNOWN_CODE' ? 'UNKNOWN_CODE' : 'INVALID_RELATIONSHIP');
   }
 
-  return { player, basketball: basketball.value };
+  return { player, basketball: basketball.value, sports };
 }

@@ -11,7 +11,7 @@ import type { Clock } from '@/services/clock/Clock';
 import type { IdService } from '@/services/ids/IdService';
 
 import { runSerialized } from '../connectionQueue';
-import { PlayerNotFoundError } from '../players/errors';
+import { PlayerNotFoundError, SportInactiveError } from '../players/errors';
 import type { PlayerDb } from '../players/playerDb';
 
 import {
@@ -32,7 +32,8 @@ export type SaveCalendarEventResult =
  * the domain first (invalid → result, nothing written). Then, one operation
  * at a time per connection and in one transaction: the Player must exist
  * (PlayerNotFoundError) and, when a sport is given, be assigned to it
- * (CalendarSportNotAssignedError); the row is inserted with a client id and
+ * (CalendarSportNotAssignedError) and the assignment be active
+ * (SportInactiveError); the row is inserted with a client id and
  * `createdAt = updatedAt = clock.wallNow()`, then re-read and validated.
  */
 export async function createCalendarEvent(
@@ -48,7 +49,7 @@ export async function createCalendarEvent(
   const id = deps.ids.newUuid();
   let saved = null as CalendarEvent | null;
   await writeTransaction(db, async () => {
-    await assertPlayerAndSport(db, playerId, valid.value);
+    await assertPlayerAndSport(db, playerId, valid.value, null);
     const v = valid.value;
     await db.runAsync(
       `INSERT INTO calendar_events
@@ -86,7 +87,8 @@ export async function updateCalendarEvent(
     // Authoritative read of the stored event before any write (fails closed when malformed).
     const existing = await readEvent(db, playerId, eventId);
     if (existing === null) throw new CalendarEventNotFoundError(playerId, eventId);
-    await assertPlayerAndSport(db, playerId, valid.value);
+    // The event may keep the sport it already has, even if that sport is now inactive.
+    await assertPlayerAndSport(db, playerId, valid.value, existing.sport);
     const v = valid.value;
     await db.runAsync(
       `UPDATE calendar_events
@@ -145,15 +147,28 @@ function writeTransaction(db: PlayerDb, task: () => Promise<void>): Promise<void
   return runSerialized(db, () => db.withTransactionAsync(task));
 }
 
-async function assertPlayerAndSport(db: PlayerDb, playerId: string, event: CalendarEventCore): Promise<void> {
+/**
+ * The Player must exist and, when the event has a sport, be assigned to it
+ * with the assignment ACTIVE (SportInactiveError otherwise) — except that an
+ * existing event may keep the sport it already has (`keptSport`): history
+ * stays editable after its sport becomes inactive (SPORT-LIFE-001).
+ */
+async function assertPlayerAndSport(
+  db: PlayerDb,
+  playerId: string,
+  event: CalendarEventCore,
+  keptSport: string | null,
+): Promise<void> {
   const player = await db.getFirstAsync('SELECT id FROM players WHERE id = ?', [playerId]);
   if (player === null) throw new PlayerNotFoundError(playerId);
   if (event.sport === null) return;
-  const assignment = await db.getFirstAsync(
-    'SELECT player_id FROM player_sports WHERE player_id = ? AND sport = ?',
+  const assignment = await db.getFirstAsync<{ active: unknown }>(
+    'SELECT active FROM player_sports WHERE player_id = ? AND sport = ?',
     [playerId, event.sport],
   );
   if (assignment === null) throw new CalendarSportNotAssignedError(playerId, event.sport);
+  if (assignment.active !== 1 && event.sport !== keptSport)
+    throw new SportInactiveError(playerId, event.sport);
 }
 
 /** Unqueued read; only for use inside an already-queued operation. */

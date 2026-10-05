@@ -38,7 +38,11 @@ export function EditCalendarEvent({ playerId, eventId }: { playerId: string; eve
       if (profile === null) return { status: 'error', message: 'calendar.errors.playerNotFound' };
       const event = await getCalendarEvent(boot.db, playerId, eventId);
       if (event === null) return { status: 'error', message: 'calendar.errors.eventNotFound' };
-      return { status: 'ready', initialValues: valuesFromEvent(event), sports: sportsOf(profile) };
+      return {
+        status: 'ready',
+        initialValues: valuesFromEvent(event),
+        sports: sportsOf(profile, event.sport),
+      };
     })()
       .then((next) => {
         if (active) setState(next);

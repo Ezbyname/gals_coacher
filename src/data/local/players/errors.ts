@@ -17,6 +17,7 @@ export type PlayerDataField =
   | 'dominantHand'
   | 'experience'
   | 'weeklyFrequency'
+  | 'sportActive'
   | 'localFamily';
 
 export type PlayerDataReason = 'INVALID_VALUE' | 'UNKNOWN_CODE' | 'INVALID_RELATIONSHIP' | 'MISSING_ROW';
@@ -39,17 +40,19 @@ export class PlayerDataError extends Error {
 }
 
 /**
- * An update asked to remove a persisted sport assignment (e.g. `basketball:
- * null` for a Basketball player). Not supported in Slice 1.1; nothing was
+ * The Player has this sport only historically: its assignment exists but is
+ * inactive. History stays readable; nothing new can be recorded for the sport
+ * (e.g. a self-assessment or a calendar event) until it is reactivated.
+ * Distinct from "not assigned" (the Player never had the sport). Nothing was
  * written.
  */
-export class SportRemovalNotSupportedError extends Error {
+export class SportInactiveError extends Error {
   readonly playerId: string;
   readonly sport: string;
 
   constructor(playerId: string, sport: string) {
-    super(`Removing sport ${sport} from player ${playerId} is not supported`);
-    this.name = 'SportRemovalNotSupportedError';
+    super(`Sport ${sport} is inactive for player ${playerId}`);
+    this.name = 'SportInactiveError';
     this.playerId = playerId;
     this.sport = sport;
   }

@@ -564,14 +564,15 @@ describe('Players — Hebrew (RTL)', () => {
       expect(plain(`player-position-${omer.player.id}`)).toBe('C · סנטר');
     });
 
-    it('shows a saved Basketball selected and locked; its details stay editable', async () => {
+    // SPORT-LIFE-001 superseded "a saved Basketball is locked": the chip can now be
+    // unselected (after a confirmation; see sportLifecycle.test.tsx).
+    it('shows a saved active Basketball selected (not locked); its details stay editable', async () => {
       const gal = await seed(GAL);
       const update = jest.spyOn(repository, 'updatePlayer');
       const app = renderRouter(routes, { initialUrl: `/children/${gal.player.id}` });
       await screen.findByDisplayValue('גל');
       const chip = screen.getByTestId('player-sport-BASKETBALL');
-      expect(chip.props.accessibilityState).toMatchObject({ selected: true, disabled: true });
-      fireEvent.press(chip); // locked: nothing happens
+      expect(chip.props.accessibilityState).toMatchObject({ selected: true, disabled: false });
       expect(selected('player-sport-BASKETBALL')).toBe(true);
       expect(screen.getByTestId('player-section-basketball')).toBeTruthy();
       fireEvent.press(screen.getByTestId('player-hand-LEFT'));

@@ -19,10 +19,11 @@ type Latest =
 
 /**
  * Entry to a Basketball player's self-assessment, shown on Edit Player
- * outside the profile fields (the caller renders it only for Basketball
- * players). Shows when the latest one was taken — never its answers.
+ * outside the profile fields (the caller renders it only for players with
+ * Basketball). Shows when the latest one was taken — never its answers.
+ * While Basketball is inactive it opens the history only.
  */
-export function SelfAssessmentSection({ playerId }: { playerId: string }) {
+export function SelfAssessmentSection({ playerId, active }: { playerId: string; active: boolean }) {
   const { boot } = useApp();
   const { t, language } = useI18n();
   const [latest, setLatest] = useState<Latest>({ status: 'loading' });
@@ -64,6 +65,11 @@ export function SelfAssessmentSection({ playerId }: { playerId: string }) {
           {t('selfAssessment.none')}
         </Text>
       ) : null}
+      {!active ? (
+        <Text style={styles.muted} testID="self-assessment-inactive">
+          {t('selfAssessment.inactive')}
+        </Text>
+      ) : null}
       {latest.status === 'error' ? (
         <Text style={styles.error} testID="self-assessment-section-error">
           {t(latest.message)}
@@ -72,7 +78,7 @@ export function SelfAssessmentSection({ playerId }: { playerId: string }) {
       <BigButton
         testID="self-assessment-open"
         variant="secondary"
-        label={t('selfAssessment.open')}
+        label={active ? t('selfAssessment.open') : t('selfAssessment.openHistory')}
         onPress={() => router.push(`/children/${playerId}/self-assessments`)}
       />
     </View>

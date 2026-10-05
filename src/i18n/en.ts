@@ -57,6 +57,12 @@ export const en = {
       saving: 'Saving…',
       cancel: 'Cancel',
       backToList: 'Back to Players',
+      deactivate: {
+        title: 'Make Basketball inactive?',
+        body: 'Basketball details, self-assessments and the schedule stay saved, and come back when Basketball is selected again. The change applies when you save.',
+        keep: 'Keep active',
+        confirm: 'Make inactive',
+      },
     },
     errors: {
       nameRequired: 'Please enter a name.',
@@ -107,6 +113,8 @@ export const en = {
     latest: 'Latest: {dateTime}',
     none: 'No self-assessment yet.',
     open: 'Open self-assessment',
+    openHistory: 'Open history',
+    inactive: 'Basketball is inactive — history only.',
     loading: 'Loading…',
     empty: 'No self-assessment yet.',
     emptyHint: 'Start with the first one.',
@@ -130,6 +138,8 @@ export const en = {
       dataInvalid: 'Some stored self-assessment data is not valid and cannot be shown.',
       playerNotFound: 'This player was not found.',
       noBasketball: 'Self-assessment is available for basketball players.',
+      inactive:
+        'Basketball is inactive for this player. Reactivate it in Edit Player to add a self-assessment.',
     },
   },
   calendar: {
@@ -201,6 +211,7 @@ export const en = {
         'This time does not exist on this device because of a clock change. Choose another time.',
       invalidValue: 'This value is not valid. Please check it.',
       sportNotAssigned: 'This player does not have that sport.',
+      sportInactive: 'This sport is inactive for this player.',
       saveFailed: 'Saving did not work. Your details are still here; you can try again.',
       deleteFailed: 'Deleting did not work. The event is still here; you can try again.',
       loadFailed: 'The schedule could not be loaded. Please try again later.',

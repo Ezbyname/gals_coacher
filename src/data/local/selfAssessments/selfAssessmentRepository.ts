@@ -10,7 +10,7 @@ import type { Clock } from '@/services/clock/Clock';
 import type { IdService } from '@/services/ids/IdService';
 
 import { runSerialized } from '../connectionQueue';
-import { PlayerNotFoundError } from '../players/errors';
+import { PlayerNotFoundError, SportInactiveError } from '../players/errors';
 import type { PlayerDb } from '../players/playerDb';
 
 import {
@@ -32,7 +32,8 @@ export type CreateSelfAssessmentResult =
  * client-generated id. The answers are validated first (invalid → result,
  * nothing written). Then, one operation at a time per connection and inside
  * one transaction: the player must exist (PlayerNotFoundError) and have the
- * sport assignment (SelfAssessmentSportNotAssignedError), and the assessment
+ * sport assignment (SelfAssessmentSportNotAssignedError) ACTIVE
+ * (SportInactiveError — history stays listed), and the assessment
  * row and every rating row are inserted together — any failure rolls back
  * all of it. Never updates or replaces an earlier assessment.
  */
@@ -52,11 +53,13 @@ export async function createSelfAssessment(
   await writeTransaction(db, async () => {
     const player = await db.getFirstAsync('SELECT id FROM players WHERE id = ?', [playerId]);
     if (player === null) throw new PlayerNotFoundError(playerId);
-    const assignment = await db.getFirstAsync(
-      'SELECT player_id FROM player_sports WHERE player_id = ? AND sport = ?',
+    const assignment = await db.getFirstAsync<{ active: unknown }>(
+      'SELECT active FROM player_sports WHERE player_id = ? AND sport = ?',
       [playerId, valid.value.sport],
     );
     if (assignment === null) throw new SelfAssessmentSportNotAssignedError(playerId, valid.value.sport);
+    // An inactive sport keeps its history but takes no new assessments.
+    if (assignment.active !== 1) throw new SportInactiveError(playerId, valid.value.sport);
 
     await db.runAsync('INSERT INTO self_assessments (id, player_id, sport, taken_at) VALUES (?, ?, ?, ?)', [
       id,

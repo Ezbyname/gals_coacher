@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ageOn, type CalendarDate } from '@/domain/calendarDate';
 import { PlayerDataError } from '@/data/local/players/errors';
-import { listPlayers, type PlayerProfile } from '@/data/local/players/playerRepository';
+import { isSportActive, listPlayers, type PlayerProfile } from '@/data/local/players/playerRepository';
 import { useApp } from '@/features/AppProvider';
 import { useI18n } from '@/i18n/I18nProvider';
 import { localCalendarDateFromEpoch } from '@/services/clock/localCalendarDate';
@@ -101,7 +101,7 @@ export function PlayerList() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {state.players.map(({ player, basketball, age }) => (
+      {state.players.map(({ player, basketball, sports, age }) => (
         <Pressable
           key={player.id}
           testID={`player-row-${player.id}`}
@@ -113,7 +113,8 @@ export function PlayerList() {
             <Text style={styles.detail} testID={`player-age-${player.id}`}>
               {t('players.list.age', { age })}
             </Text>
-            {basketball?.primaryPosition ? (
+            {/* A position is shown only while Basketball is the Player's active sport. */}
+            {basketball?.primaryPosition && isSportActive({ sports }, 'BASKETBALL') ? (
               <Text style={styles.detail} testID={`player-position-${player.id}`}>
                 {positionLabel(t, basketball.primaryPosition)}
               </Text>

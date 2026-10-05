@@ -79,7 +79,15 @@ export function toEventInput(
   };
 }
 
-/** The sports a Player's events may carry: the Player's own assignments (today only Basketball). */
-export function sportsOf(profile: { readonly basketball: unknown }): SportKey[] {
-  return profile.basketball !== null ? ['BASKETBALL'] : [];
+/**
+ * The sports a new event may carry: the Player's ACTIVE assignments (today
+ * only Basketball). An edited event also keeps offering the sport it already
+ * has (`kept`), even when that sport is now inactive.
+ */
+export function sportsOf(
+  profile: { readonly sports: readonly { readonly sport: SportKey; readonly active: boolean }[] },
+  kept: SportKey | null = null,
+): SportKey[] {
+  const active = profile.sports.filter((assignment) => assignment.active).map((a) => a.sport);
+  return kept !== null && !active.includes(kept) ? [...active, kept] : active;
 }

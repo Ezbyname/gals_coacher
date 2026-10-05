@@ -1,6 +1,10 @@
 import type { DominantHand, PrimaryPosition, SecondaryPosition } from '@/domain/basketball/profile';
 import { calendarDate, compareCalendarDates, type CalendarDate } from '@/domain/calendarDate';
-import type { PlayerProfile, PlayerProfileInput } from '@/data/local/players/playerRepository';
+import {
+  isSportActive,
+  type PlayerProfile,
+  type PlayerProfileInput,
+} from '@/data/local/players/playerRepository';
 
 /**
  * What the form edits: raw text for typed fields, codes for chip fields, and
@@ -32,14 +36,20 @@ export const EMPTY_FORM_VALUES: PlayerFormValues = {
   dominantHand: null,
 };
 
-export function formValuesFromProfile({ player, basketball }: PlayerProfile): PlayerFormValues {
+/**
+ * Basketball is shown selected only while it is ACTIVE. An inactive
+ * Basketball's stored details are still pre-filled, so selecting it again
+ * (reactivation) starts from the existing values.
+ */
+export function formValuesFromProfile(profile: PlayerProfile): PlayerFormValues {
+  const { player, basketball } = profile;
   return {
     name: player.name,
     day: String(player.dateOfBirth.day),
     month: String(player.dateOfBirth.month),
     year: String(player.dateOfBirth.year),
     height: player.heightCm === null ? '' : String(player.heightCm),
-    basketballSelected: basketball !== null,
+    basketballSelected: isSportActive(profile, 'BASKETBALL'),
     primaryPosition: basketball?.primaryPosition ?? null,
     secondaryPosition: basketball?.secondaryPosition ?? null,
     dominantHand: basketball?.dominantHand ?? null,

@@ -3,7 +3,7 @@ import {
   CalendarEventNotFoundError,
   CalendarSportNotAssignedError,
 } from '@/data/local/calendar/errors';
-import { PlayerNotFoundError } from '@/data/local/players/errors';
+import { PlayerNotFoundError, SportInactiveError } from '@/data/local/players/errors';
 import type { CalendarEvent, CalendarEventType } from '@/domain/calendarEvent';
 import type { SportKey } from '@/domain/sport';
 import type { TranslationKey, TranslationParams } from '@/i18n/types';
@@ -40,6 +40,7 @@ export function calendarErrorMessage(e: unknown, fallback: TranslationKey): Tran
   if (e instanceof PlayerNotFoundError) return 'calendar.errors.playerNotFound';
   if (e instanceof CalendarEventNotFoundError) return 'calendar.errors.eventNotFound';
   if (e instanceof CalendarSportNotAssignedError) return 'calendar.errors.sportNotAssigned';
+  if (e instanceof SportInactiveError) return 'calendar.errors.sportInactive';
   if (e instanceof CalendarEventDataError) return 'calendar.errors.dataInvalid';
   return fallback;
 }
