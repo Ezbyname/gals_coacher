@@ -8,9 +8,10 @@
 **Phase 0.H — Hardening: CLOSED / VERIFIED** (2026-10-03).
 **Slice 1.0 — Localization / RTL / Startup Splash: CLOSED / VERIFIED** (2026-10-03).
 All verified by the owner on a physical Android device.
-**Slice 1.1 — Player Profile: IMPLEMENTED** with strong automated / native verification and **PARTIAL** physical Android acceptance (2026-10-04) — not fully physically accepted. The PlayerForm bottom safe-area defect is fixed in `35c7158` (implemented); its physical Android verification is pending (see below).
-**Slice 1.2 — Self-Assessment: IMPLEMENTED** with **PARTIAL** physical Android acceptance (2026-10-04). Remaining physical acceptance items are carried forward to the next Preview APK, including revalidation of the post-Save navigation fix `e181fba`.
-**Slice 1.3 — Calendar Foundation: contract APPROVED (2026-10-04), NOT implemented** — no Slice 1.3 code exists yet, so nothing of it has been exported, built or validated on any platform.
+**Slice 1.1 — Player Profile: IMPLEMENTED; carried-forward physical items PASSED** (owner-reported, Preview APK `302bbd33…`, gate G33: 33/33 PASS, 2026-10-05) — including the PlayerForm safe-area fix `35c7158`. The "Basketball cannot be removed" rule is superseded by SPORT-LIFE-001 (below).
+**Slice 1.2 — Self-Assessment: IMPLEMENTED; carried-forward physical items PASSED** (owner-reported, gate G33), including the post-Save navigation fix `e181fba`.
+**Slice 1.3 — Calendar Foundation: IMPLEMENTED.** Commits A–D physically PASSED (gate G33, schema v4 upgrade over the previous APK). The UI polish `143fa3e`: **automated PASS, PHYSICAL ACCEPTANCE FAIL** (gate NB, build `d20190fb…`: 17 PASS / 2 FAIL — NB-02, NB-03 keyboard; open as CAL-KEY-001).
+**CAL-KEY-001 (keyboard) and SPORT-LIFE-001 (Basketball active / inactive): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING** (next Preview APK; plan below). Schema is now **v5**.
 **iOS (project baseline):** the current pre-Calendar application has passed iOS bundle export (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
@@ -23,18 +24,107 @@ All verified by the owner on a physical Android device.
 | Phase 0 hardening (slice 0.H) | **CLOSED / VERIFIED** — merged as `13a09c9`, 40/40 tests on the owner's machine, physical Android device verified (see below) |
 | Cloud Foundation position | **APPROVED (2026-10-04):** after 1.3 Calendar Foundation, before 2.0 (see Proposals) |
 | Slice 1.0 (Localization / RTL + startup splash) | **CLOSED / VERIFIED** — 123/123 tests, 20/20 suites; physical Android Preview APK verified (see below) |
-| Slice 1.1 (Player Profile) | **IMPLEMENTED** — 312/312 tests, 28/28 suites on the owner's machine; native checks pass; **PARTIAL** physical Android acceptance; PlayerForm safe-area fix implemented in `35c7158`, physical verification pending (see below) |
-| Slice 1.2 (Self-Assessment) | **IMPLEMENTED** — 37/37 suites, 504/504 tests; schema v3; **PARTIAL** physical Android acceptance; remaining items carried forward to the next Preview APK (see below) |
-| Slice 1.3 (Calendar Foundation) | **Contract approved, NOT implemented** — see below |
-| Slices after 1.3 | **Not started** |
+| Slice 1.1 (Player Profile) | **IMPLEMENTED**; carried-forward physical items **PASS** (gate G33, owner-reported) |
+| Slice 1.2 (Self-Assessment) | **IMPLEMENTED**; carried-forward physical items **PASS** (gate G33, owner-reported) |
+| Slice 1.3 (Calendar Foundation) | **IMPLEMENTED**; A–D physical **PASS** (G33); UI polish physical **FAIL** (NB-02 / NB-03) → CAL-KEY-001 |
+| CAL-KEY-001 (Calendar keyboard) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING** (NB-02 / NB-03 / NB-04 next build) |
+| SPORT-LIFE-001 (Basketball active / inactive) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v5** |
+| Slices after 1.3 (C, 2.x …) | **Not started** |
 
 ---
 
-## Slice 1.3 — Calendar Foundation: CONTRACT APPROVED, NOT IMPLEMENTED (2026-10-04)
+## Next build — validation plan (Preview APK after `dc58ea2`; schema v5)
 
-The owner approved the Slice 1.3 contract on 2026-10-04 (ROADMAP 1.3 / 2.2,
-PRODUCT_SPEC §51, ARCHITECTURE §7 / §14). **No application code, no
-migration v4 and no UI exist yet.**
+Install **over** the current APK (`d20190fb…`, schema v4) — never uninstall
+first. A build is physically accepted only when every applicable test below
+is PASS (none NOT RUN, FAIL or BLOCKED).
+
+**Blocking, carried forward (CAL-KEY-001):**
+
+| ID | Test |
+|---|---|
+| NB-02 | Calendar Create and Edit: tap **Title** near the bottom — the field and the cursor move above the keyboard; typing stays visible; the form still scrolls with the keyboard open. HE and EN. |
+| NB-03 | Calendar Create and Edit: tap **Notes**, type several lines — the current typing line stays above the keyboard as Notes grows; scrolling works with the keyboard open. HE and EN. |
+| NB-04 | Close the keyboard — the layout returns to normal; no doubled / oversized bottom gap; Save / Cancel reachable; nothing under the Android navigation bar (3-button and gesture navigation). |
+
+**New — SPORT-LIFE-001 (blocking):**
+
+| ID | Test |
+|---|---|
+| SL-01 | Upgrade over the current APK: no crash; Diagnostics shows schema v5; all players, details, self-assessments and calendar events unchanged. |
+| SL-02 | An existing Basketball player is still **active** after the upgrade: Basketball selected, positions / hand shown, Self-assessment offers a new assessment. |
+| SL-03 | Edit the Basketball player → tap Basketball → confirmation appears; **Keep active** leaves everything as it was. |
+| SL-04 | Tap Basketball → **Make inactive** → **Cancel** the form → reopen: Basketball still active, nothing changed. |
+| SL-05 | Tap Basketball → **Make inactive** → **Save**: the player saves; Basketball unselected; the player list no longer shows the position. |
+| SL-06 | Player valid without an active sport: reopen, edit the name, save — works; no error. |
+| SL-07 | Self-assessment while inactive: section says "history only"; history opens with every earlier assessment; there is **no** New button. |
+| SL-08 | Calendar while inactive: earlier Basketball events still listed with "Basketball"; a **new** event offers no Basketball choice and saves without a sport. |
+| SL-09 | Edit an earlier Basketball event while inactive: Basketball shown selected; save keeping it works; clearing it also works. |
+| SL-10 | Reactivate: tap Basketball (no confirmation) → the earlier positions / hand are pre-filled → Save → position back in the list; New self-assessment offered again; history unchanged. |
+| SL-11 | Full restart while inactive, and again after reactivation: state, history and events persist. |
+| SL-12 | No duplicates / no loss: after SL-05 → SL-10 there is one player, one set of assessments (no extra), the same events. |
+| SL-13 | Hebrew and English: confirmation dialog, "history only" notice, unavailable-sport messages read correctly (RTL / LTR). |
+| SL-14 | A player who never had Basketball: unaffected (no Basketball anywhere, schedule works). |
+
+**Regression re-run (code touched):** the whole previous NB plan (NB-01,
+NB-05 … NB-19) — the calendar form, Player Edit, Self-assessment and Player
+list changed — and from gate G33: 1 (upgrade), 2 (entry gating), 14–18
+(Self-assessment navigation, multiple, persistence, English), 21–22 (edit
+player / add Basketball), 25 (player without Basketball), 28 (optional
+sport), 29–31 (positions, clear secondary, persistence).
+
+---
+
+## SPORT-LIFE-001 — Basketball active / inactive: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-05)
+
+Owner-approved design (2026-10-05). Commit (authoring) `dc58ea2`.
+
+- **Schema v5 (additive):** `player_sports.active INTEGER NOT NULL DEFAULT 1 CHECK (typeof(active) = 'integer' AND active IN (0, 1))`. Existing assignments upgrade as active. No status timestamp (owner decision).
+- **Never destructive:** deactivation sets `active = 0` only. The assignment row, the Basketball profile (incl. dormant experience / weekly frequency), height, self-assessments and calendar events are untouched; foreign keys stay valid.
+- **Reactivation** reuses the same assignment and profile rows (no duplicates); the form pre-fills the stored details; `active = 1` only when Save succeeds.
+- **Rules:** `SportInactiveError` (distinct from "not assigned"): no new self-assessment and no new calendar event with an inactive sport; an existing event may keep or clear the sport it already has. Deactivation is confirmed in the Player form (safe default: keep active) and applies only on Save; Cancel discards it.
+- **UI while inactive:** Basketball unselected; Self-assessment "history only" (read-only history, no New); the calendar offers no Basketball for new events; the player list hides the position.
+- **Superseded:** "a saved sport cannot be removed" (Slice 1.1) and `SportRemovalNotSupportedError` (retired).
+
+**Automated evidence (authoring environment):** `npm run check` exit 0 — 46/46 suites, 825/825 tests; Android and iOS bundle exports exit 0. Focused: v5 migration 12/12, repository lifecycle 14/14, UI lifecycle 12/12; mutation gate 15/15 killed (all compiled, restored byte-identical). Legacy-schema fixtures are written with raw SQL (`src/test-support/legacyFixtures.ts`).
+
+## CAL-KEY-001 — Calendar Title / Notes under the Android keyboard: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-05)
+
+Physical failure: NB-02 / NB-03 (build `d20190fb…`). Cause: Android draws
+edge-to-edge, so the window no longer shrinks for the keyboard, and the
+previous fix padded the form on iOS only. Fix (authoring `8e6cc07`, no new
+dependency): the form's KeyboardAvoidingView pads by the keyboard overlap on
+both platforms (offset = the form's measured window position), and the focused
+Title / Notes is scrolled into the visible area on focus, on keyboard show, on
+viewport change and while Notes grows. Automated: wiring and arithmetic tests
++ 7/7 mutations killed — **not physical proof**; NB-02 / NB-03 / NB-04 must
+pass on a device to close it.
+
+## Physical gates (owner-reported)
+
+- **G33** — Preview APK `302bbd33-52cb-4863-9e41-c551a730f645` (owner HEAD `7d9daf8`, schema v4, installed over the previous APK): **33/33 PASS** (test 33, Hebrew restart persistence, owner-reported PASS). Covers Slice 1.3 A–D and the Slice 1.1 / 1.2 carried-forward items.
+- **NB** — Preview APK `d20190fb-b0b6-4a6e-bb3f-b0b75331544d` (owner HEAD `143fa3e`, schema v4, installed over G33's APK): NB-01, NB-04 … NB-19 **PASS**; **NB-02, NB-03 FAIL** → 17 PASS / 2 FAIL / 0 BLOCKED → **physical acceptance FAIL** for the UI polish `143fa3e`.
+
+## Owner-directed queue (recorded 2026-10-05; not a ROADMAP reorder)
+
+After SPORT-LIFE-001 / CAL-KEY-001 pass physically, and only with explicit
+owner approval: NAV-001 (main navigation shell: Home / Players / Exercises /
+Settings) · NAV-DIRTY-001 (reusable unsaved-changes guard, default Stay) ·
+later CAL-COMP-001 (manual completion), CAL-VIEW-001 (month / week),
+CAL-FILTER-001, CAL-COLOR-001, ACTIVITY-001 (configurable activity types),
+COACH-EVENT-001 / COACH-CAL-001, PERF-SELF-001 / PERF-OBJ-001, CLOUD-001,
+TRAIN-001 / TRAIN-002 (training direction recorded in ROADMAP),
+CAL-TRAIN-001. Daily Motivation / AI Coach remain deferred.
+
+---
+
+## Slice 1.3 — Calendar Foundation: IMPLEMENTED (2026-10-05)
+
+Contract approved 2026-10-04 (ROADMAP 1.3 / 2.2, PRODUCT_SPEC §51,
+ARCHITECTURE §7 / §14). Owner commits: `c8a87e5` docs contract · `60ba318`
+domain + local time rules · `3f46445` schema v4 + repository · `7d9daf8`
+schedule UI · `143fa3e` UI polish after device QA (physical FAIL, see
+CAL-KEY-001). Physical evidence: gates G33 and NB above.
 
 Approved contract, in short:
 
@@ -47,19 +137,9 @@ Approved contract, in short:
 - Agenda / list UI reached from Player Edit (every Player, with or without a sport): Current & upcoming / Past, add, details, edit, delete. Current & upcoming = `endAt >= now`, or `startAt >= now` without an end; otherwise Past; `now` from `Clock.wallNow()`. **Display order:** Current & upcoming by `startAt` ascending, then `id` ascending (nearest first); Past by `startAt` descending, then `id` descending (most recent first). Tests cover both the classification and the ordering.
 - Not in Slice 1.3: recurrence and occurrence exceptions (moved to 2.2), month / week / day grids, statuses, notifications, Coach / cloud / sync, device-calendar access or permissions, Player tabs.
 
-### Planned commits (one at a time, owner review after each)
+## Slice 1.2 — Self-Assessment: IMPLEMENTED; carried-forward physical items PASSED in gate G33 (2026-10-05)
 
-1. `docs(calendar): define Slice 1.3 contract` — this document change.
-2. Calendar event domain + local date / time helpers.
-3. Schema v4 + repository + real-SQLite tests.
-4. Calendar UI / routes / edit / delete.
-5. Final integration / regression evidence, only if genuinely required.
-
-Then one Preview APK covering: **A.** Slice 1.3 Calendar Foundation; **B.** the remaining Slice 1.2 physical acceptance (see Slice 1.2); **C.** the remaining Slice 1.1 physical acceptance (see Slice 1.1).
-
----
-
-## Slice 1.2 — Self-Assessment: IMPLEMENTED, PARTIAL PHYSICAL ACCEPTANCE (2026-10-04)
+> Historical record below (written 2026-10-04, when acceptance was partial). The carried-forward items listed here were physically verified in gate G33 (owner-reported, 33/33 PASS).
 
 **Status:** IMPLEMENTED with strong automated verification and **PARTIAL**
 physical Android acceptance. Remaining physical acceptance items are carried
@@ -111,7 +191,9 @@ Schema: **v3**.
 
 ---
 
-## Slice 1.1 — Player Profile: IMPLEMENTED, PARTIAL PHYSICAL ACCEPTANCE (2026-10-04)
+## Slice 1.1 — Player Profile: IMPLEMENTED; carried-forward physical items PASSED in gate G33 (2026-10-05)
+
+> Historical record below (written 2026-10-04, when acceptance was partial). The carried-forward items were physically verified in gate G33 (owner-reported). The "Basketball cannot be removed" rule is superseded by SPORT-LIFE-001.
 
 **Status:** implemented with strong automated / native verification and
 **partial** physical Android acceptance. **Not** fully physically accepted.
@@ -439,4 +521,5 @@ None platform-specific. All native modules used (`expo-sqlite`, `expo-audio`,
 ## Proposals (architecture changes awaiting owner approval)
 
 1. **Cloud Foundation before the Training Engine** (slice C after 1.3 Calendar Foundation, before 2.0; previously proposed after 1.2) — **APPROVED by the owner on 2026-10-04.** Recorded in ROADMAP. Kept here as history.
+2. **Align controlled docs with SPORT-LIFE-001 (proposed 2026-10-05):** PRODUCT_SPEC and ARCHITECTURE still describe a saved sport as not removable. The owner superseded that rule and approved the active / inactive design; the implementation exists (schema v5). Proposed: update PRODUCT_SPEC (player profile / sport) and ARCHITECTURE §7 (schema v5, `player_sports.active`) accordingly — **awaiting owner approval** for the controlled-doc edit.
 - `expo-system-ui` to enforce the light theme on Android — **DEFERRED — decide during UI/theme work.** Theme behaviour (light only / dark / system) is not decided; no dependency added.
