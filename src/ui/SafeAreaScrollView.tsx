@@ -1,3 +1,4 @@
+import type { Ref } from 'react';
 import { ScrollView, StyleSheet, type ScrollViewProps } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,8 +17,12 @@ function callerBottomPadding(style: ScrollViewProps['contentContainerStyle']): n
  * Adds the device's real bottom safe-area inset to the caller's own bottom
  * padding; every other content style (horizontal / top padding, gap, …) is
  * kept as given. Only the bottom edge is handled: the header covers the top.
+ * A `ref` reaches the inner ScrollView (e.g. to scroll a field into view).
  */
-export function SafeAreaScrollView({ contentContainerStyle, ...props }: ScrollViewProps) {
+export function SafeAreaScrollView({
+  contentContainerStyle,
+  ...props
+}: ScrollViewProps & { ref?: Ref<ScrollView> }) {
   const insets = useSafeAreaInsets();
   return (
     <ScrollView

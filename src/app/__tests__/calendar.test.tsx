@@ -6,6 +6,7 @@ import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-rout
 import { openDatabaseAsync } from 'expo-sqlite';
 import {
   Alert,
+  DeviceEventEmitter,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -26,6 +27,7 @@ import * as localTime from '@/services/clock/localCalendarDate';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
 import { prepareApp } from '@/test-support/prepareApp';
+import * as keyboardReveal from '@/ui/keyboardReveal';
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { spacing, touch } from '@/ui/theme';
 
@@ -1098,7 +1100,7 @@ describe('safe area (a 48dp bottom inset)', () => {
   });
 });
 
-describe('keyboard (structure only — the real keyboard is verified on a device)', () => {
+describe('keyboard (CAL-KEY-001; wiring only — the real keyboard is verified on a device)', () => {
   /** The keyboard wrapper around the form's scroll view, and the scroll view inside it. */
   const keyboardWrapper = () => {
     const wrappers = screen.UNSAFE_getAllByType(KeyboardAvoidingView);
@@ -1108,28 +1110,115 @@ describe('keyboard (structure only — the real keyboard is verified on a device
     expect(within(screen.getByTestId('event-form-keyboard')).getByTestId('event-form-scroll')).toBeTruthy();
     return wrapper;
   };
+  const formScroll = () =>
+    screen.UNSAFE_getAllByType(ScrollView).find((n) => n.props.testID === 'event-form-scroll')!;
+  /**
+   * measureWindowRect answers for the visible area (the view with testID
+   * event-form-viewport; a View ref is the preset's mock instance, which keeps
+   * its props) and for the focused field — in window dp.
+   */
+  let rects: { field: { top: number; bottom: number }; viewport: { top: number; bottom: number } };
+  const measuring = (field: typeof rects.field, viewport: typeof rects.viewport) => {
+    rects = { field, viewport };
+    return jest
+      .spyOn(keyboardReveal, 'measureWindowRect')
+      .mockImplementation(async (node) =>
+        (node as { props?: { testID?: string } } | null)?.props?.testID === 'event-form-viewport'
+          ? rects.viewport
+          : rects.field,
+      );
+  };
+  const showKeyboard = () =>
+    act(() =>
+      DeviceEventEmitter.emit('keyboardDidShow', {
+        endCoordinates: { screenX: 0, screenY: 500, width: 400, height: 300 },
+        duration: 0,
+        easing: 'keyboard',
+      }),
+    );
 
-  it('Android: the form scroll sits in a KeyboardAvoidingView with no extra behavior; Title / Notes inside it', async () => {
+  it.each(['android', 'ios'] as const)(
+    '%s: padding by the keyboard overlap, offset by where the form starts in the window',
+    async (platform) => {
+      await prepare('he', platform);
+      renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/new` });
+      await screen.findByTestId('event-save');
+      const wrapper = keyboardWrapper();
+      // Android draws edge-to-edge: the window does not shrink for the keyboard (NB-02 / NB-03 failed without this).
+      expect(wrapper.props.behavior).toBe('padding');
+      expect(typeof wrapper.props.keyboardVerticalOffset).toBe('number');
+      for (const id of ['event-title', 'event-notes', 'event-save', 'event-cancel']) {
+        expect(within(screen.getByTestId('event-form-scroll')).getByTestId(id)).toBeTruthy();
+      }
+      expect(formScroll().props.keyboardShouldPersistTaps).toBe('handled');
+    },
+  );
+
+  it('the keyboard offset is where the form starts in the window (measured, below the header)', async () => {
     await openNew('he');
-    const wrapper = keyboardWrapper();
-    expect(wrapper.props.behavior).toBeUndefined();
-    expect(wrapper.props.keyboardVerticalOffset).toBe(0);
-    for (const id of ['event-title', 'event-notes', 'event-save', 'event-cancel']) {
-      expect(within(screen.getByTestId('event-form-scroll')).getByTestId(id)).toBeTruthy();
-    }
-    expect(screen.getByTestId('event-form-scroll').props.keyboardShouldPersistTaps).toBe('handled');
+    jest
+      .spyOn(keyboardReveal, 'measureWindowRect')
+      .mockImplementation(async (node) =>
+        (node as { props?: { testID?: string } } | null)?.props?.testID === 'event-form-root'
+          ? { top: 88, bottom: 900 }
+          : null,
+      );
+    fireEvent(screen.getByTestId('event-form-root'), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 400, height: 812 } },
+    });
+    await waitFor(() => expect(keyboardWrapper().props.keyboardVerticalOffset).toBe(88));
   });
 
-  it('iOS: padding behavior; the safe-area bottom padding is unchanged (no double gap)', async () => {
+  it('focusing Title scrolls just enough to show it above the keyboard (Android)', async () => {
+    await openNew('he');
+    const scrollTo = jest.spyOn(formScroll().instance as ScrollView, 'scrollTo');
+    await act(async () => {}); // let earlier layout work settle
+    scrollTo.mockClear();
+    // Visible area 100–500 (above the keyboard); Title at 520–600 is hidden.
+    measuring({ top: 520, bottom: 600 }, { top: 100, bottom: 500 });
+    fireEvent(screen.getByTestId('event-title'), 'focus');
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith({ y: 600 - (500 - 16), animated: true }));
+  });
+
+  it('the keyboard opening while Notes is focused reveals the bottom of Notes (the typing position)', async () => {
+    await openNew('en');
+    const scrollTo = jest.spyOn(formScroll().instance as ScrollView, 'scrollTo');
+    await act(async () => {}); // let earlier layout work settle
+    scrollTo.mockClear();
+    measuring({ top: 200, bottom: 300 }, { top: 100, bottom: 800 }); // visible before the keyboard
+    fireEvent(screen.getByTestId('event-notes'), 'focus');
+    await act(async () => {});
+    expect(scrollTo).not.toHaveBeenCalled();
+    // The keyboard opens: the visible area shrinks to 100–420 and Notes now sits at 380–560.
+    rects = { field: { top: 380, bottom: 560 }, viewport: { top: 100, bottom: 420 } };
+    showKeyboard();
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith({ y: 560 - (420 - 16), animated: true }));
+  });
+
+  it('a multiline Notes field growing while typing stays revealed; blurred fields are left alone', async () => {
+    await openNew('en');
+    const scrollTo = jest.spyOn(formScroll().instance as ScrollView, 'scrollTo');
+    await act(async () => {}); // let earlier layout work settle
+    scrollTo.mockClear();
+    measuring({ top: 300, bottom: 700 }, { top: 100, bottom: 500 });
+    fireEvent(screen.getByTestId('event-notes'), 'focus');
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledTimes(1));
+    act(() => formScroll().props.onContentSizeChange(400, 1400));
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledTimes(2));
+    fireEvent(screen.getByTestId('event-notes'), 'blur');
+    showKeyboard();
+    act(() => formScroll().props.onContentSizeChange(400, 1500));
+    await act(async () => {});
+    expect(scrollTo).toHaveBeenCalledTimes(2);
+  });
+
+  it('safe-area bottom padding is unchanged inside the keyboard wrapper (no double gap)', async () => {
     await prepare('en', 'ios');
     mockInsets = { top: 0, left: 0, right: 0, bottom: 34 };
     renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/new` });
     await screen.findByTestId('event-save');
-    expect(keyboardWrapper().props.behavior).toBe('padding');
-    const scroll = screen
-      .UNSAFE_getAllByType(ScrollView)
-      .find((n) => n.props.testID === 'event-form-scroll')!;
-    expect(StyleSheet.flatten(scroll.props.contentContainerStyle)).toMatchObject({
+    keyboardWrapper();
+    expect(StyleSheet.flatten(formScroll().props.contentContainerStyle)).toMatchObject({
       padding: spacing.lg,
       paddingBottom: spacing.lg + 34,
     });
@@ -1140,7 +1229,7 @@ describe('keyboard (structure only — the real keyboard is verified on a device
     const event = await seedEvent({ type: 'GAME', startAt: at(6, 18) });
     renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}/edit` });
     await screen.findByTestId('event-save');
-    keyboardWrapper();
+    expect(keyboardWrapper().props.behavior).toBe('padding');
   });
 });
 

@@ -16,6 +16,8 @@ type Props = {
   numeric?: boolean;
   /** Several lines of free text (e.g. notes). */
   multiline?: boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
   testID?: string;
 };
 
@@ -29,6 +31,8 @@ export function TextField({
   keyboardType,
   numeric,
   multiline,
+  onFocus,
+  onBlur,
   testID,
 }: Props) {
   return (
@@ -42,6 +46,8 @@ export function TextField({
           onChangeText={onChangeText}
           keyboardType={keyboardType}
           multiline={multiline}
+          onFocus={onFocus}
+          onBlur={onBlur}
           style={[styles.input, numeric && styles.numeric, multiline && styles.multiline]}
         />
         {unit ? (
