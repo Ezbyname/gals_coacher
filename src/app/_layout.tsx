@@ -52,6 +52,16 @@ function AppStack() {
         name="children/[id]/self-assessments/new"
         options={{ title: t('selfAssessment.newTitle') }}
       />
+      <Stack.Screen name="children/[id]/schedule/index" options={{ title: t('calendar.title') }} />
+      <Stack.Screen name="children/[id]/schedule/new" options={{ title: t('calendar.newTitle') }} />
+      <Stack.Screen
+        name="children/[id]/schedule/[eventId]/index"
+        options={{ title: t('calendar.detailsTitle') }}
+      />
+      <Stack.Screen
+        name="children/[id]/schedule/[eventId]/edit"
+        options={{ title: t('calendar.editTitle') }}
+      />
       <Stack.Screen name="exercises" options={{ title: t('nav.exercises') }} />
       <Stack.Screen name="history" options={{ title: t('nav.history') }} />
       <Stack.Screen name="settings" options={{ title: t('nav.settings') }} />

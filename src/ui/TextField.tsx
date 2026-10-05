@@ -14,11 +14,23 @@ type Props = {
   keyboardType?: KeyboardTypeOptions;
   /** Numbers stay left-to-right inside Hebrew screens. */
   numeric?: boolean;
+  /** Several lines of free text (e.g. notes). */
+  multiline?: boolean;
   testID?: string;
 };
 
-/** Labelled single-line input. Layout uses logical start/end, so it mirrors in RTL. */
-export function TextField({ label, value, onChangeText, error, unit, keyboardType, numeric, testID }: Props) {
+/** Labelled text input (single-line unless `multiline`). Layout uses logical start/end, so it mirrors in RTL. */
+export function TextField({
+  label,
+  value,
+  onChangeText,
+  error,
+  unit,
+  keyboardType,
+  numeric,
+  multiline,
+  testID,
+}: Props) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -29,7 +41,8 @@ export function TextField({ label, value, onChangeText, error, unit, keyboardTyp
           value={value}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
-          style={[styles.input, numeric && styles.numeric]}
+          multiline={multiline}
+          style={[styles.input, numeric && styles.numeric, multiline && styles.multiline]}
         />
         {unit ? (
           <Text style={styles.unit} testID={testID ? `${testID}-unit` : undefined}>
@@ -64,6 +77,7 @@ const styles = StyleSheet.create({
   boxError: { borderColor: colors.danger },
   input: { flex: 1, minHeight: 46, fontSize: 17, color: colors.ink },
   numeric: { writingDirection: 'ltr', textAlign: 'center' },
+  multiline: { minHeight: 96, textAlignVertical: 'top', paddingVertical: spacing.sm },
   unit: { fontSize: 15, color: colors.inkMuted },
   error: { fontSize: 13, color: colors.danger },
 });

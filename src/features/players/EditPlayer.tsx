@@ -10,6 +10,7 @@ import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
 import { colors, spacing } from '@/ui/theme';
 
+import { ScheduleSection } from '@/features/calendar/ScheduleSection';
 import { SelfAssessmentSection } from '@/features/selfAssessment/SelfAssessmentSection';
 
 import { PlayerForm } from './PlayerForm';
@@ -87,8 +88,14 @@ export function EditPlayer({ playerId }: { playerId: string }) {
       }}
       onSaved={backToPlayers}
       onCancel={backToPlayers}
-      // Self-assessment is Basketball-only and separate from the profile fields.
-      footer={state.profile.basketball !== null ? <SelfAssessmentSection playerId={playerId} /> : null}
+      // Separate from the profile fields: Self-assessment for Basketball players
+      // only, then the Schedule for every player.
+      footer={
+        <>
+          {state.profile.basketball !== null ? <SelfAssessmentSection playerId={playerId} /> : null}
+          <ScheduleSection playerId={playerId} />
+        </>
+      }
     />
   );
 }
