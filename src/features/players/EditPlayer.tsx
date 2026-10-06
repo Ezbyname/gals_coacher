@@ -17,6 +17,7 @@ import { colors, spacing } from '@/ui/theme';
 
 import { ScheduleSection } from '@/features/calendar/ScheduleSection';
 import { SelfAssessmentSection } from '@/features/selfAssessment/SelfAssessmentSection';
+import { TrainingSection } from '@/features/training/PlayerTraining';
 
 import { PlayerForm } from './PlayerForm';
 import { formValuesFromProfile } from './playerFormValues';
@@ -94,14 +95,15 @@ export function EditPlayer({ playerId }: { playerId: string }) {
       onSaved={backToPlayers}
       onCancel={backToPlayers}
       // Separate from the profile fields: Self-assessment for players with
-      // Basketball (history only while it is inactive), then the Schedule for
-      // every player.
+      // Basketball (history only while it is inactive), then the Schedule and
+      // Training for every player.
       footer={
         <>
           {state.profile.basketball !== null ? (
             <SelfAssessmentSection playerId={playerId} active={isSportActive(state.profile, 'BASKETBALL')} />
           ) : null}
           <ScheduleSection playerId={playerId} />
+          <TrainingSection playerId={playerId} />
         </>
       }
     />

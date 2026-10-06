@@ -237,6 +237,15 @@ async function readOne(db: PlayerDb, id: string): Promise<Exercise> {
   return found;
 }
 
+/**
+ * Every exercise, read inside the CALLER's serialized operation (training
+ * snapshots read the library within their own transaction; calling
+ * listExercises there would wait on itself). Same fail-closed parsing.
+ */
+export function readExercisesUnserialized(db: PlayerDb): Promise<Exercise[]> {
+  return readAll(db);
+}
+
 async function readAll(db: PlayerDb): Promise<Exercise[]> {
   const rows = await db.getAllAsync<ExerciseRow>(`${SELECT_EXERCISES} ORDER BY created_at, id`, []);
   const children = async (sql: string) => {

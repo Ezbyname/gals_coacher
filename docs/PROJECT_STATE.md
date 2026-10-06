@@ -15,7 +15,7 @@ All verified by the owner on a physical Android device.
 **CAL-COMP-001 (explicit manual calendar event completion): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v6**.
 **CAL-VIEW-001 / CAL-FILTER-001 / CAL-COLOR-001 (Full Calendar: Month / Week, filters, colour meaning): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema unchanged (v6).
 **ACTIVITY-001 (configurable Activity Types): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema v7.
-**TRAIN-001 (Professional Exercise Library — ROADMAP 2.0, owner-directed ahead of Cloud Foundation C): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v8**. TRAIN-002: **design approved 2026-10-06; implementation in progress** (Proposals 3–5 approved; controlled docs updated). CAL-TRAIN-001: not started (only after TRAIN-002 passes its gate).
+**TRAIN-001 (Professional Exercise Library — ROADMAP 2.0, owner-directed ahead of Cloud Foundation C): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v8**. **TRAIN-002 (Workout Builder + manual Training Execution + objective results): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v9**. CAL-TRAIN-001: **not started** (awaiting owner go-ahead after TRAIN-002's gate).
 **iOS (project baseline):** the current pre-Calendar application has passed iOS bundle export (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
@@ -37,8 +37,8 @@ All verified by the owner on a physical Android device.
 | CAL-VIEW-001 / CAL-FILTER-001 / CAL-COLOR-001 (Full Calendar) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; no schema change |
 | ACTIVITY-001 (configurable Activity Types) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v7** |
 | TRAIN-001 (Exercise Library) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v8** |
-| TRAIN-002 (Workout Builder + manual execution) | **Approved 2026-10-06; in progress** — schema v9 |
-| CAL-TRAIN-001 | **Not started** — after TRAIN-002 passes its gate |
+| TRAIN-002 (Workout Builder + manual execution) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v9** |
+| CAL-TRAIN-001 | **Not started** — awaiting owner go-ahead |
 | Slices after 1.3 (C, 2.x …) | **Not started** |
 
 ---
@@ -84,6 +84,25 @@ player / add Basketball), 25 (player without Basketball), 28 (optional
 sport), 29–31 (positions, clear secondary, persistence).
 
 ---
+
+## TRAIN-002 — Workout Builder + Training Execution: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-06)
+
+Built to the approved model (PRODUCT_SPEC §72, ARCHITECTURE §15), before Cloud Foundation C (ROADMAP revision 2026-10-06). No timer / countdown / audio / whistle (→ 2.1b), no cloud / auth / sync / RLS.
+
+- **Builder (Family-owned, reusable, editable, never deleted):** Workout Blocks = a name + ordered exercises, each with its prescription (sets, target in the measurement's unit, load only when the exercise uses one, rest); Workout Templates = a name + ordered blocks (a block may repeat). Make inactive asks (Keep active is the default). Names: trimmed, ≤ 35 (the approved Title limit), no duplicate per kind. A block follows its exercise's *current* definition: a target / load that no longer applies after the exercise was edited is dropped on read (structural corruption still fails closed); plans never use this.
+- **Planned Workout (frozen):** planning a template for a Player writes a snapshot — per item: block name, exercise id + HE/EN name + measurement (type, comparison, load / distance), prescription. SQL triggers refuse any UPDATE / DELETE of a plan or its items, and new items once it was started. The template id is provenance only.
+- **Training Session (separate):** Start now (plan + session in one transaction) or Plan for later → Start. Purpose TRAINING. Status IN_PROGRESS → COMPLETED (every planned set performed) / PARTIAL (finished with planned sets not performed; extra sets never make up) / ABANDONED (Stop asks; Keep training is the default). Nothing performed → cannot finish. One session per plan; one in progress per Player. A finished session is read-only (repository and SQL triggers). Session exercises carry their own snapshot; each set copies its planned target / load (none for an extra set).
+- **Planned vs actual:** each set keeps its plan beside its actual values — Bench 3 × 10 @ 50 kg performed 10 @ 50 · 10 @ 50 · 7 @ 50 stays 7. Inputs are never pre-filled from the plan (a load input starts from the previous set's *actual* load). Skip / add an extra set.
+- **Measurement (per value):** kind (reps, seconds, time, metres, made, attempts, load kg, rating, completion), measured / final / edited (the first entry is measured; a later different value changes final and marks it edited — shown as "corrected from"), **source** MANUAL (CAMERA / DEVICE / SENSOR accepted by the schema, never produced), **confidence** NULL for manual (0–1 otherwise; CHECKed). One set may mix sources.
+- **Schema v9 (additive):** `workout_blocks`, `workout_block_items`, `workout_templates`, `workout_template_blocks` (family_id), `planned_workouts`, `planned_workout_items`, `training_sessions`, `session_exercises`, `session_sets`, `set_measurements` (player_id / parent ids); client UUIDs, created_at / updated_at; 4 indexes (two partial UNIQUE: one session per plan, one in progress per player); 18 history / snapshot triggers.
+- **UI:** Exercises → *Workouts and blocks* (templates, blocks, builders with library search, reorder, unsaved-changes guard). Player screen → *Training* section (Start a workout / Continue the workout / Planned workouts and history) → choose template (Start now / Plan for later) → plan view (frozen note) → session (per set: planned, actual, inputs, Save / Update / Skip, Add a set; Finish / Stop; read-only when finished). Hebrew / English; made / attempts forced left-to-right (`8/10`).
+- **Open product decision (flagged, not invented):** the RATING scale is a placeholder 1–10 bound (no built-in exercise uses RATING). Minor UX: counts are not pluralised ("1 blocks").
+
+**Automated evidence (authoring environment):** `npm run check` exit 0 — **72/72 suites, 1339/1339 tests** (lint: 0 errors; the 1 pre-existing `fullCalendar.test.tsx` warning). Android bundle export (`npx expo export --platform android`) exit 0. Focused: domain 7/7, v9 migration 5/5 (fresh, realistic v8 upgrade with every row unchanged, rollback, v10 refused, constraints), repository 20/20, UI HE / EN 11/11; existing migration suites updated to v9. Negative proof **11/11 mutants killed** (extra set ≠ planned set, correction marked edited, MANUAL source, per-set plan copied, frozen-plan trigger, one in-progress session, block follows exercise, made ≤ attempts, no pre-fill from the plan, Stop asks first — this one first SURVIVED and exposed a test gap, fixed —, finished session read-only).
+
+**Physical (next batched Preview APK) — all PENDING:**
+WB-01 Exercises → Workouts and blocks (HE RTL / EN LTR) · WB-02 create a block from library search, defaults shown, reorder / remove · WB-03 prescription validation messages · WB-04 load field only for load exercises · WB-05 create a template from blocks (repeat / reorder / remove) · WB-06 edit block / template; unsaved-changes guard · WB-07 make inactive (asks) / active; inactive template not offered to Start.
+TS-01 Player → Training section → Start a workout → Start now · TS-02 planned vs actual per set (enter 10 / 10 / 7 at 50 kg; 7 stays) · TS-03 load carries from the previous actual set, never from the plan · TS-04 made / attempts validation; `8/10` reads left-to-right in Hebrew · TS-05 skip a set; add an extra set (marked not planned) · TS-06 correct a set → "corrected from" · TS-07 Finish → Completed / Partial; nothing recorded → message · TS-08 Stop asks (Keep training default) → Stopped · TS-09 finished workout is read-only; history lists status + sets performed · TS-10 Plan for later → frozen plan unchanged after editing the block / template / exercise → Start · TS-11 Continue the workout after leaving / app restart (persistence) · TS-12 install over the previous APK: Diagnostics schema v9; exercises, calendar, self-assessments unchanged · TS-13 TalkBack reads set rows and buttons.
 
 ## TRAIN-001 — Professional Exercise Library: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-06)
 

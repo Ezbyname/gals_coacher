@@ -81,6 +81,24 @@ function ScreenStack() {
         name="children/[id]/schedule/[eventId]/edit"
         options={{ title: t('calendar.editTitle') }}
       />
+      <Stack.Screen name="children/[id]/training/index" options={{ title: t('training.overviewTitle') }} />
+      <Stack.Screen name="children/[id]/training/new" options={{ title: t('training.chooseTitle') }} />
+      <Stack.Screen
+        name="children/[id]/training/plan/[planId]"
+        options={{ title: t('training.planTitle') }}
+      />
+      <Stack.Screen
+        name="children/[id]/training/session/[sessionId]"
+        options={{ title: t('training.sessionTitle') }}
+      />
+      <Stack.Screen name="workouts/index" options={{ title: t('training.workoutsTitle') }} />
+      <Stack.Screen name="workouts/blocks/new" options={{ title: t('training.newBlockTitle') }} />
+      <Stack.Screen name="workouts/blocks/[blockId]" options={{ title: t('training.editBlockTitle') }} />
+      <Stack.Screen name="workouts/templates/new" options={{ title: t('training.newTemplateTitle') }} />
+      <Stack.Screen
+        name="workouts/templates/[templateId]"
+        options={{ title: t('training.editTemplateTitle') }}
+      />
       <Stack.Screen name="calendar" options={{ title: t('nav.calendar') }} />
       <Stack.Screen name="exercises" options={{ title: t('exercises.libraryTitle') }} />
       <Stack.Screen name="exercises/new" options={{ title: t('exercises.newTitle') }} />

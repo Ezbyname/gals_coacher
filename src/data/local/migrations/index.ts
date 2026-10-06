@@ -352,5 +352,208 @@ export const migrations: readonly Migration[] = [
         SELECT RAISE(ABORT, 'exercises are never deleted; make them inactive');
       END;
     `,
+  },  {
+    // TRAIN-002 (ARCHITECTURE §15): reusable blocks / templates (Family-owned)
+    // → frozen planned workouts → separate training sessions (Player-owned)
+    // whose sets keep the plan next to the actual measurements. History is
+    // never deleted; a planned workout and every snapshot are immutable; a
+    // finished session is read-only. Additive: no existing table changes.
+    version: 9,
+    name: 'training',
+    sql: `
+      CREATE TABLE workout_blocks (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        family_id TEXT NOT NULL REFERENCES families (id),
+        name TEXT NOT NULL CHECK (length(trim(name, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        active INTEGER NOT NULL DEFAULT 1 CHECK (typeof(active) = 'integer' AND active IN (0, 1)),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer')
+      );
+
+      CREATE TABLE workout_block_items (
+        block_id TEXT NOT NULL REFERENCES workout_blocks (id),
+        position INTEGER NOT NULL CHECK (typeof(position) = 'integer' AND position >= 0),
+        exercise_id TEXT NOT NULL REFERENCES exercises (id),
+        sets INTEGER NOT NULL CHECK (typeof(sets) = 'integer' AND sets >= 1),
+        target REAL CHECK (target IS NULL OR target > 0),
+        load_kg REAL CHECK (load_kg IS NULL OR load_kg > 0),
+        rest_sec INTEGER CHECK (rest_sec IS NULL OR (typeof(rest_sec) = 'integer' AND rest_sec >= 0)),
+        PRIMARY KEY (block_id, position)
+      );
+
+      CREATE TABLE workout_templates (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        family_id TEXT NOT NULL REFERENCES families (id),
+        name TEXT NOT NULL CHECK (length(trim(name, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        active INTEGER NOT NULL DEFAULT 1 CHECK (typeof(active) = 'integer' AND active IN (0, 1)),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer')
+      );
+
+      CREATE TABLE workout_template_blocks (
+        template_id TEXT NOT NULL REFERENCES workout_templates (id),
+        position INTEGER NOT NULL CHECK (typeof(position) = 'integer' AND position >= 0),
+        block_id TEXT NOT NULL REFERENCES workout_blocks (id),
+        PRIMARY KEY (template_id, position)
+      );
+
+      CREATE TABLE planned_workouts (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        player_id TEXT NOT NULL REFERENCES players (id),
+        template_id TEXT REFERENCES workout_templates (id),
+        name TEXT NOT NULL CHECK (length(trim(name, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer')
+      );
+      CREATE INDEX planned_workouts_by_player ON planned_workouts (player_id, created_at);
+
+      CREATE TABLE planned_workout_items (
+        planned_workout_id TEXT NOT NULL REFERENCES planned_workouts (id),
+        position INTEGER NOT NULL CHECK (typeof(position) = 'integer' AND position >= 0),
+        block_name TEXT,
+        exercise_id TEXT NOT NULL REFERENCES exercises (id),
+        exercise_name_he TEXT NOT NULL CHECK (length(trim(exercise_name_he)) > 0),
+        exercise_name_en TEXT NOT NULL CHECK (length(trim(exercise_name_en)) > 0),
+        measurement_type TEXT NOT NULL,
+        comparison_policy TEXT,
+        uses_load INTEGER NOT NULL CHECK (typeof(uses_load) = 'integer' AND uses_load IN (0, 1)),
+        distance_m REAL CHECK (distance_m IS NULL OR distance_m > 0),
+        sets INTEGER NOT NULL CHECK (typeof(sets) = 'integer' AND sets >= 1),
+        target REAL CHECK (target IS NULL OR target > 0),
+        load_kg REAL CHECK (load_kg IS NULL OR load_kg > 0),
+        rest_sec INTEGER CHECK (rest_sec IS NULL OR (typeof(rest_sec) = 'integer' AND rest_sec >= 0)),
+        PRIMARY KEY (planned_workout_id, position)
+      );
+
+      CREATE TABLE training_sessions (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        player_id TEXT NOT NULL REFERENCES players (id),
+        planned_workout_id TEXT REFERENCES planned_workouts (id),
+        name TEXT NOT NULL CHECK (length(trim(name, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        purpose TEXT NOT NULL,
+        status TEXT NOT NULL,
+        started_at INTEGER NOT NULL CHECK (typeof(started_at) = 'integer'),
+        ended_at INTEGER CHECK (ended_at IS NULL OR (typeof(ended_at) = 'integer' AND ended_at >= started_at)),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer'),
+        CHECK ((status = 'IN_PROGRESS') = (ended_at IS NULL))
+      );
+      CREATE INDEX training_sessions_by_player ON training_sessions (player_id, started_at);
+      -- A planned workout is performed at most once; a player has at most one session in progress.
+      CREATE UNIQUE INDEX training_sessions_one_per_plan ON training_sessions (planned_workout_id)
+        WHERE planned_workout_id IS NOT NULL;
+      CREATE UNIQUE INDEX training_sessions_one_in_progress ON training_sessions (player_id)
+        WHERE status = 'IN_PROGRESS';
+
+      CREATE TABLE session_exercises (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        session_id TEXT NOT NULL REFERENCES training_sessions (id),
+        position INTEGER NOT NULL CHECK (typeof(position) = 'integer' AND position >= 0),
+        planned_position INTEGER CHECK (planned_position IS NULL OR typeof(planned_position) = 'integer'),
+        block_name TEXT,
+        exercise_id TEXT NOT NULL REFERENCES exercises (id),
+        exercise_name_he TEXT NOT NULL CHECK (length(trim(exercise_name_he)) > 0),
+        exercise_name_en TEXT NOT NULL CHECK (length(trim(exercise_name_en)) > 0),
+        measurement_type TEXT NOT NULL,
+        comparison_policy TEXT,
+        uses_load INTEGER NOT NULL CHECK (typeof(uses_load) = 'integer' AND uses_load IN (0, 1)),
+        distance_m REAL CHECK (distance_m IS NULL OR distance_m > 0),
+        rest_sec INTEGER CHECK (rest_sec IS NULL OR (typeof(rest_sec) = 'integer' AND rest_sec >= 0)),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer'),
+        UNIQUE (session_id, position)
+      );
+
+      CREATE TABLE session_sets (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        session_exercise_id TEXT NOT NULL REFERENCES session_exercises (id),
+        set_number INTEGER NOT NULL CHECK (typeof(set_number) = 'integer' AND set_number >= 1),
+        planned INTEGER NOT NULL CHECK (typeof(planned) = 'integer' AND planned IN (0, 1)),
+        planned_target REAL CHECK (planned_target IS NULL OR planned_target > 0),
+        planned_load_kg REAL CHECK (planned_load_kg IS NULL OR planned_load_kg > 0),
+        status TEXT NOT NULL,
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer'),
+        CHECK (planned = 1 OR (planned_target IS NULL AND planned_load_kg IS NULL)),
+        UNIQUE (session_exercise_id, set_number)
+      );
+
+      CREATE TABLE set_measurements (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        set_id TEXT NOT NULL REFERENCES session_sets (id),
+        kind TEXT NOT NULL,
+        measured_value REAL NOT NULL,
+        final_value REAL NOT NULL,
+        was_edited INTEGER NOT NULL CHECK (typeof(was_edited) = 'integer' AND was_edited IN (0, 1)),
+        source TEXT NOT NULL CHECK (source IN ('MANUAL', 'CAMERA', 'DEVICE', 'SENSOR')),
+        confidence REAL CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer'),
+        CHECK (source <> 'MANUAL' OR confidence IS NULL),
+        UNIQUE (set_id, kind)
+      );
+
+      -- Reusable definitions: never deleted (inactive instead).
+      CREATE TRIGGER workout_blocks_never_deleted BEFORE DELETE ON workout_blocks
+      BEGIN SELECT RAISE(ABORT, 'workout blocks are never deleted; make them inactive'); END;
+      CREATE TRIGGER workout_templates_never_deleted BEFORE DELETE ON workout_templates
+      BEGIN SELECT RAISE(ABORT, 'workout templates are never deleted; make them inactive'); END;
+
+      -- A planned workout is a frozen snapshot.
+      CREATE TRIGGER planned_workouts_frozen_update BEFORE UPDATE ON planned_workouts
+      BEGIN SELECT RAISE(ABORT, 'planned workouts are frozen'); END;
+      CREATE TRIGGER planned_workouts_never_deleted BEFORE DELETE ON planned_workouts
+      BEGIN SELECT RAISE(ABORT, 'planned workouts are never deleted'); END;
+      -- Items are written with their plan; nothing is added once the plan has been started.
+      CREATE TRIGGER planned_items_frozen_insert BEFORE INSERT ON planned_workout_items
+      WHEN EXISTS (SELECT 1 FROM training_sessions WHERE planned_workout_id = NEW.planned_workout_id)
+      BEGIN SELECT RAISE(ABORT, 'planned workouts are frozen'); END;
+      CREATE TRIGGER planned_items_frozen_update BEFORE UPDATE ON planned_workout_items
+      BEGIN SELECT RAISE(ABORT, 'planned workouts are frozen'); END;
+      CREATE TRIGGER planned_items_never_deleted BEFORE DELETE ON planned_workout_items
+      BEGIN SELECT RAISE(ABORT, 'planned workouts are frozen'); END;
+
+      -- Performed history: never deleted; snapshots never change; a finished session is read-only.
+      CREATE TRIGGER training_sessions_never_deleted BEFORE DELETE ON training_sessions
+      BEGIN SELECT RAISE(ABORT, 'training sessions are never deleted'); END;
+      CREATE TRIGGER training_sessions_closed BEFORE UPDATE ON training_sessions
+      WHEN OLD.status <> 'IN_PROGRESS'
+        OR NEW.player_id IS NOT OLD.player_id OR NEW.planned_workout_id IS NOT OLD.planned_workout_id
+        OR NEW.started_at IS NOT OLD.started_at OR NEW.created_at IS NOT OLD.created_at
+        OR NEW.name IS NOT OLD.name OR NEW.purpose IS NOT OLD.purpose
+      BEGIN SELECT RAISE(ABORT, 'a finished training session is read-only'); END;
+      CREATE TRIGGER session_exercises_frozen_update BEFORE UPDATE ON session_exercises
+      BEGIN SELECT RAISE(ABORT, 'session exercises are snapshots'); END;
+      CREATE TRIGGER session_exercises_never_deleted BEFORE DELETE ON session_exercises
+      BEGIN SELECT RAISE(ABORT, 'training history is never deleted'); END;
+      CREATE TRIGGER session_exercises_closed_insert BEFORE INSERT ON session_exercises
+      WHEN (SELECT status FROM training_sessions WHERE id = NEW.session_id) IS NOT 'IN_PROGRESS'
+      BEGIN SELECT RAISE(ABORT, 'a finished training session is read-only'); END;
+      CREATE TRIGGER session_sets_never_deleted BEFORE DELETE ON session_sets
+      BEGIN SELECT RAISE(ABORT, 'training history is never deleted'); END;
+      CREATE TRIGGER session_sets_closed_insert BEFORE INSERT ON session_sets
+      WHEN (SELECT s.status FROM training_sessions s JOIN session_exercises e ON e.session_id = s.id
+            WHERE e.id = NEW.session_exercise_id) IS NOT 'IN_PROGRESS'
+      BEGIN SELECT RAISE(ABORT, 'a finished training session is read-only'); END;
+      CREATE TRIGGER session_sets_closed_update BEFORE UPDATE ON session_sets
+      WHEN (SELECT s.status FROM training_sessions s JOIN session_exercises e ON e.session_id = s.id
+            WHERE e.id = OLD.session_exercise_id) IS NOT 'IN_PROGRESS'
+        OR NEW.session_exercise_id IS NOT OLD.session_exercise_id OR NEW.set_number IS NOT OLD.set_number
+        OR NEW.planned IS NOT OLD.planned OR NEW.planned_target IS NOT OLD.planned_target
+        OR NEW.planned_load_kg IS NOT OLD.planned_load_kg
+      BEGIN SELECT RAISE(ABORT, 'a finished training session is read-only; the plan never changes'); END;
+      CREATE TRIGGER set_measurements_never_deleted BEFORE DELETE ON set_measurements
+      BEGIN SELECT RAISE(ABORT, 'training history is never deleted'); END;
+      CREATE TRIGGER set_measurements_closed_insert BEFORE INSERT ON set_measurements
+      WHEN (SELECT s.status FROM training_sessions s JOIN session_exercises e ON e.session_id = s.id
+            JOIN session_sets t ON t.session_exercise_id = e.id WHERE t.id = NEW.set_id) IS NOT 'IN_PROGRESS'
+      BEGIN SELECT RAISE(ABORT, 'a finished training session is read-only'); END;
+      CREATE TRIGGER set_measurements_closed_update BEFORE UPDATE ON set_measurements
+      WHEN (SELECT s.status FROM training_sessions s JOIN session_exercises e ON e.session_id = s.id
+            JOIN session_sets t ON t.session_exercise_id = e.id WHERE t.id = OLD.set_id) IS NOT 'IN_PROGRESS'
+        OR NEW.set_id IS NOT OLD.set_id OR NEW.kind IS NOT OLD.kind
+        OR NEW.measured_value IS NOT OLD.measured_value OR NEW.created_at IS NOT OLD.created_at
+      BEGIN SELECT RAISE(ABORT, 'a measured value is never rewritten; a finished session is read-only'); END;
+    `,
   },
 ];

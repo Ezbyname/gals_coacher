@@ -26,11 +26,13 @@ export const MAIN_DESTINATIONS: readonly MainDestination[] = [
  * Which main destination the current path belongs to: Players covers every
  * player screen (edit, self-assessment, schedule…); Home also covers the
  * pages opened from it (Quick Training, History, Diagnostics); Settings covers
- * its sub-pages (Activity types); Exercises covers the library's pages.
+ * its sub-pages (Activity types); Exercises covers the library's pages and
+ * the workout builder (Workouts, blocks, templates).
  */
 export function activeDestination(pathname: string): MainDestinationKey {
   if (pathname === '/children' || pathname.startsWith('/children/')) return 'players';
   if (pathname === '/exercises' || pathname.startsWith('/exercises/')) return 'exercises';
+  if (pathname === '/workouts' || pathname.startsWith('/workouts/')) return 'exercises';
   if (pathname === '/settings' || pathname.startsWith('/settings/')) return 'settings';
   return 'home';
 }

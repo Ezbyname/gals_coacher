@@ -101,7 +101,7 @@ describe('migration v7 (activity types) on real SQLite', () => {
 
   it('fresh install: the six built-ins exactly once, active, no name; deletion refused', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(8);
+    expect(migration.to).toBe(9);
     expect(migration.applied).toContain('activity_types');
     expect(await catalogRows(db as unknown as Db)).toEqual(SEEDED);
     expect(
@@ -123,8 +123,8 @@ describe('migration v7 (activity types) on real SQLite', () => {
     const before = await createV6Database();
 
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 6, to: 8, applied: ['activity_types', 'exercises'] });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 8 });
+    expect(migration).toEqual({ from: 6, to: 9, applied: ['activity_types', 'exercises', 'training'] });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 9 });
     // Byte-for-byte: no event row (type, dates, titles, notes, completion …) or other row changed.
     expect(await dumpV6Data(db as unknown as Db)).toEqual(before);
     expect(await catalogRows(db as unknown as Db)).toEqual(SEEDED);
@@ -168,7 +168,7 @@ describe('migration v7 (activity types) on real SQLite', () => {
 
     // Idempotent: reopening applies nothing and never re-seeds.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 8, to: 8, applied: [] });
+    expect(again.migration).toEqual({ from: 9, to: 9, applied: [] });
     expect(await catalogRows(again.db as unknown as Db)).toEqual(SEEDED);
     expect(await dumpV6Data(again.db as unknown as Db)).toEqual(before);
     await again.db.closeAsync();
@@ -197,16 +197,16 @@ describe('migration v7 (activity types) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 6, to: 8, applied: ['activity_types', 'exercises'] });
+    expect(relaunch.migration).toEqual({ from: 6, to: 9, applied: ['activity_types', 'exercises', 'training'] });
     expect(await catalogRows(relaunch.db as unknown as Db)).toEqual(SEEDED);
     await relaunch.db.closeAsync();
   });
 
-  it('refuses a newer schema (v9)', async () => {
+  it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 9');
+    await newer.execAsync('PRAGMA user_version = 10');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v9 .* only knows v8\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v10 .* only knows v9\. Refusing to downgrade/);
   });
 });
 

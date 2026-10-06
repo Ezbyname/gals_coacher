@@ -21,6 +21,7 @@ import { MultiChoiceChips } from '@/ui/MultiChoiceChips';
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
+import { workoutsPath } from '@/features/training/trainingLabels';
 
 import {
   areaLabel,
@@ -95,6 +96,12 @@ export function ExerciseLibrary() {
       testID="exercises-scroll"
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled">
+      <BigButton
+        testID="exercises-workouts"
+        variant="secondary"
+        label={t('training.openWorkouts')}
+        onPress={() => router.push(workoutsPath)}
+      />
       <TextField
         testID="exercises-search"
         label={t('exercises.search')}
