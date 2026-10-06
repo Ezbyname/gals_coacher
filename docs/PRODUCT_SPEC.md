@@ -118,7 +118,29 @@ Full V1 player profile fields: see §65. No weight in V1: see §66.
 
 ## 15. Exercise library
 
-קטן ומדויק בהתחלה:
+**Current requirement (owner, 2026-10-06 — implemented in TRAIN-001):** a
+substantial, professionally curated starter exercise library for general
+fitness **and** Basketball, in Hebrew and English. Quality, useful coverage
+and maintainability matter more than an arbitrary fixed count. Current
+implementation baseline: 107 built-in exercises (a baseline, not a fixed
+product requirement).
+
+Each exercise describes: training categories, primary / secondary muscles
+(body areas derive from them), movement patterns, difficulty (Beginner /
+Intermediate / Advanced), sports (none = general), equipment as alternative
+options ("needs X" or "needs Y + Z"; none = bodyweight), how it is measured
+(the approved measurement types, §7, with load / distance as conditions of
+a set) and how results compare, defaults (sets / target / rest),
+instructions, coaching cues, common mistakes and safety notes, optional
+tutorial URL. Built-in exercises are curated and read-only; any exercise can
+be made inactive (hidden from new choices) and active again — never deleted,
+so history keeps it. Users find exercises by search (Hebrew / English) and by
+category, body area, muscle, difficulty, sport and the equipment they have.
+
+**Superseded 2026-10-06 — kept for history, no longer authoritative:** the
+original "small and precise at first (~15 exercises)" rule below.
+
+קטן ומדויק בהתחלה (superseded):
 - Shooting: Free Throws, Mid Range, Three Pointers, Layups
 - Speed: 10m Sprint, 20m Sprint, Baseline Sprint
 - Ball Handling: Cone Slalom, Figure 8, Stationary Dribble
@@ -130,6 +152,8 @@ Full V1 player profile fields: see §65. No weight in V1: see §66.
 
 ההורה יכול ליצור Exercise: Name, Category, Measurement Type, Instructions, optional tutorial URL, optional defaults (sets, target, rest, countdown).
 
+**Implemented in TRAIN-001 (2026-10-06):** a custom exercise has a name (the user's own text, shown as entered in both languages), one or more categories, difficulty, primary / optional secondary muscles, sports, equipment options, measurement type (plus comparison when the type needs one, and load when it applies), instructions and an optional tutorial URL. It can be edited, made inactive and active again; it is never deleted. Custom defaults and countdown are not collected yet.
+
 ## 17. YouTube
 
 לכל Exercise אפשר לשמור `tutorialUrl`. אין YouTube API ב־V1. כפתור **WATCH TECHNIQUE** פותח סרטון הדרכה.
@@ -137,6 +161,8 @@ Full V1 player profile fields: see §65. No weight in V1: see §66.
 ## 18. Training engine
 
 הלב של האפליקציה. מנהל: Countdown, Audio, Whistle, Timer, Rest, Sets, Attempts, Results, Transitions.
+
+**Delivery split (owner, 2026-10-06):** TRAIN-002 delivers the workout builder, manual training execution and objective actual results (§72). Countdown, timer, audio, whistle and rest-timer behaviour (§19–§22, §28) come in a later slice built on the same training records.
 
 ## 19. Start sequence
 
@@ -197,6 +223,8 @@ Workout Template, לדוגמה SHOOTING SESSION: Warmup → Layups 20 → Free T
 ## 33. Workout builder
 
 ההורה מגדיר Exercises, Sets, Targets, Rest, Order. לא CMS מורכב — ליצור אימון בדקה-שתיים.
+
+**TRAIN-002 (owner, 2026-10-06):** the builder works with reusable **workout blocks** (a named group of exercises, each with its prescription: sets, target, load when it applies, rest) and reusable **workout templates** (an ordered list of blocks). See §72.
 
 ## 34. Active workout UX
 
@@ -471,6 +499,19 @@ Not decided yet — implementation must keep these configurable and ask the owne
 - App theme behaviour (light only / dark / follow system).
 
 Decided 2026-10-04 (moved out of this list): final self-assessment categories and their Hebrew/English wording (§67).
+
+## 72. Training system — planned vs actual (owner-approved 2026-10-06)
+
+- **Chain:** Exercise → Workout Block → Workout Template → Planned Workout → Training Session → Session Exercise → Set / Interval → objective Result / Measurement.
+- **Templates and blocks are reusable** and may be edited. Planning a template for a player creates a **frozen Planned Workout** (a snapshot of every exercise and prescription at that moment). Editing a template or block later never changes an existing Planned Workout.
+- **Performing** creates a separate **Training Session**. `CalendarEvent ≠ TrainingSession`; `PlannedWorkout ≠ TrainingSession`. The app always answers two questions independently: **what was planned?** and **what actually happened?**
+- **Session status:** In progress · Completed (every planned set performed) · Partial (finished with some planned sets not performed) · Abandoned (stopped by the user).
+- **Planned vs actual per set:** both are kept. Planned "Bench Press 3 × 10 @ 50 kg"; actual "10 @ 50 · 10 @ 50 · 7 @ 50" — the last set stays 7. Actual values are never normalized to the plan; sets can be skipped and extra sets added.
+- **Every objective measurement records its source** (Manual now; Camera, Device, Sensor in the future) and, for non-manual sources, a confidence. One set may hold measurements from different sources (e.g. weight entered manually, reps counted by a camera). Only manual entry exists today; no camera / device / sensor capture is built.
+- **Historical truth:** plans and sessions keep their own snapshot of what they showed (exercise name, measurement, prescription), so later changes to an exercise (name, instructions, active state), a template, a block or the equipment catalog never rewrite them.
+- **Objective results stay separate from the subjective Self-Assessment**; no combined Player Score.
+- **Calendar (CAL-TRAIN-001, a later slice):** a calendar event may link to a Planned Workout (what was planned in time). It never holds performed results.
+- **Not in TRAIN-002:** countdown / timer / audio / whistle / rest timer, automatic workout suggestions, Coach-assigned workouts, cloud sync.
 
 ## 71. Planning around real life (approved 2026-10-04 — not implemented)
 

@@ -108,6 +108,9 @@ source of truth. Countdown steps are likewise derived from a start timestamp.
 Results store `measuredResult`, `finalResult`, `wasEdited`; statistics read
 `finalResult`.
 
+The timer itself is delivered in slice 2.1b (moved 2026-10-06); TRAIN-002
+records results by manual entry into the same result model (§15).
+
 ## 6. Local-first & sync
 
 ### Offline / sync hard rules (approved)
@@ -167,7 +170,19 @@ Parent account → pairing code → child device
   `src/test-support/nodeSqlite.ts`, including a close/reopen restart test
   and migration rollback.
 - Domain tables arrive with their slice (1.1 family/players, 1.2
-  self-assessment, 2.0 exercises, 2.1 sessions/results/outbox).
+  self-assessment, 2.0 exercises, 2.1 sessions/results; the outbox arrives
+  with Cloud Foundation C, which now follows 2.1 — revised 2026-10-06).
+- **v8 (TRAIN-001, implemented 2026-10-06): exercise library.** Built-in
+  exercise content is curated in code under stable ids; the database holds
+  one row per built-in id (its active state only) plus full rows for custom
+  exercises (client UUID) with child rows for categories, muscles (role),
+  equipment options and sports. Exercises are never deleted (inactive
+  instead); reads fail closed on unknown codes or a missing / unknown
+  built-in row.
+- **v9 (TRAIN-002, approved 2026-10-06): training.** See §15 for the model;
+  every table uses client UUIDs (or a parent UUID + position for ordered
+  children), `created_at` / `updated_at`, and an ownership column (family
+  for reusable blocks / templates, player for plans and sessions).
 - v2 (Slice 1.1): `families (id)`; `players` (generic: name, date_of_birth
   `YYYY-MM-DD`, height_cm, created_at/updated_at); `player_sports` (PK
   `player_id, sport`); `basketball_player_profiles` (PK `player_id`, `sport`
@@ -273,12 +288,24 @@ Parent (auth user) ─┬─ Family ─── Player (a child; name, dateOfBirth
                     │                ├── PlayerSport (sport) 0..n
                     │                │     └── <Sport>Profile (only for its assignment; V1: BasketballProfile)
                     │                └── SelfAssessment (sport, takenAt) ── SelfAssessmentRating (category, 1–5)
-Sport (key) ─── Exercise (category, measurementType, comparisonPolicy?, defaults, tutorialUrl, isCustom)
-WorkoutTemplate (purpose) ── TemplateItem (exercise, sets, target, rest, order)
-WorkoutSession (player, sport, purpose, template?, startedAt, endedAt)
-  └── SessionExercise ── Set ── Attempt ── Measurement / Result
-                                 (measuredResult, finalResult, wasEdited)
+Exercise (builtin | custom, active; categories, primary / secondary muscles → body areas,
+          movement patterns, difficulty, sports 0..n, equipment options,
+          measurementType + comparisonPolicy + load / distance conditions, defaults,
+          instructions, cues, mistakes, safety, tutorialUrl)
+Family ─┬─ WorkoutBlock (name, active) ── BlockItem (exercise, prescription, order)
+        └─ WorkoutTemplate (name, active) ── ordered WorkoutBlocks
+Player ─┬─ PlannedWorkout (FROZEN snapshot of a template: items with exercise snapshot + prescription)
+        └─ TrainingSession (purpose, status, plannedWorkout?, startedAt, endedAt)
+             └── SessionExercise (exercise snapshot) ── Set / Interval (planned prescription; PENDING / DONE / SKIPPED)
+                    └── Measurement (kind, measuredResult, finalResult, wasEdited, source, confidence?)
 ```
+
+**Superseded 2026-10-06:** the earlier target lines `Exercise (category, …,
+isCustom)`, `WorkoutTemplate (purpose) ── TemplateItem` and `WorkoutSession
+→ SessionExercise → Set → Attempt → Measurement / Result`. `TrainingSession`
+is the name of the former `WorkoutSession`; `Attempt` is not a stored level
+in TRAIN-002 (a set holds its made / attempts measurements) and may be added
+later for per-shot recording (2.3) without changing sets or measurements.
 
 - "Child" in PRODUCT_SPEC and "Player" here are the same entity; code uses
   `Player` / `player_id`.
@@ -289,10 +316,20 @@ WorkoutSession (player, sport, purpose, template?, startedAt, endedAt)
 - `BasketballProfile`: primary position, secondary position, dominant hand
   (V1 UI); `experience` and `weekly_frequency` remain as dormant nullable
   columns (not collected by the V1 UI, preserved when present).
-- Future direction (not implemented): `Exercise` stays generic and is linked
-  to sports through an `ExerciseSport` association (one exercise can serve
-  several sports, e.g. 10m Sprint; others one, e.g. Free Throw). No
-  `BasketballExercise` core entity. Designed in Slice 2.0.
+- `Exercise` is generic and linked to 0..n sports (implemented in TRAIN-001;
+  none = general fitness). No `BasketballExercise` core entity.
+- **Exercise model (approved 2026-10-06, implemented in TRAIN-001):**
+  categories (1..n), primary muscles (required except for skill-only
+  basketball drills) and secondary muscles; body areas are derived from the
+  primary muscles (posterior chain only when at least two primary muscles
+  belong to it), movement patterns, difficulty, sports, equipment as
+  alternative options (any one option suffices; every item inside an option
+  is needed; no option = bodyweight), the approved measurement type with its
+  comparison policy and set conditions (load applies to reps / duration /
+  time / distance; a fixed distance for timed runs), defaults, instructions,
+  coaching cues, common mistakes, safety notes. Built-in exercises are
+  curated, versioned with the app and read-only; custom exercises belong to
+  the user. Active / inactive replaces deletion so history always resolves.
 - `SelfAssessment` is subjective data and lives in its own tables. It never
   writes to, or is derived from, the result pipeline (§12 below).
 - **Self-assessment contract (approved 2026-10-04 — not implemented):**
@@ -427,6 +464,9 @@ testing** — the engine must accept them as configuration, not hard-code a numb
   original baseline sessions are never modified.
 - The Training Engine does not depend on Baseline; Baseline depends on the
   Training Engine.
+- **Naming update (2026-10-06):** `WorkoutSession` is now `TrainingSession`
+  and results are set-level measurements with a source (§15); the single
+  pipeline and the purpose rules above are unchanged.
 
 ## 13. Cloud-ready ownership (approved)
 
@@ -442,6 +482,13 @@ testing** — the engine must accept them as configuration, not hard-code a numb
   transaction as the first Player; a pointer to a missing Family is a data
   error, never silently replaced.
 - No sync is built until its slice.
+
+- **Training ownership (approved 2026-10-06):** reusable Workout Blocks and
+  Workout Templates are owned by the Family (never global, never
+  "the only user"); Planned Workouts and Training Sessions are owned by a
+  Player (and through it the Family). Cloud representation, RLS and sync of
+  these tables come with Cloud Foundation C; nothing in the local model
+  assumes a single device user.
 
 ## 14. Planning: facts, calendar and AI (approved 2026-10-04 — not implemented)
 
@@ -478,7 +525,52 @@ testing** — the engine must accept them as configuration, not hard-code a numb
   Current & upcoming is ordered `startAt` ascending then `id` ascending;
   Past `startAt` descending then `id` descending.
   Events reference `player_id` and, where relevant, `sport`.
+- **CAL-TRAIN-001 (approved conceptually 2026-10-06; built after TRAIN-002):**
+  a `CalendarEvent` may carry an optional `planned_workout_id` — it links to
+  what was planned only, never to performed results; the Training Session
+  stays independent.
 - **Recurrence and occurrence exceptions move to 2.2** (Calendar UI +
   Calendar ↔ Training). Wall-clock recurrence needs a stored timezone, so
   that slice reopens the timezone contract; the recurrence schema shape is
   not decided.
+
+## 15. Training system (approved 2026-10-06 — TRAIN-002)
+
+```
+Exercise → WorkoutBlock → WorkoutTemplate → PlannedWorkout → TrainingSession
+                                                  (frozen)          │
+                              SessionExercise → Set / Interval → Measurement
+```
+
+- **Reusable vs frozen.** Blocks and templates are reusable and editable.
+  Planning a template for a player writes a **frozen PlannedWorkout**: each
+  item copies the exercise snapshot it needs to be displayed (names,
+  measurement type, comparison, load / distance conditions) and its
+  prescription (sets, target, load, rest). Planned items are never updated
+  or deleted; later edits to an exercise, block, template or the equipment
+  catalog never reach them. The template reference is provenance only.
+- **Planned ≠ performed.** Starting a planned workout creates a separate
+  `TrainingSession` (purpose `TRAINING`) whose session exercises carry their
+  own exercise snapshot and whose sets copy the per-set prescription.
+  `CalendarEvent ≠ TrainingSession`, `PlannedWorkout ≠ TrainingSession`;
+  "what was planned?" is answered from the plan, "what happened?" from the
+  session — independently.
+- **Status:** `IN_PROGRESS`, `COMPLETED` (every planned set performed),
+  `PARTIAL` (finished with planned sets not performed), `ABANDONED`. Only an
+  in-progress session accepts results; a finished session is read-only. At
+  most one in-progress session per player; a planned workout is performed at
+  most once.
+- **Sets / intervals:** `PENDING`, `DONE`, `SKIPPED`; extra sets beyond the
+  plan have no prescription. Actual values are never normalized to the plan.
+- **Measurement** = one objective value of one kind for one set (e.g.
+  repetitions, load kg, time, duration, distance, made, attempts, rating,
+  completion), with `measuredResult`, `finalResult`, `wasEdited`, **source**
+  (`MANUAL` now; `CAMERA`, `DEVICE`, `SENSOR` reserved) and an optional
+  **confidence** (0–1; null for manual entry). Source and confidence belong
+  to the measurement, not the set, so one set may mix sources. No
+  camera / device / sensor capture or computer-vision schema is built.
+- **History is non-destructive:** plans, sessions, sets and measurements are
+  never deleted; objective results never write to, or read from, the
+  subjective Self-Assessment, and no combined score exists.
+- **Cloud-ready, not cloud:** client UUIDs, timestamps and Family / Player
+  ownership (§13); no auth, sync, outbox or RLS until Cloud Foundation C.
