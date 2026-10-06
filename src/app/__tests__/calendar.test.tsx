@@ -1566,6 +1566,7 @@ describe('calendar UI boundaries (source guards)', () => {
     'src/app/children/[id]/schedule/new.tsx',
     'src/app/children/[id]/schedule/[eventId]/index.tsx',
     'src/app/children/[id]/schedule/[eventId]/edit.tsx',
+    'src/app/calendar.tsx',
   ];
   const code = (file: string) =>
     readFileSync(join(root, file), 'utf8')

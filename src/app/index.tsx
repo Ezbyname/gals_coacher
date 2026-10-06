@@ -25,6 +25,12 @@ export default function HomeScreen() {
           label={t('nav.players')}
           onPress={() => router.push('/children')}
         />
+        <BigButton
+          testID="home-calendar"
+          variant="secondary"
+          label={t('nav.calendar')}
+          onPress={() => router.push('/calendar')}
+        />
         <BigButton variant="secondary" label={t('nav.exercises')} onPress={() => router.push('/exercises')} />
         <BigButton variant="secondary" label={t('nav.history')} onPress={() => router.push('/history')} />
         <BigButton

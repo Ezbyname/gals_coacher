@@ -670,13 +670,14 @@ describe('calendar persistence boundaries', () => {
     },
   );
 
-  it('exports exactly create, get, list, update, delete and the explicit completion pair', () => {
+  it('exports exactly create, get, list, the range read, update, delete and the explicit completion pair', () => {
     const exported = Object.keys(jest.requireActual('../calendarEventRepository'));
     expect(exported.sort()).toEqual([
       'createCalendarEvent',
       'deleteCalendarEvent',
       'getCalendarEvent',
       'listCalendarEvents',
+      'listCalendarEventsInRange',
       'markCalendarEventCompleted',
       'undoCalendarEventCompletion',
       'updateCalendarEvent',

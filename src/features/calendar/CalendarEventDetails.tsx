@@ -17,7 +17,13 @@ import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { colors, spacing } from '@/ui/theme';
 
 import { calendarErrorMessage, eventSubtitle, eventTypeLabel, sportLabel } from './calendarLabels';
-import { SCHEDULE_ROUTE, editEventPath, leaveTo, schedulePath } from './calendarNavigation';
+import {
+  FULL_CALENDAR_ROUTE,
+  SCHEDULE_ROUTE,
+  editEventPath,
+  leaveTo,
+  schedulePath,
+} from './calendarNavigation';
 import { formatDateTime } from './formatEventTime';
 import { ErrorScreen, LoadingScreen } from './StatusScreen';
 
@@ -87,7 +93,10 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
     try {
       if (boot.status !== 'ready') throw new Error('database not ready');
       await deleteCalendarEvent(boot.db, playerId, eventId);
-      leaveTo(navigation, { route: SCHEDULE_ROUTE, params: { id: playerId }, path: schedulePath(playerId) });
+      // Back to where the event was opened from: its Player's schedule or the Full Calendar.
+      leaveTo(navigation, { route: SCHEDULE_ROUTE, params: { id: playerId }, path: schedulePath(playerId) }, [
+        FULL_CALENDAR_ROUTE,
+      ]);
       return; // stays guarded: the screen is leaving
     } catch (e) {
       console.warn('[calendar] delete failed', e);

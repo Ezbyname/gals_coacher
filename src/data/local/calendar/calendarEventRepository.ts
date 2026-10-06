@@ -226,6 +226,25 @@ export function listCalendarEvents(db: PlayerDb, playerId: string): Promise<Cale
   });
 }
 
+/**
+ * Every Player's events that overlap the instant range [from, to), in the
+ * canonical order `start_at ASC, id ASC` — one query for a whole visible
+ * month or week (the Full Calendar, CAL-VIEW-001). An event occupies
+ * [start_at, end_at); one without an end occupies its start instant only.
+ * Any malformed event in the range fails the whole read (as listCalendarEvents).
+ */
+export function listCalendarEventsInRange(db: PlayerDb, from: number, to: number): Promise<CalendarEvent[]> {
+  return runSerialized(db, async () => {
+    const rows = await db.getAllAsync<EventRow>(
+      `${SELECT_EVENTS}
+       WHERE e.start_at < ? AND (CASE WHEN e.end_at IS NULL THEN e.start_at >= ? ELSE e.end_at > ? END)
+       ORDER BY e.start_at ASC, e.id ASC`,
+      [to, from, from],
+    );
+    return rows.map(parseEventRow);
+  });
+}
+
 /** One write transaction at a time per connection (the same queue as the other repositories). */
 function writeTransaction(db: PlayerDb, task: () => Promise<void>): Promise<void> {
   return runSerialized(db, () => db.withTransactionAsync(task));

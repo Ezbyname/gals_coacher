@@ -13,6 +13,7 @@ All verified by the owner on a physical Android device.
 **Slice 1.3 — Calendar Foundation: IMPLEMENTED.** Commits A–D physically PASSED (gate G33, schema v4 upgrade over the previous APK). The UI polish `143fa3e`: **automated PASS, PHYSICAL ACCEPTANCE FAIL** (gate NB, build `d20190fb…`: 17 PASS / 2 FAIL — NB-02, NB-03 keyboard; open as CAL-KEY-001).
 **CAL-KEY-001 (keyboard) and SPORT-LIFE-001 (Basketball active / inactive): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING** (next Preview APK; plan below).
 **CAL-COMP-001 (explicit manual calendar event completion): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v6**.
+**CAL-VIEW-001 / CAL-FILTER-001 / CAL-COLOR-001 (Full Calendar: Month / Week, filters, colour meaning): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema unchanged (v6).
 **iOS (project baseline):** the current pre-Calendar application has passed iOS bundle export (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
@@ -31,6 +32,7 @@ All verified by the owner on a physical Android device.
 | CAL-KEY-001 (Calendar keyboard) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING** (NB-02 / NB-03 / NB-04 next build) |
 | SPORT-LIFE-001 (Basketball active / inactive) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v5** |
 | CAL-COMP-001 (manual event completion) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v6** |
+| CAL-VIEW-001 / CAL-FILTER-001 / CAL-COLOR-001 (Full Calendar) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; no schema change |
 | Slices after 1.3 (C, 2.x …) | **Not started** |
 
 ---
@@ -76,6 +78,19 @@ player / add Basketball), 25 (player without Basketball), 28 (optional
 sport), 29–31 (positions, clear secondary, persistence).
 
 ---
+
+## CAL-VIEW-001 / CAL-FILTER-001 / CAL-COLOR-001 — Full Calendar: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-06)
+
+- **Entry:** Home → **Calendar** (`/calendar`); no new main-navigation tab (Home stays selected). Per-Player Schedule screens unchanged; `splitAgenda` unchanged.
+- **Month:** 7-column grid of whole weeks, weekday headers, previous / next month, Today; today ringed and announced; neighbouring-month days muted; each day shows up to 2 markers (colour + Player initial or activity glyph) and "+N"; the selected day's events are listed below in full. **Week:** the same seven-day strip for one week with previous / next / Today and the selected day's list. Tapping an event opens the existing Event Details (delete there returns to the calendar).
+- **Dates:** local civil dates only; an event occupies [start, end) — an end at exactly midnight does not reach the next day; no end = its start date. One range query per visible month / week across all Players (`listCalendarEventsInRange`).
+- **Week start — OWNER DECISION PENDING:** the repository had no rule; Sunday is used for both languages (one constant, `WEEK_STARTS_ON` in `src/domain/calendarView.ts`).
+- **Filters:** Player, Sport (incl. "No sport"), Activity type; multi-select; OR inside a dimension, AND across; empty = All; screen state only (nothing stored); active filters shown as a count and a "Showing only" line with Clear. Sport filtering uses the event's stored sport — an inactive sport's history stays visible.
+- **Colour:** several Players can show → colour = Player (slot by creation order: stable across rename, filter, order, restart); exactly one Player (filtered, or a one-Player family) → colour = activity type (fixed map). Always with text (initial / glyph / labels), a legend, and "✓ Completed" for completion.
+
+**Automated evidence (authoring environment):** `npm run check` exit 0 — 58/58 suites, 1028/1028 tests; Android bundle export exit 0. Focused: calendar view domain 38/38, local-date projection (incl. Jerusalem / Los Angeles / Auckland child processes) 13/13, range repository 7/7, Full Calendar UI 28/28 (HE / EN); negative proof 18/18 mutants killed.
+
+**Physical (next batched Preview APK) — all PENDING:** CV-01 Month layout / navigation (cell size and readability on a phone) · CV-02 Week layout / navigation · CV-03 event → existing Event Details and back (and delete returns to the calendar) · CF-01 Player filter · CF-02 Sport filter (incl. No sport; inactive Basketball history) · CF-03 Activity Type filter · CF-04 combined filters + Clear + no-match message · CCOLOR-01 several Players → Player colours (same Player, same colour after rename / restart) · CCOLOR-02 one Player → activity-type colours · CCOLOR-03 meaning without colour (initials, glyphs, legend, TalkBack) · CV-04 Hebrew RTL / English LTR (grid mirrors, weekday order, arrows) · CV-05 overnight / multi-day / ending-at-midnight display · CV-06 completion shown without moving the event · CV-07 main navigation / safe-area regression.
 
 ## CAL-COMP-001 — Explicit manual calendar event completion: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-05)
 

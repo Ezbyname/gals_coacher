@@ -96,3 +96,18 @@ export function formatEventWhen(
 export function isInProgress(event: Pick<CalendarEvent, 'startAt' | 'endAt'>, now: number): boolean {
   return event.endAt !== null && event.startAt < now && event.endAt >= now;
 }
+
+/** e.g. "October 2026" / "אוקטובר 2026" (the Full Calendar's month title). `epochMs` is any instant of that month. */
+export function formatMonthYear(epochMs: number, language: Language): string {
+  return new Intl.DateTimeFormat(LOCALES[language], { month: 'long', year: 'numeric' }).format(epochMs);
+}
+
+/**
+ * A weekday for a narrow grid column: "Sun" … in English, "א׳" … in Hebrew
+ * (the Hebrew short form "יום א׳" does not fit a seventh of a phone width).
+ */
+export function formatWeekdayShort(epochMs: number, language: Language): string {
+  return new Intl.DateTimeFormat(LOCALES[language], {
+    weekday: language === 'he' ? 'narrow' : 'short',
+  }).format(epochMs);
+}

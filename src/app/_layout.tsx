@@ -81,6 +81,7 @@ function ScreenStack() {
         name="children/[id]/schedule/[eventId]/edit"
         options={{ title: t('calendar.editTitle') }}
       />
+      <Stack.Screen name="calendar" options={{ title: t('nav.calendar') }} />
       <Stack.Screen name="exercises" options={{ title: t('nav.exercises') }} />
       <Stack.Screen name="history" options={{ title: t('nav.history') }} />
       <Stack.Screen name="settings" options={{ title: t('nav.settings') }} />

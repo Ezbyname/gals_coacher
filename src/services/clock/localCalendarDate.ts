@@ -74,3 +74,38 @@ export function epochToLocalDateTime(epochMs: number): LocalDateTime {
     minute: date.getMinutes(),
   };
 }
+
+/**
+ * The first instant of a civil date on this device (local midnight; when a
+ * DST change skips midnight, the first local time that exists that day).
+ * Used as a half-open range boundary: a day is [start of day, start of next day).
+ */
+export function localDayStart(date: CalendarDate): number {
+  return new Date(date.year, date.month - 1, date.day, 0, 0, 0, 0).getTime();
+}
+
+/**
+ * The instant range [from, to) covering the civil dates first..last on this
+ * device: from = start of `first`, to = start of the day after `last`.
+ */
+export function localDateRange(first: CalendarDate, last: CalendarDate): { from: number; to: number } {
+  return {
+    from: localDayStart(first),
+    to: new Date(last.year, last.month - 1, last.day + 1, 0, 0, 0, 0).getTime(),
+  };
+}
+
+/**
+ * The first and last local civil dates an event occupies, with the end
+ * exclusive ([startAt, endAt)): an event ending exactly at midnight does not
+ * reach the next day; an event without an end occupies its start date only.
+ * Nothing about the event is changed.
+ */
+export function eventLocalDates(
+  startAt: number,
+  endAt: number | null,
+): { first: CalendarDate; last: CalendarDate } {
+  const first = localCalendarDateFromEpoch(startAt);
+  if (endAt === null || endAt <= startAt) return { first, last: first };
+  return { first, last: localCalendarDateFromEpoch(endAt - 1) };
+}
