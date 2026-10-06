@@ -9,7 +9,14 @@ import {
   type CalendarEventErrors,
   type CalendarEventInput,
 } from '@/domain/calendarEvent';
+import type { ActivityTypeRef } from '@/domain/activityType';
 import { isUuid } from '@/domain/ids';
+import { parseActivityTypeRow } from '../activityTypes/activityTypeRepository';
+import {
+  ActivityTypeDataError,
+  ActivityTypeInactiveError,
+  ActivityTypeNotFoundError,
+} from '../activityTypes/errors';
 import type { Clock } from '@/services/clock/Clock';
 import type { IdService } from '@/services/ids/IdService';
 
@@ -53,6 +60,7 @@ export async function createCalendarEvent(
   let saved = null as CalendarEvent | null;
   await writeTransaction(db, async () => {
     await assertPlayerAndSport(db, playerId, valid.value, null);
+    await assertActivityType(db, valid.value.type, null);
     const v = valid.value;
     await db.runAsync(
       `INSERT INTO calendar_events
@@ -104,6 +112,8 @@ export async function updateCalendarEvent(
     }
     // The event may keep the sport it already has, even if that sport is now inactive.
     await assertPlayerAndSport(db, playerId, valid.value, existing.sport);
+    // Likewise the type it already has, even if that type is now inactive (never reactivated).
+    await assertActivityType(db, valid.value.type, existing.type);
     const v = valid.value;
     await db.runAsync(
       `UPDATE calendar_events
@@ -274,6 +284,19 @@ async function assertPlayerAndSport(
     throw new SportInactiveError(playerId, event.sport);
 }
 
+/**
+ * The event's Activity Type must exist (ActivityTypeNotFoundError) and be
+ * ACTIVE (ActivityTypeInactiveError) — except that an existing event may keep
+ * the type it already has (`keptType`), active or not (ACTIVITY-001).
+ */
+async function assertActivityType(db: PlayerDb, typeId: string, keptType: string | null): Promise<void> {
+  const row = await db.getFirstAsync<{ active: unknown }>('SELECT active FROM activity_types WHERE id = ?', [
+    typeId,
+  ]);
+  if (row === null) throw new ActivityTypeNotFoundError(typeId);
+  if (row.active !== 1 && typeId !== keptType) throw new ActivityTypeInactiveError(typeId);
+}
+
 /** Unqueued read; only for use inside an already-queued operation. */
 async function readEvent(db: PlayerDb, playerId: string, eventId: string): Promise<CalendarEvent | null> {
   const row = await db.getFirstAsync<EventRow>(`${SELECT_EVENTS} WHERE e.id = ? AND e.player_id = ?`, [
@@ -289,10 +312,13 @@ async function readEvent(db: PlayerDb, playerId: string, eventId: string): Promi
 const SELECT_EVENTS = `
   SELECT e.id, e.player_id, e.type, e.sport, e.start_at, e.end_at, e.title, e.notes,
          e.created_at, e.updated_at, e.completed_at, e.completion_source,
-         p.id AS owner_player_id, ps.player_id AS assignment_player_id
+         p.id AS owner_player_id, ps.player_id AS assignment_player_id,
+         at.id AS at_id, at.builtin AS at_builtin, at.name AS at_name, at.active AS at_active,
+         at.created_at AS at_created_at, at.updated_at AS at_updated_at
   FROM calendar_events e
   LEFT JOIN players p ON p.id = e.player_id
-  LEFT JOIN player_sports ps ON ps.player_id = e.player_id AND ps.sport = e.sport`;
+  LEFT JOIN player_sports ps ON ps.player_id = e.player_id AND ps.sport = e.sport
+  LEFT JOIN activity_types at ON at.id = e.type`;
 
 /** Raw SQLite values: nothing is trusted until parsed. */
 type EventRow = {
@@ -310,6 +336,12 @@ type EventRow = {
   completion_source: unknown;
   owner_player_id: unknown;
   assignment_player_id: unknown;
+  at_id: unknown;
+  at_builtin: unknown;
+  at_name: unknown;
+  at_active: unknown;
+  at_created_at: unknown;
+  at_updated_at: unknown;
 };
 
 const isNullableString = (value: unknown) => value === null || typeof value === 'string';
@@ -374,7 +406,35 @@ function parseEventRow(row: EventRow): CalendarEvent {
   if (valid.value.title !== row.title) throw fail('title', 'INVALID_VALUE');
   if (valid.value.notes !== row.notes) throw fail('notes', 'INVALID_VALUE');
 
-  return { id: rawId, playerId, ...valid.value, completion: parseCompletion(row, fail) };
+  return {
+    id: rawId,
+    playerId,
+    ...valid.value,
+    activityType: parseEventActivityType(row, fail),
+    completion: parseCompletion(row, fail),
+  };
+}
+
+/** The event's catalog type: it must exist (a well-formed id with no row is a broken relationship). */
+function parseEventActivityType(
+  row: EventRow,
+  fail: (field: CalendarEventDataField, reason: CalendarEventDataReason) => CalendarEventDataError,
+): ActivityTypeRef {
+  if (row.at_id === null) throw fail('type', 'INVALID_RELATIONSHIP');
+  try {
+    const { id, builtin, name, active } = parseActivityTypeRow({
+      id: row.at_id,
+      builtin: row.at_builtin,
+      name: row.at_name,
+      active: row.at_active,
+      created_at: row.at_created_at,
+      updated_at: row.at_updated_at,
+    });
+    return { id, builtin, name, active };
+  } catch (e) {
+    if (e instanceof ActivityTypeDataError) throw fail('type', 'INVALID_VALUE');
+    throw e;
+  }
 }
 
 /** Both NULL = not completed; otherwise a whole-millisecond time and a known source, together. */

@@ -25,12 +25,13 @@ export const MAIN_DESTINATIONS: readonly MainDestination[] = [
 /**
  * Which main destination the current path belongs to: Players covers every
  * player screen (edit, self-assessment, schedule…); Home also covers the
- * pages opened from it (Quick Training, History, Diagnostics).
+ * pages opened from it (Quick Training, History, Diagnostics); Settings covers
+ * its sub-pages (Activity types).
  */
 export function activeDestination(pathname: string): MainDestinationKey {
   if (pathname === '/children' || pathname.startsWith('/children/')) return 'players';
   if (pathname === '/exercises') return 'exercises';
-  if (pathname === '/settings') return 'settings';
+  if (pathname === '/settings' || pathname.startsWith('/settings/')) return 'settings';
   return 'home';
 }
 

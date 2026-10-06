@@ -2,7 +2,9 @@ import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { createCalendarEvent } from '@/data/local/calendar/calendarEventRepository';
+import { listActivityTypes } from '@/data/local/activityTypes/activityTypeRepository';
 import { getPlayer } from '@/data/local/players/playerRepository';
+import { selectableActivityTypes, type ActivityTypeRef } from '@/domain/activityType';
 import type { SportKey } from '@/domain/sport';
 import { useApp } from '@/features/AppProvider';
 import type { TranslationKey } from '@/i18n/types';
@@ -15,7 +17,7 @@ import { ErrorScreen, LoadingScreen } from './StatusScreen';
 
 type FormState =
   | { status: 'loading' }
-  | { status: 'ready'; initialValues: CalendarFormValues; sports: SportKey[] }
+  | { status: 'ready'; initialValues: CalendarFormValues; sports: SportKey[]; types: ActivityTypeRef[] }
   | { status: 'error'; message: TranslationKey };
 
 /** Adds an event to this Player's schedule; Save and Cancel both return to the schedule. */
@@ -29,8 +31,8 @@ export function NewCalendarEvent({ playerId }: { playerId: string }) {
   useEffect(() => {
     if (boot.status !== 'ready') return;
     let active = true;
-    getPlayer(boot.db, playerId)
-      .then((profile) => {
+    Promise.all([getPlayer(boot.db, playerId), listActivityTypes(boot.db)])
+      .then(([profile, catalog]) => {
         if (!active) return;
         setState(
           profile
@@ -38,6 +40,8 @@ export function NewCalendarEvent({ playerId }: { playerId: string }) {
                 status: 'ready',
                 initialValues: newEventValues(services.clock.wallNow()),
                 sports: sportsOf(profile),
+                // A new event offers only ACTIVE types (none chosen for the user).
+                types: selectableActivityTypes(catalog),
               }
             : { status: 'error', message: 'calendar.errors.playerNotFound' },
         );
@@ -67,6 +71,7 @@ export function NewCalendarEvent({ playerId }: { playerId: string }) {
     <CalendarEventForm
       initialValues={state.initialValues}
       sports={state.sports}
+      types={state.types}
       onSave={(input) => {
         if (!db) throw new Error('database not ready');
         return createCalendarEvent(db, playerId, input, { ids: services.ids, clock: services.clock });

@@ -142,4 +142,42 @@ export const migrations: readonly Migration[] = [
         );
     `,
   },
+  {
+    // ACTIVITY-001. Activity Types become a catalog. Additive: the six
+    // built-ins are seeded with id = the code every existing event already
+    // stores in calendar_events.type, so no event row changes and that column
+    // stays the one source of an event's type identity. Custom types get a
+    // client UUID and a name; built-ins are named by i18n (name NULL).
+    // `calendar_events` is deliberately NOT rebuilt to add a foreign key: a
+    // rebuild would fail (and the app could not open its data) if any legacy
+    // row held an unknown code. The repository checks the reference on every
+    // write and every read fails closed instead. Types are never deleted
+    // (inactive instead): the trigger refuses a DELETE at the database itself.
+    version: 7,
+    name: 'activity_types',
+    sql: `
+      CREATE TABLE activity_types (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        builtin INTEGER NOT NULL CHECK (typeof(builtin) = 'integer' AND builtin IN (0, 1)),
+        name TEXT CHECK (name IS NULL OR length(trim(name, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        active INTEGER NOT NULL DEFAULT 1 CHECK (typeof(active) = 'integer' AND active IN (0, 1)),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer'),
+        CHECK ((builtin = 1) = (name IS NULL))
+      );
+
+      INSERT INTO activity_types (id, builtin, name, active, created_at, updated_at) VALUES
+        ('TEAM_TRAINING', 1, NULL, 1, 0, 0),
+        ('PERSONAL_TRAINING', 1, NULL, 1, 0, 0),
+        ('GAME', 1, NULL, 1, 0, 0),
+        ('GYM', 1, NULL, 1, 0, 0),
+        ('RECOVERY', 1, NULL, 1, 0, 0),
+        ('OTHER', 1, NULL, 1, 0, 0);
+
+      CREATE TRIGGER activity_types_never_deleted BEFORE DELETE ON activity_types
+      BEGIN
+        SELECT RAISE(ABORT, 'activity types are never deleted; make them inactive');
+      END;
+    `,
+  },
 ];

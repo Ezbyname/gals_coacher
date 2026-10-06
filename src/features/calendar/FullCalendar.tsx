@@ -5,7 +5,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { listCalendarEventsInRange } from '@/data/local/calendar/calendarEventRepository';
 import { listPlayers } from '@/data/local/players/playerRepository';
 import type { CalendarDate } from '@/domain/calendarDate';
-import { CALENDAR_EVENT_TYPES, type CalendarEvent, type CalendarEventType } from '@/domain/calendarEvent';
+import { listActivityTypes } from '@/data/local/activityTypes/activityTypeRepository';
+import type { ActivityType, ActivityTypeId } from '@/domain/activityType';
+import type { CalendarEvent } from '@/domain/calendarEvent';
 import {
   NO_FILTER,
   NO_SPORT,
@@ -41,13 +43,20 @@ import {
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { colors, spacing, touch } from '@/ui/theme';
 
-import { TYPE_COLORS, TYPE_GLYPHS, eventMarker, playerColor, playerInitial } from './calendarColors';
+import {
+  activityTypeColor,
+  activityTypeGlyph,
+  eventMarker,
+  playerColor,
+  playerInitial,
+} from './calendarColors';
 import {
   calendarErrorMessage,
   eventHeading,
   eventName,
   eventSubtitle,
-  eventTypeLabel,
+  activityTypeChoiceLabel,
+  activityTypeLabel,
   sportLabel,
 } from './calendarLabels';
 import { eventPath } from './calendarNavigation';
@@ -64,7 +73,14 @@ type PlayerRef = { id: string; name: string; createdAt: number };
 
 type Loaded =
   | { status: 'loading' }
-  | { status: 'ready'; rangeKey: string; players: PlayerRef[]; events: CalendarEvent[] }
+  | {
+      status: 'ready';
+      rangeKey: string;
+      players: PlayerRef[];
+      events: CalendarEvent[];
+      /** The whole catalog, active and inactive (history stays filterable). */
+      types: ActivityType[];
+    }
   | { status: 'error'; message: TranslationKey };
 
 /** At most this many markers in a day cell; the rest is "+N" (the day's list shows them all). */
@@ -111,15 +127,19 @@ export function FullCalendar() {
       let active = true;
       const { first, last } = rangeFromKey(rangeKey);
       const { from, to } = localDateRange(first, last);
-      Promise.all([listPlayers(boot.db), listCalendarEventsInRange(boot.db, from, to)])
-        .then(([profiles, events]) => {
+      Promise.all([
+        listPlayers(boot.db),
+        listCalendarEventsInRange(boot.db, from, to),
+        listActivityTypes(boot.db),
+      ])
+        .then(([profiles, events, types]) => {
           if (!active) return;
           const players = profiles.map(({ player }) => ({
             id: player.id as string,
             name: player.name,
             createdAt: player.createdAt,
           }));
-          setLoaded({ status: 'ready', rangeKey, players, events });
+          setLoaded({ status: 'ready', rangeKey, players, events, types });
         })
         .catch((e: unknown) => {
           console.warn('[calendar] full calendar failed', e);
@@ -134,6 +154,7 @@ export function FullCalendar() {
 
   const ready = loaded.status === 'ready' ? loaded : null;
   const players = useMemo(() => ready?.players ?? [], [ready]);
+  const types = useMemo(() => ready?.types ?? [], [ready]);
   const events = useMemo(() => ready?.events ?? [], [ready]);
   const visible = useMemo(() => filterCalendarEvents(events, filter), [events, filter]);
   /** Each local date → the visible events that overlap it ([start, end)), in chronological order. */
@@ -163,7 +184,10 @@ export function FullCalendar() {
   const filterLabels = [
     ...filter.playerIds.map(playerName),
     ...filter.sports.map(sportName),
-    ...filter.types.map((type) => eventTypeLabel(t, type)),
+    ...filter.types.map((id) => {
+      const type = types.find((candidate) => candidate.id === id);
+      return type ? activityTypeLabel(t, type) : id;
+    }),
   ];
   const isMonth = mode === 'MONTH';
   const step = (delta: number) =>
@@ -272,13 +296,14 @@ export function FullCalendar() {
             onToggle={(value) => setFilter({ ...filter, sports: toggleValue(filter.sports, value) })}
             onAll={() => setFilter({ ...filter, sports: [] })}
           />
-          <FilterGroup<CalendarEventType>
+          <FilterGroup<ActivityTypeId>
             testID="calendar-filter-type"
             label={t('calendar.full.type')}
-            options={CALENDAR_EVENT_TYPES.map((type) => ({
-              value: type,
-              label: eventTypeLabel(t, type),
-              glyph: TYPE_GLYPHS[type],
+            // Every type, inactive ones too (marked): filtering is about history, not new events.
+            options={types.map((type) => ({
+              value: type.id,
+              label: activityTypeChoiceLabel(t, type),
+              glyph: activityTypeGlyph(type),
             }))}
             selected={filter.types}
             onToggle={(type) => setFilter({ ...filter, types: toggleValue(filter.types, type) })}
@@ -317,7 +342,7 @@ export function FullCalendar() {
         ))}
       </View>
 
-      <Legend meaning={meaning} players={players} filter={filter} />
+      <Legend meaning={meaning} players={players} filter={filter} types={types} events={visible} />
 
       {ready?.rangeKey !== rangeKey ? null : players.length === 0 ? (
         <Text style={styles.muted} testID="calendar-no-players">
@@ -456,20 +481,27 @@ function Legend({
   meaning,
   players,
   filter,
+  types,
+  events,
 }: {
   meaning: ColorMeaning;
   players: PlayerRef[];
   filter: CalendarFilter;
+  types: ActivityType[];
+  events: CalendarEvent[];
 }) {
   const { t } = useI18n();
   const items =
     meaning === 'TYPE'
-      ? CALENDAR_EVENT_TYPES.map((type) => ({
-          key: type,
-          color: TYPE_COLORS[type],
-          text: TYPE_GLYPHS[type],
-          label: eventTypeLabel(t, type),
-        }))
+      ? // The active types, and any inactive type that shown events still carry.
+        types
+          .filter((type) => type.active || events.some((event) => event.type === type.id))
+          .map((type) => ({
+            key: type.id,
+            color: activityTypeColor(type),
+            text: activityTypeGlyph(type),
+            label: activityTypeChoiceLabel(t, type),
+          }))
       : players
           .filter((p) => filter.playerIds.length === 0 || filter.playerIds.includes(p.id))
           .map((p) => ({

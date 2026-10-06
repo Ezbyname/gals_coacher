@@ -1,10 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { BUILTIN_ACTIVITY_TYPES, isActivityTypeId, isBuiltinActivityType } from '../activityType';
 import {
-  CALENDAR_EVENT_TYPES,
   agendaSection,
-  isCalendarEventType,
   splitAgenda,
   validateCalendarEvent,
   validateCalendarEventRecord,
@@ -26,9 +25,9 @@ const errorsOf = (input: CalendarEventInput) => {
   return result.errors;
 };
 
-describe('event types', () => {
-  it('are exactly the six approved codes, in order', () => {
-    expect(CALENDAR_EVENT_TYPES).toEqual([
+describe('event types (Activity Type ids, ACTIVITY-001)', () => {
+  it('the built-ins are exactly the six approved codes, in order', () => {
+    expect(BUILTIN_ACTIVITY_TYPES).toEqual([
       'TEAM_TRAINING',
       'PERSONAL_TRAINING',
       'GAME',
@@ -38,7 +37,7 @@ describe('event types', () => {
     ]);
   });
 
-  it.each(CALENDAR_EVENT_TYPES.filter((t) => t !== 'OTHER'))('%s is valid without a title', (type) => {
+  it.each(BUILTIN_ACTIVITY_TYPES.filter((t) => t !== 'OTHER'))('%s is valid without a title', (type) => {
     expect(validateCalendarEvent({ ...base, type, title: null })).toEqual({
       ok: true,
       value: { type, sport: 'BASKETBALL', startAt: START, endAt: START + HOUR, title: null, notes: null },
@@ -56,11 +55,32 @@ describe('event types', () => {
     'hasOwnProperty',
   ])('rejects %p as UNKNOWN_TYPE', (type) => {
     expect(errorsOf({ ...base, type })).toEqual({ type: 'UNKNOWN_TYPE' });
-    expect(isCalendarEventType(type)).toBe(false);
+    expect(isActivityTypeId(type)).toBe(false);
   });
 
-  it('isCalendarEventType rejects non-strings', () => {
-    for (const value of [null, undefined, 1, {}, ['GAME']]) expect(isCalendarEventType(value)).toBe(false);
+  it('ids reject non-strings', () => {
+    for (const value of [null, undefined, 1, {}, ['GAME']]) {
+      expect(isActivityTypeId(value)).toBe(false);
+      expect(isBuiltinActivityType(value)).toBe(false);
+    }
+  });
+
+  it('a custom type (a UUID id) is well-formed and needs no title; only OTHER requires one', () => {
+    const custom = '00000000-0000-4000-8000-0000000000a1';
+    expect(validateCalendarEvent({ ...base, type: custom, title: null })).toEqual({
+      ok: true,
+      value: {
+        type: custom,
+        sport: 'BASKETBALL',
+        startAt: START,
+        endAt: START + HOUR,
+        title: null,
+        notes: null,
+      },
+    });
+    expect(errorsOf({ ...base, type: 'OTHER', title: '  ' })).toEqual({ title: 'REQUIRED_FOR_OTHER' });
+    // A label is never an id.
+    expect(errorsOf({ ...base, type: 'Game' })).toEqual({ type: 'UNKNOWN_TYPE' });
   });
 });
 

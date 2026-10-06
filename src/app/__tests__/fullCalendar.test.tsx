@@ -9,7 +9,8 @@ import * as calendar from '@/data/local/calendar/calendarEventRepository';
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
 import * as players from '@/data/local/players/playerRepository';
-import { CALENDAR_EVENT_TYPES, type CalendarEventInput } from '@/domain/calendarEvent';
+import { BUILTIN_ACTIVITY_TYPES } from '@/domain/activityType';
+import type { CalendarEventInput } from '@/domain/calendarEvent';
 import type { Uuid } from '@/domain/ids';
 import { PLAYER_PALETTE, TYPE_COLORS, TYPE_GLYPHS } from '@/features/calendar/calendarColors';
 import { MAIN_DESTINATIONS, screenStack } from '@/features/navigation/mainDestinations';
@@ -593,7 +594,7 @@ describe('colours (CAL-COLOR-001): Player when several can show, activity type w
   it('one Player selected: colours (and glyphs) show the activity type, the same for every type', async () => {
     await prepare('en');
     const events = [];
-    for (const [i, type] of CALENDAR_EVENT_TYPES.entries()) {
+    for (const [i, type] of BUILTIN_ACTIVITY_TYPES.entries()) {
       events.push(
         await seedEvent(
           { type, startAt: at(4 + i, 9), title: type === 'OTHER' ? 'Photo day' : undefined },
@@ -605,7 +606,7 @@ describe('colours (CAL-COLOR-001): Player when several can show, activity type w
     await openCalendar();
     await setFilter('player', noa);
     await waitFor(() => expect(text('calendar-legend-title')).toBe('Colors show the activity type'));
-    for (const [i, type] of CALENDAR_EVENT_TYPES.entries()) {
+    for (const [i, type] of BUILTIN_ACTIVITY_TYPES.entries()) {
       const marker = `${day(`2026-10-0${4 + i}`)}-marker-0`;
       expect(markerColor(marker)).toBe(TYPE_COLORS[type]);
       expect(markerText(marker)).toBe(TYPE_GLYPHS[type]);

@@ -85,6 +85,8 @@ function ScreenStack() {
       <Stack.Screen name="exercises" options={{ title: t('nav.exercises') }} />
       <Stack.Screen name="history" options={{ title: t('nav.history') }} />
       <Stack.Screen name="settings" options={{ title: t('nav.settings') }} />
+      <Stack.Screen name="settings/activity-types/index" options={{ title: t('activityTypes.title') }} />
+      <Stack.Screen name="settings/activity-types/new" options={{ title: t('activityTypes.newTitle') }} />
       <Stack.Screen name="diagnostics" options={{ title: t('nav.diagnostics') }} />
     </Stack>
   );

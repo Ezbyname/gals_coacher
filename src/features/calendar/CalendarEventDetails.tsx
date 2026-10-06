@@ -16,7 +16,7 @@ import { BigButton } from '@/ui/BigButton';
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { colors, spacing } from '@/ui/theme';
 
-import { calendarErrorMessage, eventSubtitle, eventTypeLabel, sportLabel } from './calendarLabels';
+import { activityTypeLabel, calendarErrorMessage, eventSubtitle, sportLabel } from './calendarLabels';
 import {
   FULL_CALENDAR_ROUTE,
   SCHEDULE_ROUTE,
@@ -144,7 +144,7 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
           </Text>
         ) : (
           <Text style={styles.title} testID="event-details-type">
-            {eventTypeLabel(t, event.type)}
+            {activityTypeLabel(t, event.activityType)}
           </Text>
         )}
         {subtitle !== null ? (

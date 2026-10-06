@@ -1,3 +1,4 @@
+import { isActivityTypeId, requiresTitle, type ActivityTypeId, type ActivityTypeRef } from './activityType';
 import type { Uuid } from './ids';
 import { V1_ENABLED_SPORTS, type SportKey } from './sport';
 
@@ -7,21 +8,6 @@ import { V1_ENABLED_SPORTS, type SportKey } from './sport';
  * not a TrainingSession and never creates, completes or skips one.
  * Sport-neutral; one-off events only (no recurrence in Slice 1.3).
  */
-
-/** Stable codes, persisted as-is; labels come from i18n. */
-export const CALENDAR_EVENT_TYPES = [
-  'TEAM_TRAINING',
-  'PERSONAL_TRAINING',
-  'GAME',
-  'GYM',
-  'RECOVERY',
-  'OTHER',
-] as const;
-export type CalendarEventType = (typeof CALENDAR_EVENT_TYPES)[number];
-
-export function isCalendarEventType(value: unknown): value is CalendarEventType {
-  return typeof value === 'string' && (CALENDAR_EVENT_TYPES as readonly string[]).includes(value);
-}
 
 /**
  * Who explicitly marked an event completed (CAL-COMP-001). Today only the
@@ -49,7 +35,13 @@ export interface CalendarCompletion {
 export interface CalendarEvent {
   readonly id: Uuid;
   readonly playerId: Uuid;
-  readonly type: CalendarEventType;
+  /**
+   * The event's Activity Type id (ACTIVITY-001): a built-in code or a custom
+   * type's UUID — the only stored identity of its type.
+   */
+  readonly type: ActivityTypeId;
+  /** That type as the catalog has it now (label data, active state). Read-only; never stored on the event. */
+  readonly activityType: ActivityTypeRef;
   /** Independent of `type`; null when the event has no sport. */
   readonly sport: SportKey | null;
   /** Epoch milliseconds (an absolute instant). */
@@ -80,7 +72,7 @@ export interface CalendarEventInput {
 
 /** Validated user fields, ready to persist; ids and timestamps are added by the repository. */
 export interface CalendarEventCore {
-  readonly type: CalendarEventType;
+  readonly type: ActivityTypeId;
   readonly sport: SportKey | null;
   readonly startAt: number;
   readonly endAt: number | null;
@@ -154,7 +146,8 @@ export function validateCalendarEvent(
 function validateFields(input: CalendarEventInput): CalendarEventValidation {
   const errors: CalendarEventErrors = {};
 
-  const type = isCalendarEventType(input.type) ? input.type : null;
+  // Well-formed id only; whether it exists / is active is the repository's check.
+  const type = isActivityTypeId(input.type) ? input.type : null;
   if (type === null) errors.type = 'UNKNOWN_TYPE';
 
   const sport = readSport(input.sport);
@@ -172,7 +165,7 @@ function validateFields(input: CalendarEventInput): CalendarEventValidation {
 
   const title = readText(input.title);
   if (title === INVALID) errors.title = 'INVALID_VALUE';
-  else if (type === 'OTHER' && title === null) errors.title = 'REQUIRED_FOR_OTHER';
+  else if (type !== null && requiresTitle(type) && title === null) errors.title = 'REQUIRED_FOR_OTHER';
 
   const notes = readText(input.notes);
   if (notes === INVALID) errors.notes = 'INVALID_VALUE';

@@ -61,6 +61,7 @@ describe('form values ↔ repository input', () => {
     notes: null,
     createdAt: 1,
     updatedAt: 2,
+    activityType: { id: 'GAME', builtin: 'GAME', name: null, active: true },
     completion: null,
   };
 

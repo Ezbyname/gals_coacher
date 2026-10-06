@@ -1,6 +1,6 @@
 import type { CalendarDate } from './calendarDate';
 import { daysInMonth } from './calendarDate';
-import type { CalendarEventType } from './calendarEvent';
+import type { ActivityTypeId } from './activityType';
 import type { SportKey } from './sport';
 
 /**
@@ -155,14 +155,14 @@ export type SportFilterValue = SportKey | typeof NO_SPORT;
 export interface CalendarFilter {
   readonly playerIds: readonly string[];
   readonly sports: readonly SportFilterValue[];
-  readonly types: readonly CalendarEventType[];
+  readonly types: readonly ActivityTypeId[];
 }
 
 /** What filtering looks at: the stored Player, sport and type of an event. */
 export type FilterableEvent = {
   readonly playerId: string;
   readonly sport: SportKey | null;
-  readonly type: CalendarEventType;
+  readonly type: ActivityTypeId;
 };
 
 export const NO_FILTER: CalendarFilter = { playerIds: [], sports: [], types: [] };

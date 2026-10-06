@@ -1,4 +1,5 @@
-import type { CalendarEvent, CalendarEventInput, CalendarEventType } from '@/domain/calendarEvent';
+import type { ActivityTypeId } from '@/domain/activityType';
+import type { CalendarEvent, CalendarEventInput } from '@/domain/calendarEvent';
 import type { SportKey } from '@/domain/sport';
 import {
   epochToLocalDateTime,
@@ -8,7 +9,7 @@ import {
 
 /** What the event form edits: device-local wall times, raw text (the domain trims and validates). */
 export type CalendarFormValues = {
-  readonly type: CalendarEventType | null;
+  readonly type: ActivityTypeId | null;
   readonly sport: SportKey | null;
   readonly start: LocalDateTime;
   /** null: no end time. */

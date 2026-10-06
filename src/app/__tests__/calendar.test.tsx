@@ -18,6 +18,7 @@ import * as calendar from '@/data/local/calendar/calendarEventRepository';
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
 import * as players from '@/data/local/players/playerRepository';
+import { BUILTIN_ACTIVITY_TYPES } from '@/domain/activityType';
 import * as calendarDomain from '@/domain/calendarEvent';
 import type { CalendarEventInput } from '@/domain/calendarEvent';
 import type { Uuid } from '@/domain/ids';
@@ -1439,7 +1440,7 @@ describe('completion (CAL-COMP-001: explicit, manual, undoable)', () => {
 
   it('every event type can be completed (a titled OTHER too)', async () => {
     await prepare('en');
-    for (const type of calendarDomain.CALENDAR_EVENT_TYPES) {
+    for (const type of BUILTIN_ACTIVITY_TYPES) {
       const event = await seedEvent({
         type,
         startAt: at(8, 9),
@@ -1580,7 +1581,7 @@ describe('calendar UI boundaries (source guards)', () => {
       /\b(SELECT|INSERT|UPDATE|DELETE)\b|runAsync|getAllAsync|getFirstAsync|execAsync/,
     );
     expect(source).not.toMatch(/\.sort\(|agendaSection|CURRENT_OR_UPCOMING/);
-    // Stored type codes come from CALENDAR_EVENT_TYPES; only OTHER's title rule names one.
+    // Stored type codes come from the Activity Type catalog; no feature file names one.
     expect(source).not.toMatch(
       /['"`](TEAM_TRAINING|PERSONAL_TRAINING|GAME|GYM|RECOVERY|SCHOOL|UNAVAILABLE)['"`]/,
     );

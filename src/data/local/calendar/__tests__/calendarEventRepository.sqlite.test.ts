@@ -128,6 +128,7 @@ describe('calendar event repository on real SQLite', () => {
         notes: null,
         createdAt: T0,
         updatedAt: T0,
+        activityType: { id: 'GAME', builtin: 'GAME', name: null, active: true },
         completion: null,
       });
       expect(await eventRows()).toEqual([
@@ -285,6 +286,7 @@ describe('calendar event repository on real SQLite', () => {
         notes: null,
         createdAt: T0,
         updatedAt: T0 + 60_000,
+        activityType: { id: 'RECOVERY', builtin: 'RECOVERY', name: null, active: true },
         completion: null,
       });
       expect(await getCalendarEvent(db, gal, original.id)).toEqual(updated);

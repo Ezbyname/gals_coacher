@@ -2,7 +2,9 @@ import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 
 import { getCalendarEvent, updateCalendarEvent } from '@/data/local/calendar/calendarEventRepository';
+import { listActivityTypes } from '@/data/local/activityTypes/activityTypeRepository';
 import { getPlayer } from '@/data/local/players/playerRepository';
+import { selectableActivityTypes, type ActivityTypeRef } from '@/domain/activityType';
 import type { SportKey } from '@/domain/sport';
 import { useApp } from '@/features/AppProvider';
 import type { TranslationKey } from '@/i18n/types';
@@ -15,7 +17,7 @@ import { ErrorScreen, LoadingScreen } from './StatusScreen';
 
 type FormState =
   | { status: 'loading' }
-  | { status: 'ready'; initialValues: CalendarFormValues; sports: SportKey[] }
+  | { status: 'ready'; initialValues: CalendarFormValues; sports: SportKey[]; types: ActivityTypeRef[] }
   | { status: 'error'; message: TranslationKey };
 
 /**
@@ -38,10 +40,13 @@ export function EditCalendarEvent({ playerId, eventId }: { playerId: string; eve
       if (profile === null) return { status: 'error', message: 'calendar.errors.playerNotFound' };
       const event = await getCalendarEvent(boot.db, playerId, eventId);
       if (event === null) return { status: 'error', message: 'calendar.errors.eventNotFound' };
+      const catalog = await listActivityTypes(boot.db);
       return {
         status: 'ready',
         initialValues: valuesFromEvent(event),
         sports: sportsOf(profile, event.sport),
+        // Active types, plus this event's own type even when it is now inactive.
+        types: selectableActivityTypes(catalog, event.type),
       };
     })()
       .then((next) => {
@@ -80,6 +85,7 @@ export function EditCalendarEvent({ playerId, eventId }: { playerId: string; eve
     <CalendarEventForm
       initialValues={state.initialValues}
       sports={state.sports}
+      types={state.types}
       onSave={(input) => {
         if (!db) throw new Error('database not ready');
         return updateCalendarEvent(db, playerId, eventId, input, { clock: services.clock });

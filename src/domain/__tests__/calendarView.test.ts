@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import type { CalendarDate } from '../calendarDate';
-import { CALENDAR_EVENT_TYPES, type CalendarEventType } from '../calendarEvent';
+import { BUILTIN_ACTIVITY_TYPES } from '../activityType';
 import {
   NO_FILTER,
   NO_SPORT,
@@ -162,7 +162,7 @@ describe('month grid', () => {
 });
 
 describe('filters: AND across Player / Sport / Type, OR inside one', () => {
-  type E = { id: string; playerId: string; sport: SportKey | null; type: CalendarEventType };
+  type E = { id: string; playerId: string; sport: SportKey | null; type: string };
   const events: E[] = [
     { id: 'gal-game-bb', playerId: 'gal', sport: 'BASKETBALL', type: 'GAME' },
     { id: 'gal-gym', playerId: 'gal', sport: null, type: 'GYM' },
@@ -258,7 +258,7 @@ describe('colour meaning and stable Player colour slots', () => {
   });
 
   it('all six current types are the filterable ones (no new type here)', () => {
-    expect(CALENDAR_EVENT_TYPES).toEqual([
+    expect(BUILTIN_ACTIVITY_TYPES).toEqual([
       'TEAM_TRAINING',
       'PERSONAL_TRAINING',
       'GAME',

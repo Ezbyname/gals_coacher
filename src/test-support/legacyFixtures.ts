@@ -59,3 +59,35 @@ export async function seedV4CalendarEvents(db: Db): Promise<void> {
       ('${gym}', '${gal}', 'GYM', NULL, ${createdAt + 90_000_000}, NULL, NULL, NULL, ${createdAt}, ${createdAt});
   `);
 }
+
+/**
+ * Schema v6 (CAL-COMP-001) on top of v4/v5 data: one more event of every
+ * built-in type (OTHER with its title), one of them completed, and the
+ * Basketball assignment inactive (SPORT-LIFE-001) — the history ACTIVITY-001
+ * must carry over unchanged.
+ */
+export const LEGACY_V6_EVENTS = {
+  team: '00000000-0000-4000-8000-00000000c011',
+  personal: '00000000-0000-4000-8000-00000000c012',
+  recovery: '00000000-0000-4000-8000-00000000c013',
+  other: '00000000-0000-4000-8000-00000000c014',
+} as const;
+export const LEGACY_COMPLETED_AT = 1_790_200_000_000;
+export async function seedV6CalendarHistory(db: Db): Promise<void> {
+  const { gal, noa, createdAt } = LEGACY;
+  const { team, personal, recovery, other } = LEGACY_V6_EVENTS;
+  await db.execAsync(`
+    INSERT INTO calendar_events
+      (id, player_id, type, sport, start_at, end_at, title, notes, created_at, updated_at, completed_at, completion_source)
+      VALUES
+      ('${team}', '${gal}', 'TEAM_TRAINING', 'BASKETBALL', ${createdAt + 200_000_000}, ${createdAt + 205_400_000},
+        NULL, 'Bring the ball', ${createdAt}, ${createdAt + 5}, ${LEGACY_COMPLETED_AT}, 'LOCAL_USER'),
+      ('${personal}', '${noa}', 'PERSONAL_TRAINING', NULL, ${createdAt + 300_000_000}, NULL,
+        'Footwork', NULL, ${createdAt}, ${createdAt}, NULL, NULL),
+      ('${recovery}', '${noa}', 'RECOVERY', NULL, ${createdAt + 400_000_000}, ${createdAt + 401_800_000},
+        NULL, NULL, ${createdAt}, ${createdAt}, NULL, NULL),
+      ('${other}', '${gal}', 'OTHER', NULL, ${createdAt + 500_000_000}, NULL,
+        'Photo day', 'Team shirt', ${createdAt}, ${createdAt}, NULL, NULL);
+    UPDATE player_sports SET active = 0 WHERE player_id = '${gal}' AND sport = 'BASKETBALL';
+  `);
+}

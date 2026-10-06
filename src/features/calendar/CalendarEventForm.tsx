@@ -2,13 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { SaveCalendarEventResult } from '@/data/local/calendar/calendarEventRepository';
+import { requiresTitle, type ActivityTypeId, type ActivityTypeRef } from '@/domain/activityType';
 import {
-  CALENDAR_EVENT_TYPES,
   CALENDAR_TITLE_MAX_LENGTH,
   type CalendarEvent,
   type CalendarEventErrors,
   type CalendarEventInput,
-  type CalendarEventType,
 } from '@/domain/calendarEvent';
 import type { SportKey } from '@/domain/sport';
 import { ltr } from '@/i18n/bidi';
@@ -25,7 +24,7 @@ import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing } from '@/ui/theme';
 
-import { calendarErrorMessage, eventTypeLabel, sportLabel } from './calendarLabels';
+import { activityTypeChoiceLabel, calendarErrorMessage, sportLabel } from './calendarLabels';
 import { toEventInput, type CalendarFormValues } from './calendarFormValues';
 import { formatEventDate } from './formatEventTime';
 
@@ -64,6 +63,11 @@ type Props = {
   initialValues: CalendarFormValues;
   /** The sports this Player is assigned to; only these can be chosen. */
   sports: readonly SportKey[];
+  /**
+   * The Activity Types that can be chosen, in order: the active ones, plus an
+   * edited event's own type when it is inactive (shown as such, never reactivated).
+   */
+  types: readonly ActivityTypeRef[];
   /** Persists the input (create or update). Validation problems come back as a result. */
   onSave: (input: CalendarEventInput) => Promise<SaveCalendarEventResult>;
   onSaved: (event: CalendarEvent) => void;
@@ -76,7 +80,7 @@ type Props = {
  * an invalid Save writes nothing, keeps every value and marks the fields.
  * Navigation is the caller's (onSaved / onCancel).
  */
-export function CalendarEventForm({ initialValues, sports, onSave, onSaved, onCancel }: Props) {
+export function CalendarEventForm({ initialValues, sports, types, onSave, onSaved, onCancel }: Props) {
   const { t, language } = useI18n();
   const [values, setValues] = useState<CalendarFormValues>(initialValues);
   // Leaving with unsaved changes asks first (NAV-DIRTY-001); loaded / default values are clean.
@@ -207,15 +211,21 @@ export function CalendarEventForm({ initialValues, sports, onSave, onSaved, onCa
             // multiline Notes field grows while typing: keep the focused field shown.
             onLayout={() => void revealFocused()}
             onContentSizeChange={() => void revealFocused()}>
-            <ChoiceChips<CalendarEventType>
+            <ChoiceChips<ActivityTypeId>
               testID="event-type"
               label={t('calendar.field.type')}
-              choices={CALENDAR_EVENT_TYPES.map((type) => ({ value: type, label: eventTypeLabel(t, type) }))}
+              choices={types.map((type) => ({ value: type.id, label: activityTypeChoiceLabel(t, type) }))}
               value={values.type}
               // A type is always required: pressing the chosen chip keeps it.
               onChange={(type) => type !== null && change('type', type, ['type', 'title'])}
               error={message(errors.type)}
             />
+            {types.length === 0 ? (
+              // Nothing is chosen or invented: the user turns a type on in Settings.
+              <Text style={styles.notice} testID="event-type-none">
+                {t('calendar.errors.noActiveTypes')}
+              </Text>
+            ) : null}
 
             {sports.length === 1 ? (
               // One assignable sport: a single optional chip (off = no sport). Pressing
@@ -309,7 +319,9 @@ export function CalendarEventForm({ initialValues, sports, onSave, onSaved, onCa
                 onBlur={onFieldBlur}
                 testID="event-title"
                 label={
-                  values.type === 'OTHER' ? t('calendar.field.titleRequired') : t('calendar.field.title')
+                  values.type !== null && requiresTitle(values.type)
+                    ? t('calendar.field.titleRequired')
+                    : t('calendar.field.title')
                 }
                 value={values.title}
                 maxLength={titleMaxLength}
@@ -367,4 +379,5 @@ const styles = StyleSheet.create({
   container: { padding: spacing.lg, gap: spacing.lg },
   group: { gap: spacing.md },
   error: { fontSize: 15, color: colors.danger, fontWeight: '600', textAlign: 'auto' },
+  notice: { fontSize: 15, color: colors.ink, fontWeight: '600', textAlign: 'auto' },
 });

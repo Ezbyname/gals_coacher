@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { clearLanguageSwitch, markLanguageSwitch } from '@/features/startup/languageSwitchMarker';
@@ -43,6 +44,14 @@ export default function SettingsScreen() {
           onPress={() => choose(lang)}
         />
       ))}
+
+      <Text style={[styles.label, styles.section]}>{t('activityTypes.title')}</Text>
+      <BigButton
+        testID="settings-activity-types"
+        variant="secondary"
+        label={t('activityTypes.open')}
+        onPress={() => router.push('/settings/activity-types')}
+      />
     </ScrollView>
   );
 }
@@ -50,4 +59,5 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { padding: spacing.lg, gap: spacing.sm },
   label: { fontSize: 16, fontWeight: '700', color: colors.ink, marginBottom: spacing.xs },
+  section: { marginTop: spacing.lg },
 });

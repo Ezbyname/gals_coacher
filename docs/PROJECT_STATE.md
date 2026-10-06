@@ -14,6 +14,7 @@ All verified by the owner on a physical Android device.
 **CAL-KEY-001 (keyboard) and SPORT-LIFE-001 (Basketball active / inactive): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING** (next Preview APK; plan below).
 **CAL-COMP-001 (explicit manual calendar event completion): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v6**.
 **CAL-VIEW-001 / CAL-FILTER-001 / CAL-COLOR-001 (Full Calendar: Month / Week, filters, colour meaning): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema unchanged (v6).
+**ACTIVITY-001 (configurable Activity Types): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v7**.
 **iOS (project baseline):** the current pre-Calendar application has passed iOS bundle export (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
@@ -33,6 +34,7 @@ All verified by the owner on a physical Android device.
 | SPORT-LIFE-001 (Basketball active / inactive) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v5** |
 | CAL-COMP-001 (manual event completion) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v6** |
 | CAL-VIEW-001 / CAL-FILTER-001 / CAL-COLOR-001 (Full Calendar) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; no schema change |
+| ACTIVITY-001 (configurable Activity Types) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v7** |
 | Slices after 1.3 (C, 2.x …) | **Not started** |
 
 ---
@@ -78,6 +80,16 @@ player / add Basketball), 25 (player without Basketball), 28 (optional
 sport), 29–31 (positions, clear secondary, persistence).
 
 ---
+
+## ACTIVITY-001 — Configurable Activity Types: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-06)
+
+- **Schema v7 (additive):** `activity_types (id, builtin, name, active, created_at, updated_at)`; the six built-ins are seeded with `id` = the code existing events already store, so no event row changes and `calendar_events.type` stays the one source of an event's type. Custom types: client UUID + the user's name (built-ins: name NULL, i18n label). A trigger refuses any DELETE (types are never deleted, only made inactive). `calendar_events` is not rebuilt (a foreign key would make an upgrade fail on any legacy unknown code); the repository checks the reference on every write and reads fail closed.
+- **Rules:** a NEW event may use only an ACTIVE type; an existing event keeps its type even when inactive (editable without forced change, never reactivated); OTHER keeps its title rule. Making a type inactive / active changes only that catalog row (idempotent, same id) — never an event, a completion or a sport. Custom name: trimmed, non-blank, ≤ 35 (the approved Title limit — owner may change), no duplicate custom name (re-enable instead).
+- **UI:** Settings → Activity types: Active / Inactive sections, state in words, Make inactive (asks; safe default Keep active) / Make active; Add activity type (own screen, unsaved-changes guard). The event form offers active types (+ the event's own inactive type, marked); zero active → a message, nothing chosen. Full Calendar filter lists every type (inactive marked); single-Player colours: built-ins unchanged, custom = stable hash of the id (never the name), marker = name initial.
+
+**Automated evidence (authoring environment):** `npm run check` exit 0 — 63/63 suites, 1098/1098 tests; Android bundle export exit 0. Focused: v7 migration 13/13, catalog + calendar/history/sport-independence repository 25/25, domain 14/14, colours 5/5, UI (HE / EN) 12/12; negative proof 14/14 mutants killed.
+
+**Physical (next batched Preview APK) — all PENDING:** AT-01 Settings Activity Types list · AT-02 add custom type HE / EN · AT-03 disable / re-enable · AT-04 inactive type hidden from a new event · AT-05 historical inactive type preserved (Schedule, Details, Full Calendar) · AT-06 edit an event keeping its inactive type · AT-07 Full Calendar filter with custom / inactive types · AT-08 custom type colour + accessibility (TalkBack) · AT-09 restart persistence · AT-10 Sport vs Activity Type independence. Also: install over the previous APK — Diagnostics shows schema v7 and every earlier event keeps its type.
 
 ## CAL-VIEW-001 / CAL-FILTER-001 / CAL-COLOR-001 — Full Calendar: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-06)
 
