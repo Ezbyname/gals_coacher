@@ -77,8 +77,8 @@ describe('migration v3 (self-assessments) on real SQLite', () => {
 
   it('fresh install: v3 creates exactly the two generic tables and the history index', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(7);
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 7 });
+    expect(migration.to).toBe(8);
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 8 });
     expect(await v3Objects(db as unknown as Db)).toEqual([
       'self_assessment_ratings',
       'self_assessments',
@@ -123,7 +123,7 @@ describe('migration v3 (self-assessments) on real SQLite', () => {
     await db.closeAsync();
   });
 
-  it('upgrades a v2 database with players: player data unchanged, new tables empty, schema v7 (via v3)', async () => {
+  it('upgrades a v2 database with players: player data unchanged, new tables empty, schema v8 (via v3)', async () => {
     const before = await createV2DatabaseWithPlayers();
     expect(before.data.basketball_player_profiles).toEqual([
       expect.objectContaining({ experience: 'ONE_TO_TWO_YEARS', weekly_frequency: 'TWO_TO_THREE' }),
@@ -132,16 +132,17 @@ describe('migration v3 (self-assessments) on real SQLite', () => {
     const { db, migration } = await openLocalDatabase();
     expect(migration).toEqual({
       from: 2,
-      to: 7,
+      to: 8,
       applied: [
         'self_assessments',
         'calendar_events',
         'player_sports_active',
         'calendar_event_completion',
         'activity_types',
+        'exercises',
       ],
     });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 7 });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 8 });
     expect(await dumpPlayerData(db as unknown as Db)).toEqual(before.data);
     // Read back through today's repository: both players intact, Basketball active.
     expect(
@@ -175,10 +176,10 @@ describe('migration v3 (self-assessments) on real SQLite', () => {
 
     // Idempotent: the next launch applies nothing; schema and data are identical.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 7, to: 7, applied: [] });
+    expect(again.migration).toEqual({ from: 8, to: 8, applied: [] });
     expect(await schema(again.db as unknown as Db)).toEqual(upgradedSchema);
     expect(await dumpPlayerData(again.db as unknown as Db)).toEqual(before.data);
-    expect(await again.db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 7 });
+    expect(await again.db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 8 });
     await again.db.closeAsync();
 
     // An upgraded database has the same schema as a fresh install.
@@ -204,13 +205,14 @@ describe('migration v3 (self-assessments) on real SQLite', () => {
     const relaunch = await openLocalDatabase();
     expect(relaunch.migration).toEqual({
       from: 2,
-      to: 7,
+      to: 8,
       applied: [
         'self_assessments',
         'calendar_events',
         'player_sports_active',
         'calendar_event_completion',
         'activity_types',
+        'exercises',
       ],
     });
     expect((await listPlayers(relaunch.db)).map((p) => [p.player.name, p.sports])).toEqual([

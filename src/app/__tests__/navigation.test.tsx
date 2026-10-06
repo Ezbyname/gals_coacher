@@ -54,10 +54,14 @@ describe('navigation — Hebrew (default)', () => {
     expect(screen.queryByText('בקרוב')).toBeNull();
   });
 
-  it.each([
-    ['/exercises', 'ספריית תרגילים'],
-    ['/history', 'היסטוריה'],
-  ])('shows the Hebrew placeholder on %s', async (url, title) => {
+  it('opens the Exercise Library (no longer a placeholder)', async () => {
+    renderRouter(routes, { initialUrl: '/exercises' });
+    expect(await screen.findByTestId('exercises-search')).toBeTruthy();
+    expect(screen.getByTestId('exercises-count')).toBeTruthy();
+    expect(screen.queryByText('בקרוב')).toBeNull();
+  });
+
+  it.each([['/history', 'היסטוריה']])('shows the Hebrew placeholder on %s', async (url, title) => {
     renderRouter(routes, { initialUrl: url });
     expect(await screen.findByText(title)).toBeTruthy();
     expect(screen.getByText('בקרוב')).toBeTruthy();
@@ -67,7 +71,7 @@ describe('navigation — Hebrew (default)', () => {
     const app = renderRouter(routes, { initialUrl: '/' });
     fireEvent.press(await screen.findByTestId('home-diagnostics'));
     await waitFor(() => expect(app.getPathname()).toBe('/diagnostics'));
-    await waitFor(() => expect(textOf('diag-sqlite')).toBe('מוכן · סכמה v7 (הוחלו בהפעלה זו: 7)'));
+    await waitFor(() => expect(textOf('diag-sqlite')).toBe('מוכן · סכמה v8 (הוחלו בהפעלה זו: 8)'));
     expect(textOf('diag-direction')).toBe('בפועל: rtl · צפוי: rtl');
     const sample = textOf('diag-rtl-sample');
     for (const v of ['18/20', '80%', '4.38', '00:45', '20m']) expect(sample).toContain(v);
@@ -109,7 +113,7 @@ describe('navigation — English', () => {
 
   it('shows the English diagnostics lines', async () => {
     renderRouter(routes, { initialUrl: '/diagnostics' });
-    await waitFor(() => expect(textOf('diag-sqlite')).toBe('ready · schema v7 (applied this launch: 7)'));
+    await waitFor(() => expect(textOf('diag-sqlite')).toBe('ready · schema v8 (applied this launch: 8)'));
     expect(textOf('diag-direction')).toBe('actual: ltr · expected: ltr');
   });
 });

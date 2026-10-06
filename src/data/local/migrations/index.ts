@@ -180,4 +180,177 @@ export const migrations: readonly Migration[] = [
       END;
     `,
   },
+  {
+    // TRAIN-001. The exercise library. Built-in exercises are curated content
+    // shipped in code (src/domain/exercise/catalog); here they get a row with
+    // their stable id (frozen list below) so every use can reference them and
+    // their active state is stored. Custom exercises are full rows (name,
+    // difficulty, measurement, …) with their categories / muscles / equipment
+    // options / sports in child tables. Codes are validated in the domain (no
+    // SQL CHECK lists). Exercises are never deleted — inactive instead — so
+    // history keeps every reference; the trigger refuses a DELETE.
+    // Additive: no existing table changes.
+    version: 8,
+    name: 'exercises',
+    sql: `
+      CREATE TABLE exercises (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        builtin INTEGER NOT NULL CHECK (typeof(builtin) = 'integer' AND builtin IN (0, 1)),
+        active INTEGER NOT NULL DEFAULT 1 CHECK (typeof(active) = 'integer' AND active IN (0, 1)),
+        name TEXT CHECK (name IS NULL OR length(trim(name, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        difficulty TEXT,
+        measurement_type TEXT,
+        comparison_policy TEXT,
+        uses_load INTEGER CHECK (uses_load IS NULL OR (typeof(uses_load) = 'integer' AND uses_load IN (0, 1))),
+        instructions TEXT CHECK (instructions IS NULL OR length(trim(instructions, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        tutorial_url TEXT CHECK (tutorial_url IS NULL OR length(trim(tutorial_url)) > 0),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer'),
+        CHECK ((builtin = 1) = (name IS NULL)),
+        CHECK (builtin = 1 OR (difficulty IS NOT NULL AND measurement_type IS NOT NULL AND uses_load IS NOT NULL)),
+        CHECK (builtin = 0 OR (difficulty IS NULL AND measurement_type IS NULL AND comparison_policy IS NULL
+          AND uses_load IS NULL AND instructions IS NULL AND tutorial_url IS NULL))
+      );
+
+      CREATE TABLE exercise_categories (
+        exercise_id TEXT NOT NULL REFERENCES exercises (id),
+        category TEXT NOT NULL,
+        PRIMARY KEY (exercise_id, category)
+      );
+
+      CREATE TABLE exercise_muscles (
+        exercise_id TEXT NOT NULL REFERENCES exercises (id),
+        muscle TEXT NOT NULL,
+        role TEXT NOT NULL,
+        PRIMARY KEY (exercise_id, muscle)
+      );
+
+      CREATE TABLE exercise_equipment (
+        exercise_id TEXT NOT NULL REFERENCES exercises (id),
+        option_index INTEGER NOT NULL CHECK (typeof(option_index) = 'integer' AND option_index >= 0),
+        equipment TEXT NOT NULL,
+        PRIMARY KEY (exercise_id, option_index, equipment)
+      );
+
+      CREATE TABLE exercise_sports (
+        exercise_id TEXT NOT NULL REFERENCES exercises (id),
+        sport TEXT NOT NULL,
+        PRIMARY KEY (exercise_id, sport)
+      );
+
+      INSERT INTO exercises (id, builtin, name, active, created_at, updated_at) VALUES
+        ('JUMPING_JACKS', 1, NULL, 1, 0, 0),
+        ('HIGH_KNEES', 1, NULL, 1, 0, 0),
+        ('BUTT_KICKS', 1, NULL, 1, 0, 0),
+        ('A_SKIP', 1, NULL, 1, 0, 0),
+        ('LEG_SWINGS', 1, NULL, 1, 0, 0),
+        ('WORLDS_GREATEST_STRETCH', 1, NULL, 1, 0, 0),
+        ('HIP_90_90', 1, NULL, 1, 0, 0),
+        ('CAT_COW', 1, NULL, 1, 0, 0),
+        ('THORACIC_OPEN_BOOK', 1, NULL, 1, 0, 0),
+        ('ANKLE_KNEE_TO_WALL', 1, NULL, 1, 0, 0),
+        ('BAND_PULL_APART', 1, NULL, 1, 0, 0),
+        ('STANDING_HAMSTRING_STRETCH', 1, NULL, 1, 0, 0),
+        ('HIP_FLEXOR_STRETCH', 1, NULL, 1, 0, 0),
+        ('CHILDS_POSE', 1, NULL, 1, 0, 0),
+        ('CALF_STRETCH', 1, NULL, 1, 0, 0),
+        ('PUSH_UP', 1, NULL, 1, 0, 0),
+        ('INCLINE_PUSH_UP', 1, NULL, 1, 0, 0),
+        ('BENCH_DIP', 1, NULL, 1, 0, 0),
+        ('PARALLEL_BAR_DIP', 1, NULL, 1, 0, 0),
+        ('PULL_UP', 1, NULL, 1, 0, 0),
+        ('INVERTED_ROW', 1, NULL, 1, 0, 0),
+        ('ONE_ARM_DUMBBELL_ROW', 1, NULL, 1, 0, 0),
+        ('BAND_ROW', 1, NULL, 1, 0, 0),
+        ('BARBELL_BENCH_PRESS', 1, NULL, 1, 0, 0),
+        ('DUMBBELL_BENCH_PRESS', 1, NULL, 1, 0, 0),
+        ('DUMBBELL_SHOULDER_PRESS', 1, NULL, 1, 0, 0),
+        ('BARBELL_OVERHEAD_PRESS', 1, NULL, 1, 0, 0),
+        ('LAT_PULLDOWN', 1, NULL, 1, 0, 0),
+        ('SEATED_CABLE_ROW', 1, NULL, 1, 0, 0),
+        ('FACE_PULL', 1, NULL, 1, 0, 0),
+        ('DUMBBELL_BICEPS_CURL', 1, NULL, 1, 0, 0),
+        ('TRICEPS_PUSHDOWN', 1, NULL, 1, 0, 0),
+        ('LATERAL_RAISE', 1, NULL, 1, 0, 0),
+        ('FARMER_CARRY', 1, NULL, 1, 0, 0),
+        ('BODYWEIGHT_SQUAT', 1, NULL, 1, 0, 0),
+        ('GOBLET_SQUAT', 1, NULL, 1, 0, 0),
+        ('BARBELL_BACK_SQUAT', 1, NULL, 1, 0, 0),
+        ('BULGARIAN_SPLIT_SQUAT', 1, NULL, 1, 0, 0),
+        ('REVERSE_LUNGE', 1, NULL, 1, 0, 0),
+        ('WALKING_LUNGE', 1, NULL, 1, 0, 0),
+        ('LATERAL_LUNGE', 1, NULL, 1, 0, 0),
+        ('STEP_UP', 1, NULL, 1, 0, 0),
+        ('GLUTE_BRIDGE', 1, NULL, 1, 0, 0),
+        ('HIP_THRUST', 1, NULL, 1, 0, 0),
+        ('ROMANIAN_DEADLIFT', 1, NULL, 1, 0, 0),
+        ('SINGLE_LEG_RDL', 1, NULL, 1, 0, 0),
+        ('DEADLIFT', 1, NULL, 1, 0, 0),
+        ('LEG_PRESS', 1, NULL, 1, 0, 0),
+        ('NORDIC_HAMSTRING', 1, NULL, 1, 0, 0),
+        ('CALF_RAISE', 1, NULL, 1, 0, 0),
+        ('WALL_SIT', 1, NULL, 1, 0, 0),
+        ('BAND_LATERAL_WALK', 1, NULL, 1, 0, 0),
+        ('PLANK', 1, NULL, 1, 0, 0),
+        ('SIDE_PLANK', 1, NULL, 1, 0, 0),
+        ('DEAD_BUG', 1, NULL, 1, 0, 0),
+        ('BIRD_DOG', 1, NULL, 1, 0, 0),
+        ('HOLLOW_HOLD', 1, NULL, 1, 0, 0),
+        ('PALLOF_PRESS', 1, NULL, 1, 0, 0),
+        ('HANGING_KNEE_RAISE', 1, NULL, 1, 0, 0),
+        ('RUSSIAN_TWIST', 1, NULL, 1, 0, 0),
+        ('MOUNTAIN_CLIMBERS', 1, NULL, 1, 0, 0),
+        ('STABILITY_BALL_ROLLOUT', 1, NULL, 1, 0, 0),
+        ('MED_BALL_ROTATIONAL_THROW', 1, NULL, 1, 0, 0),
+        ('SQUAT_JUMP', 1, NULL, 1, 0, 0),
+        ('BOX_JUMP', 1, NULL, 1, 0, 0),
+        ('BROAD_JUMP', 1, NULL, 1, 0, 0),
+        ('VERTICAL_JUMP', 1, NULL, 1, 0, 0),
+        ('LATERAL_BOUNDS', 1, NULL, 1, 0, 0),
+        ('POGO_JUMPS', 1, NULL, 1, 0, 0),
+        ('TUCK_JUMP', 1, NULL, 1, 0, 0),
+        ('MED_BALL_SLAM', 1, NULL, 1, 0, 0),
+        ('MED_BALL_CHEST_PASS', 1, NULL, 1, 0, 0),
+        ('KETTLEBELL_SWING', 1, NULL, 1, 0, 0),
+        ('SPRINT_10M', 1, NULL, 1, 0, 0),
+        ('SPRINT_20M', 1, NULL, 1, 0, 0),
+        ('SPRINT_30M_FLYING', 1, NULL, 1, 0, 0),
+        ('FALLING_START_ACCELERATION', 1, NULL, 1, 0, 0),
+        ('PRO_AGILITY_5_10_5', 1, NULL, 1, 0, 0),
+        ('T_DRILL', 1, NULL, 1, 0, 0),
+        ('AGILITY_LADDER_FOOTWORK', 1, NULL, 1, 0, 0),
+        ('SHUTTLE_RUN', 1, NULL, 1, 0, 0),
+        ('BURPEE', 1, NULL, 1, 0, 0),
+        ('JUMP_ROPE', 1, NULL, 1, 0, 0),
+        ('BATTLE_ROPE_WAVES', 1, NULL, 1, 0, 0),
+        ('ROW_500M', 1, NULL, 1, 0, 0),
+        ('BIKE_INTERVALS', 1, NULL, 1, 0, 0),
+        ('EASY_RUN', 1, NULL, 1, 0, 0),
+        ('SKI_ERG_INTERVALS', 1, NULL, 1, 0, 0),
+        ('SLED_PUSH', 1, NULL, 1, 0, 0),
+        ('BEAR_CRAWL', 1, NULL, 1, 0, 0),
+        ('FORM_SHOOTING', 1, NULL, 1, 0, 0),
+        ('FREE_THROWS', 1, NULL, 1, 0, 0),
+        ('MID_RANGE_SPOT_SHOOTING', 1, NULL, 1, 0, 0),
+        ('THREE_POINT_SHOOTING', 1, NULL, 1, 0, 0),
+        ('PULL_UP_JUMPER', 1, NULL, 1, 0, 0),
+        ('LAYUPS', 1, NULL, 1, 0, 0),
+        ('MIKAN_DRILL', 1, NULL, 1, 0, 0),
+        ('STATIONARY_DRIBBLING', 1, NULL, 1, 0, 0),
+        ('FIGURE_8_DRIBBLE', 1, NULL, 1, 0, 0),
+        ('TWO_BALL_DRIBBLING', 1, NULL, 1, 0, 0),
+        ('CONE_DRIBBLE_SLALOM', 1, NULL, 1, 0, 0),
+        ('WALL_PASSING', 1, NULL, 1, 0, 0),
+        ('DEFENSIVE_SLIDES', 1, NULL, 1, 0, 0),
+        ('LANE_AGILITY', 1, NULL, 1, 0, 0),
+        ('COURT_SPRINTS_SUICIDES', 1, NULL, 1, 0, 0),
+        ('TIP_DRILL', 1, NULL, 1, 0, 0),
+        ('CLOSEOUT_DRILL', 1, NULL, 1, 0, 0);
+
+      CREATE TRIGGER exercises_never_deleted BEFORE DELETE ON exercises
+      BEGIN
+        SELECT RAISE(ABORT, 'exercises are never deleted; make them inactive');
+      END;
+    `,
+  },
 ];
