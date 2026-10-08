@@ -16,7 +16,8 @@ All verified by the owner on a physical Android device.
 **CAL-VIEW-001 / CAL-FILTER-001 / CAL-COLOR-001 (Full Calendar: Month / Week, filters, colour meaning): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema unchanged (v6).
 **ACTIVITY-001 (configurable Activity Types): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema v7.
 **TRAIN-001 (Professional Exercise Library — ROADMAP 2.0, owner-directed ahead of Cloud Foundation C): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v8**. **TRAIN-002 (Workout Builder + manual Training Execution + objective results): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v9**. CAL-TRAIN-001: **not started** (awaiting owner go-ahead after TRAIN-002's gate).
-**TRAIN-TAXONOMY-001A (training taxonomy — domain / data / migration / curated taxonomy, no UI): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA: not executable yet (no taxonomy UI — TX-01…TX-13 belong to 001C–001F); PHYSICAL: not applicable to this sub-slice.** Schema is now **v10**. Slices 001B–001F, EX-GUIDE-001 and CAL-TRAIN-001: **not started** (each awaits the owner's explicit approval).
+**TRAIN-TAXONOMY-001A (training taxonomy — domain / data / migration / curated taxonomy, no UI): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA: not executable yet (no taxonomy UI — TX-01…TX-13 belong to 001C–001F); PHYSICAL: not applicable to this sub-slice.** Schema is now **v10**.
+**TRAIN-TAXONOMY-001B (professional Basketball content: 17 new built-in drills): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA: not executable as taxonomy navigation yet (no UI); the new drills appear in the existing Exercise Library.** Schema is now **v11**. Slices 001C–001F, EX-GUIDE-001 and CAL-TRAIN-001: **not started**.
 **iOS (project baseline):** the current pre-Calendar application has passed iOS bundle export (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
@@ -40,6 +41,7 @@ All verified by the owner on a physical Android device.
 | TRAIN-001 (Exercise Library) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v8** |
 | TRAIN-002 (Workout Builder + manual execution) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v9** |
 | TRAIN-TAXONOMY-001A (training taxonomy: domain / data) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS**; no UI (TX Product QA: future 001C–001F); schema **v10** |
+| TRAIN-TAXONOMY-001B (Basketball content) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS**; 124 built-ins; schema **v11** |
 | CAL-TRAIN-001 | **Not started** — awaiting owner go-ahead |
 | Slices after 1.3 (C, 2.x …) | **Not started** |
 
@@ -86,6 +88,21 @@ player / add Basketball), 25 (player without Basketball), 28 (optional
 sport), 29–31 (positions, clear secondary, persistence).
 
 ---
+
+## TRAIN-TAXONOMY-001B — Professional Basketball content: IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS (2026-10-08)
+
+Owner-approved 2026-10-07 (purpose before count). **17 new built-in Basketball drills** (catalog 107 → **124**, Basketball 17 → 34), each placed where a skills coach would look for it; **every previously empty taxonomy node now has content (0 empty nodes)**.
+
+- **Ball handling:** Crossover Dribble, Between-the-Legs Dribble, Behind-the-Back Dribble (clean moves in 30 s — REPETITIONS), Hesitation Drive, Change-of-Pace Dribble, Combination Move Series (drills, not ranked).
+- **Finishing (makes / attempts):** Reverse Layups, Contact Finishes (controlled contact from a coach / adult only — safety note), Floaters, Power Layups (two-foot jump stop).
+- **Shooting on the move:** Relocation Shooting (makes / attempts; also Catch & Shoot).
+- **Passing:** One-Hand Push Pass (clean passes in 30 s), Passing on the Move (full court, no dribble / travel).
+- **Footwork:** Jump Stop & Pivots, Jab Step Series (from the triple threat).
+- **Defense:** Defensive Recovery Drill, Zig-Zag Defensive Slides (also Basketball › Athletic › Agility).
+- **Schema v11 (additive, rows only):** seeds the 17 stable ids into `exercises` (active state only; content in code), the v8 pattern. No schema change; existing user data and history untouched (upgrade tests: every existing row unchanged, only the 17 seed rows added — `src/test-support/migrationSeeds.ts`).
+- **Tests:** all catalog quality gates (bilingual names, Hebrew script, instructions in both languages, no medical claims, measurement rules) and taxonomy coherence rules apply to the new drills; empty-node test now expects none and the hide-when-empty mechanism is covered with inactive drills. Existing migration tests now expect v11.
+- **Gate (2026-10-08):** typecheck PASS; lint 0 errors (1 pre-existing warning); **Jest 75 / 75 suites, 1395 / 1395 tests PASS** (`--maxWorkers=50%`, see TEST-FLAKE-001 note in 001A); **Android local export PASS** (3.5 MB).
+- **Product QA note:** the frozen QA baseline is still `71b1d13` (107 built-ins). When it moves past 001B, EL-01's expected built-in count becomes 124.
 
 ## TRAIN-TAXONOMY-001A — Training taxonomy (domain / data): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS (2026-10-08)
 

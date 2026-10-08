@@ -278,29 +278,23 @@ describe('coaching coherence with each exercise’s own truth', () => {
 describe('visibility: inactive and empty nodes are hidden from NEW selection', () => {
   const activeExercises = new Set(everyExercise);
 
-  it('lists the curated-ahead-of-content (empty) nodes explicitly — a content gap is never silent', () => {
+  it('has no empty node since the Basketball content expansion (001B) — a new empty node must be listed here on purpose', () => {
     const empty = t.nodes.filter((n) => activeCountUnder(t, n.key, activeExercises) === 0).map((n) => n.key);
-    expect(empty).toEqual([
-      'BASKETBALL_SHOOTING_ON_THE_MOVE',
-      'BASKETBALL_FINISHING_REVERSE_LAYUP',
-      'BASKETBALL_FINISHING_CONTACT',
-      'BASKETBALL_FINISHING_FLOATER',
-      'BASKETBALL_FINISHING_POWER',
-      'BASKETBALL_BALL_HANDLING_HESITATION',
-      'BASKETBALL_BALL_HANDLING_CHANGE_OF_PACE',
-      'BASKETBALL_BALL_HANDLING_COMBINATION',
-      'BASKETBALL_PASSING_ONE_HAND',
-      'BASKETBALL_PASSING_ON_THE_MOVE',
-      'BASKETBALL_DEFENSE_RECOVERY',
+    expect(empty).toEqual([]);
+    // Every node is offered while everything is active.
+    for (const n of t.nodes) expect(isVisible(t, n.key, activeExercises)).toBe(true);
+  });
+
+  it('an empty node (all its exercises inactive) is hidden and drops out of its parent’s choices', () => {
+    const withoutFootworkDrills = new Set(
+      [...activeExercises].filter((id) => !['JUMP_STOP_PIVOTS', 'JAB_STEP_SERIES', 'POWER_LAYUPS'].includes(id)),
+    );
+    expect(activeCountUnder(t, 'BASKETBALL_FOOTWORK', withoutFootworkDrills)).toBe(0);
+    expect(isVisible(t, 'BASKETBALL_FOOTWORK_PIVOT', withoutFootworkDrills)).toBe(false);
+    expect(visibleChildren(t, 'BASKETBALL', withoutFootworkDrills).map((n) => n.key)).not.toContain(
       'BASKETBALL_FOOTWORK',
-      'BASKETBALL_FOOTWORK_JUMP_STOP',
-      'BASKETBALL_FOOTWORK_PIVOT',
-      'BASKETBALL_FOOTWORK_JAB_STEP',
-      'BASKETBALL_FOOTWORK_TRIPLE_THREAT',
-    ]);
-    for (const key of empty) expect(isVisible(t, key, activeExercises)).toBe(false);
-    expect(childKeys(t, 'BASKETBALL')).toContain('BASKETBALL_FOOTWORK');
-    expect(visibleChildren(t, 'BASKETBALL', activeExercises).map((n) => n.key)).not.toContain('BASKETBALL_FOOTWORK');
+    );
+    expect(visibleChildren(t, 'BASKETBALL', activeExercises).map((n) => n.key)).toContain('BASKETBALL_FOOTWORK');
   });
 
   it('a shelf whose only exercises are inactive is hidden; counts use active exercises only', () => {

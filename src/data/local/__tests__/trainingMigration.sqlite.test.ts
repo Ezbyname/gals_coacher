@@ -11,6 +11,7 @@ import {
   seedV4CalendarEvents,
   seedV6CalendarHistory,
 } from '@/test-support/legacyFixtures';
+import { expectUnchangedExceptLaterSeeds } from '@/test-support/migrationSeeds';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
 
 import { openLocalDatabase } from '../database';
@@ -115,7 +116,7 @@ describe('migration v9 (training) on real SQLite', () => {
 
   it('fresh install: the ten training tables, empty', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(10);
+    expect(migration.to).toBe(11);
     expect(migration.applied).toContain('training');
     expect(await trainingObjects(db as unknown as Db)).toEqual(TRAINING_TABLES);
     for (const table of TRAINING_TABLES) {
@@ -127,8 +128,8 @@ describe('migration v9 (training) on real SQLite', () => {
   it('upgrades a realistic v8 database: every existing row unchanged; same schema as a fresh install', async () => {
     const before = await createV8Database();
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 8, to: 10, applied: ['training', 'taxonomy'] });
-    expect(await dumpV8Data(db as unknown as Db)).toEqual(before);
+    expect(migration).toEqual({ from: 8, to: 11, applied: ['training', 'taxonomy', 'basketball_content'] });
+    expectUnchangedExceptLaterSeeds(await dumpV8Data(db as unknown as Db), before, 8);
     expect(await db.getFirstAsync('PRAGMA foreign_key_check')).toBeNull();
     // Today's repositories still read everything.
     expect((await getExercise(db, CUSTOM_EXERCISE))!.name.en).toBe('Sled Drag');
@@ -143,7 +144,7 @@ describe('migration v9 (training) on real SQLite', () => {
     await db.closeAsync();
 
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 10, to: 10, applied: [] });
+    expect(again.migration).toEqual({ from: 11, to: 11, applied: [] });
     await again.db.closeAsync();
 
     const fresh = openNodeSqlite(':memory:');
@@ -168,15 +169,15 @@ describe('migration v9 (training) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 8, to: 10, applied: ['training', 'taxonomy'] });
+    expect(relaunch.migration).toEqual({ from: 8, to: 11, applied: ['training', 'taxonomy', 'basketball_content'] });
     await relaunch.db.closeAsync();
   });
 
   it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 11');
+    await newer.execAsync('PRAGMA user_version = 12');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v11 .* only knows v10\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v12 .* only knows v11\. Refusing to downgrade/);
   });
 
   it('structural constraints: ownership references, one in-progress session per player, status ⇔ end time', async () => {

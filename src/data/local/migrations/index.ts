@@ -681,4 +681,34 @@ export const migrations: readonly Migration[] = [
       BEGIN SELECT RAISE(ABORT, 'a taxonomy membership is replaced, never rewritten'); END;
     `,
   },
+  {
+    // TRAIN-TAXONOMY-001B. Professional Basketball content: 17 new built-in
+    // drills (ball-handling moves, finishes, shooting on the move, passing,
+    // footwork, defense) curated in code (src/domain/exercise/catalog). As
+    // with v8, each built-in gets a row with its stable id holding only its
+    // active state; content stays in code. Additive: rows only, no schema
+    // change; existing rows (user data and history) untouched.
+    version: 11,
+    name: 'basketball_content',
+    sql: `
+      INSERT INTO exercises (id, builtin, name, active, created_at, updated_at) VALUES
+        ('CROSSOVER_DRIBBLE', 1, NULL, 1, 0, 0),
+        ('BETWEEN_THE_LEGS_DRIBBLE', 1, NULL, 1, 0, 0),
+        ('BEHIND_THE_BACK_DRIBBLE', 1, NULL, 1, 0, 0),
+        ('HESITATION_DRIVE', 1, NULL, 1, 0, 0),
+        ('CHANGE_OF_PACE_DRIBBLE', 1, NULL, 1, 0, 0),
+        ('COMBO_MOVE_SERIES', 1, NULL, 1, 0, 0),
+        ('REVERSE_LAYUPS', 1, NULL, 1, 0, 0),
+        ('CONTACT_FINISHES', 1, NULL, 1, 0, 0),
+        ('FLOATERS', 1, NULL, 1, 0, 0),
+        ('POWER_LAYUPS', 1, NULL, 1, 0, 0),
+        ('RELOCATION_SHOOTING', 1, NULL, 1, 0, 0),
+        ('ONE_HAND_PUSH_PASS', 1, NULL, 1, 0, 0),
+        ('PASSING_ON_THE_MOVE', 1, NULL, 1, 0, 0),
+        ('JUMP_STOP_PIVOTS', 1, NULL, 1, 0, 0),
+        ('JAB_STEP_SERIES', 1, NULL, 1, 0, 0),
+        ('DEFENSIVE_RECOVERY_DRILL', 1, NULL, 1, 0, 0),
+        ('ZIGZAG_DEFENSIVE_SLIDES', 1, NULL, 1, 0, 0);
+    `,
+  },
 ];
