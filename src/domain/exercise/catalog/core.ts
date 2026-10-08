@@ -174,6 +174,10 @@ const ENTRIES: Entry[] = [
       'Side-on to a wall, rotate from the hips and throw the ball hard into the wall; catch and repeat.',
     ],
     cues: [['הכוח מתחיל מהרגליים והאגן', 'Power starts from the legs and hips']],
+    safety: [
+      'זורקים לקיר יציב או לשותף, ואף אחד לא עומד במסלול של הכדור החוזר; הסיבוב מגיע מהאגן והרגליים מסתובבות איתו, לא מפיתול של הגב התחתון.',
+      'Throw against a solid wall or to a partner with nobody in the rebound path; rotate from the hips and let the back foot pivot, rather than twisting through the lower back.',
+    ],
   },
 ];
 

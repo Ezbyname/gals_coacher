@@ -72,6 +72,10 @@ const ENTRIES: Entry[] = [
       'זריקות מקו השלוש מנקודות קבועות; רגליים ראשונות — הכוח מגיע מהרגליים.',
       'Shots from fixed spots behind the arc; legs first — the power comes from the legs.',
     ],
+    safety: [
+      'מתרחקים לשלוש רק כשהטכניקה נשמרת ממרחק קרוב יותר; מי שאוסף כדורים עומד מחוץ לאזור הנחיתה של הקולע, ומפנים כדורים מסביב לרגליים.',
+      'Move out to three only when the form holds from closer; the rebounder stays clear of the shooter\'s landing spot, and loose balls are cleared from around the feet.',
+    ],
   },
   {
     id: 'PULL_UP_JUMPER',
@@ -169,6 +173,10 @@ const ENTRIES: Entry[] = [
     how: [
       'כדרור עם כדור בכל יד: יחד, לסירוגין, ובגבהים שונים.',
       'Dribble a ball in each hand: together, alternating and at different heights.',
+    ],
+    safety: [
+      'מפנים מקום מסביב, כי כדור שבורח מתגלגל מתחת לרגליים; מתחילים במקום ובקצב איטי לפני שמוסיפים תנועה.',
+      'Clear the space around you — a lost ball rolls under the feet; start stationary and slow before adding movement.',
     ],
   },
   {
@@ -270,6 +278,10 @@ const ENTRIES: Entry[] = [
     how: [
       'הקפצת הכדור ברצף על הלוח בקפיצות חוזרות, בשתי הידיים ובכל יד בנפרד.',
       'Tip the ball repeatedly off the backboard with continuous jumps — both hands, then each hand.',
+    ],
+    safety: [
+      'נוחתים על שתי רגליים עם ברכיים רכות שנעות בקו עם כפות הרגליים לפני הקפיצה הבאה; עוצרים את הסט כשהנחיתות נהיות כבדות, ושומרים את האזור מתחת לסל פנוי משחקנים וכדורים.',
+      'Land on both feet with soft knees tracking over the feet before the next jump; stop the set when landings get heavy, and keep the area under the rim clear of players and balls.',
     ],
   },
   {
@@ -388,6 +400,10 @@ const ENTRIES: Entry[] = [
       'At each cone, chain two moves — e.g. crossover into between-the-legs, or between-the-legs into behind-the-back — with both hands, then accelerate out.',
     ],
     mistakes: [['מהלכים איטיים בשביל הנראות, בלי יציאה מהירה', 'Slow moves for show without a quick exit']],
+    safety: [
+      'לומדים כל מהלך בנפרד ובקצב איטי לפני שמחברים ביניהם. עובדים במרחב פנוי, מאטים בשליטה בשינויי כיוון, ושומרים שהברך תנוע בקו עם כף הרגל ולא תקרוס פנימה.',
+      'Learn each move slowly on its own before chaining them. Work in clear space, decelerate under control on changes of direction, and keep the knee tracking over the foot rather than collapsing inward.',
+    ],
   },
   // Finishing (makes / attempts, like the other finishes).
   {
@@ -441,6 +457,10 @@ const ENTRIES: Entry[] = [
       'Drive into the lane and release early with one hand on a high arc, over the hands of an imaginary big — off one foot and off two.',
     ],
     cues: [['שחרור רך ומוקדם, קשת גבוהה', 'Soft, early release with a high arc']],
+    safety: [
+      'מתרגלים תחילה בלי מגן עד שהניתור והנחיתה מאוזנים ובשליטה. כשמוסיפים מגע, שומרים את אזור הנחיתה פנוי ונמנעים מלנחות על כפות הרגליים של המגן או של שחקן אחר.',
+      'Practice first without a defender until take-off and landing are balanced and controlled. As contact is added, keep the landing area clear and avoid landing on the defender\'s or another player\'s feet.',
+    ],
   },
   {
     id: 'POWER_LAYUPS',

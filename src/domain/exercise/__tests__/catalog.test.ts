@@ -88,8 +88,26 @@ describe('every entry is coherent', () => {
   it('no medical diagnosis or rehabilitation claims in the content', () => {
     const text = JSON.stringify(all).toLowerCase();
     expect(text).not.toMatch(
-      /diagnos|rehab|treat(s|ment)? (injur|pain)|cures?\b|prevents? injur|אבחון|שיקום|מרפא/,
+      // \bcures? — a whole word: "a SECURE fixed bar" is not a medical claim.
+      /diagnos|rehab|treat(s|ment)? (injur|pain)|\bcures?\b|prevents? injur|אבחון|שיקום|מרפא/,
     );
+  });
+
+  // A CONSERVATIVE INITIAL HEURISTIC (owner, 2026-10-08): speed / plyometric /
+  // power / advanced stands in for real risk until EX-GUIDE-001 gives each
+  // exercise an explicit professional risk level (e.g. LOW / MODERATE /
+  // ELEVATED). Difficulty alone does not mean a safety note is required.
+  it('every higher-risk exercise (speed, jumps, power, advanced) carries a specific safety note (EX-GUIDE-001 wave 1)', () => {
+    const risky = all.filter(
+      (e) =>
+        e.difficulty === 'ADVANCED' ||
+        e.categories.some((c) => c === 'SPEED' || c === 'PLYOMETRIC' || c === 'POWER'),
+    );
+    expect(risky.length).toBeGreaterThan(20);
+    expect(risky.filter((e) => e.safety === null).map((e) => e.id)).toEqual([]);
+    // Useful, not boilerplate: no two risk notes are the same text.
+    const notes = risky.map((e) => e.safety!.en);
+    expect(new Set(notes).size).toBeGreaterThan(notes.length * 0.8);
   });
 });
 

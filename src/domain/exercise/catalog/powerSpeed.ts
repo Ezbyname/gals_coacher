@@ -106,6 +106,10 @@ const ENTRIES: Entry[] = [
       'Small, quick hops on the balls of the feet with nearly straight knees.',
     ],
     cues: [['זמן מגע קצר ככל האפשר', 'Ground contact as short as possible']],
+    safety: [
+      'מגע קצר ומהיר על כריות כף הרגל ועל משטח לא קשה מדי; מתחילים בניתורים נמוכים ומעט חזרות, ועוצרים כשהנחיתות נהיות רועשות או שהעקבים נוחתים בכבדות.',
+      'Quick, short contacts on the balls of the feet on a forgiving surface; start with low hops and few reps, and stop when landings get loud or the heels start crashing down.',
+    ],
   },
   {
     id: 'TUCK_JUMP',
@@ -139,6 +143,10 @@ const ENTRIES: Entry[] = [
       'הרמת הכדור מעל הראש על קצות האצבעות והטחה בעוצמה לרצפה לפני הרגליים.',
       'Lift the ball overhead on the toes and slam it hard into the floor in front of the feet.',
     ],
+    safety: [
+      'משתמשים בכדור סלאם שלא קופץ חזרה; מתכופפים מהאגן ומרחיקים את הפנים ממסלול הכדור, ולא מטיחים כדור קופצני על משטח קשה.',
+      'Use a dead-bounce slam ball; hinge from the hips and keep the face out of the ball\'s path, and never slam a bouncy ball onto a hard floor.',
+    ],
   },
   {
     id: 'MED_BALL_CHEST_PASS',
@@ -154,6 +162,10 @@ const ENTRIES: Entry[] = [
     how: [
       'מסירת חזה מהירה וחזקה לקיר או לבן זוג, עם צעד קדימה.',
       'A fast, powerful chest pass into a wall or to a partner, stepping forward.',
+    ],
+    safety: [
+      'כדור קל שאפשר לתפוס בידיים רכות; השותף מוכן עם ידיים למעלה לפני כל מסירה, והמרחק לקיר או לשותף כזה שאפשר לשלוט בו.',
+      'Pick a light ball you can catch with soft hands; the partner is ready with hands up before every pass, at a distance you can control.',
     ],
   },
   {
@@ -201,6 +213,10 @@ const ENTRIES: Entry[] = [
       ['גוף נוטה קדימה בצעדים הראשונים', 'Lean forward over the first steps'],
       ['ידיים עובדות חזק', 'Drive the arms hard'],
     ],
+    safety: [
+      'קודם חימום; רצים על משטח ישר ולא חלק, עם מרחב פנוי ארוך אחרי קו הסיום כדי להאט בהדרגה.',
+      'Warm up first; sprint on a flat, non-slip surface with a long clear run-out past the finish line to slow down gradually.',
+    ],
   },
   {
     id: 'SPRINT_20M',
@@ -216,6 +232,10 @@ const ENTRIES: Entry[] = [
     how: [
       'ספרינט מקסימלי של 20 מטר מעמידה; מנוחה מלאה בין חזרות.',
       'A maximal 20 m sprint from standing; full rest between reps.',
+    ],
+    safety: [
+      'קודם חימום; משטח ישר ולא חלק ומרחב פנוי כדי להאט בהדרגה אחרי הקו; מנוחה מלאה בין ספרינטים כדי שכל חזרה תהיה מהירה באמת.',
+      'Warm up first; flat, non-slip surface and a clear run-out to slow down gradually after the line; rest fully between sprints so every rep is truly fast.',
     ],
   },
   {
@@ -233,6 +253,10 @@ const ENTRIES: Entry[] = [
       'הרצה הדרגתית של 20 מטר ואז 30 מטר במהירות מרבית; נמדד רק קטע ה־30.',
       'Build up over 20 m, then run 30 m at top speed; only the 30 m section is timed.',
     ],
+    safety: [
+      'רק אחרי חימום יסודי וכמה ריצות הדרגתיות; התאוצה באזור הכניסה הדרגתית, וצריך מרחב ארוך להאטה — מהירות מרבית מעמיסה במיוחד על שרירי הירך האחורית (המסטרינג).',
+      'Only after a thorough warm-up and a few build-up runs; accelerate gradually through the fly-in zone and leave a long run-out — top speed loads the hamstrings the most.',
+    ],
   },
   {
     id: 'FALLING_START_ACCELERATION',
@@ -248,6 +272,10 @@ const ENTRIES: Entry[] = [
     how: [
       'עמידה זקופה, הטיית הגוף קדימה עד "נפילה" ופריצה לספרינט של 10 מטר.',
       'Stand tall, lean forward until you start to fall, then break into a 10 m sprint.',
+    ],
+    safety: [
+      'נוטים קדימה מהקרסוליים בגוף ישר ונותנים לצעד הראשון לתפוס את הנפילה; צעדים ראשונים קצרים וחזקים, על משטח לא חלק ועם מקום להאט.',
+      'Lean from the ankles with a straight body and let the first step catch the fall; keep the first steps short and powerful, on a non-slip surface with room to slow down.',
     ],
   },
   {
@@ -266,6 +294,10 @@ const ENTRIES: Entry[] = [
       'Run 5 m to one side, 10 m to the other and 5 m back to the middle, touching the line at each turn.',
     ],
     cues: [['ירידה נמוכה לפני שינוי הכיוון', 'Get low before each change of direction']],
+    safety: [
+      'לפני כל סיבוב מורידים אגן ומקצרים צעדים כדי לעצור בשליטה; בזמן הבלימה הברך מעל כף הרגל, ולא נותנים לה לקרוס פנימה.',
+      'Before each turn, drop the hips and shorten the steps to stop under control; keep the knee over the foot as you plant and never let it cave inward.',
+    ],
   },
   {
     id: 'T_DRILL',
@@ -446,6 +478,10 @@ const ENTRIES: Entry[] = [
     how: [
       'גוף נוטה קדימה וידיים ישרות על המזחלת, צעדים חזקים ומהירים למרחק של 20 מטר.',
       'Body leaning forward with straight arms on the sled, strong fast steps for 20 m.',
+    ],
+    safety: [
+      'בוחרים משקל שמאפשר לשמור על גו יציב וניטרלי ועל צעדים בשליטה. דוחפים רק על משטח שבו המזחלת מחליקה באופן אחיד, עם מסלול פנוי קדימה.',
+      'Use a load that lets you keep a strong, neutral trunk and controlled steps. Push only on a surface where the sled moves evenly, with a clear lane ahead.',
     ],
   },
   {

@@ -42,6 +42,10 @@ const ENTRIES: Entry[] = [
       ['מגע קצר וזריז עם הרצפה', 'Quick, light ground contacts'],
     ],
     mistakes: [['ברכיים נמוכות וקצב איטי', 'Low knees and a slow rhythm']],
+    safety: [
+      'משטח לא חלק ומקום פנוי קדימה; נוחתים רך על כריות כף הרגל, ועוצרים את הסט כשכבר אי אפשר להרים ברכיים בשליטה.',
+      'Use a non-slip surface with room ahead; land softly on the balls of the feet and stop the set when the knees no longer come up with control.',
+    ],
   },
   {
     id: 'BUTT_KICKS',
@@ -76,6 +80,10 @@ const ENTRIES: Entry[] = [
       ['ידיים בתיאום עם הרגליים', 'Arms in rhythm with the legs'],
     ],
     mistakes: [['נחיתה לפני הגוף במקום מתחתיו', 'Landing in front of the body instead of under it']],
+    safety: [
+      'מתחילים בהליכה ורק אחר כך עוברים לדילוג; נוחתים מתחת לאגן על כרית כף הרגל, לא על עקב ששולחים קדימה.',
+      'Learn it as a march before the skip; land under the hips on the ball of the foot, never reaching out with the heel.',
+    ],
   },
   {
     id: 'LEG_SWINGS',

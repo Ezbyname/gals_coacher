@@ -105,6 +105,10 @@ const ENTRIES: Entry[] = [
       ['בלי נדנוד', 'No swinging'],
     ],
     mistakes: [['חצי טווח בתחתית', 'Not lowering to a full hang']],
+    safety: [
+      'משתמשים במוט יציב ומקובע. יורדים בשליטה עד לתלייה מלאה בלי לצנוח; בסיום נעזרים בקופסה/מדרגה או בדרך מבוקרת אחרת כדי לרדת, במקום לקפוץ מגובה.',
+      'Use a secure fixed bar. Lower under control to a full hang without dropping; when finishing, use a box/step or another controlled way to come down rather than jumping from height.',
+    ],
   },
   {
     id: 'INVERTED_ROW',
@@ -122,6 +126,10 @@ const ENTRIES: Entry[] = [
       'Hang under a bar or suspension straps with a straight body, pull the chest to the handles, lower under control.',
     ],
     cues: [['גוף ישר כמו בפלאנק', 'Body straight as in a plank']],
+    safety: [
+      'מוט או טבעות מקובעים היטב; הגוף ישר ונוקשה מהראש עד העקבים, יורדים בשליטה, וכדי להקל מקרבים את הרגליים לזווית גבוהה יותר.',
+      'Fix the bar or rings securely; keep the body rigid from head to heels, lower under control, and walk the feet in to a higher angle to make it easier.',
+    ],
   },
   {
     id: 'ONE_ARM_DUMBBELL_ROW',
