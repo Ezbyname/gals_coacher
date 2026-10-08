@@ -21,6 +21,13 @@ import { touch } from '@/ui/theme';
 const routes = appRoutes(resolve(__dirname, '..')) as never;
 const NOW = new Date(2026, 9, 7, 9).getTime();
 const TOTAL = BUILTIN_EXERCISES.length;
+/**
+ * This suite is made of multi-screen flows (library → form → save → details → edit)
+ * that take 1–2 s each alone but exceeded Jest's 5 s default when the full suite
+ * runs on every core (TEST-FLAKE-001: only the timeout ever failed, never an
+ * assertion). An explicit budget for this suite only.
+ */
+jest.setTimeout(15_000);
 
 let db: ReturnType<typeof openNodeSqlite> | null = null;
 async function prepare(language: 'he' | 'en') {
