@@ -16,6 +16,7 @@ All verified by the owner on a physical Android device.
 **CAL-VIEW-001 / CAL-FILTER-001 / CAL-COLOR-001 (Full Calendar: Month / Week, filters, colour meaning): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema unchanged (v6).
 **ACTIVITY-001 (configurable Activity Types): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema v7.
 **TRAIN-001 (Professional Exercise Library — ROADMAP 2.0, owner-directed ahead of Cloud Foundation C): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v8**. **TRAIN-002 (Workout Builder + manual Training Execution + objective results): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v9**. CAL-TRAIN-001: **not started** (awaiting owner go-ahead after TRAIN-002's gate).
+**TRAIN-TAXONOMY-001A (training taxonomy — domain / data / migration / curated taxonomy, no UI): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA: not executable yet (no taxonomy UI — TX-01…TX-13 belong to 001C–001F); PHYSICAL: not applicable to this sub-slice.** Schema is now **v10**. Slices 001B–001F, EX-GUIDE-001 and CAL-TRAIN-001: **not started** (each awaits the owner's explicit approval).
 **iOS (project baseline):** the current pre-Calendar application has passed iOS bundle export (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
@@ -38,6 +39,7 @@ All verified by the owner on a physical Android device.
 | ACTIVITY-001 (configurable Activity Types) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v7** |
 | TRAIN-001 (Exercise Library) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v8** |
 | TRAIN-002 (Workout Builder + manual execution) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v9** |
+| TRAIN-TAXONOMY-001A (training taxonomy: domain / data) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS**; no UI (TX Product QA: future 001C–001F); schema **v10** |
 | CAL-TRAIN-001 | **Not started** — awaiting owner go-ahead |
 | Slices after 1.3 (C, 2.x …) | **Not started** |
 
@@ -84,6 +86,18 @@ player / add Basketball), 25 (player without Basketball), 28 (optional
 sport), 29–31 (positions, clear secondary, persistence).
 
 ---
+
+## TRAIN-TAXONOMY-001A — Training taxonomy (domain / data): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS (2026-10-08)
+
+Owner-approved 2026-10-07 (architecture review + decisions); sub-slice A of TRAIN-TAXONOMY-001 (ROADMAP 2.1c). **No taxonomy UI** — it arrives in 001C / 001D.
+
+- **Model (`src/domain/taxonomy`):** a curated, many-to-many DISCOVERY / NAVIGATION tree over the exercise library (ARCHITECTURE §16, PRODUCT_SPEC §73). `nodes.ts`: 71 built-in nodes under stable keys — **Fitness 22** (7 by body area: Chest, Back, Shoulders, Arms, Core [Stability, Rotation / Flexion], Legs [Squat & Lunge, Hinge & Posterior Chain, Single-Leg & Balance, Calves & Ankles], Full Body; 8 by training goal: Strength, Power & Plyometrics, Speed, Agility, Conditioning, Mobility, Warm-Up, Cool-Down & Recovery) and **Basketball 49** (Shooting 8, Finishing 6, Ball Handling 10, Passing 4, Defense 4, Footwork 4, Rebounding, Athletic Development 4). `memberships.ts`: 208 curated links (Fitness 168, Basketball 40) covering all 107 built-ins; 78 exercises sit in ≥ 2 nodes (e.g. DEADLIFT: Back, Legs › Hinge, Full Body, Strength; PULL_UP_JUMPER: Shooting › Mid-Range, Pull-Up, Off the Dribble); 6 general exercises explicitly cross-listed under Basketball › Athletic Development. `taxonomy.ts`: pure helpers (build with fail-closed structure checks, children / path / shelf / nodes-of-exercise, active counts, visibility: inactive or empty → hidden). HE / EN labels (`taxonomy.node.*`, `taxonomy.group.*`).
+- **Empty nodes (curated ahead of content, hidden from users):** 16 Basketball nodes — Shooting on the Move; Reverse Layup, Contact Finish, Floater, Power Finish; Hesitation, Change of Pace, Combination Moves; One-Hand Pass, Passing on the Move; Defensive Recovery; Footwork (Jump Stop, Pivot, Jab Step, Triple Threat). Filling them is TRAIN-TAXONOMY-001B (content). No Fitness node is empty.
+- **Schema v10 (additive):** `taxonomy_nodes` (one seeded row per built-in key, active state only; parent / family / name / sort-order columns reserved for future family-owned nodes, NULL for built-ins by CHECK) + `exercise_taxonomy` (custom-exercise memberships only); indexes `taxonomy_nodes_by_parent`, `exercise_taxonomy_by_node`; triggers: nodes never deleted, built-in exercises never stored as members (curated only), memberships never updated in place. No existing table changes; plan / session snapshots carry no taxonomy.
+- **Repository (`src/data/local/taxonomy`):** `readTaxonomy` (fails closed: missing / unknown / custom node rows, built-in membership rows), `setTaxonomyNodeActive` (idempotent, stamped, memberships untouched), `setCustomExerciseTaxonomy` (refuses built-in exercises, unknown exercise / node, a NEW inactive node; keeps an existing membership in a node that became inactive).
+- **Tests (38 new):** domain / coherence 22 (structure, arbitrary depth, stable order, approved trees, HE / EN labels, migration seeding, membership integrity, coverage of all built-ins, many-to-many, coaching coherence with muscles / areas / movement patterns / training categories / sport, visibility); repository 11 (real SQLite); migration v10 5 (fresh install, realistic v9 upgrade with finished training history — every pre-v10 table unchanged, same schema as fresh, taxonomy writes never change training history, restart / idempotency, rollback). Mutation check: 3 deliberate content mistakes each killed (non-hinge in Hinge; general sprint under Free Throws; missing node seed). Existing migration tests updated for the new latest version (v10) only.
+- **Gate (owner repo `main` @ `71b1d13` + uncommitted Slice A changes, 2026-10-08):** typecheck PASS; lint 0 errors (1 pre-existing warning, `fullCalendar.test.tsx`); **Jest 75 / 75 suites, 1377 / 1377 tests PASS** (twice, `--maxWorkers=50%`). The default fully parallel run on the same machine (QA emulator running) hit 5 s timeouts in UI suites — 1 test in each of two runs, the TEST-FLAKE-001 Exercise Library test; a pristine `71b1d13` copy under the same conditions also failed 1–2 UI tests by timeout only (no assertion failure) → pre-existing environment flakiness, not a Slice A regression. **Android local export PASS** (3.5 MB Hermes bundle).
+- **Not done here (by design):** taxonomy UI, Basketball content, Workout Builder picker, template classification, EX-GUIDE-001, Calendar ↔ Training, timers, camera, cloud. **Python Product QA:** TX-01…TX-13 NOT YET EXECUTABLE (future sub-slices). **Physical QA:** not applicable to a no-UI sub-slice.
 
 ## TRAIN-002 — Workout Builder + Training Execution: IMPLEMENTED + AUTOMATED PASS, PHYSICAL PENDING (2026-10-06)
 

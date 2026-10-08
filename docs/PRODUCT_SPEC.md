@@ -137,6 +137,11 @@ be made inactive (hidden from new choices) and active again — never deleted,
 so history keeps it. Users find exercises by search (Hebrew / English) and by
 category, body area, muscle, difficulty, sport and the equipment they have.
 
+**Training taxonomy (owner, 2026-10-07 — TRAIN-TAXONOMY-001, §73):** exercises
+are also discoverable through professional training categories (Fitness /
+Basketball → category → sub-category); search across the whole library always
+stays available.
+
 **Superseded 2026-10-06 — kept for history, no longer authoritative:** the
 original "small and precise at first (~15 exercises)" rule below.
 
@@ -518,3 +523,32 @@ Decided 2026-10-04 (moved out of this list): final self-assessment categories an
 - **Available time is not automatically appropriate training time.** Gals Coacher plans around the athlete's real life: school, team practices, games, personal training, unavailable time, sleep / recovery and training load are inputs to planning — not just empty calendar slots. A free slot alone must never imply "do a hard workout now"; this matters especially for young athletes.
 - **What was planned is not what happened.** A calendar entry (planned) and a training session (actual) are different things: planned + completed, planned + skipped and unplanned + completed must all be representable.
 - **Facts come first.** Recommendations and any future AI explain, suggest and summarize; they never redefine facts such as the schedule, game times, availability, the player's identity or recorded results.
+
+## 73. Training taxonomy (owner-approved 2026-10-07 — TRAIN-TAXONOMY-001)
+
+- **Goal:** an athlete finds exercises (and later workouts) through professional training categories instead of one flat list of 100+ exercises: Training Domain → Category → Sub-category → Exercises → Add to Workout.
+- **Fitness** — *By body area:* Chest, Back, Shoulders, Arms (one category in V1), Core (Stability / Anti-Movement, Rotation / Flexion), Legs (Squat & Lunge, Hinge & Posterior Chain, Single-Leg & Balance, Calves & Ankles), Full Body. *By training goal:* Strength, Power / Plyometrics, Speed, Agility, Conditioning, Mobility, Warm-Up, Cool-Down / Recovery. Body area and training goal are separate concepts and are never mixed in one list.
+- **Basketball** — Shooting (Form & Close Range, Free Throws, Mid-Range, Three-Point, Catch & Shoot, Pull-Up, Off the Dribble, Shooting on the Move) · Finishing (Layups, Reverse Layup, Around the Rim, Contact Finish, Floater, Power Finish) · Ball Handling (Stationary Control, Strong Hand, Weak Hand, Crossover, Between the Legs, Behind the Back, Hesitation, Change of Pace, Combination Moves, Moving Dribble) · Passing (Chest, Bounce, One-Hand, on the Move) · Defense (On-Ball / Lateral, Closeouts, Change of Direction, Recovery) · Footwork (Jump Stop, Pivot, Jab Step, Triple Threat) · Rebounding · **Athletic Development** (Speed, Agility, Jumping, Conditioning).
+- **One exercise, many paths:** an exercise may appear under several categories (e.g. Deadlift under Legs › Hinge, Back, Full Body, Strength) and is still one exercise — never duplicated.
+- **Curated:** the built-in organisation is professional curation; users cannot reclassify built-in exercises in V1 and cannot create their own categories in V1.
+- **No empty shelves:** a category without an active exercise is never shown. The taxonomy is not professionally complete until the Basketball content expansion (TRAIN-TAXONOMY-001B) fills the empty Basketball categories with purposeful drills.
+- **Search All always available:** the hierarchy is an optional discovery path; an athlete who knows the exercise never has to drill down.
+- **Add Exercise** must be reachable immediately — never only after scrolling past the whole list.
+- **Workout templates** (001E): 0..3 categories per template, one optional primary.
+- **History:** categories are navigation metadata; changing them never changes planned or performed training.
+- **Accessibility:** category labels carry their count ("Shooting, 6 exercises"); the current / selected state is shown in text, not colour alone; large touch targets; Hebrew RTL, English LTR, numbers stay left-to-right.
+
+## 74. Keyboard and input visibility (locked 2026-10-07 — application-wide)
+
+- Whenever the software keyboard is open, **the focused input stays visible above it**: focused, editable, with its cursor, current value and (where practical) validation state visible. If it would be hidden, the screen scrolls / repositions it automatically — never with hard-coded screen coordinates.
+- Applies to every text and numeric input: exercise / taxonomy search, custom exercise, workout block and template forms, sets / reps / load / duration / distance / made / attempts and other actual-result inputs, names, titles, notes and every future input.
+- Moving to the next field keeps that field visible; closing the keyboard never resets data; the required Save / Continue action stays reachable.
+- A focused field hidden by the keyboard is a UX defect. Automated checks verify it where technically reliable; otherwise the result is **PHYSICAL QA REQUIRED**, never an automation PASS.
+
+## 75. Exercise guidance (EX-GUIDE-001 — FUTURE, approved direction 2026-10-07, not started)
+
+- Every exercise becomes something the athlete can **learn**, not only select: purpose, setup, execution steps, coaching cues, common mistakes, safety, illustration steps, an optional **verified** tutorial video, regression / progression where useful.
+- Guidance belongs to the exercise (one source), reused from the Exercise Library, the Workout Builder and the Training Session — never per taxonomy path.
+- **Offline-first:** text and local illustrations must be enough to perform the exercise correctly; video is optional enrichment and never the only explanation.
+- Sports instruction, not medical treatment: no diagnoses, rehabilitation prescriptions or medical claims.
+- Starts with a read-only audit of the current content and a design, then explicit owner approval.

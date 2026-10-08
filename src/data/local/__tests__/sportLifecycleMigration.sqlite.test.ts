@@ -93,8 +93,8 @@ describe('migration v5 (sport assignment lifecycle) on real SQLite', () => {
 
   it('fresh install: player_sports has active INTEGER NOT NULL DEFAULT 1 with its CHECK', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(9);
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 9 });
+    expect(migration.to).toBe(10);
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 10 });
     expect(await playerSportsColumns(db as unknown as Db)).toEqual([
       { cid: 0, name: 'player_id', type: 'TEXT', notnull: 1, dflt_value: null, pk: 1 },
       { cid: 1, name: 'sport', type: 'TEXT', notnull: 1, dflt_value: null, pk: 2 },
@@ -115,10 +115,10 @@ describe('migration v5 (sport assignment lifecycle) on real SQLite', () => {
     const { db, migration } = await openLocalDatabase();
     expect(migration).toEqual({
       from: 4,
-      to: 9,
-      applied: ['player_sports_active', 'calendar_event_completion', 'activity_types', 'exercises', 'training'],
+      to: 10,
+      applied: ['player_sports_active', 'calendar_event_completion', 'activity_types', 'exercises', 'training', 'taxonomy'],
     });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 9 });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 10 });
     expect(await dumpV4Data(db as unknown as Db)).toEqual(before);
     expect(await db.getAllAsync('SELECT player_id, sport, active FROM player_sports')).toEqual([
       { player_id: LEGACY.gal, sport: 'BASKETBALL', active: 1 },
@@ -140,7 +140,7 @@ describe('migration v5 (sport assignment lifecycle) on real SQLite', () => {
 
     // Idempotent: the next launch applies nothing; schema and data unchanged.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 9, to: 9, applied: [] });
+    expect(again.migration).toEqual({ from: 10, to: 10, applied: [] });
     expect(
       await again.db.getAllAsync(
         "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name",
@@ -176,8 +176,8 @@ describe('migration v5 (sport assignment lifecycle) on real SQLite', () => {
     const relaunch = await openLocalDatabase();
     expect(relaunch.migration).toEqual({
       from: 4,
-      to: 9,
-      applied: ['player_sports_active', 'calendar_event_completion', 'activity_types', 'exercises', 'training'],
+      to: 10,
+      applied: ['player_sports_active', 'calendar_event_completion', 'activity_types', 'exercises', 'training', 'taxonomy'],
     });
     expect(await dumpV4Data(relaunch.db as unknown as Db)).toEqual(before);
     await relaunch.db.closeAsync();
@@ -185,9 +185,9 @@ describe('migration v5 (sport assignment lifecycle) on real SQLite', () => {
 
   it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 10');
+    await newer.execAsync('PRAGMA user_version = 11');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v10 .* only knows v9\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v11 .* only knows v10\. Refusing to downgrade/);
   });
 });
 

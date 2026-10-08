@@ -1,0 +1,258 @@
+/**
+ * Curated built-in taxonomy membership (TRAIN-TAXONOMY-001): which built-in
+ * exercises a coach would look for under each node. Explicit — never derived
+ * at runtime from exercise attributes — and many-to-many: one exercise may sit
+ * under several nodes (e.g. DEADLIFT under Legs › Hinge, Back, Full Body and
+ * Strength) while remaining ONE exercise with one definition.
+ *
+ * A node's shelf = its own members + every descendant's members. Nodes listed
+ * in nodes.ts but absent here are curated ahead of content; nodes without an
+ * active exercise are hidden from users (see visibleChildren).
+ *
+ * Users cannot reclassify built-in exercises (V1); custom exercises are
+ * classified in the database (exercise_taxonomy). Coherence with each
+ * exercise's own truth is test-enforced (taxonomy.test.ts).
+ */
+export const BUILTIN_TAXONOMY_MEMBERS: Readonly<Record<string, readonly string[]>> = {
+  // ---------------------------------------------------------------- Fitness: by body area
+  FITNESS_CHEST: [
+    'PUSH_UP',
+    'INCLINE_PUSH_UP',
+    'BARBELL_BENCH_PRESS',
+    'DUMBBELL_BENCH_PRESS',
+    'PARALLEL_BAR_DIP',
+    'MED_BALL_CHEST_PASS',
+  ],
+  FITNESS_BACK: [
+    'PULL_UP',
+    'INVERTED_ROW',
+    'ONE_ARM_DUMBBELL_ROW',
+    'BAND_ROW',
+    'LAT_PULLDOWN',
+    'SEATED_CABLE_ROW',
+    'FACE_PULL',
+    'BAND_PULL_APART',
+    'DEADLIFT',
+  ],
+  FITNESS_SHOULDERS: [
+    'DUMBBELL_SHOULDER_PRESS',
+    'BARBELL_OVERHEAD_PRESS',
+    'LATERAL_RAISE',
+    'FACE_PULL',
+    'BAND_PULL_APART',
+  ],
+  FITNESS_ARMS: ['DUMBBELL_BICEPS_CURL', 'TRICEPS_PUSHDOWN', 'BENCH_DIP', 'PARALLEL_BAR_DIP', 'PULL_UP'],
+  FITNESS_CORE_STABILITY: [
+    'PLANK',
+    'SIDE_PLANK',
+    'DEAD_BUG',
+    'BIRD_DOG',
+    'HOLLOW_HOLD',
+    'PALLOF_PRESS',
+    'STABILITY_BALL_ROLLOUT',
+    'MOUNTAIN_CLIMBERS',
+    'BEAR_CRAWL',
+    'FARMER_CARRY',
+  ],
+  FITNESS_CORE_ROTATION_FLEXION: ['RUSSIAN_TWIST', 'HANGING_KNEE_RAISE', 'MED_BALL_ROTATIONAL_THROW'],
+  // Direct Legs members: lower-body work that is none of the sub-shelves.
+  FITNESS_LEGS: ['BAND_LATERAL_WALK'],
+  FITNESS_LEGS_SQUAT_LUNGE: [
+    'BODYWEIGHT_SQUAT',
+    'GOBLET_SQUAT',
+    'BARBELL_BACK_SQUAT',
+    'LEG_PRESS',
+    'WALL_SIT',
+    'BULGARIAN_SPLIT_SQUAT',
+    'REVERSE_LUNGE',
+    'WALKING_LUNGE',
+    'LATERAL_LUNGE',
+  ],
+  FITNESS_LEGS_HINGE: [
+    'ROMANIAN_DEADLIFT',
+    'DEADLIFT',
+    'SINGLE_LEG_RDL',
+    'HIP_THRUST',
+    'GLUTE_BRIDGE',
+    'NORDIC_HAMSTRING',
+    'KETTLEBELL_SWING',
+  ],
+  FITNESS_LEGS_SINGLE_LEG: ['BULGARIAN_SPLIT_SQUAT', 'REVERSE_LUNGE', 'STEP_UP', 'SINGLE_LEG_RDL'],
+  FITNESS_LEGS_CALVES_ANKLES: ['CALF_RAISE', 'POGO_JUMPS', 'ANKLE_KNEE_TO_WALL', 'CALF_STRETCH'],
+  FITNESS_FULL_BODY: [
+    'DEADLIFT',
+    'FARMER_CARRY',
+    'BURPEE',
+    'MED_BALL_SLAM',
+    'BATTLE_ROPE_WAVES',
+    'ROW_500M',
+    'SKI_ERG_INTERVALS',
+    'BEAR_CRAWL',
+  ],
+
+  // ---------------------------------------------------------------- Fitness: by training goal
+  FITNESS_STRENGTH: [
+    'BODYWEIGHT_SQUAT',
+    'GOBLET_SQUAT',
+    'BARBELL_BACK_SQUAT',
+    'LEG_PRESS',
+    'WALL_SIT',
+    'BULGARIAN_SPLIT_SQUAT',
+    'REVERSE_LUNGE',
+    'WALKING_LUNGE',
+    'STEP_UP',
+    'ROMANIAN_DEADLIFT',
+    'DEADLIFT',
+    'SINGLE_LEG_RDL',
+    'HIP_THRUST',
+    'GLUTE_BRIDGE',
+    'NORDIC_HAMSTRING',
+    'CALF_RAISE',
+    'PUSH_UP',
+    'INCLINE_PUSH_UP',
+    'BARBELL_BENCH_PRESS',
+    'DUMBBELL_BENCH_PRESS',
+    'PARALLEL_BAR_DIP',
+    'BENCH_DIP',
+    'PULL_UP',
+    'INVERTED_ROW',
+    'ONE_ARM_DUMBBELL_ROW',
+    'BAND_ROW',
+    'LAT_PULLDOWN',
+    'SEATED_CABLE_ROW',
+    'DUMBBELL_SHOULDER_PRESS',
+    'BARBELL_OVERHEAD_PRESS',
+    'FARMER_CARRY',
+  ],
+  FITNESS_POWER: [
+    'SQUAT_JUMP',
+    'BOX_JUMP',
+    'BROAD_JUMP',
+    'VERTICAL_JUMP',
+    'TUCK_JUMP',
+    'LATERAL_BOUNDS',
+    'POGO_JUMPS',
+    'MED_BALL_SLAM',
+    'MED_BALL_CHEST_PASS',
+    'MED_BALL_ROTATIONAL_THROW',
+    'KETTLEBELL_SWING',
+    'SLED_PUSH',
+  ],
+  FITNESS_SPEED: [
+    'SPRINT_10M',
+    'SPRINT_20M',
+    'SPRINT_30M_FLYING',
+    'FALLING_START_ACCELERATION',
+    'A_SKIP',
+    'HIGH_KNEES',
+  ],
+  FITNESS_AGILITY: [
+    'PRO_AGILITY_5_10_5',
+    'T_DRILL',
+    'AGILITY_LADDER_FOOTWORK',
+    'SHUTTLE_RUN',
+    'LATERAL_BOUNDS',
+  ],
+  FITNESS_CONDITIONING: [
+    'BURPEE',
+    'MOUNTAIN_CLIMBERS',
+    'JUMPING_JACKS',
+    'JUMP_ROPE',
+    'BATTLE_ROPE_WAVES',
+    'ROW_500M',
+    'BIKE_INTERVALS',
+    'SKI_ERG_INTERVALS',
+    'EASY_RUN',
+    'SHUTTLE_RUN',
+    'MED_BALL_SLAM',
+    'KETTLEBELL_SWING',
+    'SLED_PUSH',
+    'BEAR_CRAWL',
+  ],
+  FITNESS_MOBILITY: [
+    'WORLDS_GREATEST_STRETCH',
+    'HIP_90_90',
+    'CAT_COW',
+    'THORACIC_OPEN_BOOK',
+    'ANKLE_KNEE_TO_WALL',
+    'LEG_SWINGS',
+    'LATERAL_LUNGE',
+    'STANDING_HAMSTRING_STRETCH',
+    'HIP_FLEXOR_STRETCH',
+  ],
+  FITNESS_WARMUP: [
+    'JUMPING_JACKS',
+    'HIGH_KNEES',
+    'BUTT_KICKS',
+    'A_SKIP',
+    'LEG_SWINGS',
+    'WORLDS_GREATEST_STRETCH',
+    'CAT_COW',
+    'BAND_PULL_APART',
+    'BODYWEIGHT_SQUAT',
+    'WALKING_LUNGE',
+    'BAND_LATERAL_WALK',
+    'POGO_JUMPS',
+    'AGILITY_LADDER_FOOTWORK',
+    'FALLING_START_ACCELERATION',
+    'JUMP_ROPE',
+  ],
+  FITNESS_COOLDOWN: [
+    'STANDING_HAMSTRING_STRETCH',
+    'HIP_FLEXOR_STRETCH',
+    'CHILDS_POSE',
+    'CALF_STRETCH',
+    'CAT_COW',
+  ],
+
+  // ---------------------------------------------------------------- Basketball
+  BASKETBALL_SHOOTING_FORM_CLOSE_RANGE: ['FORM_SHOOTING'],
+  BASKETBALL_SHOOTING_FREE_THROWS: ['FREE_THROWS'],
+  BASKETBALL_SHOOTING_MID_RANGE: ['MID_RANGE_SPOT_SHOOTING', 'PULL_UP_JUMPER'],
+  BASKETBALL_SHOOTING_THREE_POINT: ['THREE_POINT_SHOOTING'],
+  // Spot shooting from fixed spots is catch & shoot.
+  BASKETBALL_SHOOTING_CATCH_AND_SHOOT: ['MID_RANGE_SPOT_SHOOTING', 'THREE_POINT_SHOOTING'],
+  BASKETBALL_SHOOTING_PULL_UP: ['PULL_UP_JUMPER'],
+  BASKETBALL_SHOOTING_OFF_THE_DRIBBLE: ['PULL_UP_JUMPER'],
+  BASKETBALL_FINISHING_LAYUPS: ['LAYUPS'],
+  BASKETBALL_FINISHING_AROUND_THE_RIM: ['MIKAN_DRILL'],
+  // "Hard dribbles with each hand, crossovers and behind-the-back".
+  BASKETBALL_BALL_HANDLING_STATIONARY: ['STATIONARY_DRIBBLING', 'FIGURE_8_DRIBBLE', 'TWO_BALL_DRIBBLING'],
+  BASKETBALL_BALL_HANDLING_STRONG_HAND: ['STATIONARY_DRIBBLING'],
+  BASKETBALL_BALL_HANDLING_WEAK_HAND: ['STATIONARY_DRIBBLING', 'TWO_BALL_DRIBBLING', 'CONE_DRIBBLE_SLALOM'],
+  BASKETBALL_BALL_HANDLING_CROSSOVER: ['STATIONARY_DRIBBLING'],
+  BASKETBALL_BALL_HANDLING_BETWEEN_THE_LEGS: ['FIGURE_8_DRIBBLE'],
+  BASKETBALL_BALL_HANDLING_BEHIND_THE_BACK: ['STATIONARY_DRIBBLING'],
+  BASKETBALL_BALL_HANDLING_MOVING: ['CONE_DRIBBLE_SLALOM'],
+  // "Chest and bounce passes into a wall".
+  BASKETBALL_PASSING_CHEST: ['WALL_PASSING'],
+  BASKETBALL_PASSING_BOUNCE: ['WALL_PASSING'],
+  BASKETBALL_DEFENSE_ON_BALL: ['DEFENSIVE_SLIDES'],
+  BASKETBALL_DEFENSE_CLOSEOUTS: ['CLOSEOUT_DRILL'],
+  // "Sprint, slide, backpedal and slide back".
+  BASKETBALL_DEFENSE_CHANGE_OF_DIRECTION: ['LANE_AGILITY'],
+  BASKETBALL_REBOUNDING: ['TIP_DRILL'],
+  BASKETBALL_ATHLETIC_SPEED: ['COURT_SPRINTS_SUICIDES', 'SPRINT_10M', 'SPRINT_20M'],
+  BASKETBALL_ATHLETIC_AGILITY: [
+    'LANE_AGILITY',
+    'DEFENSIVE_SLIDES',
+    'CONE_DRIBBLE_SLALOM',
+    'PRO_AGILITY_5_10_5',
+  ],
+  BASKETBALL_ATHLETIC_JUMPING: ['TIP_DRILL', 'VERTICAL_JUMP', 'POGO_JUMPS'],
+  BASKETBALL_ATHLETIC_CONDITIONING: ['COURT_SPRINTS_SUICIDES', 'SHUTTLE_RUN'],
+};
+
+/**
+ * General (non-Basketball) exercises a Basketball coach deliberately lists
+ * under Basketball › Athletic Development. Anything else outside its sport is
+ * a curation mistake (test-enforced).
+ */
+export const BASKETBALL_CROSS_LISTED: readonly string[] = [
+  'SPRINT_10M',
+  'SPRINT_20M',
+  'PRO_AGILITY_5_10_5',
+  'VERTICAL_JUMP',
+  'POGO_JUMPS',
+  'SHUTTLE_RUN',
+];

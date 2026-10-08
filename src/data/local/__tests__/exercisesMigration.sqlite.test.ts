@@ -50,7 +50,7 @@ const exerciseRows = (db: Db) =>
 const v8Tables = async (db: Db) =>
   (
     await db.getAllAsync<{ name: string }>(
-      "SELECT name FROM sqlite_master WHERE type IN ('table', 'trigger') AND name LIKE 'exercise%' ORDER BY name",
+      "SELECT name FROM sqlite_master WHERE type IN ('table', 'trigger') AND name LIKE 'exercise%' AND name NOT LIKE 'exercise_taxonomy%' ORDER BY name",
     )
   ).map((r) => r.name);
 
@@ -98,7 +98,7 @@ describe('migration v8 (exercise library) on real SQLite', () => {
 
   it('fresh install: the library tables, every built-in id exactly once (active), deletion refused', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(9);
+    expect(migration.to).toBe(10);
     expect(migration.applied).toContain('exercises');
     expect(await v8Tables(db as unknown as Db)).toEqual([
       'exercise_categories',
@@ -130,7 +130,7 @@ describe('migration v8 (exercise library) on real SQLite', () => {
     const before = await createV7Database();
 
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 7, to: 9, applied: ['exercises', 'training'] });
+    expect(migration).toEqual({ from: 7, to: 10, applied: ['exercises', 'training', 'taxonomy'] });
     expect(await dumpV7Data(db as unknown as Db)).toEqual(before);
     expect(await exerciseRows(db as unknown as Db)).toHaveLength(BUILTIN_EXERCISES.length);
     expect(await db.getFirstAsync('PRAGMA foreign_key_check')).toBeNull();
@@ -145,7 +145,7 @@ describe('migration v8 (exercise library) on real SQLite', () => {
     await db.closeAsync();
 
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 9, to: 9, applied: [] });
+    expect(again.migration).toEqual({ from: 10, to: 10, applied: [] });
     expect(await exerciseRows(again.db as unknown as Db)).toHaveLength(BUILTIN_EXERCISES.length);
     expect(await dumpV7Data(again.db as unknown as Db)).toEqual(before);
     await again.db.closeAsync();
@@ -172,15 +172,15 @@ describe('migration v8 (exercise library) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 7, to: 9, applied: ['exercises', 'training'] });
+    expect(relaunch.migration).toEqual({ from: 7, to: 10, applied: ['exercises', 'training', 'taxonomy'] });
     await relaunch.db.closeAsync();
   });
 
   it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 10');
+    await newer.execAsync('PRAGMA user_version = 11');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v10 .* only knows v9\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v11 .* only knows v10\. Refusing to downgrade/);
   });
 });
 

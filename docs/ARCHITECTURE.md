@@ -183,6 +183,20 @@ Parent account → pairing code → child device
   every table uses client UUIDs (or a parent UUID + position for ordered
   children), `created_at` / `updated_at`, and an ownership column (family
   for reusable blocks / templates, player for plans and sessions).
+- **v10 (TRAIN-TAXONOMY-001A, approved and implemented 2026-10-07): training
+  taxonomy.** See §16. `taxonomy_nodes (id, builtin, active, parent_id?,
+  family_id?, name?, sort_order?, created_at, updated_at)`: one row per
+  curated built-in key (frozen list in the migration, test-enforced) holding
+  only its active state; the hierarchy, order, labels and built-in
+  memberships live in code. The parent / family / name / sort-order columns
+  exist for future family-owned (custom) nodes and are NULL for built-ins
+  (CHECKs); V1 reads refuse custom node rows. `exercise_taxonomy
+  (exercise_id, node_id, created_at, PK (exercise_id, node_id))`: memberships
+  of CUSTOM exercises only (a trigger refuses built-in exercises, which are
+  classified by the curated taxonomy). Indexes: `taxonomy_nodes_by_parent`,
+  `exercise_taxonomy_by_node (node_id, exercise_id)`. Nodes are never deleted
+  (trigger; inactive instead). Additive: no existing table changes; plan and
+  session snapshots carry no taxonomy, so taxonomy can never rewrite history.
 - v2 (Slice 1.1): `families (id)`; `players` (generic: name, date_of_birth
   `YYYY-MM-DD`, height_cm, created_at/updated_at); `player_sports` (PK
   `player_id, sport`); `basketball_player_profiles` (PK `player_id`, `sport`
@@ -288,6 +302,7 @@ Parent (auth user) ─┬─ Family ─── Player (a child; name, dateOfBirth
                     │                ├── PlayerSport (sport) 0..n
                     │                │     └── <Sport>Profile (only for its assignment; V1: BasketballProfile)
                     │                └── SelfAssessment (sport, takenAt) ── SelfAssessmentRating (category, 1–5)
+TaxonomyNode (curated key, parent, domain sport, group, order, active) ⇄ Exercise   [many-to-many, §16]
 Exercise (builtin | custom, active; categories, primary / secondary muscles → body areas,
           movement patterns, difficulty, sports 0..n, equipment options,
           measurementType + comparisonPolicy + load / distance conditions, defaults,
@@ -574,3 +589,51 @@ Exercise → WorkoutBlock → WorkoutTemplate → PlannedWorkout → TrainingSes
   subjective Self-Assessment, and no combined score exists.
 - **Cloud-ready, not cloud:** client UUIDs, timestamps and Family / Player
   ownership (§13); no auth, sync, outbox or RLS until Cloud Foundation C.
+
+## 16. Training taxonomy (approved 2026-10-07 — TRAIN-TAXONOMY-001)
+
+- **What it is:** a curated DISCOVERY / NAVIGATION tree over the exercise
+  library (`src/domain/taxonomy`) — Training Domain → Category → Sub-category
+  → Exercises → Add to Workout. It is **not** an exercise attribute: each
+  exercise's own truth (categories, muscles, body areas, movement patterns,
+  difficulty, sports, equipment, measurement, instructions) stays in
+  `src/domain/exercise`, and the taxonomy never duplicates it.
+- **Many-to-many (locked):** one exercise sits under any number of nodes and
+  remains ONE record with one definition (e.g. Deadlift under Legs › Hinge,
+  Back, Full Body and Strength). A node's shelf is its own members plus its
+  active descendants', without duplicates.
+- **Curated (locked):** built-in nodes (stable keys, hierarchy, order, labels
+  via i18n `taxonomy.node.<KEY>`) and built-in membership are curated in code
+  — explicit, never derived at runtime from exercise attributes. Existing
+  attributes validate the curation in tests (sports: REUSE; muscles / body
+  areas and training categories: PARTIALLY REUSE; movement patterns: KEEP
+  SEPARATE but used for validation; difficulty, equipment, measurement and
+  guidance content: KEEP SEPARATE; Calendar Activity Types: unrelated).
+- **Model:** an adjacency list — arbitrary depth without a migration per
+  level; V1 curates domain → category → sub-category. A domain (root) carries
+  its sport (`BASKETBALL`; null = general fitness). Fitness level-2 nodes
+  carry a group: BY BODY AREA vs BY TRAINING GOAL — two concepts, never mixed
+  in one list. Basketball Athletic Development (Speed, Agility, Jumping,
+  Conditioning) is a top-level Basketball category; general exercises are
+  listed there only through an explicit, test-enforced cross-list.
+- **Visibility:** a node is offered for NEW selection only when it and its
+  ancestors are active and its shelf holds at least one active exercise —
+  empty shelves are never shown (nodes may be curated ahead of content).
+  Inactive never removes membership.
+- **V1 scope:** no user-created nodes (schema-ready, refused on read); users
+  cannot reclassify built-in exercises; custom exercises may be classified
+  (`exercise_taxonomy`) — a NEW membership needs an active node.
+- **History (locked):** taxonomy is navigation / classification metadata;
+  plans, sessions, set and measurement snapshots never reference it, so no
+  taxonomy change can rewrite training history.
+- **Future sports:** a new sport is a new domain node with its own curated
+  sub-tree — no schema change, no sport-specific tables.
+- **EX-GUIDE-001 compatibility:** guidance belongs to the exercise id, never
+  to a taxonomy path; one exercise in many nodes has one guidance source.
+- **Workout Template classification (001E, approved, not implemented):**
+  0..3 taxonomy tags per template with one optional primary, separate from
+  exercise membership and never copied into plan snapshots.
+- **Performance:** memberships are indexed in memory once per load; counts
+  come from that index; navigation renders nodes, never the whole catalog;
+  exercise lists in the taxonomy UX are virtualized (FlatList); list screens
+  load no media.

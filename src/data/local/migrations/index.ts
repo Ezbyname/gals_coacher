@@ -556,4 +556,129 @@ export const migrations: readonly Migration[] = [
       BEGIN SELECT RAISE(ABORT, 'a measured value is never rewritten; a finished session is read-only'); END;
     `,
   },
+  {
+    // TRAIN-TAXONOMY-001A. The training taxonomy: a curated DISCOVERY /
+    // NAVIGATION tree over the exercise library (src/domain/taxonomy). Like
+    // built-in exercises, built-in nodes are curated in code under stable keys
+    // and get a row here (frozen list below) holding only their active state;
+    // their hierarchy, order, labels and built-in memberships live in code, so
+    // an app update can improve them without touching user data. Users cannot
+    // reclassify built-in exercises (trigger); custom exercises' memberships are
+    // rows in exercise_taxonomy. Custom nodes are not implemented: the columns
+    // exist for cloud-ready family-owned nodes later. Nodes are never deleted
+    // (inactive instead). Taxonomy is never part of a plan / session snapshot,
+    // so it can never rewrite training history. Additive: no existing table
+    // changes.
+    version: 10,
+    name: 'taxonomy',
+    sql: `
+      CREATE TABLE taxonomy_nodes (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        builtin INTEGER NOT NULL CHECK (typeof(builtin) = 'integer' AND builtin IN (0, 1)),
+        active INTEGER NOT NULL DEFAULT 1 CHECK (typeof(active) = 'integer' AND active IN (0, 1)),
+        parent_id TEXT REFERENCES taxonomy_nodes (id),
+        family_id TEXT REFERENCES families (id),
+        name TEXT CHECK (name IS NULL OR length(trim(name, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        sort_order INTEGER CHECK (sort_order IS NULL OR typeof(sort_order) = 'integer'),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer'),
+        CHECK ((builtin = 1) = (name IS NULL)),
+        CHECK (builtin = 0 OR (parent_id IS NULL AND family_id IS NULL AND sort_order IS NULL)),
+        CHECK (builtin = 1 OR (family_id IS NOT NULL AND sort_order IS NOT NULL))
+      );
+
+      CREATE INDEX taxonomy_nodes_by_parent ON taxonomy_nodes (parent_id);
+
+      CREATE TABLE exercise_taxonomy (
+        exercise_id TEXT NOT NULL REFERENCES exercises (id),
+        node_id TEXT NOT NULL REFERENCES taxonomy_nodes (id),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        PRIMARY KEY (exercise_id, node_id)
+      );
+
+      CREATE INDEX exercise_taxonomy_by_node ON exercise_taxonomy (node_id, exercise_id);
+
+      INSERT INTO taxonomy_nodes (id, builtin, active, created_at, updated_at) VALUES
+        ('FITNESS', 1, 1, 0, 0),
+        ('FITNESS_CHEST', 1, 1, 0, 0),
+        ('FITNESS_BACK', 1, 1, 0, 0),
+        ('FITNESS_SHOULDERS', 1, 1, 0, 0),
+        ('FITNESS_ARMS', 1, 1, 0, 0),
+        ('FITNESS_CORE', 1, 1, 0, 0),
+        ('FITNESS_CORE_STABILITY', 1, 1, 0, 0),
+        ('FITNESS_CORE_ROTATION_FLEXION', 1, 1, 0, 0),
+        ('FITNESS_LEGS', 1, 1, 0, 0),
+        ('FITNESS_LEGS_SQUAT_LUNGE', 1, 1, 0, 0),
+        ('FITNESS_LEGS_HINGE', 1, 1, 0, 0),
+        ('FITNESS_LEGS_SINGLE_LEG', 1, 1, 0, 0),
+        ('FITNESS_LEGS_CALVES_ANKLES', 1, 1, 0, 0),
+        ('FITNESS_FULL_BODY', 1, 1, 0, 0),
+        ('FITNESS_STRENGTH', 1, 1, 0, 0),
+        ('FITNESS_POWER', 1, 1, 0, 0),
+        ('FITNESS_SPEED', 1, 1, 0, 0),
+        ('FITNESS_AGILITY', 1, 1, 0, 0),
+        ('FITNESS_CONDITIONING', 1, 1, 0, 0),
+        ('FITNESS_MOBILITY', 1, 1, 0, 0),
+        ('FITNESS_WARMUP', 1, 1, 0, 0),
+        ('FITNESS_COOLDOWN', 1, 1, 0, 0),
+        ('BASKETBALL', 1, 1, 0, 0),
+        ('BASKETBALL_SHOOTING', 1, 1, 0, 0),
+        ('BASKETBALL_SHOOTING_FORM_CLOSE_RANGE', 1, 1, 0, 0),
+        ('BASKETBALL_SHOOTING_FREE_THROWS', 1, 1, 0, 0),
+        ('BASKETBALL_SHOOTING_MID_RANGE', 1, 1, 0, 0),
+        ('BASKETBALL_SHOOTING_THREE_POINT', 1, 1, 0, 0),
+        ('BASKETBALL_SHOOTING_CATCH_AND_SHOOT', 1, 1, 0, 0),
+        ('BASKETBALL_SHOOTING_PULL_UP', 1, 1, 0, 0),
+        ('BASKETBALL_SHOOTING_OFF_THE_DRIBBLE', 1, 1, 0, 0),
+        ('BASKETBALL_SHOOTING_ON_THE_MOVE', 1, 1, 0, 0),
+        ('BASKETBALL_FINISHING', 1, 1, 0, 0),
+        ('BASKETBALL_FINISHING_LAYUPS', 1, 1, 0, 0),
+        ('BASKETBALL_FINISHING_REVERSE_LAYUP', 1, 1, 0, 0),
+        ('BASKETBALL_FINISHING_AROUND_THE_RIM', 1, 1, 0, 0),
+        ('BASKETBALL_FINISHING_CONTACT', 1, 1, 0, 0),
+        ('BASKETBALL_FINISHING_FLOATER', 1, 1, 0, 0),
+        ('BASKETBALL_FINISHING_POWER', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING_STATIONARY', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING_STRONG_HAND', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING_WEAK_HAND', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING_CROSSOVER', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING_BETWEEN_THE_LEGS', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING_BEHIND_THE_BACK', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING_HESITATION', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING_CHANGE_OF_PACE', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING_COMBINATION', 1, 1, 0, 0),
+        ('BASKETBALL_BALL_HANDLING_MOVING', 1, 1, 0, 0),
+        ('BASKETBALL_PASSING', 1, 1, 0, 0),
+        ('BASKETBALL_PASSING_CHEST', 1, 1, 0, 0),
+        ('BASKETBALL_PASSING_BOUNCE', 1, 1, 0, 0),
+        ('BASKETBALL_PASSING_ONE_HAND', 1, 1, 0, 0),
+        ('BASKETBALL_PASSING_ON_THE_MOVE', 1, 1, 0, 0),
+        ('BASKETBALL_DEFENSE', 1, 1, 0, 0),
+        ('BASKETBALL_DEFENSE_ON_BALL', 1, 1, 0, 0),
+        ('BASKETBALL_DEFENSE_CLOSEOUTS', 1, 1, 0, 0),
+        ('BASKETBALL_DEFENSE_CHANGE_OF_DIRECTION', 1, 1, 0, 0),
+        ('BASKETBALL_DEFENSE_RECOVERY', 1, 1, 0, 0),
+        ('BASKETBALL_FOOTWORK', 1, 1, 0, 0),
+        ('BASKETBALL_FOOTWORK_JUMP_STOP', 1, 1, 0, 0),
+        ('BASKETBALL_FOOTWORK_PIVOT', 1, 1, 0, 0),
+        ('BASKETBALL_FOOTWORK_JAB_STEP', 1, 1, 0, 0),
+        ('BASKETBALL_FOOTWORK_TRIPLE_THREAT', 1, 1, 0, 0),
+        ('BASKETBALL_REBOUNDING', 1, 1, 0, 0),
+        ('BASKETBALL_ATHLETIC', 1, 1, 0, 0),
+        ('BASKETBALL_ATHLETIC_SPEED', 1, 1, 0, 0),
+        ('BASKETBALL_ATHLETIC_AGILITY', 1, 1, 0, 0),
+        ('BASKETBALL_ATHLETIC_JUMPING', 1, 1, 0, 0),
+        ('BASKETBALL_ATHLETIC_CONDITIONING', 1, 1, 0, 0);
+
+      CREATE TRIGGER taxonomy_nodes_never_deleted BEFORE DELETE ON taxonomy_nodes
+      BEGIN SELECT RAISE(ABORT, 'taxonomy nodes are never deleted; make them inactive'); END;
+      -- Built-in exercises are classified in code (curated); never in the database.
+      CREATE TRIGGER exercise_taxonomy_builtin_curated BEFORE INSERT ON exercise_taxonomy
+      WHEN (SELECT builtin FROM exercises WHERE id = NEW.exercise_id) IS NOT 0
+      BEGIN SELECT RAISE(ABORT, 'built-in exercises are classified by the curated taxonomy'); END;
+      CREATE TRIGGER exercise_taxonomy_frozen_update BEFORE UPDATE ON exercise_taxonomy
+      BEGIN SELECT RAISE(ABORT, 'a taxonomy membership is replaced, never rewritten'); END;
+    `,
+  },
 ];

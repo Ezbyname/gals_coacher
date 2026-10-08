@@ -44,7 +44,7 @@ describe('local database on real SQLite', () => {
     const { db, migration } = await openLocalDatabase();
     expect(migration).toEqual({
       from: 0,
-      to: 9,
+      to: 10,
       applied: [
         'app_meta',
         'players',
@@ -55,9 +55,10 @@ describe('local database on real SQLite', () => {
         'activity_types',
         'exercises',
         'training',
+        'taxonomy',
       ],
     });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 9 });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 10 });
     expect(await db.getFirstAsync("SELECT name FROM sqlite_master WHERE name = 'app_meta'")).toEqual({
       name: 'app_meta',
     });
@@ -70,7 +71,7 @@ describe('local database on real SQLite', () => {
     await first.db.closeAsync();
 
     const second = await openLocalDatabase();
-    expect(second.migration).toEqual({ from: 9, to: 9, applied: [] });
+    expect(second.migration).toEqual({ from: 10, to: 10, applied: [] });
     expect(await second.db.getFirstAsync('SELECT value FROM app_meta WHERE key = ?', ['probe'])).toEqual({
       value: 'kept',
     });
@@ -126,7 +127,7 @@ describe('local database on real SQLite', () => {
       const { db, migration } = await openLocalDatabase();
       expect(migration).toEqual({
         from: 1,
-        to: 9,
+        to: 10,
         applied: [
           'players',
           'self_assessments',
@@ -136,15 +137,16 @@ describe('local database on real SQLite', () => {
           'activity_types',
           'exercises',
           'training',
+          'taxonomy',
         ],
       });
-      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 9 });
+      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 10 });
       expect(await v2Tables(db)).toEqual(V2_TABLES);
       expect(await db.getAllAsync('SELECT key, value FROM app_meta')).toEqual([{ key: 'probe', value: 'kept' }]);
       await db.closeAsync();
 
       const reopened = await openLocalDatabase();
-      expect(reopened.migration).toEqual({ from: 9, to: 9, applied: [] });
+      expect(reopened.migration).toEqual({ from: 10, to: 10, applied: [] });
       await reopened.db.closeAsync();
     });
 
@@ -157,7 +159,7 @@ describe('local database on real SQLite', () => {
       const fresh = openNodeSqlite(':memory:');
       expect(await runMigrations(fresh, migrations)).toEqual({
         from: 0,
-        to: 9,
+        to: 10,
         applied: [
           'app_meta',
           'players',
@@ -168,13 +170,15 @@ describe('local database on real SQLite', () => {
           'activity_types',
           'exercises',
           'training',
+          'taxonomy',
         ],
       });
       expect(await schema(fresh)).toEqual(upgradedSchema);
       // 14 tables + players_family_id, self_assessments_history, calendar_events_player_start indexes
       // + the activity_types_never_deleted (v7) and exercises_never_deleted (v8) triggers
       // + v9 training: 10 tables, 4 indexes, 18 history / snapshot triggers
-      expect(upgradedSchema).toHaveLength(51);
+      // + v10 taxonomy: 2 tables, 2 indexes, 3 triggers
+      expect(upgradedSchema).toHaveLength(58);
       await fresh.closeAsync();
     });
 
@@ -193,7 +197,7 @@ describe('local database on real SQLite', () => {
       const relaunch = await openLocalDatabase();
       expect(relaunch.migration).toEqual({
         from: 1,
-        to: 9,
+        to: 10,
         applied: [
           'players',
           'self_assessments',
@@ -203,6 +207,7 @@ describe('local database on real SQLite', () => {
           'activity_types',
           'exercises',
           'training',
+          'taxonomy',
         ],
       });
       await relaunch.db.closeAsync();
@@ -210,9 +215,9 @@ describe('local database on real SQLite', () => {
 
     it('still refuses to open a newer schema (downgrade)', async () => {
       const newer = openTracked(file);
-      await newer.execAsync('PRAGMA user_version = 10');
+      await newer.execAsync('PRAGMA user_version = 11');
       await newer.closeAsync();
-      await expect(openLocalDatabase()).rejects.toThrow(/v10 .* only knows v9\. Refusing to downgrade/);
+      await expect(openLocalDatabase()).rejects.toThrow(/v11 .* only knows v10\. Refusing to downgrade/);
     });
   });
 
@@ -226,7 +231,7 @@ describe('local database on real SQLite', () => {
 
     it('closes the opened database before rethrowing a migration failure (downgrade refusal)', async () => {
       const newer = openTracked(file);
-      await newer.execAsync('PRAGMA user_version = 10');
+      await newer.execAsync('PRAGMA user_version = 11');
       await newer.closeAsync();
 
       const { handle, close } = nextAppHandle();
@@ -260,7 +265,7 @@ describe('local database on real SQLite', () => {
       expect(db).toBe(handle);
       expect(close).not.toHaveBeenCalled();
       expect(handle.raw.isOpen).toBe(true);
-      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 9 });
+      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 10 });
       await db.closeAsync();
     });
   });

@@ -6,6 +6,15 @@
 Every phase: **Implement → Test → Run → Prove → Update PROJECT_STATE.md → STOP.**
 No automatic transition to the next phase.
 
+**Automation-first (locked, owner 2026-10-07):** every slice ships automation-ready
+in the same slice — stable testIDs / resource ids for every new or changed
+user-facing behaviour, its Product QA scenarios defined, and the Python Product
+QA added or updated in the same development cycle where UI exists. Automation is
+never a follow-up cleanup task. SKIPPED, NOT RUN and BLOCKED are never PASS;
+every Product QA failure is classified (PRODUCT_BUG, AUTOMATION_BUG,
+TEST_DATA_ISSUE, ENVIRONMENT_LIMITATION, REQUIREMENT_AMBIGUITY, AUTOMATION_GAP)
+before any product change.
+
 The slices below are the owner-approved product slices (2026-10-02,
 revised 2026-10-04: Player Profile contract, Calendar Foundation added,
 Calendar UI moved after the Training Engine, Shooting renamed, Quick
@@ -32,6 +41,8 @@ cloud, auth, sync and RLS can be added in C without redesigning it.
 | 2.0 | Exercise Model + Exercise Library | Generic `Exercise` + `ExerciseSport` association (one exercise may serve several sports), generic measurement types + comparison policy, ~~small basketball-first library~~ (**superseded 2026-10-06:** a substantial professionally curated starter library for fitness and Basketball — quality and coverage over a fixed count; baseline 107), custom exercise foundation (former Phase 2). **TRAIN-001 IMPLEMENTED (2026-10-06)** — status in PROJECT_STATE. **TRAIN-001 future direction (2026-10-05, not implemented):** Exercises / Drills for general fitness **and** Basketball in one generic model; reusable Exercise Packs / Training Blocks by area / category and difficulty — see *Training system direction* below. | Predefined exercises load; create / edit custom exercise. |
 | 2.1 | Training Engine — **TRAIN-002 re-scoped 2026-10-06 (owner):** Dynamic Workout Builder + Manual Training Execution + objective actual results | Reusable Workout Blocks and Workout Templates (create / edit / reorder / sets / targets / load / rest; absorbs former slice 5 Workout Builder); frozen Planned Workout snapshot per player; Training Session (In progress / Completed / Partial / Abandoned) with planned vs actual per set, skip / extra sets, manual entry with a per-measurement source (Manual now; Camera / Device / Sensor later); historical snapshots; session `purpose` TRAINING; local persistence; HE / EN. **Not included:** timer / countdown / audio / whistle (→ 2.1b), Cloud. | Automated domain / persistence / UI tests, migration upgrade + rollback, negative proof on planned ≠ actual, frozen snapshots and history; Android export. **Physical Android:** WB-xx / TS-xx IDs in PROJECT_STATE. |
 | 2.1b | Timed Execution (former 2.1 timer scope, moved 2026-10-06; built on the TRAIN-002 records) | Countdown 5-4-3-2-1, audio cue, whistle, timestamp timer, STOP, manual correction (measured / final / edited), sets, attempts, session `purpose`, local persistence (former Phase 3). **TRAIN-002 future direction (2026-10-05, not implemented):** one engine for fitness and Basketball — Workout Templates built from Packs, planned workouts, Training Sessions with a live workout mode — see *Training system direction* below. | Player → 20m Sprint → START → 5-4-3-2-1 → 📣 → 4.38 → Edit → 4.35 → Save → restart → 4.35 still exists. **Early iOS dev-build gate:** core runtime path verified on iOS. |
+| 2.1c | Training Taxonomy — **TRAIN-TAXONOMY-001 (approved 2026-10-07)** | Curated, many-to-many DISCOVERY / NAVIGATION tree over the exercise library (Fitness: by body area / by training goal; Basketball: Shooting, Finishing, Ball Handling, Passing, Defense, Footwork, Rebounding, Athletic Development). One exercise, many paths; built-in tree and membership curated in code, state in the database; no custom nodes and no reclassification of built-ins in V1; empty / inactive nodes hidden; Search All always available; virtualized exercise lists; Add Exercise reachable without scrolling. Bounded sub-slices: **001A** domain / data / migration v10 / curated taxonomy (**IMPLEMENTED 2026-10-07**, status in PROJECT_STATE) · **001B** professional Basketball content expansion (crossover, between the legs, behind the back, hesitation, change of pace, contact finish, floater, shooting on the move, passing / footwork / defensive drills — purpose before count) · **001C** Exercise Library taxonomy UX · **001D** Workout Builder taxonomy picker · **001E** Workout Template classification (0..3 tags, one optional primary) · **001F** Product QA + physical acceptance. **Not included:** EX-GUIDE-001, CAL-TRAIN-001, timers, camera, cloud. | Per sub-slice: domain / repository / migration / coherence tests; UI sub-slices ship Python Product QA in the same slice (TX-01…TX-13) and keyboard-visibility checks; Android export; physical acceptance in 001F. |
+| 2.1d | Exercise Guidance — **EX-GUIDE-001 (FUTURE, approved direction 2026-10-07 — not started)** | Professional exercise learning per exercise id (never per taxonomy path): purpose, setup, execution steps, coaching cues, common mistakes, safety, illustration steps, optional VERIFIED tutorial video, regression / progression. Offline-first: text + local illustrations must be enough; video is optional enrichment. Reused from Exercise Library, Workout Builder and Training Session. Starts with a read-only content audit and design, then explicit owner approval. | Defined when it enters planning (GUIDE-01…GUIDE-16 proposed). Software quality **and** coaching-content review. |
 | 2.2 | Calendar UI + Calendar ↔ Training | Day / week / month views, recurring team practices (recurrence and occurrence exceptions, moved from 1.3 on 2026-10-04; reopens the timezone contract for wall-clock recurrence), games, school / unavailable time; starting training from a planned event; planned + completed, planned + skipped, unplanned + completed (calendar UI part of former Phase 12; added 2026-10-04). **CAL-TRAIN-001 future direction (2026-10-05, not implemented):** a CalendarEvent may LINK to a planned workout and open the Training Session from it; the event never becomes the container of execution data — see *Training system direction* below. | User-facing: automated tests **and** full physical-device acceptance. Expected categories: day / week / month UI, event times, recurrence, occurrence exceptions / cancellation, RTL / LTR, timezone / DST, Calendar → Training flow, persistence after restart, background / foreground. Exact checklist finalized when 2.2 enters planning. |
 | 2.3 | Basketball Measurements & Shooting | MADE / MISS, attempts, percentage, sets, totals (former 2.2 Basketball Shooting, renamed 2026-10-04; former Phase 4) | 10 shots, 8 made → 8/10, 80%. |
 | 2.4 | Quick Training | Player → Exercise → Start, minimal taps; creates an ordinary `TRAINING` session (entry mode, not a purpose) (former 2.3; former Phase 5) | Closed app to active training in minimal taps. |
@@ -77,7 +88,16 @@ IDs used in owner handoffs, mapped to slices here so they stay stable:
 `TRAIN-001` = 2.0 Exercise Model + Exercise Library · `TRAIN-002` = 2.1
 Training Engine (with 4 Rest + Full Session Flow and 5 Workout Builder as its
 later parts) · `CAL-TRAIN-001` = 2.2 Calendar UI + Calendar ↔ Training
-(recurrence / exceptions). Work items outside this table (`SPORT-LIFE-001`,
+(recurrence / exceptions). `TRAIN-TAXONOMY-001` = 2.1c Training Taxonomy (sub-slices
+001A–001F) · `EX-GUIDE-001` = 2.1d Exercise Guidance (future) ·
+`TRAIN-TIMER-001` = 2.1b Timed Execution · `CAMERA-MEASURE-001` = camera-derived
+objective measurements (future, not yet a numbered slice).
+
+**Order revised 2026-10-07 (owner):** TRAIN-001 / TRAIN-002 Product QA closure →
+TRAIN-TAXONOMY-001 → EX-GUIDE-001 → CAL-TRAIN-001 → TRAIN-TIMER-001 →
+CAMERA-MEASURE-001 → Cloud / Auth / RLS / Coach collaboration. The order is not
+permission to start a later slice: each one starts only with the owner's
+explicit approval. Work items outside this table (`SPORT-LIFE-001`,
 `CAL-KEY-001`, and the owner's later queue) are tracked in PROJECT_STATE; they
 do not reorder this roadmap.
 
