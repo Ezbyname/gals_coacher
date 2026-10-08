@@ -257,6 +257,9 @@ export const he = {
     results: 'תוצאות חיפוש',
     unavailable: 'הקטגוריה הזו לא זמינה כרגע.',
     more: '›',
+    pickerTitle: 'בחירת תרגיל',
+    back: 'חזרה',
+    close: 'סגירה',
     backToLibrary: 'חזרה לספריית התרגילים',
     group: {
       BODY_AREA: 'לפי אזור בגוף',
@@ -361,6 +364,7 @@ export const he = {
     searchExercise: 'חיפוש בספריית התרגילים',
     searchHint: 'מקלידים כדי למצוא תרגיל, ולוחצים עליו כדי להוסיף.',
     noMatches: 'אין תרגילים מתאימים.',
+    browse: 'בחירה לפי קטגוריית אימון',
     addThis: 'הוספת {name}',
     sets: 'סטים',
     targetReps: 'חזרות בסט',

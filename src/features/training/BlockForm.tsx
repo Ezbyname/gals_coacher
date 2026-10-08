@@ -3,6 +3,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { listExercises } from '@/data/local/exercises/exerciseRepository';
+import { readTaxonomy } from '@/data/local/taxonomy/taxonomyRepository';
 import {
   createBlock,
   getBlock,
@@ -12,6 +13,7 @@ import {
   type WorkoutBlock,
 } from '@/data/local/training/workoutRepository';
 import { filterExercises, NO_EXERCISE_FILTER, type Exercise } from '@/domain/exercise/exercise';
+import type { Taxonomy } from '@/domain/taxonomy/taxonomy';
 import {
   defaultPrescription,
   parseEntry,
@@ -22,6 +24,7 @@ import {
 } from '@/domain/training/training';
 import { useApp } from '@/features/AppProvider';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
+import { ExercisePicker } from '@/features/exercises/ExercisePicker';
 import { exerciseName, measurementStyle } from '@/features/exercises/exerciseLabels';
 import { useUnsavedChangesGuard } from '@/features/navigation/unsavedChanges';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -86,17 +89,21 @@ export function BlockForm({ blockId }: { blockId?: string }) {
   const [state, setState] = useState<
     | { status: 'loading' }
     | { status: 'error' }
-    | { status: 'ready'; exercises: Exercise[]; block: WorkoutBlock | null }
+    | { status: 'ready'; exercises: Exercise[]; taxonomy: Taxonomy; block: WorkoutBlock | null }
   >({ status: 'loading' });
 
   useFocusEffect(
     useCallback(() => {
       if (boot.status !== 'ready' || state.status === 'ready') return;
       let active = true;
-      Promise.all([listExercises(boot.db), blockId ? getBlock(boot.db, blockId) : Promise.resolve(null)])
-        .then(([exercises, block]) => {
+      Promise.all([
+        listExercises(boot.db),
+        readTaxonomy(boot.db),
+        blockId ? getBlock(boot.db, blockId) : Promise.resolve(null),
+      ])
+        .then(([exercises, taxonomy, block]) => {
           if (!active) return;
-          setState(blockId && !block ? { status: 'error' } : { status: 'ready', exercises, block });
+          setState(blockId && !block ? { status: 'error' } : { status: 'ready', exercises, taxonomy, block });
         })
         .catch((e: unknown) => {
           console.warn('[training] block load failed', e);
@@ -112,10 +119,18 @@ export function BlockForm({ blockId }: { blockId?: string }) {
     return <ErrorScreen testID="block-form-error" message="training.errors.notFound" fallback="/workouts" />;
   }
   if (state.status === 'loading') return <LoadingScreen />;
-  return <Form exercises={state.exercises} block={state.block} />;
+  return <Form exercises={state.exercises} taxonomy={state.taxonomy} block={state.block} />;
 }
 
-function Form({ exercises, block }: { exercises: Exercise[]; block: WorkoutBlock | null }) {
+function Form({
+  exercises,
+  taxonomy,
+  block,
+}: {
+  exercises: Exercise[];
+  taxonomy: Taxonomy;
+  block: WorkoutBlock | null;
+}) {
   const { boot, services } = useApp();
   const { t, language } = useI18n();
   const initial = useMemo<Values>(
@@ -128,6 +143,11 @@ function Form({ exercises, block }: { exercises: Exercise[]; block: WorkoutBlock
   const [values, setValues] = useState<Values>(initial);
   const [active, setActive] = useState(block?.active ?? true);
   const [query, setQuery] = useState('');
+  const [browsing, setBrowsing] = useState(false);
+  const pickerData = useMemo(
+    () => ({ exercises, taxonomy, activeIds: new Set(exercises.filter((e) => e.active).map((e) => e.id)) }),
+    [exercises, taxonomy],
+  );
   const [errors, setErrors] = useState<BlockErrors>({});
   const [failure, setFailure] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -253,6 +273,21 @@ function Form({ exercises, block }: { exercises: Exercise[]; block: WorkoutBlock
       <Text style={styles.heading} accessibilityRole="header">
         {t('training.addExercise')}
       </Text>
+      <BigButton
+        testID="block-form-browse"
+        variant="secondary"
+        label={t('training.browse')}
+        onPress={() => setBrowsing(true)}
+      />
+      <ExercisePicker
+        visible={browsing}
+        data={pickerData}
+        onPick={(exercise) => {
+          setBrowsing(false);
+          add(exercise);
+        }}
+        onClose={() => setBrowsing(false)}
+      />
       <TextField
         testID="block-form-search"
         label={t('training.searchExercise')}

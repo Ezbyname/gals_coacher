@@ -15,6 +15,7 @@ import { V1_ENABLED_SPORTS, type SportKey } from '@/domain/sport';
 import { sportLabel } from '@/features/calendar/calendarLabels';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
 import { useI18n } from '@/i18n/I18nProvider';
+import { stripBidi } from '@/i18n/bidi';
 import { BigButton } from '@/ui/BigButton';
 import { MultiChoiceChips } from '@/ui/MultiChoiceChips';
 import { SafeAreaFlatList } from '@/ui/SafeAreaFlatList';
@@ -242,8 +243,12 @@ function Separator() {
   return <View style={{ height: spacing.md }} />;
 }
 
-/** One exercise in a list: name, training type, difficulty / equipment, how it is measured. */
-export function ExerciseRow({ exercise }: { exercise: Exercise }) {
+/**
+ * One exercise in a list: name, training type, difficulty / equipment, how it
+ * is measured. Opens its details, or — when `onPress` is given (the Workout
+ * Builder picker) — hands it back; the row then says so to screen readers.
+ */
+export function ExerciseRow({ exercise, onPress }: { exercise: Exercise; onPress?: () => void }) {
   const { t, language } = useI18n();
   const id = `exercise-${exercise.id}`;
   const name = exerciseName(exercise, language);
@@ -255,8 +260,10 @@ export function ExerciseRow({ exercise }: { exercise: Exercise }) {
     <Pressable
       testID={id}
       accessibilityRole="button"
-      accessibilityLabel={t('exercises.rowA11y', { name, details })}
-      onPress={() => router.push(exercisePath(exercise.id))}
+      accessibilityLabel={
+        onPress ? stripBidi(t('training.addThis', { name })) : t('exercises.rowA11y', { name, details })
+      }
+      onPress={onPress ?? (() => router.push(exercisePath(exercise.id)))}
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}>
       <Text style={styles.name} testID={`${id}-name`}>
         {name}

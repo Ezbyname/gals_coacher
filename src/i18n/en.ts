@@ -256,6 +256,9 @@ export const en = {
     results: 'Search results',
     unavailable: 'This category is not available right now.',
     more: '›',
+    pickerTitle: 'Choose an exercise',
+    back: 'Back',
+    close: 'Close',
     backToLibrary: 'Back to the Exercise Library',
     group: {
       BODY_AREA: 'By body area',
@@ -360,6 +363,7 @@ export const en = {
     searchExercise: 'Search the exercise library',
     searchHint: 'Type to find an exercise, then tap it to add it.',
     noMatches: 'No exercises match.',
+    browse: 'Browse by training category',
     addThis: 'Add {name}',
     sets: 'Sets',
     targetReps: 'Reps per set',
