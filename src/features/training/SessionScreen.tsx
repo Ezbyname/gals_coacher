@@ -26,7 +26,7 @@ import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
-import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
+import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing } from '@/ui/theme';
 
@@ -112,7 +112,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
     ]);
 
   return (
-    <SafeAreaScrollView
+    <KeyboardSafeScrollView
       testID="session-scroll"
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled">
@@ -181,7 +181,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
           />
         </View>
       ) : null}
-    </SafeAreaScrollView>
+    </KeyboardSafeScrollView>
   );
 }
 

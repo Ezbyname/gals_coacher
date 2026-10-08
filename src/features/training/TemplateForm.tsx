@@ -34,7 +34,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { stripBidi } from '@/i18n/bidi';
 import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
-import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
+import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
 
@@ -216,7 +216,7 @@ function Form({
   };
 
   return (
-    <SafeAreaScrollView
+    <KeyboardSafeScrollView
       testID="template-form-scroll"
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled">
@@ -405,7 +405,7 @@ function Form({
           />
         ) : null}
       </View>
-    </SafeAreaScrollView>
+    </KeyboardSafeScrollView>
   );
 }
 

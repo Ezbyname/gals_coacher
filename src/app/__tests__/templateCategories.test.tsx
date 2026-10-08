@@ -194,5 +194,12 @@ describe('template categories', () => {
     expect(text('template-form-category-FITNESS_LEGS-label')).toBe('אימון כושר › רגליים');
     press('template-form-category-FITNESS_LEGS-primary');
     expect(text('template-form-primary')).toBe('קטגוריה ראשית: אימון כושר › רגליים');
+
+    // Like exercise search, category names are found in either language; shown in Hebrew.
+    await openPicker();
+    fireEvent.changeText(screen.getByTestId('taxonomy-search'), 'floater');
+    expect(text('taxonomy-choose-BASKETBALL_FINISHING_FLOATER-label')).toBe('כדורסל › סיומות ליד הסל › פלואטר');
+    fireEvent.changeText(screen.getByTestId('taxonomy-search'), 'פלואטר');
+    expect(text('taxonomy-choose-BASKETBALL_FINISHING_FLOATER-label')).toBe('כדורסל › סיומות ליד הסל › פלואטר');
   });
 });

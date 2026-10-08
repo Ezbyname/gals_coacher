@@ -7,6 +7,8 @@ import { TAXONOMY_GROUPS, type TaxonomyGroup } from '@/domain/taxonomy/nodes';
 import { isVisible, visibleChildren, type Taxonomy, type TaxonomyNode } from '@/domain/taxonomy/taxonomy';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
 import { useI18n } from '@/i18n/I18nProvider';
+import { LANGUAGES, messagesFor } from '@/i18n/languages';
+import { translate } from '@/i18n/translate';
 import { BigButton } from '@/ui/BigButton';
 import { SafeAreaFlatList } from '@/ui/SafeAreaFlatList';
 import { TextField } from '@/ui/TextField';
@@ -114,15 +116,21 @@ export function TaxonomyView({
         : [],
     [data, allScope, searching, shelf, query, language, choose],
   );
-  // Choose mode: search category names (full path, current language) in scope.
+  // Choose mode: search category names in scope. Like exercise search, a
+  // category is found by its Hebrew OR English name; it is shown with its
+  // full path in the app language.
   const categoryResults = useMemo(() => {
     if (!choose || !searching) return [];
     const wanted = searchKey(query);
     return data.taxonomy.nodes
       .filter((n) => n.depth > 0 && isVisible(data.taxonomy, n.key, data.activeIds))
       .filter((n) => allScope || data.taxonomy.path(n.key).some((a) => a.key === nodeKey))
-      .map((n) => ({ key: n.key, path: pathLabel(t, data.taxonomy.path(n.key).map((a) => a.key)) }))
-      .filter((n) => searchKey(n.path).includes(wanted));
+      .map((n) => {
+        const keys = data.taxonomy.path(n.key).map((a) => a.key);
+        const both = LANGUAGES.map((l) => pathLabel((key, params) => translate(messagesFor(l), key, params), keys));
+        return { key: n.key, path: pathLabel(t, keys), searchable: searchKey(both.join(' ')) };
+      })
+      .filter((n) => n.searchable.includes(wanted));
   }, [choose, searching, query, data, allScope, nodeKey, t]);
 
   const label = nodeKey === null ? t('taxonomy.home') : nodeLabel(t, nodeKey);

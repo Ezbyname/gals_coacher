@@ -19,7 +19,7 @@ import { localCalendarDateFromEpoch } from '@/services/clock/localCalendarDate';
 import { BigButton } from '@/ui/BigButton';
 import { ChoiceChips } from '@/ui/ChoiceChips';
 import { DateOfBirthPicker } from '@/ui/DateOfBirthPicker';
-import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
+import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing } from '@/ui/theme';
 
@@ -126,7 +126,7 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }:
   };
 
   return (
-    <SafeAreaScrollView
+    <KeyboardSafeScrollView
       testID="player-form-scroll"
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled">
@@ -275,7 +275,7 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }:
         }}
       />
       {footer}
-    </SafeAreaScrollView>
+    </KeyboardSafeScrollView>
   );
 }
 

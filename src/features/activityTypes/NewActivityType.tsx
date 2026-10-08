@@ -9,7 +9,7 @@ import { useUnsavedChangesGuard } from '@/features/navigation/unsavedChanges';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
-import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
+import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing } from '@/ui/theme';
 
@@ -60,7 +60,7 @@ export function NewActivityType() {
   };
 
   return (
-    <SafeAreaScrollView
+    <KeyboardSafeScrollView
       testID="activity-type-form-scroll"
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled">
@@ -94,7 +94,7 @@ export function NewActivityType() {
           disabled={saving}
         />
       </View>
-    </SafeAreaScrollView>
+    </KeyboardSafeScrollView>
   );
 }
 

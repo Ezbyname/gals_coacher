@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View, type KeyboardTypeOptions } from 'react-native';
 
+import { KeyboardRevealContext } from './KeyboardSafeScrollView';
 import { colors, spacing } from './theme';
 
 type Props = {
@@ -50,12 +51,20 @@ export function TextField({
   // starts at its first line. The value is untouched (it is the prop).
   const [instance, setInstance] = useState(0);
   const bounded = multiline && visibleLines !== undefined;
+  // Inside a KeyboardSafeScrollView, the focused field (label + box) is kept above the keyboard.
+  const keyboard = useContext(KeyboardRevealContext);
+  const box = useRef<View>(null);
+  const handleFocus = () => {
+    onFocus?.();
+    keyboard?.focused(box.current);
+  };
   const handleBlur = () => {
     onBlur?.();
+    keyboard?.blurred(box.current);
     if (bounded) setInstance((n) => n + 1);
   };
   return (
-    <View style={styles.field}>
+    <View style={styles.field} ref={box} collapsable={false} testID={testID ? `${testID}-field` : undefined}>
       <Text style={styles.label}>{label}</Text>
       <View style={[styles.box, !!error && styles.boxError]}>
         <TextInput
@@ -69,7 +78,7 @@ export function TextField({
           maxLength={maxLength}
           numberOfLines={bounded ? visibleLines : undefined}
           scrollEnabled={multiline ? true : undefined}
-          onFocus={onFocus}
+          onFocus={handleFocus}
           onBlur={handleBlur}
           style={[
             styles.input,

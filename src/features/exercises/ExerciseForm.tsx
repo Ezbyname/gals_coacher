@@ -35,7 +35,7 @@ import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
 import { ChoiceChips } from '@/ui/ChoiceChips';
 import { MultiChoiceChips } from '@/ui/MultiChoiceChips';
-import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
+import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing } from '@/ui/theme';
 
@@ -243,7 +243,7 @@ function Form({ initial, exerciseId }: { initial: Values; exerciseId?: string })
   };
 
   return (
-    <SafeAreaScrollView
+    <KeyboardSafeScrollView
       testID="exercise-form-scroll"
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled">
@@ -397,7 +397,7 @@ function Form({ initial, exerciseId }: { initial: Values; exerciseId?: string })
           disabled={saving}
         />
       </View>
-    </SafeAreaScrollView>
+    </KeyboardSafeScrollView>
   );
 }
 
