@@ -68,6 +68,43 @@ async function go(key: string) {
 }
 const pickerClosed = () => waitFor(() => expect(screen.queryByTestId('taxonomy-picker')).toBeNull());
 
+describe('category search is bilingual (both directions)', () => {
+  const results = () =>
+    screen
+      .queryAllByTestId(/^taxonomy-choose-[A-Z_]+$/)
+      .map((n) => String(n.props.testID).replace('taxonomy-choose-', ''));
+
+  it('English UI: a Hebrew query finds the category, shown in English; no duplicates; scoped search unchanged', async () => {
+    await openNewTemplate('en');
+    await openPicker();
+    fireEvent.changeText(screen.getByTestId('taxonomy-search'), 'פלואטר');
+    expect(results()).toEqual(['BASKETBALL_FINISHING_FLOATER']);
+    expect(text('taxonomy-choose-BASKETBALL_FINISHING_FLOATER-label')).toBe('Basketball › Finishing › Floater');
+    // "Shooting" matches the category and each of its sub-categories once (the path contains it).
+    fireEvent.changeText(screen.getByTestId('taxonomy-search'), 'קליעה');
+    const shooting = results();
+    expect(new Set(shooting).size).toBe(shooting.length);
+    expect(shooting).toContain('BASKETBALL_SHOOTING');
+    expect(shooting.every((k) => k.startsWith('BASKETBALL_SHOOTING'))).toBe(true);
+    // Inside Fitness, a Basketball term finds nothing until "search all".
+    fireEvent.changeText(screen.getByTestId('taxonomy-search'), '');
+    press('taxonomy-node-FITNESS');
+    await screen.findByTestId('taxonomy-search-all');
+    fireEvent.changeText(screen.getByTestId('taxonomy-search'), 'פלואטר');
+    expect(results()).toEqual([]);
+    press('taxonomy-search-all');
+    expect(results()).toEqual(['BASKETBALL_FINISHING_FLOATER']);
+  });
+
+  it('Hebrew UI: an English query finds the category, shown in Hebrew', async () => {
+    await openNewTemplate('he');
+    await openPicker();
+    fireEvent.changeText(screen.getByTestId('taxonomy-search'), 'floater');
+    expect(results()).toEqual(['BASKETBALL_FINISHING_FLOATER']);
+    expect(text('taxonomy-choose-BASKETBALL_FINISHING_FLOATER-label')).toBe('כדורסל › סיומות ליד הסל › פלואטר');
+  });
+});
+
 describe('template categories', () => {
   it('choose by browsing and by searching; full paths; duplicate refused; primary; saved', async () => {
     await openNewTemplate();

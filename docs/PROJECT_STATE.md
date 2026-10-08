@@ -18,7 +18,12 @@ All verified by the owner on a physical Android device.
 **TRAIN-001 (Professional Exercise Library — ROADMAP 2.0, owner-directed ahead of Cloud Foundation C): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v8**. **TRAIN-002 (Workout Builder + manual Training Execution + objective results): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v9**. CAL-TRAIN-001: **not started** (awaiting owner go-ahead after TRAIN-002's gate).
 **TRAIN-TAXONOMY-001A (training taxonomy — domain / data / migration / curated taxonomy, no UI): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA: not executable yet (no taxonomy UI — TX-01…TX-13 belong to 001C–001F); PHYSICAL: not applicable to this sub-slice.** Schema is now **v10**.
 **TRAIN-TAXONOMY-001B (professional Basketball content: 17 new built-in drills): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA: not executable as taxonomy navigation yet (no UI); the new drills appear in the existing Exercise Library.** Schema is now **v11**.
-**TRAIN-TAXONOMY-001C (Exercise Library training-category navigation): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA AUTOMATED_PARTIAL (8 TX PASS; TX-07/08 not run, TX-09 not proven); PHYSICAL: pending (001F).** Schema unchanged (v11). Slices 001D–001F, EX-GUIDE-001 and CAL-TRAIN-001: **not started**.
+**TRAIN-TAXONOMY-001C (Exercise Library training-category navigation): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA AUTOMATED_PARTIAL (8 TX PASS; TX-07/08 not run, TX-09 not proven); PHYSICAL: pending (001F).** Schema unchanged (v11).
+**TRAIN-TAXONOMY-001D (Workout Builder category picker): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS + PYTHON PRODUCT QA PASS (WB-08…11); PHYSICAL pending (001F).** Schema unchanged (v11).
+**PERF-FOUNDATION-001 (library sort bottleneck — pre-existing since TRAIN-001): FIXED in `78c5585` (B1); measured on device: sort 1.2–4.5 s → 3–17 ms, tap → first row 0.57–0.87 s.**
+**TRAIN-TAXONOMY-001E (Workout Template classification): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS + PYTHON PRODUCT QA PASS (TX-11 on `a0ecfd4`); PHYSICAL pending (001F).**
+**KEYBOARD-FORMS fix (`a0ecfd4`, PRODUCT_SPEC §74): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS + PYTHON PRODUCT QA PASS (KB-01…06, WB-11); PHYSICAL pending.**
+**EX-GUIDE-001 Wave 1 (19 safety notes): CONTENT DRAFTED — NOT coach-reviewed, not committed.** Schema is now **v12**. 001F, EX-GUIDE-001, UX-VISUAL-001 and CAL-TRAIN-001: **not started** (EX-GUIDE-001 / UX-VISUAL-001 read-only audits approved 2026-10-08).
 **iOS (project baseline):** the current pre-Calendar application has passed iOS bundle export (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
@@ -43,6 +48,10 @@ All verified by the owner on a physical Android device.
 | TRAIN-002 (Workout Builder + manual execution) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v9** |
 | TRAIN-TAXONOMY-001A (training taxonomy: domain / data) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS**; no UI (TX Product QA: future 001C–001F); schema **v10** |
 | TRAIN-TAXONOMY-001B (Basketball content) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS**; 124 built-ins; schema **v11** |
+| TRAIN-TAXONOMY-001E (template classification) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS + PYTHON QA PASS (TX-11)**; physical pending; schema **v12** |
+| KEYBOARD-FORMS fix (§74, six forms) | **FIXED + CODE TESTED + PYTHON QA PASS (KB-01…06)**; physical pending |
+| PERF-FOUNDATION-001 (library sort) | **FIXED + MEASURED** (B1, `78c5585`); B2 not needed |
+| TRAIN-TAXONOMY-001D (block-form category picker) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS + PYTHON QA PASS (WB-08…11)**; physical pending |
 | TRAIN-TAXONOMY-001C (Library category navigation) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON QA AUTOMATED_PARTIAL**; physical pending |
 | CAL-TRAIN-001 | **Not started** — awaiting owner go-ahead |
 | Slices after 1.3 (C, 2.x …) | **Not started** |
@@ -88,6 +97,54 @@ list changed — and from gate G33: 1 (upgrade), 2 (entry gating), 14–18
 (Self-assessment navigation, multiple, persistence, English), 21–22 (edit
 player / add Basketball), 25 (player without Basketball), 28 (optional
 sport), 29–31 (positions, clear secondary, persistence).
+
+---
+
+## KEYBOARD-FORMS — focused field above the keyboard in every form: FIXED (`a0ecfd4`, 2026-10-08)
+
+- **Found by device QA (WB-11 on `cdf8d3a`):** the workout block's exercise search sat under the keyboard (field 1568–1690 px, keyboard top 1541). Root cause: only the calendar form (CAL-KEY-001) kept a focused field visible; the block, template, custom exercise, player, activity-type and training-session forms (built before §74 was locked) did not. Slice D's Browse button pushed the search lower and exposed it. **PRODUCT_BUG, pre-existing.**
+- **Fix:** shared `KeyboardSafeScrollView` (the calendar's proven mechanism — keyboard padding + scroll just enough to show the focused field, bottom first, no coordinates); `TextField` reports itself on focus, so every field inside the six forms is covered without per-screen wiring. Calendar form unchanged.
+- **Also fixed (found by TX-11):** category search in the picker matched only the current language; it now finds a category by its Hebrew OR English name (as exercise search does), shown in the app language. **PRODUCT_BUG — FIXED.**
+- **Gate (`a0ecfd4`):** typecheck PASS; lint 0 errors; **Jest 82 / 82 suites, 1447 / 1447 tests**; Android export PASS (3.6 MB). Tests: 6 form-keyboard wiring tests; bilingual category search both directions (HE UI + English query, EN UI + Hebrew query, no duplicates, scoped search unchanged).
+- **Python Product QA on `a0ecfd4`:** WB-11, TX-11, TX-05, TX-06 PASS; **KB-01…06 PASS** (block rest field, template name, **session reps / load / made / attempts**, custom-exercise link, player height, activity-type name): focus, field fully above the keyboard, still focused, value visible, value kept after scrolling, Save / Finish reachable. Emulator proof; physical phone: PHYSICAL QA REQUIRED. Harness state recorded with SHA-256 per file next to each run (`qa_evidence/a0ecfd4/runs-gate/*/harness.txt`).
+
+---
+
+## EX-GUIDE-001 Wave 1 — safety notes: CONTENT DRAFTED (2026-10-08)
+
+- 19 higher-risk built-ins had no safety note; each now has a specific HE / EN note (landing, deceleration and run-out, rebound path, ball / athlete spacing, equipment setup, joint alignment) — **CONTENT DRAFTED, NOT CONTENT COACH-REVIEWED; not committed** until the owner's coaching review.
+- A coverage test requires a note on every speed / plyometric / power / advanced exercise — a **conservative initial heuristic**, not domain truth; EX-GUIDE-001 will move to an explicit risk level (LOW / MODERATE / ELEVATED).
+
+---
+
+## TRAIN-TAXONOMY-001E — Workout Template classification: IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA in progress (2026-10-08)
+
+Commit `cdf8d3a` (local, not pushed). Owner-approved 2026-10-08.
+
+- **Model (locked):** a template carries 0–3 taxonomy categories chosen by the coach, at most one primary (which must be one of them). Explicit coach intent — never derived from the template's exercises. Discovery metadata only: plans, sessions and results keep their own snapshots and never reference it.
+- **Schema v12 (additive):** `workout_template_taxonomy(template_id, node_id, position 0..2, is_primary, created_at)`, PK `(template_id, node_id)` (no duplicates), `UNIQUE(template_id, position)` (never a 4th), partial unique index on the primary (one per template), index by node; rows replaced as a set, never rewritten (trigger). No existing table changes.
+- **Rules (domain + repository, inside the save transaction):** TOO_MANY / DUPLICATE / PRIMARY_NOT_SELECTED; a NEW category must be selectable now (active, with an active exercise); a category the template already had is kept — never silently removed or rewritten — and shown as "Not available for new selection — kept as it was". Unknown node fails closed. Removing the primary leaves no primary.
+- **UI:** template form "Training categories" section — each with its full path ("Basketball › Athletic Development › Agility"), Primary as a radio (state in text), Remove, "Primary category: …" summary, Add disabled at 3 with the reason. Categories are chosen with the SAME shared taxonomy view / picker as the library and the block form (new choose-category mode: "Choose <path>" on the current category, or search category names — every result shown with its full path; an already-chosen category is offered disabled with "Already added").
+- **Gate:** typecheck PASS; lint 0 errors (1 pre-existing warning); **Jest 81 / 81 suites, 1440 / 1440 tests** (`--ci --maxWorkers=25%`; the default-parallel `npm run check` hit the known 5 s Jest timeout in 2 existing library tests while the emulator QA loaded the host — TEST-FLAKE-001); **Android export PASS** (3.6 MB). New tests: domain rules 5, repository + schema integrity 8, migration v12 5 (fresh, realistic v11 upgrade with finished training history unchanged, classification never rewrites history, restart, rollback), UI 4 (browse / search / duplicate / primary / save; max 3; edit with inactive kept; Hebrew).
+- **Python Product QA:** TX-11 (end-to-end owner scenario incl. inactive, HE RTL, EN LTR, keyboard) **PASS on `a0ecfd4`** (after the two product fixes below).
+
+---
+
+## PERF-FOUNDATION-001 — Exercise list sort: FIXED + MEASURED (2026-10-08)
+
+- **Phase A (measure, scratch instrumentation only):** on a healthy emulator, opening the library: DB 40–117 ms, catalog assembly ≤ 6 ms, taxonomy ≤ 1.5 ms, 2 library renders, 54 rows (virtualized) — and **`filterExercises` 1.2–4.5 s with 19–27 Java GCs**: `localeCompare(…, language)` per comparison (~890 per sort) rebuilt the locale machinery each time. Present in production-mode JS too; pre-existing since TRAIN-001 (not introduced by 001C); also hit every search keystroke.
+- **Phase B1 (`78c5585`):** one `Intl.Collator` per language, created once and reused. Same order (tests pin HE / EN, built-in + custom, equal names, search) and a test that the per-comparison path is gone. **Re-measured:** sort 3–17 ms, filter + sort 6–31 ms, 1 GC per open, tap → first row 0.57–0.87 s; search keystroke 6.5–79 ms.
+- **Phase B2:** not needed (remaining cost below perception; caching would add stale-data risk). No other optimisation done.
+
+---
+
+## TRAIN-TAXONOMY-001D — Workout Builder category picker: IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA in progress (2026-10-08)
+
+Commit `2adcfe3` (local, not pushed).
+
+- The block form gets "Browse by training category": the same category view as the library (one shared implementation in browse / pick mode) opens over the form; Fitness / Basketball → category → sub-category → exercise; the chosen exercise is added by its id (the same id whatever the path); Back goes up one level, Close returns with the form unchanged; the direct search in the form keeps working.
+- **Gate:** typecheck PASS; lint 0 errors; Jest 77 / 77 suites, 1411 / 1411 tests; Android export PASS. 6 new UI tests.
+- **Python Product QA:** WB-08 **PASS on `78c5585`**; TX-09, WB-09, WB-10 **PASS on `cdf8d3a`**; WB-11 **PASS on `a0ecfd4`**. History kept separate: WB-11 / TX-11 first failed on `cdf8d3a` because the harness closed the keyboard with Escape, which Android treats as "close dialog" in the picker (**AUTOMATION_BUG — FIXED**: Back, as a user does; proven on device that Back hides only the keyboard and a second Back closes the picker). The re-run then found two product defects (**PRODUCT_BUG — FIXED IN `a0ecfd4`**, below).
 
 ---
 
