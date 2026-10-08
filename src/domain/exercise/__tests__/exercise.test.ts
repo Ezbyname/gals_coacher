@@ -200,3 +200,77 @@ describe('custom exercise validation', () => {
     expect(result.ok && result.value.equipment).toEqual([['KETTLEBELL'], ['DUMBBELL']]);
   });
 });
+
+describe('library order (PERF-FOUNDATION-001: one reused collator, same order as before)', () => {
+  /** The order the library had before the fix: localeCompare per comparison, then id. */
+  const reference = (list: readonly Exercise[], language: 'he' | 'en') =>
+    [...list]
+      .sort(
+        (a, b) =>
+          a.name[language].localeCompare(b.name[language], language) ||
+          (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+      )
+      .map((e) => e.id);
+  const custom = (id: string, he: string, en: string, from = library[0]!): Exercise => ({
+    ...from,
+    id,
+    builtin: false,
+    name: { he, en },
+  });
+  const withCustom = [
+    ...library,
+    custom('00000000-0000-4000-8000-000000000002', 'סקוואט מותאם', 'Zercher Squat (mine)'),
+    custom('00000000-0000-4000-8000-000000000001', 'אאא תרגיל', 'aardvark crawl'),
+    // Same names as each other: the id decides, so the order is stable.
+    custom('00000000-0000-4000-8000-00000000000b', 'זהה', 'Twin'),
+    custom('00000000-0000-4000-8000-00000000000a', 'זהה', 'Twin'),
+  ];
+
+  it.each(['he', 'en'] as const)('%s: the whole catalog with custom exercises keeps the previous order', (language) => {
+    expect(ids({}, withCustom, language)).toEqual(reference(withCustom, language));
+  });
+
+  it('English sorts case-insensitively by name; Hebrew by Hebrew name', () => {
+    const en = ids({}, withCustom, 'en');
+    // "aardvark crawl" sorts with the A's although it is lower case (not after every capital).
+    expect(en.indexOf('00000000-0000-4000-8000-000000000001')).toBeLessThan(en.indexOf('BOX_JUMP'));
+    expect(en.indexOf('00000000-0000-4000-8000-00000000000a')).toBe(
+      en.indexOf('00000000-0000-4000-8000-00000000000b') - 1,
+    );
+    const he = ids({}, withCustom, 'he');
+    const firstHebrew = he.findIndex((id) => /^[א-ת]/.test(withCustom.find((e) => e.id === id)!.name.he));
+    expect(he[firstHebrew]).toBe('00000000-0000-4000-8000-000000000001'); // "אאא…" first among Hebrew names
+  });
+
+  it('switching language re-orders by the other language’s names', () => {
+    expect(ids({}, library, 'he')).not.toEqual(ids({}, library, 'en'));
+    expect(ids({}, library, 'he')).toEqual(reference(library, 'he'));
+    expect(ids({}, library, 'en')).toEqual(reference(library, 'en'));
+  });
+
+  it('search and filters are unchanged; results keep the same order', () => {
+    expect(ids({ query: 'squat' }, withCustom, 'en')).toEqual(
+      reference(
+        withCustom.filter((e) => /squat/i.test(e.name.en) || /squat/i.test(e.name.he)),
+        'en',
+      ).filter((id) => ids({ query: 'squat' }, withCustom, 'en').includes(id)),
+    );
+    expect(ids({ query: 'זהה' }, withCustom, 'he')).toEqual([
+      '00000000-0000-4000-8000-00000000000a',
+      '00000000-0000-4000-8000-00000000000b',
+    ]);
+  });
+
+  it('creates at most one collator per language, however often the library is sorted', () => {
+    const spy = jest.spyOn(Intl, 'Collator');
+    const perComparison = jest.spyOn(String.prototype, 'localeCompare');
+    for (let i = 0; i < 5; i++) {
+      ids({}, library, 'he');
+      ids({ query: 'a' }, library, 'en');
+    }
+    expect(spy.mock.calls.length).toBeLessThanOrEqual(2);
+    expect(perComparison).not.toHaveBeenCalled(); // the slow path is gone
+    spy.mockRestore();
+    perComparison.mockRestore();
+  });
+});

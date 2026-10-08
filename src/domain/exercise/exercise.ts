@@ -167,18 +167,35 @@ export function matchesExerciseFilter(exercise: Exercise, filter: ExerciseFilter
   return true;
 }
 
+/**
+ * One collator per language, created on first use and reused. A collator is
+ * immutable, so reuse cannot go stale. Calling `localeCompare(…, language)`
+ * per comparison builds the locale machinery every time — on Android that cost
+ * 1.2–4.5 s and a GC storm to sort ~130 exercises (PERF-FOUNDATION-001); the
+ * reused collator gives the same order in ~30 ms.
+ */
+const collators = new Map<'he' | 'en', Intl.Collator>();
+function collatorFor(language: 'he' | 'en'): Intl.Collator {
+  let collator = collators.get(language);
+  if (collator === undefined) {
+    collator = new Intl.Collator(language);
+    collators.set(language, collator);
+  }
+  return collator;
+}
+
 /** Matching exercises, ordered by name in the given language (then id). Pure. */
 export function filterExercises(
   exercises: readonly Exercise[],
   filter: ExerciseFilter,
   language: 'he' | 'en',
 ): Exercise[] {
+  const collator = collatorFor(language);
   return exercises
     .filter((exercise) => matchesExerciseFilter(exercise, filter))
     .sort(
       (a, b) =>
-        a.name[language].localeCompare(b.name[language], language) ||
-        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+        collator.compare(a.name[language], b.name[language]) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
     );
 }
 
