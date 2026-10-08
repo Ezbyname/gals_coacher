@@ -2,12 +2,12 @@ import { resolve } from 'node:path';
 
 import { act, fireEvent, renderRouter, screen, waitFor, within } from 'expo-router/testing-library';
 import { openDatabaseAsync } from 'expo-sqlite';
-import { Alert, Platform, StyleSheet, type AlertButton } from 'react-native';
+import { Alert, FlatList, Platform, StyleSheet, type AlertButton } from 'react-native';
 
 import * as exercises from '@/data/local/exercises/exerciseRepository';
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
-import { BUILTIN_EXERCISES } from '@/domain/exercise/catalog';
+import { BUILTIN_EXERCISES, builtinExercise } from '@/domain/exercise/catalog';
 import { screenStack } from '@/features/navigation/mainDestinations';
 import { stripBidi } from '@/i18n/bidi';
 import { systemClock } from '@/services/clock/Clock';
@@ -42,10 +42,24 @@ afterEach(async () => {
 const text = (testID: string) => String(screen.getByTestId(testID).props.children);
 const plain = (testID: string) => stripBidi(text(testID));
 const press = (testID: string) => fireEvent.press(screen.getByTestId(testID));
-const shown = () =>
+/** The library is virtualized: what it LISTS is its data, in order (rows render as they scroll in). */
+const shown = (): string[] =>
+  (screen.UNSAFE_getAllByType(FlatList).find((l) => l.props.testID === 'exercises-scroll')?.props.data ?? []).map(
+    (e: { id: string }) => e.id,
+  );
+const rendered = () =>
   screen
     .queryAllByTestId(/^exercise-[A-Z0-9_]+$|^exercise-[0-9a-f-]{36}$/)
     .map((n) => n.props.testID.replace('exercise-', ''));
+/**
+ * Brings a built-in row into the rendered window the way a user finds it:
+ * by searching for its name (the virtualized list renders only nearby rows).
+ */
+async function reveal(id: string) {
+  if (rendered().includes(id)) return;
+  search(builtinExercise(id)!.name.en);
+  await waitFor(() => expect(rendered()).toContain(id));
+}
 async function openLibrary(language: 'he' | 'en' = 'en') {
   await prepare(language);
   const app = renderRouter(routes, { initialUrl: '/exercises' });
@@ -67,11 +81,14 @@ describe('library', () => {
     expect(screen.getByTestId('main-nav-exercises').props.accessibilityState.selected).toBe(true);
     expect(plain('exercises-count')).toBe(`${TOTAL} תרגילים`);
     expect(shown()).toHaveLength(TOTAL);
+    await reveal('PUSH_UP');
     expect(text('exercise-PUSH_UP-name')).toBe('שכיבות סמיכה');
     expect(text('exercise-PUSH_UP-categories')).toBe('כוח');
     expect(text('exercise-PUSH_UP-meta')).toBe('מתחילים · בלי ציוד');
     expect(text('exercise-PUSH_UP-style')).toBe('חזרות');
+    await reveal('GOBLET_SQUAT');
     expect(text('exercise-GOBLET_SQUAT-meta')).toBe('מתחילים · קטלבל או משקולות יד');
+    await reveal('PUSH_UP');
     const row = screen.getByTestId('exercise-PUSH_UP');
     expect(row.props.accessibilityRole).toBe('button');
     expect(StyleSheet.flatten(row.props.style).minHeight).toBeGreaterThanOrEqual(touch.buttonMinHeight);
@@ -131,6 +148,7 @@ describe('library', () => {
 describe('details', () => {
   it('English: a coach’s view — targets, equipment options, measurement, defaults, how-to, cues, mistakes, safety', async () => {
     const app = await openLibrary('en');
+    await reveal('ROMANIAN_DEADLIFT');
     press('exercise-ROMANIAN_DEADLIFT');
     await screen.findByTestId('exercise-details-name');
     expect(app.getPathname()).toBe('/exercises/ROMANIAN_DEADLIFT');
@@ -154,6 +172,7 @@ describe('details', () => {
 
   it('Hebrew: a sprint is time over a distance; no load is asked for', async () => {
     await openLibrary('he');
+    await reveal('SPRINT_20M');
     press('exercise-SPRINT_20M');
     await screen.findByTestId('exercise-details-name');
     expect(text('exercise-details-name')).toBe('ספרינט 20 מטר');
@@ -163,6 +182,7 @@ describe('details', () => {
 
   it('make inactive asks (Keep active is the default); it then hides from the library unless asked; active again without asking', async () => {
     await openLibrary('en');
+    await reveal('PLANK');
     press('exercise-PLANK');
     await screen.findByTestId('exercise-details-toggle');
     const dialogs: { title: string; buttons: AlertButton[] }[] = [];
@@ -192,6 +212,7 @@ describe('details', () => {
     openFilters();
     press('exercises-filter-flags-INACTIVE');
     await waitFor(() => expect(shown()).toContain('PLANK'));
+    await reveal('PLANK');
     expect(text('exercise-PLANK-inactive')).toBe('Inactive');
   });
 });

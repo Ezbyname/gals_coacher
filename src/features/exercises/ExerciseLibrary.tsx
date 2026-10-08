@@ -1,8 +1,7 @@
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { router } from 'expo-router';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { listExercises } from '@/data/local/exercises/exerciseRepository';
 import { EQUIPMENT, type EquipmentId } from '@/domain/exercise/equipment';
 import {
   NO_EXERCISE_FILTER,
@@ -11,14 +10,14 @@ import {
   type ExerciseFilter,
 } from '@/domain/exercise/exercise';
 import { BODY_AREAS, DIFFICULTIES, MUSCLE_GROUPS, TRAINING_CATEGORIES } from '@/domain/exercise/taxonomy';
+import { visibleChildren } from '@/domain/taxonomy/taxonomy';
 import { V1_ENABLED_SPORTS, type SportKey } from '@/domain/sport';
-import { useApp } from '@/features/AppProvider';
 import { sportLabel } from '@/features/calendar/calendarLabels';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
 import { useI18n } from '@/i18n/I18nProvider';
 import { BigButton } from '@/ui/BigButton';
 import { MultiChoiceChips } from '@/ui/MultiChoiceChips';
-import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
+import { SafeAreaFlatList } from '@/ui/SafeAreaFlatList';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
 import { workoutsPath } from '@/features/training/trainingLabels';
@@ -33,8 +32,9 @@ import {
   measurementStyle,
   muscleLabel,
 } from './exerciseLabels';
-
-type Loaded = { status: 'loading' } | { status: 'ready'; exercises: Exercise[] } | { status: 'error' };
+import { CategoryButton } from './CategoryButton';
+import { categoryPath } from './taxonomyLabels';
+import { useExerciseLibrary } from './useExerciseLibrary';
 
 export const exercisePath = (id: string) => `/exercises/${id}` as const;
 export const NEW_EXERCISE_PATH = '/exercises/new';
@@ -48,37 +48,25 @@ const toggle = <T,>(values: readonly T[], value: T) =>
  * practice — the equipment you actually have (or none at all). Filters live in
  * screen state only. Inactive exercises are hidden unless asked for. Reloads
  * on focus (a new or changed exercise shows on return).
+ *
+ * TRAIN-TAXONOMY-001C: "Add exercise" sits at the top (never only after the
+ * whole list); the training categories (Fitness, Basketball…) are offered as
+ * an optional way in, and searching here always searches ALL exercises. The
+ * list is virtualized: only the rows near the screen are rendered.
  */
 export function ExerciseLibrary() {
-  const { boot } = useApp();
   const { t, language } = useI18n();
-  const [loaded, setLoaded] = useState<Loaded>({ status: 'loading' });
+  const data = useExerciseLibrary();
   const [filter, setFilter] = useState<ExerciseFilter>(NO_EXERCISE_FILTER);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (boot.status !== 'ready') return;
-      let active = true;
-      listExercises(boot.db)
-        .then((exercises) => active && setLoaded({ status: 'ready', exercises }))
-        .catch((e: unknown) => {
-          console.warn('[exercises] load failed', e);
-          if (active) setLoaded({ status: 'error' });
-        });
-      return () => {
-        active = false;
-      };
-    }, [boot]),
-  );
-
-  const exercises = useMemo(() => (loaded.status === 'ready' ? loaded.exercises : []), [loaded]);
+  const exercises = useMemo(() => (data.status === 'ready' ? data.exercises : []), [data]);
   const shown = useMemo(() => filterExercises(exercises, filter, language), [exercises, filter, language]);
 
-  if (boot.status === 'error' || loaded.status === 'error') {
+  if (data.status === 'error') {
     return <ErrorScreen testID="exercises-error" message="exercises.loadFailed" fallback="/" />;
   }
-  if (loaded.status === 'loading') return <LoadingScreen />;
+  if (data.status === 'loading') return <LoadingScreen />;
 
   const narrowed = [
     filter.categories.length,
@@ -91,11 +79,12 @@ export function ExerciseLibrary() {
   const selectedLabel = (label: string) => t('exercises.selectedChip', { label });
   const set = (change: Partial<ExerciseFilter>) => setFilter({ ...filter, ...change });
 
-  return (
-    <SafeAreaScrollView
-      testID="exercises-scroll"
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled">
+  const domains = visibleChildren(data.taxonomy, null, data.activeIds);
+  const browsing = narrowed === 0 && filter.query.length === 0;
+
+  const header = (
+    <View style={styles.header}>
+      <BigButton testID="exercises-add" label={t('exercises.add')} onPress={() => router.push(NEW_EXERCISE_PATH)} />
       <BigButton
         testID="exercises-workouts"
         variant="secondary"
@@ -205,27 +194,56 @@ export function ExerciseLibrary() {
         </View>
       ) : null}
 
+      {browsing && domains.length > 0 ? (
+        <View style={styles.categories} testID="taxonomy-home">
+          <Text style={styles.heading} accessibilityRole="header" testID="taxonomy-home-title">
+            {t('taxonomy.home')}
+          </Text>
+          <Text style={styles.hint}>{t('taxonomy.homeHint')}</Text>
+          {domains.map((node) => (
+            <CategoryButton
+              key={node.key}
+              testID={`taxonomy-domain-${node.key}`}
+              nodeKey={node.key}
+              taxonomy={data.taxonomy}
+              activeIds={data.activeIds}
+              onPress={() => router.push(categoryPath(node.key))}
+            />
+          ))}
+        </View>
+      ) : null}
+
       <Text style={styles.count} testID="exercises-count">
         {t('exercises.count', { count: shown.length })}
       </Text>
-      {shown.length === 0 ? (
+    </View>
+  );
+
+  return (
+    <SafeAreaFlatList<Exercise>
+      testID="exercises-scroll"
+      data={shown}
+      keyExtractor={(exercise) => exercise.id}
+      renderItem={({ item }) => <ExerciseRow exercise={item} />}
+      ListHeaderComponent={header}
+      ListEmptyComponent={
         <Text style={styles.hint} testID="exercises-none">
           {t('exercises.none')}
         </Text>
-      ) : (
-        shown.map((exercise) => <Row key={exercise.id} exercise={exercise} />)
-      )}
-
-      <BigButton
-        testID="exercises-add"
-        label={t('exercises.add')}
-        onPress={() => router.push(NEW_EXERCISE_PATH)}
-      />
-    </SafeAreaScrollView>
+      }
+      ItemSeparatorComponent={Separator}
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    />
   );
 }
 
-function Row({ exercise }: { exercise: Exercise }) {
+function Separator() {
+  return <View style={{ height: spacing.md }} />;
+}
+
+/** One exercise in a list: name, training type, difficulty / equipment, how it is measured. */
+export function ExerciseRow({ exercise }: { exercise: Exercise }) {
   const { t, language } = useI18n();
   const id = `exercise-${exercise.id}`;
   const name = exerciseName(exercise, language);
@@ -262,7 +280,10 @@ function Row({ exercise }: { exercise: Exercise }) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.lg, gap: spacing.md },
+  container: { padding: spacing.lg },
+  header: { gap: spacing.md, paddingBottom: spacing.md },
+  categories: { gap: spacing.sm },
+  heading: { fontSize: 18, fontWeight: '800', color: colors.ink, textAlign: 'auto' },
   bar: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   pill: {
     minHeight: 44,

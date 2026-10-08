@@ -240,6 +240,23 @@ export const en = {
   },
   taxonomy: {
     // TRAIN-TAXONOMY-001: labels of the curated taxonomy nodes (src/domain/taxonomy/nodes.ts).
+    // TRAIN-TAXONOMY-001C: browsing the library by training category.
+    title: 'Training category',
+    home: 'Training categories',
+    homeHint: 'Search all exercises above, or choose a domain and narrow it down.',
+    count: '{count} exercises',
+    nodeA11y: '{label}, {count} exercises',
+    breadcrumbA11y: 'You are in: {path}',
+    searchIn: 'Search in {label}',
+    searchAll: 'Search all exercises',
+    scopeNode: 'Searching in {label} only',
+    scopeAll: 'Searching all exercises',
+    allIn: 'All exercises in {label}',
+    exercises: 'Exercises',
+    results: 'Search results',
+    unavailable: 'This category is not available right now.',
+    more: '›',
+    backToLibrary: 'Back to the Exercise Library',
     group: {
       BODY_AREA: 'By body area',
       TRAINING_GOAL: 'By training goal',

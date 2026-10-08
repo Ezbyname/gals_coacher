@@ -241,6 +241,23 @@ export const he = {
   },
   taxonomy: {
     // TRAIN-TAXONOMY-001: labels of the curated taxonomy nodes (src/domain/taxonomy/nodes.ts).
+    // TRAIN-TAXONOMY-001C: browsing the library by training category.
+    title: 'קטגוריית אימון',
+    home: 'קטגוריות אימון',
+    homeHint: 'אפשר לחפש בכל התרגילים למעלה, או לבחור תחום ולהתקדם בקטגוריות.',
+    count: '{count} תרגילים',
+    nodeA11y: '{label}, {count} תרגילים',
+    breadcrumbA11y: 'המיקום: {path}',
+    searchIn: 'חיפוש ב{label}',
+    searchAll: 'חיפוש בכל התרגילים',
+    scopeNode: 'מחפשים רק ב{label}',
+    scopeAll: 'מחפשים בכל התרגילים',
+    allIn: 'כל התרגילים ב{label}',
+    exercises: 'תרגילים',
+    results: 'תוצאות חיפוש',
+    unavailable: 'הקטגוריה הזו לא זמינה כרגע.',
+    more: '›',
+    backToLibrary: 'חזרה לספריית התרגילים',
     group: {
       BODY_AREA: 'לפי אזור בגוף',
       TRAINING_GOAL: 'לפי מטרת אימון',
