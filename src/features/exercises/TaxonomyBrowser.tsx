@@ -2,7 +2,7 @@ import { Stack, router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { NO_EXERCISE_FILTER, filterExercises, type Exercise } from '@/domain/exercise/exercise';
+import { NO_EXERCISE_FILTER, filterExercises, searchKey, type Exercise } from '@/domain/exercise/exercise';
 import { TAXONOMY_GROUPS, type TaxonomyGroup } from '@/domain/taxonomy/nodes';
 import { isVisible, visibleChildren, type Taxonomy, type TaxonomyNode } from '@/domain/taxonomy/taxonomy';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
@@ -75,19 +75,23 @@ export function TaxonomyBrowser({ nodeKey }: { nodeKey: string }) {
  * so Search All is never more than a tap away (at the top level it IS all).
  *
  * Browse mode opens an exercise's details; pick mode (`onPick`) hands the
- * chosen exercise back — the same exercise id whatever the path.
+ * chosen exercise back — the same exercise id whatever the path. Choose mode
+ * (`choose`, 001E) picks a CATEGORY: the current one ("Choose …"), or one
+ * found by searching category names, each shown with its full path.
  */
 export function TaxonomyView({
   data,
   nodeKey,
   onOpenNode,
   onPick,
+  choose,
   top,
 }: {
   data: TaxonomyData;
   nodeKey: string | null;
   onOpenNode: (key: string) => void;
   onPick?: (exercise: Exercise) => void;
+  choose?: CategoryChoice;
   /** Extra controls above the breadcrumb (the picker's Close / Back). */
   top?: React.ReactNode;
 }) {
@@ -105,11 +109,21 @@ export function TaxonomyView({
   const searching = query.trim().length > 0;
   const results = useMemo(
     () =>
-      searching
+      searching && !choose
         ? filterExercises(allScope ? data.exercises : shelf, { ...NO_EXERCISE_FILTER, query }, language)
         : [],
-    [data, allScope, searching, shelf, query, language],
+    [data, allScope, searching, shelf, query, language, choose],
   );
+  // Choose mode: search category names (full path, current language) in scope.
+  const categoryResults = useMemo(() => {
+    if (!choose || !searching) return [];
+    const wanted = searchKey(query);
+    return data.taxonomy.nodes
+      .filter((n) => n.depth > 0 && isVisible(data.taxonomy, n.key, data.activeIds))
+      .filter((n) => allScope || data.taxonomy.path(n.key).some((a) => a.key === nodeKey))
+      .map((n) => ({ key: n.key, path: pathLabel(t, data.taxonomy.path(n.key).map((a) => a.key)) }))
+      .filter((n) => searchKey(n.path).includes(wanted));
+  }, [choose, searching, query, data, allScope, nodeKey, t]);
 
   const label = nodeKey === null ? t('taxonomy.home') : nodeLabel(t, nodeKey);
   const path =
@@ -122,7 +136,7 @@ export function TaxonomyView({
   const sections = sectionsOf(visibleChildren(data.taxonomy, nodeKey, data.activeIds));
   const hasChildren = sections.length > 0;
   const isTop = nodeKey === null || data.taxonomy.node(nodeKey)?.depth === 0;
-  const showList = searching || !isTop;
+  const showList = !choose && (searching || !isTop);
   const listed = searching ? results : isTop ? [] : shelf;
   const listTitle = searching
     ? t('taxonomy.results')
@@ -164,6 +178,23 @@ export function TaxonomyView({
       <Text style={styles.hint} testID="taxonomy-search-scope">
         {allScope ? t('taxonomy.scopeAll') : t('taxonomy.scopeNode', { label })}
       </Text>
+
+      {choose && nodeKey !== null && !isTop && !searching ? (
+        <ChooseButton testID="taxonomy-choose" nodeKey={nodeKey} path={path} choose={choose} current />
+      ) : null}
+      {choose && searching ? (
+        <View style={styles.section} testID="taxonomy-category-results">
+          {categoryResults.length === 0 ? (
+            <Text style={styles.hint} testID="taxonomy-none">
+              {t('taxonomy.noCategories')}
+            </Text>
+          ) : (
+            categoryResults.map((r) => (
+              <ChooseButton key={r.key} testID={`taxonomy-choose-${r.key}`} nodeKey={r.key} path={r.path} choose={choose} />
+            ))
+          )}
+        </View>
+      ) : null}
 
       {!searching
         ? sections.map(({ group, nodes }) => (
@@ -224,6 +255,56 @@ export function TaxonomyView({
   );
 }
 
+/** Choose mode (TRAIN-TAXONOMY-001E): what to do with a chosen category, and why one cannot be chosen. */
+export type CategoryChoice = {
+  onChoose: (key: string) => void;
+  /** Translated reason (e.g. "Already added"), or null when it can be chosen. */
+  unavailable: (key: string) => string | null;
+};
+
+/** "Choose Basketball › Shooting" — the full path, so similar names are never ambiguous. */
+function ChooseButton({
+  nodeKey,
+  path,
+  choose,
+  current,
+  testID,
+}: {
+  nodeKey: string;
+  path: string;
+  choose: CategoryChoice;
+  current?: boolean;
+  testID: string;
+}) {
+  const { t } = useI18n();
+  const reason = choose.unavailable(nodeKey);
+  const label = current ? t('taxonomy.chooseThis', { path }) : path;
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: reason !== null }}
+      accessibilityLabel={reason ? `${label}, ${reason}` : label}
+      disabled={reason !== null}
+      onPress={() => choose.onChoose(nodeKey)}
+      style={({ pressed }) => [
+        styles.choose,
+        current && styles.chooseCurrent,
+        reason !== null && styles.chooseDisabled,
+        pressed && { opacity: 0.8 },
+      ]}>
+      <Text style={[styles.chooseLabel, current && styles.chooseLabelCurrent]} testID={`${testID}-label`}>
+        {label}
+      </Text>
+      {reason ? (
+        <Text style={styles.hint} testID={`${testID}-reason`}>
+          {reason}
+        </Text>
+      ) : null}
+    </Pressable>
+  );
+}
+
 /** Sub-categories in display order, split by group (Fitness: body area / training goal), never mixed. */
 function sectionsOf(
   children: readonly TaxonomyNode[],
@@ -261,6 +342,21 @@ const styles = StyleSheet.create({
   },
   pillActive: { borderColor: colors.ink, borderWidth: 2 },
   pillLabel: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  choose: {
+    minHeight: 56,
+    justifyContent: 'center',
+    gap: 2,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  chooseCurrent: { backgroundColor: colors.ink, borderColor: colors.ink },
+  chooseDisabled: { opacity: 0.55 },
+  chooseLabel: { fontSize: 16, fontWeight: '700', color: colors.ink, textAlign: 'auto' },
+  chooseLabelCurrent: { color: colors.background },
   unavailable: { flex: 1, padding: spacing.lg, gap: spacing.lg, justifyContent: 'center' },
   message: { fontSize: 17, color: colors.ink, textAlign: 'center' },
 });

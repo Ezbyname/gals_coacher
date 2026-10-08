@@ -711,4 +711,34 @@ export const migrations: readonly Migration[] = [
         ('ZIGZAG_DEFENSIVE_SLIDES', 1, NULL, 1, 0, 0);
     `,
   },
+  {
+    // TRAIN-TAXONOMY-001E. Workout Template classification: the coach's
+    // explicit 0..3 taxonomy categories for a template, at most one primary.
+    // Discovery metadata only — plans and sessions keep their own snapshots
+    // and never reference it. Additive: one new table, no existing table
+    // changes. The schema itself enforces the shape: a position 0..2 that is
+    // unique per template (so never a 4th), one row per (template, node) (so
+    // never a duplicate), one primary per template (partial unique index).
+    // Rows are replaced as a set, never rewritten in place.
+    version: 12,
+    name: 'template_classification',
+    sql: `
+      CREATE TABLE workout_template_taxonomy (
+        template_id TEXT NOT NULL REFERENCES workout_templates (id),
+        node_id TEXT NOT NULL REFERENCES taxonomy_nodes (id),
+        position INTEGER NOT NULL CHECK (typeof(position) = 'integer' AND position BETWEEN 0 AND 2),
+        is_primary INTEGER NOT NULL DEFAULT 0 CHECK (typeof(is_primary) = 'integer' AND is_primary IN (0, 1)),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        PRIMARY KEY (template_id, node_id),
+        UNIQUE (template_id, position)
+      );
+
+      CREATE INDEX workout_template_taxonomy_by_node ON workout_template_taxonomy (node_id, template_id);
+      CREATE UNIQUE INDEX workout_template_taxonomy_one_primary
+        ON workout_template_taxonomy (template_id) WHERE is_primary = 1;
+
+      CREATE TRIGGER workout_template_taxonomy_frozen_update BEFORE UPDATE ON workout_template_taxonomy
+      BEGIN SELECT RAISE(ABORT, 'a template classification is replaced, never rewritten'); END;
+    `,
+  },
 ];

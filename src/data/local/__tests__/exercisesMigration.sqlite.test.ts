@@ -98,7 +98,7 @@ describe('migration v8 (exercise library) on real SQLite', () => {
 
   it('fresh install: the library tables, every built-in id exactly once (active), deletion refused', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(11);
+    expect(migration.to).toBe(12);
     expect(migration.applied).toContain('exercises');
     expect(await v8Tables(db as unknown as Db)).toEqual([
       'exercise_categories',
@@ -130,7 +130,7 @@ describe('migration v8 (exercise library) on real SQLite', () => {
     const before = await createV7Database();
 
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 7, to: 11, applied: ['exercises', 'training', 'taxonomy', 'basketball_content'] });
+    expect(migration).toEqual({ from: 7, to: 12, applied: ['exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification'] });
     expect(await dumpV7Data(db as unknown as Db)).toEqual(before);
     expect(await exerciseRows(db as unknown as Db)).toHaveLength(BUILTIN_EXERCISES.length);
     expect(await db.getFirstAsync('PRAGMA foreign_key_check')).toBeNull();
@@ -145,7 +145,7 @@ describe('migration v8 (exercise library) on real SQLite', () => {
     await db.closeAsync();
 
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 11, to: 11, applied: [] });
+    expect(again.migration).toEqual({ from: 12, to: 12, applied: [] });
     expect(await exerciseRows(again.db as unknown as Db)).toHaveLength(BUILTIN_EXERCISES.length);
     expect(await dumpV7Data(again.db as unknown as Db)).toEqual(before);
     await again.db.closeAsync();
@@ -172,15 +172,15 @@ describe('migration v8 (exercise library) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 7, to: 11, applied: ['exercises', 'training', 'taxonomy', 'basketball_content'] });
+    expect(relaunch.migration).toEqual({ from: 7, to: 12, applied: ['exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification'] });
     await relaunch.db.closeAsync();
   });
 
   it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 12');
+    await newer.execAsync('PRAGMA user_version = 13');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v12 .* only knows v11\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v13 .* only knows v12\. Refusing to downgrade/);
   });
 });
 

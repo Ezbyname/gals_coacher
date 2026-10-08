@@ -7,7 +7,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { BottomInsetHandledContext } from '@/ui/bottomInset';
 import { colors, spacing } from '@/ui/theme';
 
-import { TaxonomyView, categoryAvailable, type TaxonomyData } from './TaxonomyBrowser';
+import { TaxonomyView, categoryAvailable, type CategoryChoice, type TaxonomyData } from './TaxonomyBrowser';
 
 /**
  * Choose an exercise by training category (TRAIN-TAXONOMY-001D): the SAME
@@ -27,6 +27,44 @@ export function ExercisePicker({
   visible: boolean;
   data: TaxonomyData;
   onPick: (exercise: Exercise) => void;
+  onClose: () => void;
+}) {
+  return <TaxonomyPicker visible={visible} data={data} mode={{ kind: 'exercise', onPick }} onClose={onClose} />;
+}
+
+/**
+ * Choose a training CATEGORY (TRAIN-TAXONOMY-001E: template classification)
+ * with the same picker: navigate to it and tap "Choose …", or search category
+ * names. `unavailable` says why one cannot be chosen (e.g. already added).
+ */
+export function CategoryPicker({
+  visible,
+  data,
+  choose,
+  onClose,
+}: {
+  visible: boolean;
+  data: TaxonomyData;
+  choose: CategoryChoice;
+  onClose: () => void;
+}) {
+  return <TaxonomyPicker visible={visible} data={data} mode={{ kind: 'category', choose }} onClose={onClose} />;
+}
+
+type PickerMode =
+  | { kind: 'exercise'; onPick: (exercise: Exercise) => void }
+  | { kind: 'category'; choose: CategoryChoice };
+
+/** The one picker implementation behind ExercisePicker and CategoryPicker. */
+function TaxonomyPicker({
+  visible,
+  data,
+  mode,
+  onClose,
+}: {
+  visible: boolean;
+  data: TaxonomyData;
+  mode: PickerMode;
   onClose: () => void;
 }) {
   const { t } = useI18n();
@@ -54,7 +92,7 @@ export function ExercisePicker({
         </Pressable>
       ) : null}
       <Text style={styles.title} accessibilityRole="header" testID="taxonomy-picker-title">
-        {t('taxonomy.pickerTitle')}
+        {t(mode.kind === 'category' ? 'taxonomy.categoryPickerTitle' : 'taxonomy.pickerTitle')}
       </Text>
       <Pressable
         testID="taxonomy-picker-close"
@@ -76,10 +114,25 @@ export function ExercisePicker({
             data={data}
             nodeKey={nodeKey}
             onOpenNode={(key) => setStack([...stack, key])}
-            onPick={(exercise) => {
-              setStack([]);
-              onPick(exercise);
-            }}
+            onPick={
+              mode.kind === 'exercise'
+                ? (exercise) => {
+                    setStack([]);
+                    mode.onPick(exercise);
+                  }
+                : undefined
+            }
+            choose={
+              mode.kind === 'category'
+                ? {
+                    unavailable: mode.choose.unavailable,
+                    onChoose: (key) => {
+                      setStack([]);
+                      mode.choose.onChoose(key);
+                    },
+                  }
+                : undefined
+            }
             top={top}
           />
         </View>

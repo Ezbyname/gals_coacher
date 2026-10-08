@@ -2,6 +2,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { listExercises } from '@/data/local/exercises/exerciseRepository';
+import { readTaxonomy } from '@/data/local/taxonomy/taxonomyRepository';
 import {
   createTemplate,
   getTemplate,
@@ -12,9 +14,21 @@ import {
   type WorkoutBlock,
   type WorkoutTemplate,
 } from '@/data/local/training/workoutRepository';
+import type { Exercise } from '@/domain/exercise/exercise';
+import { isVisible, type Taxonomy } from '@/domain/taxonomy/taxonomy';
+import {
+  addCategory,
+  MAX_TEMPLATE_CATEGORIES,
+  NO_CLASSIFICATION,
+  removeCategory,
+  setPrimary,
+  type TemplateClassification,
+} from '@/domain/taxonomy/templateClassification';
 import { WORKOUT_NAME_MAX_LENGTH } from '@/domain/training/training';
 import { useApp } from '@/features/AppProvider';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
+import { CategoryPicker } from '@/features/exercises/ExercisePicker';
+import { pathLabel } from '@/features/exercises/taxonomyLabels';
 import { useUnsavedChangesGuard } from '@/features/navigation/unsavedChanges';
 import { useI18n } from '@/i18n/I18nProvider';
 import { stripBidi } from '@/i18n/bidi';
@@ -26,8 +40,16 @@ import { colors, spacing, touch } from '@/ui/theme';
 
 import { Small } from './BlockForm';
 
-type Values = { name: string; blocks: WorkoutBlock[] };
-const key = (v: Values) => JSON.stringify([v.name, v.blocks.map((b) => b.id)]);
+type Values = { name: string; blocks: WorkoutBlock[]; classification: TemplateClassification };
+const key = (v: Values) =>
+  JSON.stringify([v.name, v.blocks.map((b) => b.id), v.classification.nodeKeys, v.classification.primary]);
+
+const CATEGORY_ERRORS: Record<NonNullable<TemplateErrors['categories']>, TranslationKey> = {
+  TOO_MANY: 'training.errors.categoriesTooMany',
+  DUPLICATE: 'training.errors.categoriesDuplicate',
+  PRIMARY_NOT_SELECTED: 'training.errors.categoriesPrimary',
+  NOT_SELECTABLE: 'training.errors.categoriesNotSelectable',
+};
 
 const NAME_ERRORS: Record<NonNullable<TemplateErrors['name']>, TranslationKey> = {
   REQUIRED: 'training.errors.nameRequired',
@@ -45,7 +67,13 @@ export function TemplateForm({ templateId }: { templateId?: string }) {
   const [state, setState] = useState<
     | { status: 'loading' }
     | { status: 'error' }
-    | { status: 'ready'; blocks: WorkoutBlock[]; template: WorkoutTemplate | null }
+    | {
+        status: 'ready';
+        blocks: WorkoutBlock[];
+        template: WorkoutTemplate | null;
+        exercises: Exercise[];
+        taxonomy: Taxonomy;
+      }
   >({ status: 'loading' });
 
   useFocusEffect(
@@ -55,10 +83,16 @@ export function TemplateForm({ templateId }: { templateId?: string }) {
       Promise.all([
         listBlocks(boot.db),
         templateId ? getTemplate(boot.db, templateId) : Promise.resolve(null),
+        listExercises(boot.db),
+        readTaxonomy(boot.db),
       ])
-        .then(([blocks, template]) => {
+        .then(([blocks, template, exercises, taxonomy]) => {
           if (!active) return;
-          setState(templateId && !template ? { status: 'error' } : { status: 'ready', blocks, template });
+          setState(
+            templateId && !template
+              ? { status: 'error' }
+              : { status: 'ready', blocks, template, exercises, taxonomy },
+          );
         })
         .catch((e: unknown) => {
           console.warn('[training] template load failed', e);
@@ -76,16 +110,43 @@ export function TemplateForm({ templateId }: { templateId?: string }) {
     );
   }
   if (state.status === 'loading') return <LoadingScreen />;
-  return <Form blocks={state.blocks} template={state.template} />;
+  return (
+    <Form blocks={state.blocks} template={state.template} exercises={state.exercises} taxonomy={state.taxonomy} />
+  );
 }
 
-function Form({ blocks, template }: { blocks: WorkoutBlock[]; template: WorkoutTemplate | null }) {
+function Form({
+  blocks,
+  template,
+  exercises,
+  taxonomy,
+}: {
+  blocks: WorkoutBlock[];
+  template: WorkoutTemplate | null;
+  exercises: Exercise[];
+  taxonomy: Taxonomy;
+}) {
   const { boot, services } = useApp();
   const { t } = useI18n();
   const initial = useMemo<Values>(
-    () => ({ name: template?.name ?? '', blocks: template ? [...template.blocks] : [] }),
+    () => ({
+      name: template?.name ?? '',
+      blocks: template ? [...template.blocks] : [],
+      classification: template?.classification ?? NO_CLASSIFICATION,
+    }),
     [template],
   );
+  const [choosing, setChoosing] = useState(false);
+  const pickerData = useMemo(
+    () => ({ exercises, taxonomy, activeIds: new Set(exercises.filter((e) => e.active).map((e) => e.id)) }),
+    [exercises, taxonomy],
+  );
+  const pathOf = (nodeKey: string) =>
+    pathLabel(
+      t,
+      taxonomy.path(nodeKey).map((n) => n.key),
+    );
+
   const [values, setValues] = useState<Values>(initial);
   const [active, setActive] = useState(template?.active ?? true);
   const [errors, setErrors] = useState<TemplateErrors>({});
@@ -94,6 +155,9 @@ function Form({ blocks, template }: { blocks: WorkoutBlock[]; template: WorkoutT
   const busy = useRef(false);
   const guard = useUnsavedChangesGuard(key(values) !== key(initial));
   const available = blocks.filter((b) => b.active);
+  const classification = values.classification;
+  const setClassification = (next: TemplateClassification) => setValues((v) => ({ ...v, classification: next }));
+  const full = classification.nodeKeys.length >= MAX_TEMPLATE_CATEGORIES;
 
   const move = (index: number, by: -1 | 1) =>
     setValues((v) => {
@@ -110,7 +174,11 @@ function Form({ blocks, template }: { blocks: WorkoutBlock[]; template: WorkoutT
     setFailure(false);
     try {
       if (boot.status !== 'ready') throw new Error('database not ready');
-      const input = { name: values.name, blockIds: values.blocks.map((b) => b.id) };
+      const input = {
+        name: values.name,
+        blockIds: values.blocks.map((b) => b.id),
+        classification: values.classification,
+      };
       const result = template
         ? await updateTemplate(boot.db, template.id, input, { clock: services.clock })
         : await createTemplate(boot.db, input, { ids: services.ids, clock: services.clock });
@@ -165,6 +233,86 @@ function Form({ blocks, template }: { blocks: WorkoutBlock[]; template: WorkoutT
           {t(active ? 'training.statusActive' : 'training.inactive')}
         </Text>
       ) : null}
+
+      <Text style={styles.heading} accessibilityRole="header" testID="template-form-categories-title">
+        {t('training.categories')}
+      </Text>
+      <Text style={styles.muted}>{t('training.categoriesHint')}</Text>
+      {errors.categories ? (
+        <Text style={styles.error} testID="template-form-categories-error">
+          {t(CATEGORY_ERRORS[errors.categories])}
+        </Text>
+      ) : null}
+      <View style={styles.categories} testID="template-form-categories">
+        {classification.nodeKeys.length === 0 ? (
+          <Text style={styles.muted} testID="template-form-categories-none">
+            {t('training.noCategoriesYet')}
+          </Text>
+        ) : null}
+        {classification.nodeKeys.map((nodeKey) => {
+          const id = `template-form-category-${nodeKey}`;
+          const path = pathOf(nodeKey);
+          const isPrimary = classification.primary === nodeKey;
+          const selectable = isVisible(taxonomy, nodeKey, pickerData.activeIds);
+          return (
+            <View key={nodeKey} style={styles.card} testID={id}>
+              <Text style={styles.name} testID={`${id}-label`}>
+                {path}
+              </Text>
+              {!selectable ? (
+                <Text style={styles.muted} testID={`${id}-inactive`}>
+                  {t('training.categoryUnavailable')}
+                </Text>
+              ) : null}
+              <View style={styles.actions}>
+                <Pressable
+                  testID={`${id}-primary`}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: isPrimary }}
+                  accessibilityLabel={stripBidi(t('training.primaryA11y', { path }))}
+                  onPress={() => setClassification(setPrimary(classification, isPrimary ? null : nodeKey))}
+                  style={[styles.pill, isPrimary && styles.pillActive]}>
+                  <Text style={styles.pillLabel}>{isPrimary ? t('training.primaryChosen') : t('training.primary')}</Text>
+                </Pressable>
+                <Small
+                  testID={`${id}-remove`}
+                  label={t('training.removeCategory')}
+                  onPress={() => setClassification(removeCategory(classification, nodeKey))}
+                />
+              </View>
+            </View>
+          );
+        })}
+        <Text style={styles.muted} testID="template-form-primary">
+          {classification.primary
+            ? t('training.primaryIs', { path: pathOf(classification.primary) })
+            : t('training.primaryNone')}
+        </Text>
+        <BigButton
+          testID="template-form-add-category"
+          variant="secondary"
+          label={t('training.addCategory')}
+          onPress={() => setChoosing(true)}
+          disabled={full}
+        />
+        {full ? (
+          <Text style={styles.muted} testID="template-form-categories-max">
+            {t('training.categoriesMax')}
+          </Text>
+        ) : null}
+      </View>
+      <CategoryPicker
+        visible={choosing}
+        data={pickerData}
+        choose={{
+          unavailable: (nodeKey) => (classification.nodeKeys.includes(nodeKey) ? t('taxonomy.alreadyAdded') : null),
+          onChoose: (nodeKey) => {
+            setChoosing(false);
+            setClassification(addCategory(classification, nodeKey));
+          },
+        }}
+        onClose={() => setChoosing(false)}
+      />
 
       <Text style={styles.heading} accessibilityRole="header">
         {t('training.blocksInTemplate')}
@@ -286,4 +434,16 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: '700', color: colors.ink, textAlign: 'auto' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   buttons: { gap: spacing.sm },
+  categories: { gap: spacing.sm },
+  pill: {
+    minHeight: 44,
+    paddingHorizontal: spacing.md,
+    justifyContent: 'center',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  pillActive: { borderColor: colors.ink, borderWidth: 2 },
+  pillLabel: { fontSize: 15, fontWeight: '700', color: colors.ink },
 });

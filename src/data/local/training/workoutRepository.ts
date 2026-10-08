@@ -1,5 +1,13 @@
 import type { Exercise } from '@/domain/exercise/exercise';
 import { isUuid } from '@/domain/ids';
+import { builtinTaxonomyNode } from '@/domain/taxonomy/nodes';
+import { isVisible } from '@/domain/taxonomy/taxonomy';
+import {
+  classificationError,
+  NO_CLASSIFICATION,
+  type ClassificationError,
+  type TemplateClassification,
+} from '@/domain/taxonomy/templateClassification';
 import {
   adaptPrescription,
   WORKOUT_NAME_MAX_LENGTH,
@@ -14,6 +22,8 @@ import { runSerialized } from '../connectionQueue';
 import { readExercisesUnserialized } from '../exercises/exerciseRepository';
 import { ensureLocalFamily } from '../players/localFamily';
 import type { PlayerDb } from '../players/playerDb';
+import { TaxonomyNodeNotFoundError } from '../taxonomy/errors';
+import { readTaxonomyUnserialized } from '../taxonomy/taxonomyRepository';
 
 import { TrainingDataError, TrainingNotFoundError } from './errors';
 
@@ -41,6 +51,8 @@ export interface WorkoutTemplate {
   readonly name: string;
   readonly active: boolean;
   readonly blocks: readonly WorkoutBlock[];
+  /** The coach's categories (TRAIN-TAXONOMY-001E): discovery metadata, never snapshotted into plans. */
+  readonly classification: TemplateClassification;
   readonly createdAt: number;
   readonly updatedAt: number;
 }
@@ -64,10 +76,13 @@ export type SaveBlockResult =
 export interface TemplateInput {
   readonly name: string;
   readonly blockIds: readonly string[];
+  /** Omitted: a new template has none and an edited one keeps what it had. */
+  readonly classification?: TemplateClassification;
 }
 export interface TemplateErrors {
   name?: NameError;
   blocks?: 'REQUIRED';
+  categories?: Exclude<ClassificationError, 'UNKNOWN_NODE'>;
 }
 export type SaveTemplateResult =
   | { readonly ok: true; readonly template: WorkoutTemplate }
@@ -184,6 +199,7 @@ export async function createTemplate(
       [id, familyId, checked.name, now, now],
     );
     await writeTemplateBlocks(db, id, input.blockIds);
+    if (input.classification) await writeClassification(db, id, input.classification, now);
     result = { ok: true, template: await readTemplate(db, id, await readExercisesUnserialized(db)) };
   });
   return result!;
@@ -199,8 +215,8 @@ export async function updateTemplate(
   let result = null as SaveTemplateResult | null;
   await writeTransaction(db, async () => {
     const exercises = await readExercisesUnserialized(db);
-    await readTemplate(db, id, exercises);
-    const checked = await validateTemplate(db, input, id);
+    const before = await readTemplate(db, id, exercises);
+    const checked = await validateTemplate(db, input, id, before.classification);
     if (!checked.ok) {
       result = checked;
       return;
@@ -212,6 +228,7 @@ export async function updateTemplate(
     ]);
     await db.runAsync('DELETE FROM workout_template_blocks WHERE template_id = ?', [id]);
     await writeTemplateBlocks(db, id, input.blockIds);
+    if (input.classification) await writeClassification(db, id, input.classification, now);
     result = { ok: true, template: await readTemplate(db, id, exercises) };
   });
   return result!;
@@ -305,6 +322,7 @@ async function validateTemplate(
   db: PlayerDb,
   input: TemplateInput,
   except: string | null,
+  previous: TemplateClassification = NO_CLASSIFICATION,
 ): Promise<{ ok: true; name: string } | { ok: false; errors: TemplateErrors }> {
   const errors: TemplateErrors = {};
   const name = checkName(input.name, await otherNames(db, 'workout_templates', except));
@@ -313,6 +331,23 @@ async function validateTemplate(
   for (const blockId of input.blockIds) {
     const row = await db.getFirstAsync('SELECT id FROM workout_blocks WHERE id = ?', [blockId]);
     if (row === null) throw new TrainingNotFoundError('block', blockId);
+  }
+  if (input.classification) {
+    // A NEW category must be selectable now (active, with an active exercise);
+    // one the template already had stays, even if it has become inactive.
+    const taxonomy = await readTaxonomyUnserialized(db);
+    const exercises = await readExercisesUnserialized(db);
+    const activeIds = new Set(exercises.filter((e) => e.active).map((e) => e.id));
+    const problem = classificationError(
+      input.classification,
+      taxonomy,
+      (key) => isVisible(taxonomy, key, activeIds),
+      previous,
+    );
+    if (problem === 'UNKNOWN_NODE') {
+      throw new TaxonomyNodeNotFoundError(input.classification.nodeKeys.find((k) => taxonomy.node(k) === null)!);
+    }
+    if (problem !== null) errors.categories = problem;
   }
   return Object.keys(errors).length === 0 && name.ok ? { ok: true, name: name.name } : { ok: false, errors };
 }
@@ -337,6 +372,22 @@ async function writeTemplateBlocks(
     await db.runAsync(
       'INSERT INTO workout_template_blocks (template_id, position, block_id) VALUES (?, ?, ?)',
       [templateId, position, blockId],
+    );
+  }
+}
+
+/** Replaces the template's classification as a set (rows are never rewritten in place). */
+async function writeClassification(
+  db: PlayerDb,
+  templateId: string,
+  classification: TemplateClassification,
+  now: number,
+): Promise<void> {
+  await db.runAsync('DELETE FROM workout_template_taxonomy WHERE template_id = ?', [templateId]);
+  for (const [position, nodeId] of classification.nodeKeys.entries()) {
+    await db.runAsync(
+      'INSERT INTO workout_template_taxonomy (template_id, node_id, position, is_primary, created_at) VALUES (?, ?, ?, ?, ?)',
+      [templateId, nodeId, position, classification.primary === nodeId ? 1 : 0, now],
     );
   }
 }
@@ -429,12 +480,29 @@ async function readTemplates(db: PlayerDb, exercises: Exercise[]): Promise<Worko
     'SELECT template_id, block_id FROM workout_template_blocks ORDER BY template_id, position',
     [],
   );
+  const categories = await db.getAllAsync<{ template_id: unknown; node_id: unknown; is_primary: unknown }>(
+    'SELECT template_id, node_id, is_primary FROM workout_template_taxonomy ORDER BY template_id, position',
+    [],
+  );
   return rows.map((row) => {
     const base = header(row, 'template');
     const own = links.filter((l) => l.template_id === base.id);
     if (own.length === 0) throw new TrainingDataError('template.blocks', 'MISSING_ROW', base.id);
+    const tags = categories.filter((c) => c.template_id === base.id);
+    for (const tag of tags) {
+      // Fail closed: only curated built-in nodes exist in V1.
+      const known = typeof tag.node_id === 'string' && builtinTaxonomyNode(tag.node_id) !== null;
+      if (!known || (tag.is_primary !== 0 && tag.is_primary !== 1)) {
+        throw new TrainingDataError('template.category', 'INVALID_VALUE', base.id);
+      }
+    }
+    const classification: TemplateClassification = {
+      nodeKeys: tags.map((c) => c.node_id as string),
+      primary: (tags.find((c) => c.is_primary === 1)?.node_id as string | undefined) ?? null,
+    };
     return {
       ...base,
+      classification,
       blocks: own.map((l) => {
         const block = blocks.get(String(l.block_id));
         if (!block) throw new TrainingDataError('template.block', 'MISSING_ROW', base.id);

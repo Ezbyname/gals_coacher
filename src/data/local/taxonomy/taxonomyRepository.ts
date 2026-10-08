@@ -25,6 +25,11 @@ export function readTaxonomy(db: PlayerDb): Promise<Taxonomy> {
   return runSerialized(db, () => readAll(db));
 }
 
+/** The same read inside the CALLER's serialized operation (e.g. a template save's transaction). */
+export function readTaxonomyUnserialized(db: PlayerDb): Promise<Taxonomy> {
+  return readAll(db);
+}
+
 /** Makes a node active / inactive. Idempotent. Never touches memberships or history. */
 export async function setTaxonomyNodeActive(
   db: PlayerDb,
