@@ -17,7 +17,8 @@ All verified by the owner on a physical Android device.
 **ACTIVITY-001 (configurable Activity Types): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema v7.
 **TRAIN-001 (Professional Exercise Library — ROADMAP 2.0, owner-directed ahead of Cloud Foundation C): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v8**. **TRAIN-002 (Workout Builder + manual Training Execution + objective results): IMPLEMENTED + AUTOMATED GATE PASS, PHYSICAL ACCEPTANCE PENDING.** Schema is now **v9**. CAL-TRAIN-001: **not started** (awaiting owner go-ahead after TRAIN-002's gate).
 **TRAIN-TAXONOMY-001A (training taxonomy — domain / data / migration / curated taxonomy, no UI): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA: not executable yet (no taxonomy UI — TX-01…TX-13 belong to 001C–001F); PHYSICAL: not applicable to this sub-slice.** Schema is now **v10**.
-**TRAIN-TAXONOMY-001B (professional Basketball content: 17 new built-in drills): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA: not executable as taxonomy navigation yet (no UI); the new drills appear in the existing Exercise Library.** Schema is now **v11**. Slices 001C–001F, EX-GUIDE-001 and CAL-TRAIN-001: **not started**.
+**TRAIN-TAXONOMY-001B (professional Basketball content: 17 new built-in drills): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA: not executable as taxonomy navigation yet (no UI); the new drills appear in the existing Exercise Library.** Schema is now **v11**.
+**TRAIN-TAXONOMY-001C (Exercise Library training-category navigation): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA AUTOMATED_PARTIAL (8 TX PASS; TX-07/08 not run, TX-09 not proven); PHYSICAL: pending (001F).** Schema unchanged (v11). Slices 001D–001F, EX-GUIDE-001 and CAL-TRAIN-001: **not started**.
 **iOS (project baseline):** the current pre-Calendar application has passed iOS bundle export (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
@@ -42,6 +43,7 @@ All verified by the owner on a physical Android device.
 | TRAIN-002 (Workout Builder + manual execution) | **IMPLEMENTED + AUTOMATED PASS; PHYSICAL PENDING**; schema **v9** |
 | TRAIN-TAXONOMY-001A (training taxonomy: domain / data) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS**; no UI (TX Product QA: future 001C–001F); schema **v10** |
 | TRAIN-TAXONOMY-001B (Basketball content) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS**; 124 built-ins; schema **v11** |
+| TRAIN-TAXONOMY-001C (Library category navigation) | **IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON QA AUTOMATED_PARTIAL**; physical pending |
 | CAL-TRAIN-001 | **Not started** — awaiting owner go-ahead |
 | Slices after 1.3 (C, 2.x …) | **Not started** |
 
@@ -86,6 +88,19 @@ list changed — and from gate G33: 1 (upgrade), 2 (entry gating), 14–18
 (Self-assessment navigation, multiple, persistence, English), 21–22 (edit
 player / add Basketball), 25 (player without Basketball), 28 (optional
 sport), 29–31 (positions, clear secondary, persistence).
+
+---
+
+## TRAIN-TAXONOMY-001C — Exercise Library training categories: IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS; PYTHON PRODUCT QA AUTOMATED_PARTIAL (2026-10-08)
+
+Commit `eaf83fd` (local, not pushed). Owner-approved 2026-10-07 / FAST GATE 2026-10-08.
+
+- **Library home:** "Add exercise" moved to the top (never only after the list). A "Training categories" section offers the visible domains (Fitness, Basketball) with their counts. Searching on the home always searches ALL exercises and hides the categories (Search All bypasses the hierarchy). The list is virtualized (FlatList).
+- **Category screen** (`/exercises/categories/<KEY>`): breadcrumb ("Basketball › Shooting › Free Throws", spoken "You are in: …"), sub-categories with counts — Fitness keeps "By body area" and "By training goal" as separate sections — and the node's exercises (own + active descendants', each once). A domain shows categories only. Search inside a category is scoped to it; one tap ("Search all exercises", a switch with its state in text) searches everything. Inactive / empty categories are never offered; reached directly they say "not available".
+- **Accessibility:** category buttons are 56 dp, spoken as "Shooting, 8 exercises"; breadcrumb read as one phrase; scope state in text, not colour.
+- **Gate:** typecheck PASS; lint 0 errors (1 pre-existing warning); **Jest 76 / 76 suites, 1405 / 1405 tests** (`--maxWorkers=25%`; at 50 % one existing library test hits the 5 s Jest timeout under parallel load — TEST-FLAKE-001; it passes alone and the library tests got faster); 10 new UI tests (`src/app/__tests__/trainingCategories.test.tsx`); library tests adapted to the virtualized list; **Android export PASS** (3.5 MB).
+- **Python Product QA (real app, QA baseline moved to `eaf83fd`, schema v11; device data upgraded v9 → v11 without error):** TX-01, TX-02, TX-03, TX-04, TX-05, TX-06, TX-12, TX-13 **PASS** on `eaf83fd`. TX-05 / TX-06 include the keyboard check (focused search field focused, value visible, fully above the keyboard — emulator; real phone: PHYSICAL QA REQUIRED). **TX-09: NOT PROVEN** (setup timed out opening the library on a degraded emulator — not a product failure; the hide / restore behaviour itself is covered by TX-12). **TX-07 (HE RTL) / TX-08 (EN LTR): NOT RUN** (device instability: repeated ADB reconnects, one blank-screen bundle reload). TX-10 / TX-11 belong to 001E / 001F. Pending TX tests run later either on `eaf83fd` or reported against the newer baseline they actually ran on.
+- **Library-open performance check (bounded, 2026-10-08):** 3 opens 9.1 / 13.9 / 9.4 s incl. tap + ~3 s UI dumps (median 9.4 s; dump 2.9–3.0 s, emulator load ~3). Opening Exercises causes 17–19 Java GCs over ~4–5 s (Players: 0) — consistent with the list rendering row batches after first paint; no skipped-frame / ANR evidence; the taxonomy read itself is tiny. No comparable pre-001C measurement exists on this device (the v11 database cannot run the v9 build). **Classification: PERFORMANCE_NOT_PROVEN** (inconclusive under a degraded environment) — to re-measure on a healthy emulator / physical phone in 001F; FlatList window tuning is the first candidate if a regression is confirmed.
 
 ---
 
