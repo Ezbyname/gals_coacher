@@ -12,9 +12,11 @@ import {
   type TrainingOverview,
 } from '@/data/local/training/trainingRepository';
 import { listTemplates, type WorkoutTemplate } from '@/data/local/training/workoutRepository';
+import { MissingPlayerContextError, requireActivePlayer } from '@/domain/training/activePlayer';
 import { useApp } from '@/features/AppProvider';
 import { formatDateTime } from '@/features/calendar/formatEventTime';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
+import { PlayerTargetLabel, RoutePlayerScope, useActivePlayer } from '@/features/players/ActivePlayerContext';
 import { useI18n } from '@/i18n/I18nProvider';
 import { stripBidi } from '@/i18n/bidi';
 import type { TranslationKey } from '@/i18n/types';
@@ -109,6 +111,15 @@ export function TrainingSection({ playerId }: { playerId: string }) {
 
 /** A Player's planned workouts (not started) and every workout performed, newest first. */
 export function TrainingOverviewScreen({ playerId }: { playerId: string }) {
+  return (
+    <RoutePlayerScope playerId={playerId}>
+      <TrainingOverviewView />
+    </RoutePlayerScope>
+  );
+}
+
+function TrainingOverviewView() {
+  const playerId = requireActivePlayer(useActivePlayer()).id;
   const { t, language } = useI18n();
   const state = useLoad(useCallback((db: Db) => listTraining(db, playerId), [playerId]));
   if (state.status === 'error') {
@@ -119,6 +130,7 @@ export function TrainingOverviewScreen({ playerId }: { playerId: string }) {
   const running = overview.sessions.some((s) => s.status === 'IN_PROGRESS');
   return (
     <SafeAreaScrollView testID="training-scroll" contentContainerStyle={styles.container}>
+      <PlayerTargetLabel />
       {!running ? (
         <BigButton
           testID="training-overview-start"
@@ -174,6 +186,15 @@ export function TrainingOverviewScreen({ playerId }: { playerId: string }) {
 
 /** Choose an active template: start it now (plan + session) or plan it for later (a frozen plan). */
 export function ChooseWorkoutScreen({ playerId }: { playerId: string }) {
+  return (
+    <RoutePlayerScope playerId={playerId}>
+      <ChooseWorkoutView />
+    </RoutePlayerScope>
+  );
+}
+
+function ChooseWorkoutView() {
+  const context = useActivePlayer();
   const { boot, services } = useApp();
   const { t } = useI18n();
   const state = useLoad(listTemplates);
@@ -190,6 +211,8 @@ export function ChooseWorkoutScreen({ playerId }: { playerId: string }) {
     busy.current = true;
     setFailure(null);
     try {
+      // The Player this workout is for comes from the context — the one guard for Player-specific writes.
+      const playerId = requireActivePlayer(context).id;
       const deps = { ids: services.ids, clock: services.clock };
       if (now) {
         const session = await planAndStart(boot.db, { playerId, templateId: template.id }, deps);
@@ -200,13 +223,14 @@ export function ChooseWorkoutScreen({ playerId }: { playerId: string }) {
       }
     } catch (e) {
       console.warn('[training] start failed', e);
-      setFailure(trainingErrorMessage(e));
+      setFailure(e instanceof MissingPlayerContextError ? 'training.errors.playerRequired' : trainingErrorMessage(e));
     }
     busy.current = false;
   };
 
   return (
     <SafeAreaScrollView testID="choose-scroll" contentContainerStyle={styles.container}>
+      <PlayerTargetLabel />
       <Text style={styles.muted}>{t('training.chooseHint')}</Text>
       {failure ? (
         <Text style={styles.error} testID="choose-failed">
@@ -246,12 +270,25 @@ export function ChooseWorkoutScreen({ playerId }: { playerId: string }) {
 
 /** A planned workout exactly as it was planned (a frozen snapshot), and Start / Open. */
 export function PlannedWorkoutScreen({ playerId, planId }: { playerId: string; planId: string }) {
+  return (
+    <RoutePlayerScope playerId={playerId}>
+      <PlannedWorkoutView planId={planId} />
+    </RoutePlayerScope>
+  );
+}
+
+function PlannedWorkoutView({ planId }: { planId: string }) {
+  const playerId = requireActivePlayer(useActivePlayer()).id;
   const { boot, services } = useApp();
   const { t, language } = useI18n();
   const state = useLoad(useCallback((db: Db) => getPlannedWorkout(db, planId), [planId]));
   const [failure, setFailure] = useState<TranslationKey | null>(null);
   const busy = useRef(false);
-  if (state.status === 'error' || (state.status === 'ready' && state.value === null)) {
+  // A plan of another Player is never shown (or started) under this Player.
+  if (
+    state.status === 'error' ||
+    (state.status === 'ready' && (state.value === null || state.value.playerId !== playerId))
+  ) {
     return <ErrorScreen testID="plan-error" message="training.errors.notFound" fallback="/children" />;
   }
   if (state.status === 'loading') return <LoadingScreen />;
@@ -273,6 +310,7 @@ export function PlannedWorkoutScreen({ playerId, planId }: { playerId: string; p
 
   return (
     <SafeAreaScrollView testID="plan-scroll" contentContainerStyle={styles.container}>
+      <PlayerTargetLabel />
       <Text style={styles.title} testID="plan-name" accessibilityRole="header">
         {plan.name}
       </Text>

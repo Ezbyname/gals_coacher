@@ -21,6 +21,7 @@ import {
   type SetValues,
 } from '@/domain/training/training';
 import { useApp } from '@/features/AppProvider';
+import { PlayerTargetLabel, useActivePlayer } from '@/features/players/ActivePlayerContext';
 import { formatDateTime } from '@/features/calendar/formatEventTime';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -49,9 +50,13 @@ type Change = (session: TrainingSession) => void;
  * Finish (Completed or Partial) or Stop (asks first). Finished: read-only —
  * planned and actual side by side, corrections marked. Actual values are
  * never pre-filled from the plan.
+ *
+ * Under a Player's route the active Player is shown as the target, and a
+ * session that belongs to another Player is not shown (or changed) there.
  */
 export function SessionScreen({ sessionId }: { sessionId: string }) {
   const { boot, services } = useApp();
+  const context = useActivePlayer();
   const { t, language } = useI18n();
   const [state, setState] = useState<
     { status: 'loading' } | { status: 'ready'; session: TrainingSession } | { status: 'error' }
@@ -75,7 +80,9 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
     }, [boot, sessionId]),
   );
 
-  if (boot.status === 'error' || state.status === 'error') {
+  const otherPlayers =
+    state.status === 'ready' && context.status === 'resolved' && state.session.playerId !== context.activePlayerId;
+  if (boot.status === 'error' || state.status === 'error' || otherPlayers) {
     return <ErrorScreen testID="session-error" message="training.errors.notFound" fallback="/children" />;
   }
   if (state.status === 'loading') return <LoadingScreen />;
@@ -116,6 +123,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
       testID="session-scroll"
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled">
+      <PlayerTargetLabel />
       <Text style={styles.title} testID="session-name" accessibilityRole="header">
         {session.name}
       </Text>
