@@ -11,8 +11,14 @@
  * production app ignores the parameter entirely (proven by Jest). No fixture
  * text ships in the app; the test sends it. Physical QA (001E) pastes for real.
  */
+/** U+2028 LINE SEPARATOR — the QA transport's stand-in for a line break. */
+const LINE_SEPARATOR = String.fromCharCode(0x2028);
+
 export function devPrefillText(param: unknown, isDev: boolean): string | null {
   if (!isDev) return null;
   const value = Array.isArray(param) ? param[0] : param;
-  return typeof value === 'string' && value.length > 0 ? value : null;
+  // Transport: URL parsing on the device strips raw line breaks (even percent-encoded
+  // ones, after its own decoding), so the QA harness sends them as U+2028 LINE SEPARATOR;
+  // they are turned back into "\n" here — the parser sees the message exactly as written.
+  return typeof value === 'string' && value.length > 0 ? value.split(LINE_SEPARATOR).join('\n') : null;
 }

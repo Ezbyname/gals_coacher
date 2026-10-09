@@ -124,4 +124,8 @@ describe('QA-only Hebrew pre-fill gate', () => {
     expect(devPrefillText('', true)).toBeNull();
     expect(devPrefillText(7, true)).toBeNull();
   });
+  it('the QA transport sends line breaks as U+2028; the pre-fill restores the exact message', () => {
+    expect(devPrefillText(WHATSAPP_EXAMPLE_1.split('\n').join(String.fromCharCode(0x2028)), true)).toBe(WHATSAPP_EXAMPLE_1);
+    expect(devPrefillText(WHATSAPP_EXAMPLE_1.split('\n').join(String.fromCharCode(0x2028)), false)).toBeNull();
+  });
 });
