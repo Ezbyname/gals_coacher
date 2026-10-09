@@ -116,8 +116,9 @@ sport), 29–31 (positions, clear secondary, persistence).
 | APK installed on the physical phone | **PASS** (owner, 2026-10-09) | Installed OVER the existing app; upgrade PASS; existing data preserved. |
 | Physical smoke / keyboard / RTL | **PASS** (owner-reported) | Smoke, physical keyboard (block, template, session results), HE RTL / EN LTR. Emulator results are not physical results. |
 | **Milestone** | **CLOSED / ACCEPTED** | 2026-10-09. |
+| TS coverage restored (QA-TS-FIXTURE-V12, QA infra only) | **12 / 13 PASS + 1 AUTOMATION_BUG** | Fixture `V12-ALICE-TEMPLATES-01` (schema v12, built from `1da4eca` through the product UI). New precheck **PRE-09 fixture compatibility: PASS**. PRECHECK 9/9; TS-01…13: 12 PASS, **TS-10 AUTOMATION_BUG** (fixture-restore app launch, PASS 2/2 isolated). No product bug. TS-07 stays in the TRAINING_SESSION impact group (not Core Sanity). Fixtures are commit-bound: rebuild per baseline. |
 
-Known limitations: CF-01 / 03 / 04 automation; TS fixture; pre-auth visibility is not security; physical keyboard overlap on a real phone unproven until checked.
+Known limitations: CF-01 / 03 / 04 automation; TS fixture commit-bound (rebuild per baseline) and TS-10 restore-launch automation bug; migration-preservation test missing; pre-auth visibility is not security; physical keyboard overlap on a real phone unproven until checked.
 
 ---
 
