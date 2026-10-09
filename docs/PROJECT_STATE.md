@@ -4,7 +4,7 @@
 
 ## Current status
 
-**TRAIN-QUICKBUILD-001A — ActivePlayerContext (`1707333`, 2026-10-09): IMPLEMENTED = PASS · CODE TESTED = PASS · ANDROID EXPORT = PASS · PYTHON PRODUCT QA = PASS for 001A (TS-05 gate failure = pre-existing React Native native crash, not a 001A regression) · PHYSICAL = not tested (no APK for 001A).** Open runtime issue RN-FABRIC-NATIVE-CRASH (below) is tracked separately; CAL-TEXT-IMPORT-001 starts only after the owner reviews it.
+**TRAIN-QUICKBUILD-001A — ActivePlayerContext (`1707333`, 2026-10-09): IMPLEMENTED = PASS · CODE TESTED = PASS · ANDROID EXPORT = PASS · PYTHON PRODUCT QA = PASS WITH ONE NON-001A PRE-EXISTING RUNTIME CRASH OBSERVED · PHYSICAL QA = NOT RUN.** Accepted by the owner 2026-10-09; the crash is not attributed to 001A. Next: CAL-TEXT-IMPORT-001 read-only design check.
 
 | 001A item | Result | Detail |
 |---|---|---|
@@ -12,7 +12,7 @@
 | Code gate | **PASS** | `npm run check` exit 0: typecheck PASS; lint 0 errors (1 pre-existing warning); **86 / 86 suites, 1493 / 1493 tests, 0 skipped**, ~63 s Jest (78 s total). Focused: 19 new tests (domain guard / global target, stale-context derivation, route tests HE / EN). |
 | Android local export | **PASS** | 3.41 MB Hermes bundle. |
 | Python Product QA | **PRECHECK 9/9 · CORE SANITY 7/7 · IMPACTED 18/19 → TS-05 2/2 PASS isolated** | QA harness `6a6edc4` (fingerprint `0774159567994b5a`), 110 min. QB-01…05 5/5 PASS. TS-05: app process died during fixture boot — native SIGSEGV in React Native Fabric (`MountingCoordinator::pullTransaction`), same signature as 6 earlier crashes on baselines without 001A code (incl. `1da4eca`); 3/3 clean cold launches, TS-05 2/2. Evidence `qa_evidence/1707333/`. |
-| Open runtime issue | **RN-FABRIC-NATIVE-CRASH — OPEN, pre-existing** | Debug dev-client on the emulator, ~7 occurrences 2026-10-07…09; release-APK impact unverified (confidence < 95 % on root category). Details: `product_qa/QA_AUTOMATION_STATE.md`. |
+| Open runtime issue | **RN-FABRIC-NATIVE-CRASH — OPEN · PRE-EXISTING · DEBUG DEV-CLIENT / EMULATOR OBSERVED · RELEASE-BUILD IMPACT UNKNOWN** | ~7 occurrences 2026-10-07…09, same SIGSEGV / Fabric signature before 001A. Owner decision 2026-10-09: accepted as a separate issue; no speculative RN / Fabric change; no destructive emulator workflow. **Release-build check deferred to the next APK milestone:** preview APK on the physical phone, bounded cold-launch repetition, crash check, logcat / crash evidence kept. Details: `product_qa/QA_AUTOMATION_STATE.md`. |
 
 **CAL-TEXT-IMPORT-001 (Weekly Training Schedule Import from Text): APPROVED DESIGN 2026-10-09 — NOT IMPLEMENTED** (ROADMAP order 2026-10-09: after 001A, before TRAIN-QUICKBUILD-001B).
 
