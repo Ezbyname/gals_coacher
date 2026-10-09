@@ -23,7 +23,9 @@ All verified by the owner on a physical Android device.
 **PERF-FOUNDATION-001 (library sort bottleneck — pre-existing since TRAIN-001): FIXED in `78c5585` (B1); measured on device: sort 1.2–4.5 s → 3–17 ms, tap → first row 0.57–0.87 s.**
 **TRAIN-TAXONOMY-001E (Workout Template classification): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS + PYTHON PRODUCT QA PASS (TX-11 on `a0ecfd4`); PHYSICAL pending (001F).**
 **KEYBOARD-FORMS fix (`a0ecfd4`, PRODUCT_SPEC §74): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS + PYTHON PRODUCT QA PASS (KB-01…06, WB-11); PHYSICAL pending.**
-**EX-GUIDE-001 Wave 1 (19 safety notes): CONTENT DRAFTED — NOT coach-reviewed, not committed.** Schema is now **v12**. 001F, EX-GUIDE-001, UX-VISUAL-001 and CAL-TRAIN-001: **not started** (EX-GUIDE-001 / UX-VISUAL-001 read-only audits approved 2026-10-08).
+**EX-GUIDE-001 Wave 1 (19 safety notes): CONTENT DRAFTED + CONTENT COACH-REVIEWED (`aca22d3`).**
+**UX-VISUAL-001A (design tokens + shared primitives): IMPLEMENTED + CODE TESTED + ANDROID EXPORT PASS (`1a8a177`); no screen changes.**
+**Milestone APK (`1da4eca`): APK BUILT = PASS (EAS preview `b99722a3`, v0.1.0 (1), 113.8 MB); APK INSTALLED: PENDING (owner's phone); PHYSICAL QA: PENDING.** Schema is now **v12**. 001F, EX-GUIDE-001, UX-VISUAL-001 and CAL-TRAIN-001: **not started** (EX-GUIDE-001 / UX-VISUAL-001 read-only audits approved 2026-10-08).
 **iOS (project baseline):** the current pre-Calendar application has passed iOS bundle export (`npx expo export --platform ios`); no physical iOS device/runtime validation or native iOS build has been performed.
 
 | Item | State |
@@ -97,6 +99,24 @@ list changed — and from gate G33: 1 (upgrade), 2 (entry gating), 14–18
 (Self-assessment navigation, multiple, persistence, English), 21–22 (edit
 player / add Basketball), 25 (player without Basketball), 28 (optional
 sport), 29–31 (positions, clear secondary, persistence).
+
+---
+
+## Milestone — UX-VISUAL-001A + EX-GUIDE Wave 1 + preview APK (2026-10-09)
+
+| Gate | Status | Evidence |
+|---|---|---|
+| EX-GUIDE-001 Wave 1 | **CONTENT DRAFTED + CONTENT COACH-REVIEWED** | `aca22d3` — owner review: 14 approved as drafted, 5 revised (PULL_UP, SLED_PUSH, TIP_DRILL, COMBO_MOVE_SERIES, FLOATERS) to the exact reviewed wording. The no-medical-claims check now matches "cure" as a whole word ("a secure bar" is not a claim). Coverage heuristic (speed / plyometric / power / advanced ⇒ note) documented as conservative, not domain truth. |
+| UX-VISUAL-001A | **IMPLEMENTED + CODE TESTED** | `1a8a177` — semantic tokens (text, surface, border, selected, disabled, error / warning / success / neutral), six training-domain tones (basketball orange, strength blue, power amber, speed green, mobility teal, skill purple; strong-on-tint ≥ 4.5:1 tested), radius, typography, elevation, icon sizes, 48 dp minimum target; shared Card, Pill / Toggle, SectionHeader, IconButton (foundation), StatusBadge, EmptyState (logical RTL / LTR layout, a11y roles / states, selected in text, stable testIDs). Existing colours / spacing / button heights unchanged (locked by test) — no screen changes, no icon package, no animation. 45 UI tests. |
+| Test infra | `1da4eca` | TEST-FLAKE-001 fixed: explicit 15 s budget for the library's multi-screen UI suite (only the 5 s timeout ever failed). |
+| Code gate (`1da4eca`) | **PASS** | `npm run check` 3 / 3 runs: **83 / 83 suites, 1474 / 1474 tests, 0 skipped, ~64–66 s**; typecheck PASS; lint 0 errors (1 pre-existing warning). |
+| Android local export | **PASS** | 3.6 MB Hermes bundle (not an APK). |
+| Python Product QA (`1da4eca`) | **67 / 71 PASS in the full run, then EL-03 / EL-04 PASS after harness fixes** | PRE 1–8, AT 2–8 & 10, CCOLOR 1–3, CV 1 & 3–7, EL 1–12, KB 1–6, TX 1–9 & 11–13, TS 1–2, WB 1–11 PASS. **CF-01 / 03 / 04 FAIL — AUTOMATION_BUG (open since `71b1d13`, non-blocking).** EL-03: AUTOMATION_BUG — FIXED (the filter-group helper stopped at a group title with every chip off-screen since the library became virtualized). EL-04 re-run: one UIAutomator segfault (ENVIRONMENT_LIMITATION), then cleanup helper made end-aware → PASS. TS-03…13: **NOT RUN** (v9 DB fixture refuses schema v12 — TEST_DATA_ISSUE; rebuild pending). Harness SHA-256 per file next to each run in `qa_evidence/1da4eca/runs-gate/`. |
+| APK build | **APK BUILT = PASS** | EAS `b99722a3-bfed-4b86-bf85-e623c0b47bb0`, profile `preview` (internal), source `1da4eca`, version 0.1.0 (1), existing remote keystore (same signing as earlier preview APKs → in-place upgrade), 113.8 MB. Artifact: https://expo.dev/artifacts/eas/QWkBodPAt99kpPaK6oVdv9EkjJzV3sEi-JawGlXkzcQ.apk |
+| APK installed on the physical phone | **PENDING** | The phone was not connected over ADB; the owner installs from the link OVER the existing app (never uninstall). |
+| Physical smoke / keyboard / RTL | **PENDING** | Owner checklist in this milestone's report. Emulator results are not physical results. |
+
+Known limitations: CF-01 / 03 / 04 automation; TS fixture; pre-auth visibility is not security; physical keyboard overlap on a real phone unproven until checked.
 
 ---
 
