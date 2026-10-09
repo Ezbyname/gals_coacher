@@ -126,6 +126,9 @@ describe('calendar event repository on real SQLite', () => {
         endAt: null,
         title: null,
         notes: null,
+        location: null,
+        source: null,
+        importBatchId: null,
         createdAt: T0,
         updatedAt: T0,
         activityType: { id: 'GAME', builtin: 'GAME', name: null, active: true },
@@ -145,6 +148,9 @@ describe('calendar event repository on real SQLite', () => {
           updated_at: T0,
           completed_at: null,
           completion_source: null,
+          location: null,
+          source: null,
+          import_batch_id: null,
         },
       ]);
       expect(await getCalendarEvent(db, gal, saved.id)).toEqual(saved);
@@ -284,6 +290,9 @@ describe('calendar event repository on real SQLite', () => {
         endAt: null,
         title: 'Stretch',
         notes: null,
+        location: null,
+        source: null,
+        importBatchId: null,
         createdAt: T0,
         updatedAt: T0 + 60_000,
         activityType: { id: 'RECOVERY', builtin: 'RECOVERY', name: null, active: true },
@@ -672,16 +681,19 @@ describe('calendar persistence boundaries', () => {
     },
   );
 
-  it('exports exactly create, get, list, the range read, update, delete and the explicit completion pair', () => {
+  it('exports exactly create, get, list, the range read, update, delete, the explicit completion pair and the import batch trio', () => {
     const exported = Object.keys(jest.requireActual('../calendarEventRepository'));
     expect(exported.sort()).toEqual([
       'createCalendarEvent',
+      'createCalendarEventBatch',
       'deleteCalendarEvent',
       'getCalendarEvent',
+      'listCalendarEventBatch',
       'listCalendarEvents',
       'listCalendarEventsInRange',
       'markCalendarEventCompleted',
       'undoCalendarEventCompletion',
+      'undoCalendarImport',
       'updateCalendarEvent',
     ]);
   });

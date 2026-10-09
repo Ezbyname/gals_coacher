@@ -857,6 +857,9 @@ describe('edit', () => {
         updated_at: NOW,
         completed_at: null,
         completion_source: null,
+        location: null,
+        source: null,
+        import_batch_id: null,
       },
     ]);
     // Details reloads on focus with the new values.

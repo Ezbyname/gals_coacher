@@ -1,6 +1,8 @@
 import {
   isCalendarCompletionSource,
+  isCalendarEventSource,
   validateCalendarEvent,
+  validateProvenance,
   type CalendarCompletion,
   type CalendarCompletionSource,
   validateCalendarEventRecord,
@@ -8,6 +10,7 @@ import {
   type CalendarEventCore,
   type CalendarEventErrors,
   type CalendarEventInput,
+  type CalendarEventSource,
 } from '@/domain/calendarEvent';
 import type { ActivityTypeRef } from '@/domain/activityType';
 import { isUuid } from '@/domain/ids';
@@ -62,17 +65,162 @@ export async function createCalendarEvent(
     await assertPlayerAndSport(db, playerId, valid.value, null);
     await assertActivityType(db, valid.value.type, null);
     const v = valid.value;
-    await db.runAsync(
-      `INSERT INTO calendar_events
-         (id, player_id, type, sport, start_at, end_at, title, notes, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, playerId, v.type, v.sport, v.startAt, v.endAt, v.title, v.notes, now, now],
-    );
+    await insertEvent(db, id, playerId, v, null, null, now);
     // Re-read inside the transaction: the saved result is parsed like any read.
     saved = await readEvent(db, playerId, id);
   });
   if (saved === null) throw new Error('createCalendarEvent: transaction finished without the saved row');
   return { ok: true, event: saved };
+}
+
+/** Unqueued insert of one validated event (provenance is null for hand-entered events). */
+async function insertEvent(
+  db: PlayerDb,
+  id: string,
+  playerId: string,
+  v: CalendarEventCore,
+  source: CalendarEventSource | null,
+  importBatchId: string | null,
+  now: number,
+): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO calendar_events
+       (id, player_id, type, sport, start_at, end_at, title, notes, location, source, import_batch_id,
+        created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, playerId, v.type, v.sport, v.startAt, v.endAt, v.title, v.notes, v.location, source, importBatchId, now, now],
+  );
+}
+
+/** One requested event of a batch that failed validation (index in the request). */
+export interface BatchEventErrors {
+  readonly index: number;
+  readonly errors: CalendarEventErrors;
+}
+
+export type CreateCalendarEventBatchResult =
+  | { readonly ok: true; readonly importBatchId: string; readonly events: CalendarEvent[] }
+  | { readonly ok: false; readonly errors: readonly BatchEventErrors[] };
+
+/**
+ * Creates the events of ONE confirmed import for one Player — ALL OR NOTHING
+ * (CAL-TEXT-IMPORT-001B). The inputs are the reviewed values, used exactly as
+ * given: nothing is parsed, inferred, re-typed or completed here (no end time
+ * is invented; the location is what the user confirmed).
+ *
+ * Every input is validated first; any invalid one → a result listing each
+ * failing index, and nothing is written. Then, in one transaction: the Player
+ * must exist, every sport be assigned and active, every Activity Type exist
+ * and be active — any failure throws and the transaction writes nothing. Every
+ * event gets a client id, `source` and one NEW `importBatchId` shared by the
+ * whole batch, and `createdAt = updatedAt = clock.wallNow()`. Returns the saved
+ * events in request order (re-read and parsed like any read).
+ */
+export async function createCalendarEventBatch(
+  db: PlayerDb,
+  playerId: string,
+  request: { readonly events: readonly CalendarEventInput[]; readonly source: CalendarEventSource },
+  deps: { ids: IdService; clock: Clock },
+): Promise<CreateCalendarEventBatchResult> {
+  if (request.events.length === 0) throw new RangeError('createCalendarEventBatch: an import has at least one event');
+  if (!isCalendarEventSource(request.source)) throw new RangeError(`createCalendarEventBatch: unknown source ${String(request.source)}`);
+  const now = deps.clock.wallNow();
+  const validated = request.events.map((event) => validateCalendarEvent(event));
+  const errors = validated.flatMap((v, index) => (v.ok ? [] : [{ index, errors: v.errors }]));
+  if (errors.length > 0) return { ok: false, errors };
+  const values = validated.map((v) => (v as { ok: true; value: CalendarEventCore }).value);
+
+  const importBatchId = deps.ids.newUuid();
+  const ids = values.map(() => deps.ids.newUuid());
+  let saved = null as CalendarEvent[] | null;
+  await writeTransaction(db, async () => {
+    const checkedTypes = new Set<string>();
+    for (const v of values) {
+      await assertPlayerAndSport(db, playerId, v, null);
+      if (!checkedTypes.has(v.type)) {
+        await assertActivityType(db, v.type, null);
+        checkedTypes.add(v.type);
+      }
+    }
+    for (let i = 0; i < values.length; i++) {
+      await insertEvent(db, ids[i]!, playerId, values[i]!, request.source, importBatchId, now);
+    }
+    const read = await Promise.all(ids.map((id) => readEvent(db, playerId, id)));
+    if (read.some((e) => e === null)) throw new Error('createCalendarEventBatch: a saved row could not be re-read');
+    saved = read as CalendarEvent[];
+  });
+  if (saved === null) throw new Error('createCalendarEventBatch: transaction finished without the saved rows');
+  return { ok: true, importBatchId, events: saved };
+}
+
+/**
+ * This Player's events of one import, in the canonical order. Identified ONLY
+ * by (playerId, importBatchId) — never by date, type, title or location; a
+ * batch id of another Player returns nothing.
+ */
+export function listCalendarEventBatch(
+  db: PlayerDb,
+  playerId: string,
+  importBatchId: string,
+): Promise<CalendarEvent[]> {
+  return runSerialized(db, () => readBatch(db, playerId, importBatchId));
+}
+
+async function readBatch(db: PlayerDb, playerId: string, importBatchId: string): Promise<CalendarEvent[]> {
+  if (!isUuid(playerId) || !isUuid(importBatchId)) return [];
+  const rows = await db.getAllAsync<EventRow>(
+    `${SELECT_EVENTS} WHERE e.player_id = ? AND e.import_batch_id = ? ORDER BY e.start_at ASC, e.id ASC`,
+    [playerId, importBatchId],
+  );
+  return rows.map(parseEventRow);
+}
+
+/** Why an event of an undone import was kept instead of deleted. */
+export type ImportUndoKeptReason = 'COMPLETED' | 'EDITED';
+
+export interface UndoCalendarImportResult {
+  readonly deletedIds: readonly string[];
+  readonly kept: readonly { readonly id: string; readonly reason: ImportUndoKeptReason }[];
+}
+
+/**
+ * Undoes one import (V1: offered on the success screen right after the
+ * import). In one transaction, over this Player's events of THIS batch only
+ * (matched by player_id AND import_batch_id AND id — nothing else):
+ *  - an event marked completed is KEPT (COMPLETED) — never silently deleted;
+ *  - an event edited after the import is KEPT (EDITED): every edit sets
+ *    `updatedAt` (completion does not), so `updatedAt ≠ createdAt` proves an
+ *    edit. Limit: an edit in the very millisecond of the import would not be
+ *    seen (not reachable through the UI);
+ *  - every other event of the batch is deleted.
+ * Unknown / foreign batch → nothing happens. Persistent "undo later" is not
+ * claimed by V1; the stored batch id keeps it possible.
+ */
+export async function undoCalendarImport(
+  db: PlayerDb,
+  playerId: string,
+  importBatchId: string,
+): Promise<UndoCalendarImportResult> {
+  let result: UndoCalendarImportResult = { deletedIds: [], kept: [] };
+  await writeTransaction(db, async () => {
+    const events = await readBatch(db, playerId, importBatchId);
+    const kept: { id: string; reason: ImportUndoKeptReason }[] = [];
+    const deletedIds: string[] = [];
+    for (const e of events) {
+      if (e.completion !== null) kept.push({ id: e.id, reason: 'COMPLETED' });
+      else if (e.updatedAt !== e.createdAt) kept.push({ id: e.id, reason: 'EDITED' });
+      else {
+        await db.runAsync('DELETE FROM calendar_events WHERE id = ? AND player_id = ? AND import_batch_id = ?', [
+          e.id,
+          playerId,
+          importBatchId,
+        ]);
+        deletedIds.push(e.id);
+      }
+    }
+    result = { deletedIds, kept };
+  });
+  return result;
 }
 
 /**
@@ -95,7 +243,8 @@ export async function updateCalendarEvent(
   // Every field rule first (nothing is read or written for invalid input) —
   // except the title length, which depends on the stored title (below).
   const typedTitle = typeof input.title === 'string' ? input.title.trim() : null;
-  const fields = validateCalendarEvent(input, { storedTitle: typedTitle });
+  const typedLocation = typeof input.location === 'string' ? input.location.trim() : null;
+  const fields = validateCalendarEvent(input, { storedTitle: typedTitle, storedLocation: typedLocation });
   if (!fields.ok) return fields;
 
   let updated = null as CalendarEvent | null;
@@ -104,8 +253,10 @@ export async function updateCalendarEvent(
     // Authoritative read of the stored event before any write (fails closed when malformed).
     const existing = await readEvent(db, playerId, eventId);
     if (existing === null) throw new CalendarEventNotFoundError(playerId, eventId);
-    // A title over the limit is accepted only when it is the stored one, unchanged.
-    const valid = validateCalendarEvent(input, { storedTitle: existing.title });
+    // An edit that does not mention the location keeps the stored one (today's form has no location field).
+    const edited: CalendarEventInput = input.location === undefined ? { ...input, location: existing.location } : input;
+    // A title / location over the limit is accepted only when it is the stored one, unchanged.
+    const valid = validateCalendarEvent(edited, { storedTitle: existing.title, storedLocation: existing.location });
     if (!valid.ok) {
       rejected = valid;
       return; // nothing written
@@ -116,10 +267,11 @@ export async function updateCalendarEvent(
     await assertActivityType(db, valid.value.type, existing.type);
     const v = valid.value;
     await db.runAsync(
+      // Provenance (source, import_batch_id) is written once at creation and never edited.
       `UPDATE calendar_events
-          SET type = ?, sport = ?, start_at = ?, end_at = ?, title = ?, notes = ?, updated_at = ?
+          SET type = ?, sport = ?, start_at = ?, end_at = ?, title = ?, notes = ?, location = ?, updated_at = ?
         WHERE id = ? AND player_id = ?`,
-      [v.type, v.sport, v.startAt, v.endAt, v.title, v.notes, now, eventId, playerId],
+      [v.type, v.sport, v.startAt, v.endAt, v.title, v.notes, v.location, now, eventId, playerId],
     );
     updated = await readEvent(db, playerId, eventId);
   });
@@ -311,6 +463,7 @@ async function readEvent(db: PlayerDb, playerId: string, eventId: string): Promi
 // players.id and the player_sports key are unique, so rows never multiply.
 const SELECT_EVENTS = `
   SELECT e.id, e.player_id, e.type, e.sport, e.start_at, e.end_at, e.title, e.notes,
+         e.location, e.source, e.import_batch_id,
          e.created_at, e.updated_at, e.completed_at, e.completion_source,
          p.id AS owner_player_id, ps.player_id AS assignment_player_id,
          at.id AS at_id, at.builtin AS at_builtin, at.name AS at_name, at.active AS at_active,
@@ -330,6 +483,9 @@ type EventRow = {
   end_at: unknown;
   title: unknown;
   notes: unknown;
+  location: unknown;
+  source: unknown;
+  import_batch_id: unknown;
   created_at: unknown;
   updated_at: unknown;
   completed_at: unknown;
@@ -355,6 +511,7 @@ const RECORD_FIELDS = [
   'endAt',
   'title',
   'notes',
+  'location',
   'createdAt',
   'updatedAt',
 ] as const satisfies readonly (keyof CalendarEventErrors & CalendarEventDataField)[];
@@ -382,6 +539,7 @@ function parseEventRow(row: EventRow): CalendarEvent {
   if (!isNullableNumber(row.end_at)) throw fail('endAt', 'INVALID_VALUE');
   if (!isNullableString(row.title)) throw fail('title', 'INVALID_VALUE');
   if (!isNullableString(row.notes)) throw fail('notes', 'INVALID_VALUE');
+  if (!isNullableString(row.location)) throw fail('location', 'INVALID_VALUE');
   if (typeof row.created_at !== 'number') throw fail('createdAt', 'INVALID_VALUE');
   if (typeof row.updated_at !== 'number') throw fail('updatedAt', 'INVALID_VALUE');
 
@@ -392,6 +550,7 @@ function parseEventRow(row: EventRow): CalendarEvent {
     endAt: row.end_at as number | null,
     title: row.title as string | null,
     notes: row.notes as string | null,
+    location: row.location as string | null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   });
@@ -405,11 +564,22 @@ function parseEventRow(row: EventRow): CalendarEvent {
   }
   if (valid.value.title !== row.title) throw fail('title', 'INVALID_VALUE');
   if (valid.value.notes !== row.notes) throw fail('notes', 'INVALID_VALUE');
+  if (valid.value.location !== row.location) throw fail('location', 'INVALID_VALUE');
+
+  const provenance = validateProvenance(row.source, row.import_batch_id);
+  if (!provenance.ok) {
+    throw provenance.error === 'UNKNOWN_SOURCE'
+      ? fail('source', 'UNKNOWN_CODE')
+      : provenance.error === 'INVALID_BATCH_ID'
+        ? fail('importBatchId', 'INVALID_VALUE')
+        : fail(provenance.error === 'BATCH_REQUIRED' ? 'importBatchId' : 'source', 'INVALID_RELATIONSHIP');
+  }
 
   return {
     id: rawId,
     playerId,
     ...valid.value,
+    ...provenance.value,
     activityType: parseEventActivityType(row, fail),
     completion: parseCompletion(row, fail),
   };

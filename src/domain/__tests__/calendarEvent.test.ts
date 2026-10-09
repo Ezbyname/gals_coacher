@@ -40,7 +40,7 @@ describe('event types (Activity Type ids, ACTIVITY-001)', () => {
   it.each(BUILTIN_ACTIVITY_TYPES.filter((t) => t !== 'OTHER'))('%s is valid without a title', (type) => {
     expect(validateCalendarEvent({ ...base, type, title: null })).toEqual({
       ok: true,
-      value: { type, sport: 'BASKETBALL', startAt: START, endAt: START + HOUR, title: null, notes: null },
+      value: { type, sport: 'BASKETBALL', startAt: START, endAt: START + HOUR, title: null, notes: null, location: null },
     });
   });
 
@@ -76,6 +76,7 @@ describe('event types (Activity Type ids, ACTIVITY-001)', () => {
         endAt: START + HOUR,
         title: null,
         notes: null,
+        location: null,
       },
     });
     expect(errorsOf({ ...base, type: 'OTHER', title: '  ' })).toEqual({ title: 'REQUIRED_FOR_OTHER' });
@@ -299,6 +300,7 @@ describe('calendar domain boundaries', () => {
       .replace(/\/\/.*$/gm, '');
     expect(code).not.toMatch(/Date\.now|new Date|toISOString|getUTC|Date\.UTC/);
     expect(code).not.toMatch(/measurement|comparison|session|result/i);
-    expect(code).not.toMatch(/status|timezone|timeZone|recurr|series|reminder|location|deleted|sync/i);
+    // `location` is first-class event data since CAL-TEXT-IMPORT-001B (owner decision 2026-10-09).
+    expect(code).not.toMatch(/status|timezone|timeZone|recurr|series|reminder|deleted|sync/i);
   });
 });

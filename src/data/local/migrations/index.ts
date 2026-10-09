@@ -741,4 +741,35 @@ export const migrations: readonly Migration[] = [
       BEGIN SELECT RAISE(ABORT, 'a template classification is replaced, never rewritten'); END;
     `,
   },
+  {
+    // CAL-TEXT-IMPORT-001B. Location becomes first-class event data, and an
+    // event can say where it came from. Additive: three nullable columns, no
+    // existing row rewritten (every existing event upgrades with NULLs — no
+    // location, entered by hand). Text is stored trimmed and non-blank (same
+    // CHECK style as title / notes). `source` is NOT restricted to a value set
+    // here: known codes are validated in the domain, so a new origin needs no
+    // migration. A batch id never exists without a source. The partial index
+    // serves "this Player's events of that import" (Undo Import) without
+    // touching hand-entered events.
+    version: 13,
+    name: 'calendar_event_import',
+    sql: `
+      ALTER TABLE calendar_events
+        ADD COLUMN location TEXT
+        CHECK (location IS NULL OR length(trim(location, ' ' || char(9, 10, 11, 12, 13))) > 0);
+      ALTER TABLE calendar_events
+        ADD COLUMN source TEXT
+        CHECK (source IS NULL OR length(trim(source, ' ' || char(9, 10, 11, 12, 13))) > 0);
+      ALTER TABLE calendar_events
+        ADD COLUMN import_batch_id TEXT
+        CHECK (
+          import_batch_id IS NULL
+          OR (length(trim(import_batch_id, ' ' || char(9, 10, 11, 12, 13))) > 0 AND source IS NOT NULL)
+        );
+
+      CREATE INDEX calendar_events_player_import_batch
+        ON calendar_events (player_id, import_batch_id)
+        WHERE import_batch_id IS NOT NULL;
+    `,
+  },
 ];

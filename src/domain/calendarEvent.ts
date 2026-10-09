@@ -1,5 +1,5 @@
 import { isActivityTypeId, requiresTitle, type ActivityTypeId, type ActivityTypeRef } from './activityType';
-import type { Uuid } from './ids';
+import { isUuid, type Uuid } from './ids';
 import { V1_ENABLED_SPORTS, type SportKey } from './sport';
 
 /**
@@ -32,6 +32,35 @@ export interface CalendarCompletion {
   readonly source: CalendarCompletionSource;
 }
 
+/**
+ * Where an event came from when it was not entered by hand (CAL-TEXT-IMPORT-001,
+ * schema v13). NULL = entered by hand / created before provenance existed — not
+ * reinterpreted. New origins (e.g. another import format) are new codes here; the
+ * database deliberately does not restrict the value set (no migration per code).
+ */
+export const CALENDAR_EVENT_SOURCES = ['TEXT_IMPORT'] as const;
+export type CalendarEventSource = (typeof CALENDAR_EVENT_SOURCES)[number];
+
+export function isCalendarEventSource(value: unknown): value is CalendarEventSource {
+  return typeof value === 'string' && (CALENDAR_EVENT_SOURCES as readonly string[]).includes(value);
+}
+
+/** Sources whose events always belong to an import batch (one confirmed import = one batch id). */
+export function sourceRequiresBatch(source: CalendarEventSource): boolean {
+  return source === 'TEXT_IMPORT';
+}
+
+/**
+ * Provenance of an event, written once at creation and never edited:
+ * both null for a hand-entered event; for an imported one, its source and the
+ * id shared by every event of that confirmed import (never inferred from
+ * dates, types, titles or locations).
+ */
+export interface CalendarEventProvenance {
+  readonly source: CalendarEventSource | null;
+  readonly importBatchId: Uuid | null;
+}
+
 export interface CalendarEvent {
   readonly id: Uuid;
   readonly playerId: Uuid;
@@ -52,6 +81,12 @@ export interface CalendarEvent {
   readonly title: string | null;
   /** Trimmed; null when blank. */
   readonly notes: string | null;
+  /** Where it takes place (schema v13): trimmed; null when blank or unknown. First-class data, never folded into notes. */
+  readonly location: string | null;
+  /** See CalendarEventProvenance: null for events entered by hand. */
+  readonly source: CalendarEventSource | null;
+  /** The confirmed import this event was created by; null otherwise. */
+  readonly importBatchId: Uuid | null;
   /** Epoch milliseconds; set once. */
   readonly createdAt: number;
   /** Epoch milliseconds; set on create and on every edit (not by completion). */
@@ -68,6 +103,8 @@ export interface CalendarEventInput {
   readonly endAt?: number | null;
   readonly title?: string | null;
   readonly notes?: string | null;
+  /** Omitted (undefined) on an edit = keep the stored location; null / blank = no location. */
+  readonly location?: string | null;
 }
 
 /** Validated user fields, ready to persist; ids and timestamps are added by the repository. */
@@ -78,6 +115,7 @@ export interface CalendarEventCore {
   readonly endAt: number | null;
   readonly title: string | null;
   readonly notes: string | null;
+  readonly location: string | null;
 }
 
 export type CalendarEventErrors = {
@@ -87,6 +125,7 @@ export type CalendarEventErrors = {
   endAt?: 'INVALID_TIMESTAMP' | 'NOT_AFTER_START';
   title?: 'INVALID_VALUE' | 'REQUIRED_FOR_OTHER' | 'TOO_LONG';
   notes?: 'INVALID_VALUE';
+  location?: 'INVALID_VALUE' | 'TOO_LONG';
   createdAt?: 'INVALID_TIMESTAMP';
   updatedAt?: 'INVALID_TIMESTAMP';
 };
@@ -116,6 +155,9 @@ function readSport(value: unknown): SportKey | null | typeof INVALID {
 /** The longest title a user may enter (characters, counted after trimming). */
 export const CALENDAR_TITLE_MAX_LENGTH = 35;
 
+/** The longest location a user may enter (characters, after trimming). Owner may change it here. */
+export const CALENDAR_LOCATION_MAX_LENGTH = 80;
+
 /**
  * Validates what the user entered. Nothing is clamped or normalized except
  * trimming text (blank → null). Timestamps must be whole milliseconds (safe
@@ -128,17 +170,23 @@ export const CALENDAR_TITLE_MAX_LENGTH = 35;
  */
 export function validateCalendarEvent(
   input: CalendarEventInput,
-  options: { readonly storedTitle?: string | null } = {},
+  options: { readonly storedTitle?: string | null; readonly storedLocation?: string | null } = {},
 ): CalendarEventValidation {
   const fields = validateFields(input);
   const title = readText(input.title);
-  const tooLong =
+  const titleTooLong =
     typeof title === 'string' &&
     title.length > CALENDAR_TITLE_MAX_LENGTH &&
     title !== (options.storedTitle ?? null);
-  if (!tooLong) return fields;
+  const location = readText(input.location);
+  const locationTooLong =
+    typeof location === 'string' &&
+    location.length > CALENDAR_LOCATION_MAX_LENGTH &&
+    location !== (options.storedLocation ?? null);
+  if (!titleTooLong && !locationTooLong) return fields;
   const errors: CalendarEventErrors = fields.ok ? {} : { ...fields.errors };
-  if (errors.title === undefined) errors.title = 'TOO_LONG';
+  if (titleTooLong && errors.title === undefined) errors.title = 'TOO_LONG';
+  if (locationTooLong && errors.location === undefined) errors.location = 'TOO_LONG';
   return { ok: false, errors };
 }
 
@@ -170,16 +218,44 @@ function validateFields(input: CalendarEventInput): CalendarEventValidation {
   const notes = readText(input.notes);
   if (notes === INVALID) errors.notes = 'INVALID_VALUE';
 
+  const location = readText(input.location);
+  if (location === INVALID) errors.location = 'INVALID_VALUE';
+
   if (
     Object.keys(errors).length > 0 ||
     type === null ||
     sport === INVALID ||
     title === INVALID ||
-    notes === INVALID
+    notes === INVALID ||
+    location === INVALID
   ) {
     return { ok: false, errors };
   }
-  return { ok: true, value: { type, sport, startAt, endAt, title, notes } };
+  return { ok: true, value: { type, sport, startAt, endAt, title, notes, location } };
+}
+
+export type CalendarEventProvenanceError = 'UNKNOWN_SOURCE' | 'INVALID_BATCH_ID' | 'BATCH_WITHOUT_SOURCE' | 'BATCH_REQUIRED';
+
+/**
+ * Provenance rules (written by the import path only): a batch id is a UUID and
+ * never appears without a source; a source that groups events (TEXT_IMPORT)
+ * always has one; an unknown source code is refused (validated here, not by a
+ * database CHECK, so new codes need no migration).
+ */
+export function validateProvenance(
+  source: unknown,
+  importBatchId: unknown,
+): { ok: true; value: CalendarEventProvenance } | { ok: false; error: CalendarEventProvenanceError } {
+  if (source === null && importBatchId === null) return { ok: true, value: { source: null, importBatchId: null } };
+  if (source === null) return { ok: false, error: 'BATCH_WITHOUT_SOURCE' };
+  if (!isCalendarEventSource(source)) return { ok: false, error: 'UNKNOWN_SOURCE' };
+  if (importBatchId === null) {
+    return sourceRequiresBatch(source)
+      ? { ok: false, error: 'BATCH_REQUIRED' }
+      : { ok: true, value: { source, importBatchId: null } };
+  }
+  if (typeof importBatchId !== 'string' || !isUuid(importBatchId)) return { ok: false, error: 'INVALID_BATCH_ID' };
+  return { ok: true, value: { source, importBatchId } };
 }
 
 /** A stored event's fields plus its timestamps (used when reading or writing a full record). */
