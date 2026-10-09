@@ -2,6 +2,8 @@ import { router, type Href } from 'expo-router';
 
 export const schedulePath = (playerId: string) => `/children/${playerId}/schedule` as const;
 export const newEventPath = (playerId: string) => `/children/${playerId}/schedule/new` as const;
+/** CAL-TEXT-IMPORT-001C: import a weekly schedule from pasted text for this Player. */
+export const importSchedulePath = (playerId: string) => `/children/${playerId}/schedule/import` as const;
 export const eventPath = (playerId: string, eventId: string) =>
   `/children/${playerId}/schedule/${eventId}` as const;
 export const editEventPath = (playerId: string, eventId: string) =>

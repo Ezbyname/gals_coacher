@@ -14,7 +14,7 @@ import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { colors, spacing, touch } from '@/ui/theme';
 
 import { calendarErrorMessage, eventHeading, eventName, eventSubtitle, sportLabel } from './calendarLabels';
-import { eventPath, newEventPath } from './calendarNavigation';
+import { eventPath, importSchedulePath, newEventPath } from './calendarNavigation';
 import { eventTimeLines, formatEventWhen, isInProgress } from './formatEventTime';
 import { ErrorScreen, LoadingScreen } from './StatusScreen';
 
@@ -85,6 +85,12 @@ export function CalendarAgenda({ playerId }: { playerId: string }) {
         testID="schedule-add"
         label={t('calendar.add')}
         onPress={() => router.push(newEventPath(playerId))}
+      />
+      <BigButton
+        testID="schedule-import-text"
+        variant="secondary"
+        label={t('calendarImport.entry')}
+        onPress={() => router.push(importSchedulePath(playerId))}
       />
 
       {isEmpty ? (

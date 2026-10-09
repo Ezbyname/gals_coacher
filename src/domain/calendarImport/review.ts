@@ -25,8 +25,12 @@ export interface ImportCandidate {
   readonly line: number;
   readonly sourceText: string;
   readonly date: CalendarDate;
-  /** Where the date came from: the weekday in the chosen week, or a date written in the text. */
-  readonly dateFrom: 'WEEKDAY' | 'EXPLICIT_DATE';
+  /**
+   * Where the date came from: the weekday in the chosen week, a date written in
+   * the text, or the user's own edit in the Preview (then it is the user's
+   * decision and is no longer compared with the message's weekday).
+   */
+  readonly dateFrom: 'WEEKDAY' | 'EXPLICIT_DATE' | 'EDITED';
   /** The weekday the text named (kept to show a weekday / date disagreement). */
   readonly textWeekday: Weekday | null;
   readonly start: ParsedTime;
@@ -118,7 +122,15 @@ export interface ExistingSlot {
   readonly start: ParsedTime;
   readonly end: ParsedTime | null;
   readonly type: ActivityTypeId;
+  /** The stored event (for showing both sides of a possible duplicate). */
+  readonly id?: string;
+  readonly title?: string | null;
 }
+
+/** What a candidate may duplicate: an event already in the calendar, or another line of this paste. */
+export type DuplicateMatch =
+  | { readonly kind: 'EXISTING'; readonly event: ExistingSlot }
+  | { readonly kind: 'IN_IMPORT'; readonly otherKey: string };
 
 /** Starts this close (minutes) count as "the same time" when an end is missing. */
 export const DUPLICATE_START_TOLERANCE_MIN = 15;
@@ -143,18 +155,31 @@ export function findPossibleDuplicates(
   candidates: readonly ImportCandidate[],
   existing: readonly ExistingSlot[],
 ): Set<string> {
-  const flagged = new Set<string>();
+  return new Set(findDuplicateMatches(candidates, existing).keys());
+}
+
+/**
+ * The same rule, with WHAT each flagged candidate looks like — so the Preview
+ * can show both sides ("from the import" and "already in the calendar"). An
+ * existing event is preferred over a repeat inside the paste.
+ */
+export function findDuplicateMatches(
+  candidates: readonly ImportCandidate[],
+  existing: readonly ExistingSlot[],
+): Map<string, DuplicateMatch> {
+  const matches = new Map<string, DuplicateMatch>();
   candidates.forEach((c, i) => {
-    if (existing.some((e) => looksSame(c, e))) flagged.add(c.key);
+    const event = existing.find((e) => looksSame(c, e));
+    if (event) matches.set(c.key, { kind: 'EXISTING', event });
     for (let j = 0; j < i; j++) {
       const other = candidates[j]!;
       if (looksSame(c, other)) {
-        flagged.add(c.key);
-        flagged.add(other.key);
+        if (!matches.has(c.key)) matches.set(c.key, { kind: 'IN_IMPORT', otherKey: other.key });
+        if (!matches.has(other.key)) matches.set(other.key, { kind: 'IN_IMPORT', otherKey: c.key });
       }
     }
   });
-  return flagged;
+  return matches;
 }
 
 // ------------------------------------------------------------------ summary

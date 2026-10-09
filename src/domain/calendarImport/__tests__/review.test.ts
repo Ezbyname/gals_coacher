@@ -2,6 +2,7 @@ import { calendarDate } from '../../calendarDate';
 import {
   buildCandidates,
   candidateIssues,
+  findDuplicateMatches,
   findPossibleDuplicates,
   reviewSummary,
   type ImportCandidate,
@@ -178,6 +179,29 @@ describe('CTI-25 possible duplicates (warning only, never dropped)', () => {
     const twice = candidatesOf('יום שני 18:40-20:10\nיום שני 18:40-20:10');
     expect([...findPossibleDuplicates(twice, [])].sort()).toEqual(['s1', 's2']);
     expect(findPossibleDuplicates(candidatesOf('יום שני 08:00-09:00 ו 18:00-19:30'), []).size).toBe(0);
+  });
+});
+
+describe('duplicate matches show both sides; an edited date is the user decision', () => {
+  const cs = candidatesOf(WHATSAPP_EXAMPLE_1);
+  const monday = calendarDate(2026, 10, 12)!;
+
+  it('an existing event is reported with its own values', () => {
+    const event = { id: 'e1', title: 'Team', date: monday, start: { hour: 18, minute: 30 }, end: { hour: 20, minute: 0 }, type: 'TEAM_TRAINING' };
+    expect(findDuplicateMatches(cs, [event]).get(cs[0]!.key)).toEqual({ kind: 'EXISTING', event });
+  });
+
+  it('a repeat inside the paste points at the other candidate', () => {
+    const twice = candidatesOf('יום שני 18:40-20:10\nיום שני 18:40-20:10');
+    const m = findDuplicateMatches(twice, []);
+    expect(m.get('s2')).toEqual({ kind: 'IN_IMPORT', otherKey: 's1' });
+    expect(m.get('s1')).toEqual({ kind: 'IN_IMPORT', otherKey: 's2' });
+  });
+
+  it('after the user edits the date, the message weekday is no longer compared', () => {
+    const [c] = candidatesOf('יום שני 14/10 18:00-19:00');
+    expect(candidateIssues(c!, week)).toEqual(['WEEKDAY_DATE_MISMATCH']);
+    expect(candidateIssues({ ...c!, dateFrom: 'EDITED' }, week)).toEqual([]);
   });
 });
 

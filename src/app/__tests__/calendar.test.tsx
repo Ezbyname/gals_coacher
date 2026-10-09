@@ -140,7 +140,7 @@ function answerAlerts(answer: 'confirm' | 'cancel') {
 }
 
 describe('route tree', () => {
-  it('the four schedule screens exist under the Player route, named with `/` on every OS', () => {
+  it('the five schedule screens exist under the Player route, named with `/` on every OS', () => {
     expect(
       Object.keys(routes)
         .filter((r) => r.includes('schedule'))
@@ -148,6 +148,8 @@ describe('route tree', () => {
     ).toEqual([
       'children/[id]/schedule/[eventId]/edit',
       'children/[id]/schedule/[eventId]/index',
+      // CAL-TEXT-IMPORT-001C: import weekly trainings from text (a static segment, before [eventId]).
+      'children/[id]/schedule/import',
       'children/[id]/schedule/index',
       'children/[id]/schedule/new',
     ]);
