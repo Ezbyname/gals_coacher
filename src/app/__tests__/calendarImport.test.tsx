@@ -115,7 +115,10 @@ describe('CAL-TEXT-IMPORT-001C import wizard + preview', () => {
 
     expect(text('import-row-s2-status-label')).toBe('⚠ דורש בדיקה');
     expect(text('import-row-s2-time')).toBe('16:30–?');
-    expect(text('import-row-s2-issue-END_TIME_MISSING')).toBe('חסרה שעת סיום — יש להזין שעת סיום או להסיר את האימון.');
+    expect(text('import-row-s2-issue-END_TIME_MISSING-text')).toBe(
+      'אין שעת סיום — אפשר להשאיר בלי, להזין שעת סיום או להסיר את האימון.',
+    );
+    expect(text('import-row-s2-keep-no-end-label')).toBe('השאר ללא שעת סיום');
     expect(text('import-row-s2-details')).toBe('משחק אימון נגד העומר');
     expect(text('import-row-s2-suggestion')).toMatch(/^סוג מוצע: /);
     expect(text('import-row-s1-details')).toBe('אחרי בית ספר');
@@ -136,6 +139,25 @@ describe('CAL-TEXT-IMPORT-001C import wizard + preview', () => {
     expect(screen.queryByTestId('import-row-s2-suggestion')).toBeNull(); // GAME chosen by the user
     expect(isDisabled('import-continue')).toBe(false);
     expect(await eventCount()).toBe(0);
+  });
+
+  it('an unknown end is allowed: "keep without end time" → Continue with 3, Tuesday still 16:30–?', async () => {
+    await prepare('he');
+    renderRouter(routes, { initialUrl: importUrl() });
+    await analyze(WHATSAPP_EXAMPLE_2);
+    press('import-row-s2-keep-no-end');
+    expect(text('import-row-s2-status-label')).toBe('✓ מוכן');
+    expect(text('import-row-s2-time')).toBe('16:30–?');
+    expect(text('import-row-s2-resolved-END_TIME_MISSING')).toBe('✓ לפי בחירתך');
+    expect(isDisabled('import-continue')).toBe(false);
+    expect(cta()).toBe('המשך עם 3 אימונים');
+    // The editor can also clear an end the user had set.
+    press('import-row-s1-edit');
+    press('import-row-s1-edit-clear-end');
+    expect(text('import-row-s1-edit-end-value')).toBe('לא הוגדר');
+    press('import-row-s1-edit-done');
+    expect(text('import-row-s1-time')).toBe('15:00–?');
+    expect(text('import-row-s1-status-label')).toBe('⚠ דורש בדיקה');
   });
 
   it('removing the incomplete Tuesday unblocks: Continue with 2', async () => {

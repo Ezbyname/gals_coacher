@@ -78,11 +78,16 @@ describe('example 2 → missing end time (CTI-04, CTI-05, CTI-08, CTI-09)', () =
   const cs = candidatesOf(WHATSAPP_EXAMPLE_2);
   const tue = cs[1]!;
 
-  it('CTI-04: Tuesday is END_TIME_MISSING (BLOCKING) and blocks "Add 3 trainings"', () => {
+  it('CTI-04: Tuesday is END_TIME_MISSING (REVIEW: a decision is needed) and stops the import until decided', () => {
     expect(candidateIssues(tue, week)).toContain('END_TIME_MISSING');
     const summary = reviewSummary(cs, issuesOf(cs), decisions());
     expect(summary.canConfirm).toBe(false);
     expect([...summary.needsReview.keys()]).toEqual([tue.key]);
+  });
+
+  it('an end may be unknown (e.g. a game): "keep without end time" resolves it; the end stays null', () => {
+    expect(reviewSummary(cs, issuesOf(cs), decisions([], { [tue.key]: ['END_TIME_MISSING'] })).canConfirm).toBe(true);
+    expect(tue.end).toBeNull();
   });
 
   it('CTI-05: the user enters an end time → the candidate is valid', () => {

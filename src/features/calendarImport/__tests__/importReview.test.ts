@@ -50,6 +50,14 @@ describe('import review state (001C, pure — nothing is written)', () => {
     expect(back.candidates[1]).toEqual(s.candidates[1]); // the same candidate, values kept
   });
 
+  it('keep without end time (owner 2026-10-09): Tuesday is confirmable with NO end — never invented', () => {
+    const s = analyzeSchedule(WHATSAPP_EXAMPLE_2, week, 'TEAM_TRAINING', []);
+    const tue = s.candidates[1]!;
+    const kept = acknowledge(s, tue.key, 'END_TIME_MISSING');
+    expect(viewOf(kept).summary.canConfirm).toBe(true);
+    expect(reviewedBatch(kept)[1]!.end).toBeNull();
+  });
+
   it('editing in an end time fixes Tuesday; an end before the start blocks; the suggestion stays INFO', () => {
     const s = analyzeSchedule(WHATSAPP_EXAMPLE_2, week, 'TEAM_TRAINING', []);
     const tue = s.candidates[1]!;

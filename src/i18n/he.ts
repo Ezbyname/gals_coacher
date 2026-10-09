@@ -672,7 +672,7 @@ export const he = {
     editA11y: 'עריכת {day} {time}',
     removeA11y: 'הסרת {day} {time}',
     issue: {
-      END_TIME_MISSING: 'חסרה שעת סיום — יש להזין שעת סיום או להסיר את האימון.',
+      END_TIME_MISSING: 'אין שעת סיום — אפשר להשאיר בלי, להזין שעת סיום או להסיר את האימון.',
       END_NOT_AFTER_START: 'הסיום צריך להיות אחרי ההתחלה.',
       TITLE_REQUIRED: 'לסוג הזה נדרשת כותרת.',
     },
@@ -686,6 +686,8 @@ export const he = {
     duplicateExisting: 'כבר ביומן: {when}',
     duplicateInImport: 'מופיע גם בייבוא הזה: {when}',
     keepAnyway: 'השאר בכל זאת',
+    keepWithoutEnd: 'השאר ללא שעת סיום',
+    clearEnd: 'ללא שעת סיום',
     keepAnywayA11y: 'השאר את הכפילות האפשרית {day} {time}',
     removeFromImport: 'הסר מהייבוא',
     resolvedByYou: '✓ לפי בחירתך',

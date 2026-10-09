@@ -14,9 +14,10 @@ import { dateInWeek, isInWeek, type ImportWeek } from './week';
  *
  * Issue severity:
  *  - BLOCKING: an included candidate cannot be confirmed until it is fixed
- *    (or the candidate is removed). No "keep without end time" in V1.
- *  - REVIEW: the user must decide — "Keep anyway" or Remove — never decided
- *    for them (date outside the week, weekday/date disagree, possible duplicate).
+ *    (or the candidate is removed): an end before the start, OTHER without a title.
+ *  - REVIEW: the user must decide — never decided for them: no end time (keep it
+ *    without one — e.g. a game whose end is unknown — or enter one), date outside
+ *    the week, weekday/date disagree, possible duplicate.
  *  - INFO: shown, never blocks (a different suggested type).
  */
 
@@ -56,7 +57,7 @@ export type ImportIssueCode =
 export type ImportIssueSeverity = 'BLOCKING' | 'REVIEW' | 'INFO';
 
 export const ISSUE_SEVERITY: Readonly<Record<ImportIssueCode, ImportIssueSeverity>> = {
-  END_TIME_MISSING: 'BLOCKING',
+  END_TIME_MISSING: 'REVIEW', // owner 2026-10-09: an end may be unknown (e.g. a game)
   END_NOT_AFTER_START: 'BLOCKING',
   TITLE_REQUIRED: 'BLOCKING',
   DATE_OUTSIDE_WEEK: 'REVIEW',

@@ -673,7 +673,7 @@ export const en = {
     editA11y: 'Edit {day} {time}',
     removeA11y: 'Remove {day} {time}',
     issue: {
-      END_TIME_MISSING: 'Missing end time — enter an end time or remove this training.',
+      END_TIME_MISSING: 'No end time — keep it without one, enter one, or remove this training.',
       END_NOT_AFTER_START: 'The end must be after the start.',
       TITLE_REQUIRED: 'This type needs a title.',
     },
@@ -687,6 +687,8 @@ export const en = {
     duplicateExisting: 'Already in the calendar: {when}',
     duplicateInImport: 'Also in this import: {when}',
     keepAnyway: 'Keep anyway',
+    keepWithoutEnd: 'Keep without end time',
+    clearEnd: 'No end time',
     keepAnywayA11y: 'Keep possible duplicate {day} {time}',
     removeFromImport: 'Remove from import',
     resolvedByYou: '✓ Your choice',

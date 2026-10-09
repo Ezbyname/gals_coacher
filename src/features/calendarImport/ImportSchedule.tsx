@@ -449,7 +449,28 @@ function CandidateRow(props: RowProps) {
       ) : null}
 
       {issues.map((code) => {
-        if (code === 'END_TIME_MISSING' || code === 'END_NOT_AFTER_START' || code === 'TITLE_REQUIRED') {
+        if (code === 'END_TIME_MISSING') {
+          // An end may be unknown (e.g. a game): the user keeps it without one, enters one, or removes it.
+          return (
+            <View key={code} style={styles.gap} testID={`${id}-issue-${code}`}>
+              <Text style={styles.warning} testID={`${id}-issue-${code}-text`}>
+                {t('calendarImport.issue.END_TIME_MISSING')}
+              </Text>
+              {resolved(code) ? (
+                <Text style={styles.muted} testID={`${id}-resolved-${code}`}>
+                  {t('calendarImport.resolvedByYou')}
+                </Text>
+              ) : (
+                <RowAction
+                  testID={`${id}-keep-no-end`}
+                  label={t('calendarImport.keepWithoutEnd')}
+                  onPress={() => props.onAcknowledge(code)}
+                />
+              )}
+            </View>
+          );
+        }
+        if (code === 'END_NOT_AFTER_START' || code === 'TITLE_REQUIRED') {
           return (
             <Text key={code} style={styles.warning} testID={`${id}-issue-${code}`}>
               {t(`calendarImport.issue.${code}`)}
@@ -611,6 +632,9 @@ function CandidateEditor({
           onSelect={(v) => setEnd({ hour: v.hour, minute: v.minute })}
         />
       </View>
+      {end !== null ? (
+        <RowAction testID={`${id}-edit-clear-end`} label={t('calendarImport.clearEnd')} onPress={() => setEnd(null)} />
+      ) : null}
       <TextField testID={`${id}-edit-location`} label={t('calendarImport.field.location')} value={location} onChangeText={setLocation} />
       <ChoiceChips<ActivityTypeId>
         testID={`${id}-edit-type`}
