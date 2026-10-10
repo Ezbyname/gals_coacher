@@ -322,9 +322,14 @@ describe('agenda', () => {
     expect(text(`schedule-event-${placed.id}-location`)).toBe(`📍 ${FSI}עין כרמל${PDI}`); // isolated: safe in RTL and LTR
     expect(screen.queryByTestId(`schedule-event-${bare.id}-location`)).toBeNull();
     expect(screen.getAllByTestId(/^schedule-event-.*-location$/)).toHaveLength(1);
+    // Screen readers hear the location (never an empty / placeholder one).
+    const a11y = (testID: string) => stripBidi(screen.getByTestId(testID).props.accessibilityLabel);
+    expect(a11y(`schedule-event-${placed.id}`)).toBe('אימון קבוצתי, 6 באוק׳ 2026 · 18:40–20:10, מיקום: עין כרמל');
+    expect(a11y(`schedule-event-${bare.id}`)).not.toMatch(/מיקום/);
     press(`schedule-event-${placed.id}`);
     await screen.findByTestId('event-details-location');
     expect(plain('event-details-location')).toBe('📍 עין כרמל');
+    expect(a11y('event-details-location')).toBe('מיקום: עין כרמל');
   });
 
   it('English: the location line reads "📍 <place>"; an event without one shows no location in details', async () => {
@@ -334,6 +339,9 @@ describe('agenda', () => {
     renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule` });
     await screen.findByTestId('schedule-upcoming');
     expect(plain(`schedule-event-${placed.id}-location`)).toBe('📍 Ein Carmel');
+    const a11y = (testID: string) => stripBidi(screen.getByTestId(testID).props.accessibilityLabel);
+    expect(a11y(`schedule-event-${placed.id}`)).toBe('Game, 6 Oct 2026 · 16:30, Location: Ein Carmel');
+    expect(a11y(`schedule-event-${bare.id}`)).toBe('Gym, 7 Oct 2026 · 07:00');
     press(`schedule-event-${bare.id}`);
     await screen.findByTestId('event-details-start');
     expect(screen.queryByTestId('event-details-location')).toBeNull();

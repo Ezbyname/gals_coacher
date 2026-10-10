@@ -745,6 +745,8 @@ export const he = {
     noUpcoming: 'אין אירועים קרובים.',
     inProgress: 'עכשיו',
     locationLine: '📍 {place}',
+    locationA11y: 'מיקום: {place}',
+    eventA11yWithLocation: '{label}, מיקום: {place}',
     newTitle: 'אירוע חדש',
     editTitle: 'עריכת אירוע',
     detailsTitle: 'פרטי האירוע',

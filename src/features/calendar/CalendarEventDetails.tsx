@@ -166,7 +166,10 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
           </Text>
         ) : null}
         {event.location !== null ? (
-          <Text style={styles.line} testID="event-details-location">
+          <Text
+            style={styles.line}
+            testID="event-details-location"
+            accessibilityLabel={t('calendar.locationA11y', { place: event.location })}>
             {t('calendar.locationLine', { place: event.location })}
           </Text>
         ) : null}

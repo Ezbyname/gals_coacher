@@ -136,10 +136,12 @@ function EventCard({ event, now, playerId }: { event: CalendarEvent; now: number
   const inProgress = isInProgress(event, now);
   const subtitle = eventSubtitle(t, event);
   const lines = eventTimeLines(event, language);
-  const label = t(inProgress ? 'calendar.eventA11yInProgress' : 'calendar.eventA11y', {
+  const base = t(inProgress ? 'calendar.eventA11yInProgress' : 'calendar.eventA11y', {
     event: eventName(t, event),
     when: stripBidi(formatEventWhen(t, event, language)),
   });
+  const label =
+    event.location === null ? base : t('calendar.eventA11yWithLocation', { label: base, place: event.location });
   // Completion is shown, never used to move the card: sections stay schedule-based.
   const completed = event.completion !== null;
   return (

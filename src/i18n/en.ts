@@ -746,6 +746,8 @@ export const en = {
     noUpcoming: 'Nothing coming up.',
     inProgress: 'Now',
     locationLine: '📍 {place}',
+    locationA11y: 'Location: {place}',
+    eventA11yWithLocation: '{label}, Location: {place}',
     newTitle: 'New event',
     editTitle: 'Edit event',
     detailsTitle: 'Event details',
