@@ -225,15 +225,69 @@ describe('CAL-TEXT-IMPORT-001C import wizard + preview', () => {
     expect(await eventCount()).toBe(1); // only the seeded event
   });
 
-  it('a past week can be chosen, with a warning (never forbidden)', async () => {
+  it('CTI-32: the current week is the earliest choice — never a past week (owner 2026-10-10)', async () => {
     await prepare('en');
     renderRouter(routes, { initialUrl: importUrl() });
     await screen.findByTestId('import-text');
     expect(screen.queryByTestId('import-week-warning')).toBeNull();
+    expect(isDisabled('import-week-prev')).toBe(false);
+    press('import-week-prev'); // the current week (Sun 4 – Sat 10 Oct; today is Fri 9)
+    expect(text('import-week-label')).toBe('Sunday 4/10 – Saturday 10/10');
+    expect(text('import-week-warning')).toBe('This week has already started — only today and later days can be imported.');
+    expect(isDisabled('import-week-prev')).toBe(true);
     press('import-week-prev');
-    expect(text('import-week-warning')).toBe('This week has already started. You can still continue.');
+    expect(text('import-week-label')).toBe('Sunday 4/10 – Saturday 10/10'); // no past week
+  });
+
+  it('CTI-32: a day that has passed is blocked (edit the date or remove — never "keep anyway"); today is fine', async () => {
+    await prepare('he');
+    renderRouter(routes, { initialUrl: importUrl() });
+    await screen.findByTestId('import-text');
     press('import-week-prev');
-    expect(text('import-week-warning')).toBe('This week is in the past. You can still continue.');
+    await analyze('יום שני 18:40-20:10\nיום שישי 18:00-19:00\n08/10 17:00-18:00');
+    expect(text('import-row-s1-status-label')).toBe('⚠ דורש בדיקה');
+    expect(text('import-row-s1-past')).toBe('התאריך 5/10 כבר עבר — אי אפשר לייבא אימון לתאריך שעבר.');
+    expect(screen.getByTestId('import-row-s1-past-edit-date')).toBeTruthy();
+    expect(screen.getByTestId('import-row-s1-past-remove')).toBeTruthy();
+    expect(screen.queryByTestId('import-row-s1-keep')).toBeNull();
+    expect(text('import-row-s2-status-label')).toBe('✓ מוכן'); // Friday 9/10 = today
+    expect(text('import-row-s3-past')).toBe('התאריך 8/10 כבר עבר — אי אפשר לייבא אימון לתאריך שעבר.'); // explicit date: never moved
+    expect(screen.queryByTestId('import-row-s3-use-date-anyway')).toBeNull();
+    expect(isDisabled('import-continue')).toBe(true);
+    // Edit the date to a future day → allowed.
+    press('import-row-s1-past-edit-date');
+    press('import-row-s1-edit-date');
+    const native = await screen.findByTestId('import-row-s1-edit-date-native');
+    act(() => native.props.onValueChange({}, new Date(2026, 9, 10, 12, 0)));
+    press('import-row-s1-edit-done');
+    expect(text('import-row-s1-status-label')).toBe('✓ מוכן');
+    press('import-row-s3-past-remove');
+    expect(isDisabled('import-continue')).toBe(false);
+    expect(cta()).toBe('המשך עם 2 אימונים');
+    expect(await eventCount()).toBe(0);
+  });
+
+  it('CTI-31: Analyze needs an Activity Type — a clear message next to the type, nothing analyzed; it goes when a type is chosen', async () => {
+    await prepare('he');
+    renderRouter(routes, { initialUrl: importUrl() });
+    await screen.findByTestId('import-text');
+    fireEvent.changeText(screen.getByTestId('import-text'), WHATSAPP_EXAMPLE_1);
+    press('import-analyze');
+    expect(text('import-type-error')).toBe('יש לבחור סוג אימון לפני ניתוח הלו״ז');
+    expect(screen.queryByTestId('import-continue')).toBeNull(); // no preview
+    press('import-type-TEAM_TRAINING');
+    expect(screen.queryByTestId('import-type-error')).toBeNull();
+    press('import-analyze');
+    await screen.findByTestId('import-continue');
+  });
+
+  it('CTI-31 (EN): the message reads "Select a training type before analyzing the schedule."', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: importUrl() });
+    await screen.findByTestId('import-text');
+    fireEvent.changeText(screen.getByTestId('import-text'), 'יום שני 18:40-20:10');
+    press('import-analyze');
+    expect(text('import-type-error')).toBe('Select a training type before analyzing the schedule.');
   });
 
   it('a release build ignores qaText (no text injection outside development)', async () => {

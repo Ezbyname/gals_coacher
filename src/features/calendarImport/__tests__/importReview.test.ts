@@ -27,6 +27,24 @@ const edit = (c: { date: CandidateEdit['date']; start: CandidateEdit['start'] },
   ...patch,
 });
 
+describe('today or later only (owner 2026-10-10, CTI-32)', () => {
+  const current = { start: calendarDate(2026, 10, 4)!, end: calendarDate(2026, 10, 10)! };
+  const friday = calendarDate(2026, 10, 9)!;
+
+  it('a past day is BLOCKING (no keep-anyway); today and later are fine; an explicit past date is not moved', () => {
+    const s = analyzeSchedule('יום שני 18:00-19:00\nיום שישי 18:00-19:00\n08/10 18:00-19:00', current, 'TEAM_TRAINING', [], friday);
+    const v = viewOf(s);
+    expect(v.open.get('s1')).toEqual(['DATE_IN_PAST']);
+    expect(v.open.has('s2')).toBe(false);
+    expect(v.open.get('s3')).toEqual(['DATE_IN_PAST']);
+    expect(s.candidates[2]!.date).toEqual(calendarDate(2026, 10, 8));
+    expect(viewOf(acknowledge(s, 's1', 'DATE_IN_PAST')).open.get('s1')).toEqual(['DATE_IN_PAST']);
+    expect(v.summary.canConfirm).toBe(false);
+    const fixed = removeCandidate(removeCandidate(s, 's1'), 's3');
+    expect(viewOf(fixed).summary.canConfirm).toBe(true);
+  });
+});
+
 describe('import review state (001C, pure — nothing is written)', () => {
   it('example 1: four READY candidates; "Continue with 4"', () => {
     const s = analyzeSchedule(WHATSAPP_EXAMPLE_1, week, 'TEAM_TRAINING', []);

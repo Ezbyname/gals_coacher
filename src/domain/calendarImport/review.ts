@@ -1,6 +1,6 @@
 import { requiresTitle, type ActivityTypeId, type BuiltinActivityType } from '../activityType';
 import { sameDate, weekdayOf, type Weekday } from '../calendarView';
-import type { CalendarDate } from '../calendarDate';
+import { compareCalendarDates, type CalendarDate } from '../calendarDate';
 import type { ParsedSession, ParsedTime } from './parseSchedule';
 import { dateInWeek, isInWeek, type ImportWeek } from './week';
 
@@ -14,7 +14,8 @@ import { dateInWeek, isInWeek, type ImportWeek } from './week';
  *
  * Issue severity:
  *  - BLOCKING: an included candidate cannot be confirmed until it is fixed
- *    (or the candidate is removed): an end before the start, OTHER without a title.
+ *    (or the candidate is removed): an end before the start, OTHER without a title,
+ *    a date that has already passed (owner 2026-10-10: today or later only).
  *  - REVIEW: the user must decide — never decided for them: no end time (keep it
  *    without one — e.g. a game whose end is unknown — or enter one), date outside
  *    the week, weekday/date disagree, possible duplicate.
@@ -49,6 +50,7 @@ export type ImportIssueCode =
   | 'END_TIME_MISSING'
   | 'END_NOT_AFTER_START'
   | 'TITLE_REQUIRED'
+  | 'DATE_IN_PAST'
   | 'DATE_OUTSIDE_WEEK'
   | 'WEEKDAY_DATE_MISMATCH'
   | 'POSSIBLE_DUPLICATE'
@@ -60,6 +62,7 @@ export const ISSUE_SEVERITY: Readonly<Record<ImportIssueCode, ImportIssueSeverit
   END_TIME_MISSING: 'REVIEW', // owner 2026-10-09: an end may be unknown (e.g. a game)
   END_NOT_AFTER_START: 'BLOCKING',
   TITLE_REQUIRED: 'BLOCKING',
+  DATE_IN_PAST: 'BLOCKING', // owner 2026-10-10: import only today or later — never "keep anyway"
   DATE_OUTSIDE_WEEK: 'REVIEW',
   WEEKDAY_DATE_MISMATCH: 'REVIEW',
   POSSIBLE_DUPLICATE: 'REVIEW',
@@ -93,22 +96,33 @@ export function buildCandidates(
   }));
 }
 
+/** True when `date` is before `today` (local calendar days). */
+export function isPastDate(date: CalendarDate, today: CalendarDate): boolean {
+  return compareCalendarDates(date, today) < 0;
+}
+
 /**
  * The issues of one candidate as it is NOW (call again after every edit).
- * `duplicate` comes from findPossibleDuplicates.
+ * `duplicate` comes from findPossibleDuplicates; `today` (the device's local
+ * date) makes a past date a BLOCKING issue — then the date-only reviews
+ * (outside the week, weekday / date) are not offered: no "use it anyway".
  */
 export function candidateIssues(
   c: ImportCandidate,
   week: ImportWeek,
-  options: { readonly duplicate?: boolean } = {},
+  options: { readonly duplicate?: boolean; readonly today?: CalendarDate | null } = {},
 ): ImportIssueCode[] {
   const issues: ImportIssueCode[] = [];
   if (c.end === null) issues.push('END_TIME_MISSING');
   else if (toMinutes(c.end) <= toMinutes(c.start)) issues.push('END_NOT_AFTER_START');
   if (requiresTitle(c.type) && (c.title === null || c.title.trim().length === 0)) issues.push('TITLE_REQUIRED');
-  if (!isInWeek(week, c.date)) issues.push('DATE_OUTSIDE_WEEK');
-  if (c.dateFrom === 'EXPLICIT_DATE' && c.textWeekday !== null && weekdayOf(c.date) !== c.textWeekday) {
-    issues.push('WEEKDAY_DATE_MISMATCH');
+  const past = options.today != null && isPastDate(c.date, options.today);
+  if (past) issues.push('DATE_IN_PAST');
+  else {
+    if (!isInWeek(week, c.date)) issues.push('DATE_OUTSIDE_WEEK');
+    if (c.dateFrom === 'EXPLICIT_DATE' && c.textWeekday !== null && weekdayOf(c.date) !== c.textWeekday) {
+      issues.push('WEEKDAY_DATE_MISMATCH');
+    }
   }
   if (options.duplicate) issues.push('POSSIBLE_DUPLICATE');
   if (c.suggestedType !== null && c.suggestedType !== c.type) issues.push('SUGGESTED_TYPE_DIFFERS');

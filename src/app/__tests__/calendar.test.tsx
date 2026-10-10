@@ -492,6 +492,54 @@ describe('create', () => {
     expect(await screen.findByTestId(`schedule-event-${row!.id}`)).toBeTruthy();
   });
 
+  it('CAL-EVENT-LOC-001: an optional location is saved as location (not notes) and shown; blank = none', async () => {
+    const app = await openNew('he');
+    expect(screen.getByText('מיקום (לא חובה)')).toBeTruthy();
+    press('event-type-TEAM_TRAINING');
+    fireEvent.changeText(screen.getByTestId('event-location'), '  עין כרמל ');
+    press('event-save');
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/schedule`));
+    const [row] = await rows();
+    expect(row).toMatchObject({ location: 'עין כרמל', notes: null });
+    expect(plain(`schedule-event-${row!.id}-location`)).toBe('📍 עין כרמל');
+  });
+
+  it('CAL-EVENT-LOC-001 (EN): no location typed → NULL and no location row', async () => {
+    const app = await openNew('en');
+    expect(screen.getByText('Location (optional)')).toBeTruthy();
+    press('event-type-GYM');
+    fireEvent.changeText(screen.getByTestId('event-location'), '   ');
+    press('event-save');
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${gal}/schedule`));
+    const [row] = await rows();
+    expect(row!.location).toBeNull();
+    expect(screen.queryByTestId(`schedule-event-${row!.id}-location`)).toBeNull();
+  });
+
+  it('CAL-EVENT-LOC-001: Edit shows the stored location and saves a changed one', async () => {
+    await prepare('en');
+    const event = await seedEvent({ type: 'TEAM_TRAINING', startAt: at(6, 18, 40), endAt: at(6, 20, 10), location: 'Ein Carmel' });
+    const app = renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}/edit` });
+    await screen.findByTestId('event-save');
+    expect(screen.getByTestId('event-location').props.value).toBe('Ein Carmel');
+    fireEvent.changeText(screen.getByTestId('event-location'), 'Oranim Hall');
+    press('event-save');
+    await waitFor(() => expect(app.getPathname()).not.toContain('/edit'));
+    expect((await rows())[0]).toMatchObject({ location: 'Oranim Hall' });
+  });
+
+  it('CAL-EVENT-LOC-001: clearing the location on Edit removes it (NULL, no row)', async () => {
+    await prepare('he');
+    const event = await seedEvent({ type: 'GAME', startAt: at(6, 16, 30), location: 'עין כרמל' });
+    const app = renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule/${event.id}/edit` });
+    await screen.findByTestId('event-save');
+    fireEvent.changeText(screen.getByTestId('event-location'), '');
+    press('event-save');
+    await waitFor(() => expect(app.getPathname()).not.toContain('/edit'));
+    expect((await rows())[0]!.location).toBeNull();
+    expect(screen.queryByTestId('event-details-location')).toBeNull();
+  });
+
   it('OTHER needs a title: a localized message, nothing written; with a title it saves', async () => {
     const app = await openNew('en');
     press('event-type-OTHER');

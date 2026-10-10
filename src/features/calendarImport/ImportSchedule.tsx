@@ -1,6 +1,6 @@
 import { useNavigation } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { listActivityTypes } from '@/data/local/activityTypes/activityTypeRepository';
 import {
@@ -13,6 +13,7 @@ import { getPlayer } from '@/data/local/players/playerRepository';
 import { requiresTitle, selectableActivityTypes, type ActivityTypeId, type ActivityTypeRef } from '@/domain/activityType';
 import type { CalendarDate } from '@/domain/calendarDate';
 import {
+  canShowPreviousWeek,
   dateInWeek,
   importWeekTiming,
   nextImportWeek,
@@ -39,7 +40,7 @@ import { BigButton } from '@/ui/BigButton';
 import { Card } from '@/ui/Card';
 import { ChoiceChips } from '@/ui/ChoiceChips';
 import { DateTimeField } from '@/ui/DateTimeField';
-import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
+import { KeyboardRevealContext, KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { StatusBadge } from '@/ui/StatusBadge';
 import { TextField } from '@/ui/TextField';
 import { colors, semantic, spacing, touch } from '@/ui/theme';
@@ -127,7 +128,11 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
   };
 
   const analyze = async () => {
-    if (typeId === null) return setInputError('type');
+    if (typeId === null) {
+      setInputError('type');
+      AccessibilityInfo.announceForAccessibility(t('calendarImport.typeRequired'));
+      return;
+    }
     if (text.trim().length === 0) return setInputError('text');
     if (busy || boot.status !== 'ready') return;
     setBusy(true);
@@ -135,7 +140,8 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
     try {
       // READ ONLY: this Player's events, for the conservative duplicate review.
       const events = await listCalendarEvents(boot.db, player.id);
-      setReview(analyzeSchedule(text, week, typeId, events.map(toSlot)));
+      const now = localCalendarDateFromEpoch(services.clock.wallNow());
+      setReview(analyzeSchedule(text, week, typeId, events.map(toSlot), now));
       setAnalyzedFor(player.id);
       setEditing(null);
       setPhase('review');
@@ -168,6 +174,7 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
       activeTypes: new Set(types.map((x) => x.id)),
       sports,
       sport,
+      today: localCalendarDateFromEpoch(services.clock.wallNow()),
     });
     if (!prepared.ok) return setSaveError('invalid');
     setBusy(true);
@@ -398,27 +405,26 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
     <KeyboardSafeScrollView testID="import-scroll" contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       {header}
       <Text style={styles.heading}>{t('calendarImport.stepType')}</Text>
-      {types.length === 0 ? (
-        <Text style={styles.warning} testID="import-type-none">
-          {t('calendar.errors.noActiveTypes')}
-        </Text>
-      ) : (
-        <ChoiceChips<ActivityTypeId>
-          testID="import-type"
-          label={t('calendarImport.field.type')}
-          choices={types.map((type) => ({ value: type.id, label: activityTypeChoiceLabel(t, type) }))}
-          value={typeId}
-          onChange={(value) => {
-            if (value !== null) setTypeId(value);
-            setInputError(null);
-          }}
-        />
-      )}
-      {inputError === 'type' ? (
-        <Text style={styles.warning} testID="import-type-error">
-          {t('calendar.errors.typeRequired')}
-        </Text>
-      ) : null}
+      <RevealWhen active={inputError === 'type'}>
+        {types.length === 0 ? (
+          <Text style={styles.warning} testID="import-type-none">
+            {t('calendar.errors.noActiveTypes')}
+          </Text>
+        ) : (
+          <ChoiceChips<ActivityTypeId>
+            testID="import-type"
+            label={t('calendarImport.field.type')}
+            choices={types.map((type) => ({ value: type.id, label: activityTypeChoiceLabel(t, type) }))}
+            value={typeId}
+            onChange={(value) => {
+              if (value !== null) setTypeId(value);
+              setInputError(null);
+            }}
+            // CTI-31: the error stays next to the type (testID import-type-error) until one is chosen.
+            error={inputError === 'type' ? t('calendarImport.typeRequired') : undefined}
+          />
+        )}
+      </RevealWhen>
       {sports.length > 0 ? (
         <ChoiceChips<SportKey>
           testID="import-sport"
@@ -435,7 +441,9 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
           testID="import-week-prev"
           label={language === 'he' ? '›' : '‹'}
           a11y={t('calendarImport.previousWeekA11y')}
-          onPress={() => setWeek(shiftImportWeek(week, -1))}
+          // Only today and later can be imported: no week before the current one (CTI-32).
+          disabled={!canShowPreviousWeek(week, today)}
+          onPress={() => canShowPreviousWeek(week, today) && setWeek(shiftImportWeek(week, -1))}
         />
         <Text style={styles.weekLabel} testID="import-week-label">
           {t('calendarImport.weekRange', {
@@ -452,7 +460,7 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
       </View>
       {weekTiming !== 'FUTURE' ? (
         <Text style={styles.warning} testID="import-week-warning">
-          {weekTiming === 'PAST' ? t('calendarImport.weekPast') : t('calendarImport.weekStarted')}
+          {weekTiming === 'PAST' ? t('calendarImport.weekPastBlocked') : t('calendarImport.weekStartedFromToday')}
         </Text>
       ) : null}
 
@@ -490,14 +498,42 @@ function toSlot(e: { id: string; title: string | null; type: string; startAt: nu
   };
 }
 
-function WeekButton({ testID, label, a11y, onPress }: { testID: string; label: string; a11y: string; onPress: () => void }) {
+/** Scrolls its content into view when `active` turns on (e.g. a validation error above the fold). */
+function RevealWhen({ active, children }: { active: boolean; children: ReactNode }) {
+  const reveal = useContext(KeyboardRevealContext);
+  const box = useRef<View>(null);
+  useEffect(() => {
+    if (active && box.current) reveal?.focused(box.current);
+  }, [active, reveal]);
+  return (
+    <View ref={box} collapsable={false} style={styles.gap}>
+      {children}
+    </View>
+  );
+}
+
+function WeekButton({
+  testID,
+  label,
+  a11y,
+  disabled = false,
+  onPress,
+}: {
+  testID: string;
+  label: string;
+  a11y: string;
+  disabled?: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={a11y}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.weekButton, pressed && { opacity: 0.7 }]}>
+      style={({ pressed }) => [styles.weekButton, disabled && styles.disabled, pressed && { opacity: 0.7 }]}>
       <Text style={styles.weekButtonText}>{label}</Text>
     </Pressable>
   );
@@ -623,6 +659,20 @@ function CandidateRow(props: RowProps) {
             <Text key={code} style={styles.warning} testID={`${id}-issue-${code}`}>
               {t(`calendarImport.issue.${code}`)}
             </Text>
+          );
+        }
+        if (code === 'DATE_IN_PAST') {
+          // Never "keep anyway": change the date or remove the training (CTI-32).
+          return (
+            <View key={code} style={styles.gap} testID={`${id}-issue-${code}`}>
+              <Text style={styles.warning} testID={`${id}-past`}>
+                {t('calendarImport.datePast', { date })}
+              </Text>
+              <View style={styles.actions}>
+                <RowAction testID={`${id}-past-edit-date`} label={t('calendarImport.editDate')} onPress={props.onEdit} />
+                <RowAction testID={`${id}-past-remove`} label={t('calendarImport.remove')} onPress={props.onRemove} />
+              </View>
+            </View>
           );
         }
         if (code === 'WEEKDAY_DATE_MISMATCH') {
@@ -844,4 +894,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   weekButtonText: { fontSize: 22, fontWeight: '800', color: colors.ink },
+  disabled: { opacity: 0.35 },
 });

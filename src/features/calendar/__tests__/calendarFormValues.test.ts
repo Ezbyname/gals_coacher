@@ -45,6 +45,7 @@ describe('nextQuarterHour (default start of a new event)', () => {
       end: null,
       title: '',
       notes: '',
+      location: '', // CAL-EVENT-LOC-001: optional, starts empty
     });
   });
 });
@@ -77,6 +78,7 @@ describe('form values ↔ repository input', () => {
       end: { year: 2026, month: 10, day: 7, hour: 0, minute: 30 },
       title: 'Cup',
       notes: '',
+      location: '',
     });
     expect(toEventInput(values)).toEqual({
       ok: true,
@@ -87,6 +89,7 @@ describe('form values ↔ repository input', () => {
         endAt: event.endAt,
         title: 'Cup',
         notes: '',
+        location: '',
       },
     });
   });

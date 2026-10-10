@@ -29,13 +29,22 @@ export function shiftImportWeek(week: ImportWeek, weeks: number): ImportWeek {
   return importWeekContaining(addDays(week.start, 7 * weeks));
 }
 
-/** FUTURE: not begun · STARTED: today is inside it · PAST: it has ended (warn, never forbid). */
+/**
+ * FUTURE: not begun · STARTED: today is inside it (only today and later days can be
+ * imported) · PAST: it has ended — nothing in it can be imported (owner 2026-10-10;
+ * supersedes "past weeks allowed with a warning").
+ */
 export type ImportWeekTiming = 'FUTURE' | 'STARTED' | 'PAST';
 
 export function importWeekTiming(week: ImportWeek, today: CalendarDate): ImportWeekTiming {
   if (compareCalendarDates(today, week.start) < 0) return 'FUTURE';
   if (compareCalendarDates(today, week.end) > 0) return 'PAST';
   return 'STARTED';
+}
+
+/** The earliest week that may be chosen: the one containing `today`. */
+export function canShowPreviousWeek(week: ImportWeek, today: CalendarDate): boolean {
+  return compareCalendarDates(week.start, importWeekContaining(today).start) > 0;
 }
 
 /** The date of `weekday` inside `week`. */

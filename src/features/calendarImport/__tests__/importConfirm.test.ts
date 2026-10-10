@@ -13,6 +13,7 @@ const ctx: ConfirmContext = {
   activeTypes: new Set(['TEAM_TRAINING', 'GAME', 'GYM', 'OTHER']),
   sports: ['BASKETBALL'],
   sport: 'BASKETBALL',
+  today: calendarDate(2026, 10, 9)!,
 };
 const local = (ms: number | null | undefined) => {
   if (ms === null || ms === undefined) return ms;
@@ -98,6 +99,15 @@ describe('prepareImport (001D) — the reviewed Preview is authoritative; checke
     const r = prepareImport(backwards, ctx);
     if (r.ok) throw new Error('expected refusal');
     expect(r.candidates.get('s3')).toContain('END_NOT_AFTER_START');
+  });
+
+  it('a date that has passed by save time is never written (today or later only)', () => {
+    const s = analyzeSchedule(WHATSAPP_EXAMPLE_1, week, 'TEAM_TRAINING', []);
+    const r = prepareImport(s, { ...ctx, today: calendarDate(2026, 10, 15)! }); // Mon 12 and Wed 14 are now past
+    if (r.ok) throw new Error('expected refusal');
+    expect([...r.candidates.keys()]).toEqual(['s1', 's2']);
+    expect(r.candidates.get('s1')).toEqual(['DATE_IN_PAST']);
+    expect(prepareImport(s, { ...ctx, today: calendarDate(2026, 10, 12)! }).ok).toBe(true); // today itself is fine
   });
 
   it('a local time that does not exist is never normalized into another time', () => {

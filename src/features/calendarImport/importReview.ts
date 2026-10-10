@@ -33,6 +33,8 @@ export interface ImportReviewState {
   readonly acknowledged: ReadonlyMap<string, ReadonlySet<ImportIssueCode>>;
   /** The Player's events already in the calendar (read once at Analyze). */
   readonly existing: readonly ExistingSlot[];
+  /** The device's local date at Analyze: earlier dates cannot be imported (null only in pure tests). */
+  readonly today: CalendarDate | null;
 }
 
 export interface ImportReviewView {
@@ -48,6 +50,7 @@ export function analyzeSchedule(
   week: ImportWeek,
   typeId: ActivityTypeId,
   existing: readonly ExistingSlot[],
+  today: CalendarDate | null = null,
 ): ImportReviewState {
   const parsed = parseSchedule(text, { weekStart: week.start });
   return {
@@ -57,6 +60,7 @@ export function analyzeSchedule(
     removed: new Set(),
     acknowledged: new Map(),
     existing,
+    today,
   };
 }
 
@@ -66,7 +70,7 @@ export function viewOf(state: ImportReviewState): ImportReviewView {
   const included = state.candidates.filter((c) => !state.removed.has(c.key));
   const duplicates = findDuplicateMatches(included, state.existing);
   const issues = new Map(
-    state.candidates.map((c) => [c.key, candidateIssues(c, state.week, { duplicate: duplicates.has(c.key) })] as const),
+    state.candidates.map((c) => [c.key, candidateIssues(c, state.week, { duplicate: duplicates.has(c.key), today: state.today })] as const),
   );
   const summary = reviewSummary(state.candidates, issues, {
     removed: state.removed,

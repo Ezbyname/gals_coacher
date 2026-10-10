@@ -10,7 +10,7 @@ import {
   type ReviewDecisions,
 } from '../review';
 import { parseSchedule } from '../parseSchedule';
-import { importWeekContaining, importWeekTiming, nextImportWeek, shiftImportWeek, dateInWeek } from '../week';
+import { canShowPreviousWeek, importWeekContaining, importWeekTiming, nextImportWeek, shiftImportWeek, dateInWeek } from '../week';
 import { WHATSAPP_EXAMPLE_1, WHATSAPP_EXAMPLE_2 } from './whatsappFixtures';
 
 const today = calendarDate(2026, 10, 9)!; // Friday
@@ -39,11 +39,14 @@ describe('CTI-16 week: next Sunday–Saturday (Israel week)', () => {
   });
 });
 
-describe('CTI-28 past / started week: warned, never forbidden or moved', () => {
+describe('CTI-28 week timing; CTI-32 no week before the current one (owner 2026-10-10)', () => {
   it('FUTURE / STARTED / PAST', () => {
     expect(importWeekTiming(week, today)).toBe('FUTURE');
     expect(importWeekTiming(week, calendarDate(2026, 10, 13)!)).toBe('STARTED');
     expect(importWeekTiming(week, calendarDate(2026, 10, 20)!)).toBe('PAST');
+    // The current week is the earliest that may be chosen (owner 2026-10-10).
+    expect(canShowPreviousWeek(week, today)).toBe(true);
+    expect(canShowPreviousWeek(shiftImportWeek(week, -1), today)).toBe(false);
   });
   it('a past week still yields candidates with the dates of that week', () => {
     const past = shiftImportWeek(week, -2);

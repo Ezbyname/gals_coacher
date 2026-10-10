@@ -4,6 +4,7 @@ import { Keyboard, KeyboardAvoidingView, ScrollView, StyleSheet, Text, View } fr
 import type { SaveCalendarEventResult } from '@/data/local/calendar/calendarEventRepository';
 import { requiresTitle, type ActivityTypeId, type ActivityTypeRef } from '@/domain/activityType';
 import {
+  CALENDAR_LOCATION_MAX_LENGTH,
   CALENDAR_TITLE_MAX_LENGTH,
   type CalendarEvent,
   type CalendarEventErrors,
@@ -31,7 +32,9 @@ import { formatEventDate } from './formatEventTime';
 /** The sport chip meaning "this event has no sport" (never stored: it saves as null). */
 const NO_SPORT = 'NONE';
 
-type FieldErrors = Partial<Record<'type' | 'sport' | 'start' | 'end' | 'title' | 'notes', TranslationKey>>;
+type FieldErrors = Partial<
+  Record<'type' | 'sport' | 'start' | 'end' | 'title' | 'notes' | 'location', TranslationKey>
+>;
 
 /** Domain validation codes → which field shows which message. */
 function fieldErrors(errors: CalendarEventErrors): FieldErrors {
@@ -52,6 +55,9 @@ function fieldErrors(errors: CalendarEventErrors): FieldErrors {
           : 'calendar.errors.invalidValue';
   }
   if (errors.notes) out.notes = 'calendar.errors.invalidValue';
+  if (errors.location) {
+    out.location = errors.location === 'TOO_LONG' ? 'calendar.errors.locationTooLong' : 'calendar.errors.invalidValue';
+  }
   return out;
 }
 
@@ -88,6 +94,8 @@ export function CalendarEventForm({ initialValues, sports, types, onSave, onSave
   // New titles stop at the limit; a longer title stored before the limit is shown in full
   // (never cut by the field) and may be kept or shortened (the domain decides on Save).
   const titleMaxLength = Math.max(CALENDAR_TITLE_MAX_LENGTH, initialValues.title.length);
+  // The same for a location stored before the limit (CAL-EVENT-LOC-001).
+  const locationMaxLength = Math.max(CALENDAR_LOCATION_MAX_LENGTH, initialValues.location.length);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [saveError, setSaveError] = useState<TranslationKey | null>(null);
   const [saving, setSaving] = useState(false);
@@ -103,11 +111,19 @@ export function CalendarEventForm({ initialValues, sports, types, onSave, onSave
   const scrollOffset = useRef(0);
   const titleBox = useRef<View>(null);
   const notesBox = useRef<View>(null);
-  const focusedField = useRef<'title' | 'notes' | null>(null);
+  const locationBox = useRef<View>(null);
+  const focusedField = useRef<'title' | 'notes' | 'location' | null>(null);
   /** Scrolls just enough to show the focused field (its bottom first: the typing position). */
   const revealFocused = useCallback(async () => {
     const focused = focusedField.current;
-    const box = focused === 'title' ? titleBox.current : focused === 'notes' ? notesBox.current : null;
+    const box =
+      focused === 'title'
+        ? titleBox.current
+        : focused === 'notes'
+          ? notesBox.current
+          : focused === 'location'
+            ? locationBox.current
+            : null;
     if (!box) return;
     const [field, viewport] = await Promise.all([
       measureWindowRect(box),
@@ -128,6 +144,10 @@ export function CalendarEventForm({ initialValues, sports, types, onSave, onSave
   }, [revealFocused]);
   const onNotesFocus = useCallback(() => {
     focusedField.current = 'notes';
+    void revealFocused();
+  }, [revealFocused]);
+  const onLocationFocus = useCallback(() => {
+    focusedField.current = 'location';
     void revealFocused();
   }, [revealFocused]);
   const onFieldBlur = useCallback(() => {
@@ -327,6 +347,18 @@ export function CalendarEventForm({ initialValues, sports, types, onSave, onSave
                 maxLength={titleMaxLength}
                 onChangeText={(title) => change('title', title, ['title'])}
                 error={message(errors.title)}
+              />
+            </View>
+            <View ref={locationBox} collapsable={false} testID="event-location-box">
+              <TextField
+                onFocus={onLocationFocus}
+                onBlur={onFieldBlur}
+                testID="event-location"
+                label={t('calendar.field.location')}
+                value={values.location}
+                maxLength={locationMaxLength}
+                onChangeText={(location) => change('location', location, ['location'])}
+                error={message(errors.location)}
               />
             </View>
             <View ref={notesBox} collapsable={false} testID="event-notes-box">

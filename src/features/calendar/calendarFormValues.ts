@@ -16,6 +16,8 @@ export type CalendarFormValues = {
   readonly end: LocalDateTime | null;
   readonly title: string;
   readonly notes: string;
+  /** Optional place (CAL-EVENT-LOC-001); blank saves as no location. */
+  readonly location: string;
 };
 
 const MINUTE = 60_000;
@@ -35,7 +37,7 @@ export function nextQuarterHour(now: number): LocalDateTime {
 
 /** A new event: no type chosen yet, no sport, starting at the next quarter hour, no end. */
 export function newEventValues(now: number): CalendarFormValues {
-  return { type: null, sport: null, start: nextQuarterHour(now), end: null, title: '', notes: '' };
+  return { type: null, sport: null, start: nextQuarterHour(now), end: null, title: '', notes: '', location: '' };
 }
 
 /** A saved event, as the form shows it (local wall times on this device). */
@@ -47,6 +49,7 @@ export function valuesFromEvent(event: CalendarEvent): CalendarFormValues {
     end: event.endAt === null ? null : epochToLocalDateTime(event.endAt),
     title: event.title ?? '',
     notes: event.notes ?? '',
+    location: event.location ?? '',
   };
 }
 
@@ -76,6 +79,7 @@ export function toEventInput(
       endAt,
       title: values.title,
       notes: values.notes,
+      location: values.location,
     },
   };
 }

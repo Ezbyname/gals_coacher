@@ -1,6 +1,7 @@
 import type { ActivityTypeId } from '@/domain/activityType';
 import { validateCalendarEvent, type CalendarEventInput } from '@/domain/calendarEvent';
-import { toMinutes, type ImportCandidate } from '@/domain/calendarImport';
+import type { CalendarDate } from '@/domain/calendarDate';
+import { isPastDate, toMinutes, type ImportCandidate } from '@/domain/calendarImport';
 import type { SportKey } from '@/domain/sport';
 import { localDateTimeToEpoch } from '@/services/clock/localCalendarDate';
 
@@ -23,6 +24,8 @@ export interface ConfirmContext {
   /** The Player's active sports, and the sport chosen for the batch (or none). */
   readonly sports: readonly SportKey[];
   readonly sport: SportKey | null;
+  /** The device's local date NOW: an earlier date is never written. */
+  readonly today: CalendarDate;
 }
 
 export type CandidateProblem =
@@ -30,6 +33,7 @@ export type CandidateProblem =
   | 'END_NOT_CONFIRMED' // no end time, and the user did not choose "Keep without end time"
   | 'END_NOT_AFTER_START'
   | 'TIME_DOES_NOT_EXIST' // an impossible date / a local time skipped by DST
+  | 'DATE_IN_PAST' // today or later only (owner 2026-10-10)
   | 'TYPE_UNAVAILABLE'
   | 'INVALID'; // refused by the CalendarEvent domain validator
 
@@ -69,6 +73,7 @@ export function prepareImport(state: ImportReviewState, ctx: ConfirmContext): Co
       problems.push('END_NOT_CONFIRMED');
     }
     if (c.end !== null && toMinutes(c.end) <= toMinutes(c.start)) problems.push('END_NOT_AFTER_START');
+    if (isPastDate(c.date, ctx.today)) problems.push('DATE_IN_PAST');
     if (!ctx.activeTypes.has(c.type)) problems.push('TYPE_UNAVAILABLE');
     const input = candidateInput(c, ctx.sport);
     if (input === null) problems.push('TIME_DOES_NOT_EXIST');
