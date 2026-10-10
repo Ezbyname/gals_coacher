@@ -301,7 +301,10 @@ describe('CAL-TEXT-IMPORT-001D confirm + batch write + Undo Import', () => {
     expect(await boundary()).toEqual(before); // CalendarEvent ≠ PlannedWorkout ≠ TrainingSession
 
     press('import-view-calendar');
-    for (const r of rows) await screen.findByTestId(`schedule-event-${r.id}`);
+    for (const r of rows) {
+      await screen.findByTestId(`schedule-event-${r.id}`);
+      expect(text(`schedule-event-${r.id}-location`)).toBe('📍 עין כרמל'); // persisted AND visible
+    }
   });
 
   it('example 2: Tuesday kept without an end is saved with end = NULL; per-candidate GAME and an edited location persist', async () => {

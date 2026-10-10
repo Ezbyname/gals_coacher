@@ -744,6 +744,7 @@ export const he = {
     past: 'עבר',
     noUpcoming: 'אין אירועים קרובים.',
     inProgress: 'עכשיו',
+    locationLine: '📍 {place}',
     newTitle: 'אירוע חדש',
     editTitle: 'עריכת אירוע',
     detailsTitle: 'פרטי האירוע',

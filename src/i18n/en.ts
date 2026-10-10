@@ -745,6 +745,7 @@ export const en = {
     past: 'Past',
     noUpcoming: 'Nothing coming up.',
     inProgress: 'Now',
+    locationLine: '📍 {place}',
     newTitle: 'New event',
     editTitle: 'Edit event',
     detailsTitle: 'Event details',

@@ -165,6 +165,11 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
             {sportLabel(t, event.sport)}
           </Text>
         ) : null}
+        {event.location !== null ? (
+          <Text style={styles.line} testID="event-details-location">
+            {t('calendar.locationLine', { place: event.location })}
+          </Text>
+        ) : null}
       </View>
 
       {event.notes !== null ? (

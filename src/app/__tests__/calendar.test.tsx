@@ -22,7 +22,7 @@ import { BUILTIN_ACTIVITY_TYPES } from '@/domain/activityType';
 import * as calendarDomain from '@/domain/calendarEvent';
 import type { CalendarEventInput } from '@/domain/calendarEvent';
 import type { Uuid } from '@/domain/ids';
-import { LRI, PDI, stripBidi } from '@/i18n/bidi';
+import { FSI, LRI, PDI, stripBidi } from '@/i18n/bidi';
 import { systemClock } from '@/services/clock/Clock';
 import * as localTime from '@/services/clock/localCalendarDate';
 import { createSequentialIdService } from '@/services/ids/IdService';
@@ -310,6 +310,34 @@ describe('agenda', () => {
     expect(text(id(e.game, 'sport'))).toBe('Basketball');
     expect(screen.getAllByTestId(/-sport$/)).toHaveLength(1);
     expect(screen.queryByText(/null|undefined|NaN/)).toBeNull();
+  });
+
+  it('a stored location is shown on the card and in details (HE RTL); no location → no empty row', async () => {
+    await prepare('he');
+    const placed = await seedEvent({ type: 'TEAM_TRAINING', sport: 'BASKETBALL', startAt: at(6, 18, 40), endAt: at(6, 20, 10), location: 'עין כרמל' });
+    const bare = await seedEvent({ type: 'GYM', startAt: at(7, 7) });
+    renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule` });
+    await screen.findByTestId('schedule-upcoming');
+    expect(plain(`schedule-event-${placed.id}-location`)).toBe('📍 עין כרמל');
+    expect(text(`schedule-event-${placed.id}-location`)).toBe(`📍 ${FSI}עין כרמל${PDI}`); // isolated: safe in RTL and LTR
+    expect(screen.queryByTestId(`schedule-event-${bare.id}-location`)).toBeNull();
+    expect(screen.getAllByTestId(/^schedule-event-.*-location$/)).toHaveLength(1);
+    press(`schedule-event-${placed.id}`);
+    await screen.findByTestId('event-details-location');
+    expect(plain('event-details-location')).toBe('📍 עין כרמל');
+  });
+
+  it('English: the location line reads "📍 <place>"; an event without one shows no location in details', async () => {
+    await prepare('en');
+    const placed = await seedEvent({ type: 'GAME', startAt: at(6, 16, 30), location: 'Ein Carmel' });
+    const bare = await seedEvent({ type: 'GYM', startAt: at(7, 7) });
+    renderRouter(routes as never, { initialUrl: `/children/${gal}/schedule` });
+    await screen.findByTestId('schedule-upcoming');
+    expect(plain(`schedule-event-${placed.id}-location`)).toBe('📍 Ein Carmel');
+    press(`schedule-event-${bare.id}`);
+    await screen.findByTestId('event-details-start');
+    expect(screen.queryByTestId('event-details-location')).toBeNull();
+    expect(screen.queryByText(/📍|null|undefined/)).toBeNull();
   });
 
   it('only past events: Current & upcoming says nothing is coming up', async () => {

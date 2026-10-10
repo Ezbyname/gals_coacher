@@ -188,6 +188,11 @@ function EventCard({ event, now, playerId }: { event: CalendarEvent; now: number
           {sportLabel(t, event.sport)}
         </Text>
       ) : null}
+      {event.location !== null ? (
+        <Text style={styles.cardMuted} testID={`${id}-location`}>
+          {t('calendar.locationLine', { place: event.location })}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }
