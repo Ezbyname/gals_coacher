@@ -1,8 +1,14 @@
+import { useNavigation } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { listActivityTypes } from '@/data/local/activityTypes/activityTypeRepository';
-import { listCalendarEvents } from '@/data/local/calendar/calendarEventRepository';
+import {
+  createCalendarEventBatch,
+  listCalendarEvents,
+  undoCalendarImport,
+  type UndoCalendarImportResult,
+} from '@/data/local/calendar/calendarEventRepository';
 import { getPlayer } from '@/data/local/players/playerRepository';
 import { requiresTitle, selectableActivityTypes, type ActivityTypeId, type ActivityTypeRef } from '@/domain/activityType';
 import type { CalendarDate } from '@/domain/calendarDate';
@@ -21,11 +27,12 @@ import { requireActivePlayer } from '@/domain/training/activePlayer';
 import type { SportKey } from '@/domain/sport';
 import { useApp } from '@/features/AppProvider';
 import { activityTypeChoiceLabel, activityTypeLabel, sportLabel } from '@/features/calendar/calendarLabels';
+import { leaveTo, SCHEDULE_ROUTE, schedulePath } from '@/features/calendar/calendarNavigation';
 import { sportsOf } from '@/features/calendar/calendarFormValues';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
 import { useUnsavedChangesGuard } from '@/features/navigation/unsavedChanges';
 import { PlayerTargetLabel, useActivePlayer } from '@/features/players/ActivePlayerContext';
-import { stripBidi } from '@/i18n/bidi';
+import { isolate, stripBidi } from '@/i18n/bidi';
 import { useI18n } from '@/i18n/I18nProvider';
 import { epochToLocalDateTime, localCalendarDateFromEpoch } from '@/services/clock/localCalendarDate';
 import { BigButton } from '@/ui/BigButton';
@@ -37,6 +44,7 @@ import { StatusBadge } from '@/ui/StatusBadge';
 import { TextField } from '@/ui/TextField';
 import { colors, semantic, spacing, touch } from '@/ui/theme';
 
+import { prepareImport } from './importConfirm';
 import { clock, dayLine, shortDate, timeRange, weekdayName } from './importFormat';
 import {
   acknowledge,
@@ -55,11 +63,14 @@ import {
  * Player (ActivePlayerContext; never asked again). One screen: Training type
  * → Week → Paste → Analyze → Preview (edit / remove / undo / decisions).
  *
- * READS existing calendar events (duplicate review) and NEVER writes: the
- * CTA ends in a "review complete" state; saving the reviewed batch is 001D.
+ * READS existing calendar events (duplicate review). 001D: Continue → Confirm
+ * ("Add N trainings") writes the REVIEWED candidates as ONE import batch of
+ * CalendarEvents for this Player (all or nothing; never re-parsed) → Done
+ * (View calendar / Undo import) → Undone.
  */
-type Loaded = { types: ActivityTypeRef[]; sports: SportKey[] };
-type Phase = 'input' | 'review' | 'complete';
+type Loaded = { types: ActivityTypeRef[]; sports: SportKey[]; name: string };
+type Phase = 'input' | 'review' | 'confirm' | 'done' | 'undone';
+type Saved = { importBatchId: string; candidates: ImportCandidate[] };
 
 export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
   const player = requireActivePlayer(useActivePlayer());
@@ -76,7 +87,14 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [inputError, setInputError] = useState<'type' | 'text' | null>(null);
   const [busy, setBusy] = useState(false);
-  useUnsavedChangesGuard(text.trim().length > 0 || review !== null);
+  const [analyzedFor, setAnalyzedFor] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<'failed' | 'invalid' | null>(null);
+  const [saved, setSaved] = useState<Saved | null>(null);
+  const [undone, setUndone] = useState<UndoCalendarImportResult | null>(null);
+  const [undoError, setUndoError] = useState(false);
+  const navigation = useNavigation();
+  // Once the batch is saved there is nothing left to lose by leaving.
+  useUnsavedChangesGuard(phase !== 'done' && phase !== 'undone' && (text.trim().length > 0 || review !== null));
 
   useEffect(() => {
     if (boot.status !== 'ready') return;
@@ -85,7 +103,7 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
       .then(([catalog, profile]) => {
         if (!active) return;
         const sports = profile ? sportsOf(profile) : [];
-        setLoaded({ types: selectableActivityTypes(catalog), sports });
+        setLoaded({ types: selectableActivityTypes(catalog), sports, name: profile?.player.name ?? player.name });
         // Smart default: preselect the sport only when the Player has exactly one active sport.
         setSport(sports.length === 1 ? sports[0]! : null);
       })
@@ -96,7 +114,7 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
     return () => {
       active = false;
     };
-  }, [boot, player.id]);
+  }, [boot, player.id, player.name]);
 
   if (boot.status === 'error' || loaded === 'error') {
     return <ErrorScreen testID="import-error" message="calendarImport.loadFailed" fallback="/children" />;
@@ -118,6 +136,7 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
       // READ ONLY: this Player's events, for the conservative duplicate review.
       const events = await listCalendarEvents(boot.db, player.id);
       setReview(analyzeSchedule(text, week, typeId, events.map(toSlot)));
+      setAnalyzedFor(player.id);
       setEditing(null);
       setPhase('review');
     } catch (e) {
@@ -137,27 +156,152 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
     </>
   );
 
-  if (phase === 'complete' && review) {
+  const viewCalendar = () =>
+    leaveTo(navigation, { route: SCHEDULE_ROUTE, params: { id: player.id }, path: schedulePath(player.id) });
+
+  /** Writes exactly the reviewed batch (001D). Any problem → nothing is written. */
+  const addTrainings = async () => {
+    if (busy || review === null || boot.status !== 'ready') return;
+    const prepared = prepareImport(review, {
+      playerId: player.id,
+      analyzedFor: analyzedFor ?? '',
+      activeTypes: new Set(types.map((x) => x.id)),
+      sports,
+      sport,
+    });
+    if (!prepared.ok) return setSaveError('invalid');
+    setBusy(true);
+    setSaveError(null);
+    try {
+      const result = await createCalendarEventBatch(
+        boot.db,
+        player.id,
+        { events: prepared.inputs, source: 'TEXT_IMPORT' },
+        { ids: services.ids, clock: services.clock },
+      );
+      if (result.ok) {
+        setSaved({ importBatchId: result.importBatchId, candidates: reviewedBatch(review) });
+        setPhase('done');
+      } else setSaveError('invalid');
+    } catch (e) {
+      console.warn('[calendarImport] save failed', e);
+      setSaveError('failed'); // the transaction wrote nothing
+    }
+    setBusy(false);
+  };
+
+  const undoImport = async () => {
+    if (busy || saved === null || boot.status !== 'ready') return;
+    setBusy(true);
+    setUndoError(false);
+    try {
+      // Only this Player's events of THIS batch (playerId + importBatchId) — never by date / type / title.
+      setUndone(await undoCalendarImport(boot.db, player.id, saved.importBatchId));
+      setPhase('undone');
+    } catch (e) {
+      console.warn('[calendarImport] undo failed', e);
+      setUndoError(true);
+    }
+    setBusy(false);
+  };
+
+  const batchLines = (batch: readonly ImportCandidate[], prefix: string) =>
+    batch.map((c) => (
+      <View key={c.key} style={styles.gap} testID={`${prefix}-${c.key}`}>
+        <Text style={styles.body} testID={`${prefix}-${c.key}-line`}>
+          {t('calendarImport.completeLine', { day: dayLine(c.date, language), time: timeRange(c.start, c.end), type: typeLabelOf(c.type) })}
+        </Text>
+        {c.location !== null ? (
+          <Text style={styles.muted} testID={`${prefix}-${c.key}-location`}>
+            {t('calendarImport.locationLine', { place: c.location })}
+          </Text>
+        ) : null}
+      </View>
+    ));
+  const name = isolate(loaded.name);
+
+  if (phase === 'undone' && undone) {
+    const partial = undone.kept.length > 0;
+    return (
+      <KeyboardSafeScrollView testID="import-scroll" contentContainerStyle={styles.container}>
+        {header}
+        <Card testID="import-undone">
+          <Text style={styles.heading} testID="import-undone-title">
+            {partial ? t('calendarImport.undonePartialTitle') : t('calendarImport.undoneTitle')}
+          </Text>
+          <Text style={styles.body} testID="import-undone-body">
+            {partial
+              ? t('calendarImport.undonePartialBody', { removed: undone.deletedIds.length, kept: undone.kept.length })
+              : t('calendarImport.undoneBody')}
+          </Text>
+        </Card>
+        <BigButton testID="import-view-calendar" label={t('calendarImport.viewCalendar')} onPress={viewCalendar} />
+      </KeyboardSafeScrollView>
+    );
+  }
+
+  if (phase === 'done' && saved) {
+    const count = saved.candidates.length;
+    return (
+      <KeyboardSafeScrollView testID="import-scroll" contentContainerStyle={styles.container}>
+        {header}
+        <Card testID="import-done">
+          <Text style={styles.heading} testID="import-done-title">
+            {count === 1 ? t('calendarImport.doneOne', { name }) : t('calendarImport.doneMany', { count, name })}
+          </Text>
+          {batchLines(saved.candidates, 'import-done')}
+        </Card>
+        <BigButton testID="import-view-calendar" label={t('calendarImport.viewCalendar')} onPress={viewCalendar} />
+        <BigButton
+          testID="import-undo"
+          variant="secondary"
+          label={t('calendarImport.undoImport')}
+          disabled={busy}
+          onPress={() => void undoImport()}
+        />
+        {undoError ? (
+          <Text style={styles.warning} testID="import-undo-error">
+            {t('calendarImport.undoFailed')}
+          </Text>
+        ) : null}
+      </KeyboardSafeScrollView>
+    );
+  }
+
+  if (phase === 'confirm' && review) {
     const batch = reviewedBatch(review);
     return (
       <KeyboardSafeScrollView testID="import-scroll" contentContainerStyle={styles.container}>
         {header}
-        <Card testID="import-complete">
-          <Text style={styles.heading}>{t('calendarImport.completeTitle')}</Text>
-          <Text style={styles.body} testID="import-complete-body">
-            {t('calendarImport.completeBody')}
+        <Card testID="import-confirm">
+          <Text style={styles.heading} testID="import-confirm-title">
+            {t('calendarImport.confirmTitle', { name })}
           </Text>
-          {batch.map((c) => (
-            <Text key={c.key} style={styles.body} testID={`import-complete-${c.key}`}>
-              {t('calendarImport.completeLine', { day: dayLine(c.date, language), time: timeRange(c.start, c.end), type: typeLabelOf(c.type) })}
-            </Text>
-          ))}
+          <Text style={styles.muted} testID="import-confirm-body">
+            {t('calendarImport.confirmBody')}
+          </Text>
+          {batchLines(batch, 'import-confirm')}
         </Card>
+        {saveError !== null ? (
+          <Text style={styles.warning} testID="import-save-error">
+            {saveError === 'invalid' ? t('calendarImport.saveInvalid') : t('calendarImport.saveFailed')}
+          </Text>
+        ) : null}
+        <BigButton
+          testID="import-add"
+          label={batch.length === 1 ? t('calendarImport.addOne') : t('calendarImport.addMany', { count: batch.length })}
+          disabled={busy || batch.length === 0}
+          onPress={() => void addTrainings()}
+        />
         <BigButton
           testID="import-back-to-review"
           variant="secondary"
           label={t('calendarImport.backToReview')}
-          onPress={() => setPhase('review')}
+          disabled={busy}
+          onPress={() => {
+            setSaveError(null);
+            setPhase('review');
+          }}
         />
       </KeyboardSafeScrollView>
     );
@@ -235,12 +379,16 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
             {blocked === 1 ? t('calendarImport.blockedOne') : t('calendarImport.blockedMany', { count: blocked })}
           </Text>
         ) : null}
-        {/* 001C: "Continue", never "Add" — nothing is saved until 001D. */}
+        {/* "Continue" reviews; the write happens only on the Confirm step ("Add N trainings"). */}
         <BigButton
           testID="import-continue"
           label={included === 1 ? t('calendarImport.continueOne') : t('calendarImport.continueMany', { count: included })}
           disabled={!view.summary.canConfirm}
-          onPress={() => view.summary.canConfirm && setPhase('complete')}
+          onPress={() => {
+            if (!view.summary.canConfirm) return;
+            setSaveError(null);
+            setPhase('confirm');
+          }}
         />
       </KeyboardSafeScrollView>
     );
