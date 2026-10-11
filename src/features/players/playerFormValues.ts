@@ -18,6 +18,8 @@ export type PlayerFormValues = {
   month: string;
   year: string;
   height: string;
+  /** Optional current team (CAL-SCHEDULE-IMPORT-002A); blank = none. */
+  teamName: string;
   basketballSelected: boolean;
   primaryPosition: PrimaryPosition | null;
   secondaryPosition: SecondaryPosition | null;
@@ -30,6 +32,7 @@ export const EMPTY_FORM_VALUES: PlayerFormValues = {
   month: '',
   year: '',
   height: '',
+  teamName: '',
   basketballSelected: false,
   primaryPosition: null,
   secondaryPosition: null,
@@ -49,6 +52,7 @@ export function formValuesFromProfile(profile: PlayerProfile): PlayerFormValues 
     month: String(player.dateOfBirth.month),
     year: String(player.dateOfBirth.year),
     height: player.heightCm === null ? '' : String(player.heightCm),
+    teamName: player.teamName ?? '',
     basketballSelected: isSportActive(profile, 'BASKETBALL'),
     primaryPosition: basketball?.primaryPosition ?? null,
     secondaryPosition: basketball?.secondaryPosition ?? null,
@@ -87,6 +91,7 @@ export function formValuesToInput(values: PlayerFormValues): PlayerProfileInput 
         ? null
         : { year: year ?? Number.NaN, month: month ?? Number.NaN, day: day ?? Number.NaN },
       heightCm: numberFrom(values.height),
+      teamName: values.teamName,
     },
     basketball: values.basketballSelected
       ? {

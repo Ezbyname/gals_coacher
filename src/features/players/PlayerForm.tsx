@@ -9,6 +9,7 @@ import {
   type SecondaryPosition,
 } from '@/domain/basketball/profile';
 import { PlayerDataError, PlayerNotFoundError } from '@/data/local/players/errors';
+import { TEAM_NAME_MAX_LENGTH } from '@/domain/player';
 import type { PlayerProfileInput, SavePlayerResult } from '@/data/local/players/playerRepository';
 import { useApp } from '@/features/AppProvider';
 import { isFormDirty } from '@/features/navigation/formDirty';
@@ -190,6 +191,16 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }:
           unit={t('players.form.heightUnit')}
           numeric
           error={errors.height}
+        />
+
+        {/* CAL-SCHEDULE-IMPORT-002A: the Player's current team (optional; used to filter fixture lists). */}
+        <TextField
+          testID="player-team-name"
+          label={t('players.form.teamName')}
+          value={values.teamName}
+          onChangeText={set('teamName')}
+          maxLength={TEAM_NAME_MAX_LENGTH}
+          error={errors.teamName}
         />
       </View>
 

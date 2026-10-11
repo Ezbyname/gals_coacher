@@ -13,7 +13,7 @@ describe('validatePlayerCore', () => {
   it('accepts a valid name and date of birth', () => {
     expect(validatePlayerCore(valid, today)).toEqual({
       ok: true,
-      value: { name: 'גל', dateOfBirth: { year: 2015, month: 7, day: 9 }, heightCm: null },
+      value: { name: 'גל', dateOfBirth: { year: 2015, month: 7, day: 9 }, heightCm: null, teamName: null },
     });
   });
 
@@ -84,7 +84,7 @@ describe('validatePlayerCore', () => {
 
     it('accepts a date of birth equal to today', () => {
       const result = validatePlayerCore({ ...valid, dateOfBirth: { ...today } }, today);
-      expect(result).toEqual({ ok: true, value: { name: 'גל', dateOfBirth: today, heightCm: null } });
+      expect(result).toEqual({ ok: true, value: { name: 'גל', dateOfBirth: today, heightCm: null, teamName: null } });
     });
 
     it('has no minimum year or age limit', () => {
@@ -120,5 +120,24 @@ describe('validatePlayerCore', () => {
         errors: { heightCm: 'NOT_POSITIVE_INTEGER' },
       });
     });
+  });
+});
+
+describe('validatePlayerCore — team name (CAL-SCHEDULE-IMPORT-002A)', () => {
+  const today: CalendarDate = { year: 2026, month: 10, day: 11 };
+  const base = { name: 'Daniel', dateOfBirth: { year: 2013, month: 3, day: 4 } };
+
+  it('optional: omitted, null or blank → no team; otherwise trimmed (never otherwise rewritten)', () => {
+    for (const teamName of [undefined, null, '', '   ']) {
+      const r = validatePlayerCore({ ...base, teamName }, today);
+      expect(r.ok && r.value.teamName).toBeNull();
+    }
+    const r = validatePlayerCore({ ...base, teamName: '  הפועל  חוף הכרמל ' }, today);
+    expect(r.ok && r.value.teamName).toBe('הפועל  חוף הכרמל'); // inner spacing is the user's; matching normalizes
+  });
+
+  it('at most 60 characters after trimming', () => {
+    expect(validatePlayerCore({ ...base, teamName: 'x'.repeat(60) }, today).ok).toBe(true);
+    expect(validatePlayerCore({ ...base, teamName: 'x'.repeat(61) }, today)).toEqual({ ok: false, errors: { teamName: 'TOO_LONG' } });
   });
 });

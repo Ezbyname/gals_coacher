@@ -28,7 +28,7 @@ const V5_EVENT_COLUMNS = 'id, player_id, type, sport, start_at, end_at, title, n
 async function dumpV5Data(db: Db) {
   return {
     families: await db.getAllAsync('SELECT * FROM families ORDER BY id'),
-    players: await db.getAllAsync('SELECT * FROM players ORDER BY id'),
+    players: await db.getAllAsync('SELECT id, family_id, name, date_of_birth, height_cm, created_at, updated_at FROM players ORDER BY id'),
     player_sports: await db.getAllAsync('SELECT * FROM player_sports ORDER BY player_id, sport'),
     basketball_player_profiles: await db.getAllAsync(
       'SELECT * FROM basketball_player_profiles ORDER BY player_id',
@@ -91,7 +91,7 @@ describe('migration v6 (calendar event completion) on real SQLite', () => {
 
   it('fresh install: two nullable completion columns, each with its CHECK, no default', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(13);
+    expect(migration.to).toBe(14);
     expect(migration.applied).toContain('calendar_event_completion');
     expect(await completionColumns(db as unknown as Db)).toEqual([
       { cid: 10, name: 'completed_at', type: 'INTEGER', notnull: 0, dflt_value: null, pk: 0 },
@@ -113,10 +113,10 @@ describe('migration v6 (calendar event completion) on real SQLite', () => {
     const { db, migration } = await openLocalDatabase();
     expect(migration).toEqual({
       from: 5,
-      to: 13,
-      applied: ['calendar_event_completion', 'activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import'],
+      to: 14,
+      applied: ['calendar_event_completion', 'activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name'],
     });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 13 });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 14 });
     expect(await dumpV5Data(db as unknown as Db)).toEqual(before);
     expect(
       await db.getAllAsync('SELECT id, completed_at, completion_source FROM calendar_events ORDER BY id'),
@@ -144,7 +144,7 @@ describe('migration v6 (calendar event completion) on real SQLite', () => {
 
     // Idempotent: the next launch applies nothing; schema and data unchanged.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 13, to: 13, applied: [] });
+    expect(again.migration).toEqual({ from: 14, to: 14, applied: [] });
     expect(
       await again.db.getAllAsync(
         "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name",
@@ -182,8 +182,8 @@ describe('migration v6 (calendar event completion) on real SQLite', () => {
     const relaunch = await openLocalDatabase();
     expect(relaunch.migration).toEqual({
       from: 5,
-      to: 13,
-      applied: ['calendar_event_completion', 'activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import'],
+      to: 14,
+      applied: ['calendar_event_completion', 'activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name'],
     });
     expect(await dumpV5Data(relaunch.db as unknown as Db)).toEqual(before);
     await relaunch.db.closeAsync();
@@ -191,9 +191,9 @@ describe('migration v6 (calendar event completion) on real SQLite', () => {
 
   it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 14');
+    await newer.execAsync('PRAGMA user_version = 15');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v14 .* only knows v13\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v15 .* only knows v14\. Refusing to downgrade/);
   });
 });
 

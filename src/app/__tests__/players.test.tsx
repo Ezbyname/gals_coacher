@@ -285,6 +285,27 @@ describe('Players — Hebrew (RTL)', () => {
     expect(await editHeight('')).toBeNull();
   });
 
+  it('CAL-SCHEDULE-IMPORT-002A: Team name is optional — added, changed and cleared through Edit (Hebrew)', async () => {
+    const noa = await seed(NOA);
+    expect(noa.player.teamName).toBeNull(); // a Player without a team keeps working
+    const app = renderRouter(routes, { initialUrl: '/children' });
+    const editTeam = async (team: string) => {
+      fireEvent.press(await screen.findByTestId(`player-row-${noa.player.id}`));
+      await screen.findByDisplayValue('נועה');
+      expect(screen.getByText('שם הקבוצה (לא חובה)')).toBeTruthy();
+      type('player-team-name', team);
+      fireEvent.press(screen.getByTestId('player-save'));
+      await waitFor(() => expect(app.getPathname()).toBe('/children'));
+      return (await repository.getPlayer(db, noa.player.id))!.player.teamName;
+    };
+    expect(await editTeam('  הפועל חוף הכרמל ')).toBe('הפועל חוף הכרמל'); // stored trimmed
+    fireEvent.press(await screen.findByTestId(`player-row-${noa.player.id}`));
+    expect(await screen.findByDisplayValue('הפועל חוף הכרמל')).toBeTruthy(); // Edit shows it
+    fireEvent.press(screen.getByTestId('player-cancel'));
+    expect(await editTeam('הפועל חוף הכרמל מעיין צבי')).toBe('הפועל חוף הכרמל מעיין צבי');
+    expect(await editTeam('   ')).toBeNull(); // cleared
+  });
+
   describe('validation (localized, nothing saved, values kept)', () => {
     async function submitNew(fill: () => void) {
       const app = renderRouter(routes, { initialUrl: '/children/new' });

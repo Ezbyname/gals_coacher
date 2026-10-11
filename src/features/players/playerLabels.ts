@@ -30,6 +30,9 @@ const DATE_OF_BIRTH: Record<NonNullable<PlayerCoreErrors['dateOfBirth']>, Transl
 const HEIGHT: Record<NonNullable<PlayerCoreErrors['heightCm']>, TranslationKey> = {
   NOT_POSITIVE_INTEGER: 'players.errors.heightInvalid',
 };
+const TEAM_NAME: Record<NonNullable<PlayerCoreErrors['teamName']>, TranslationKey> = {
+  TOO_LONG: 'players.errors.teamNameTooLong',
+};
 const SECONDARY: Record<NonNullable<BasketballProfileErrors['secondaryPosition']>, TranslationKey> = {
   UNKNOWN_CODE: 'players.errors.choiceInvalid',
   REQUIRES_SPECIFIC_PRIMARY: 'players.errors.secondaryNeedsPrimary',
@@ -38,7 +41,7 @@ const SECONDARY: Record<NonNullable<BasketballProfileErrors['secondaryPosition']
 const UNKNOWN_CODE: Record<'UNKNOWN_CODE', TranslationKey> = { UNKNOWN_CODE: 'players.errors.choiceInvalid' };
 
 export type PlayerFieldMessages = Partial<
-  Record<'name' | 'dateOfBirth' | 'height' | 'primaryPosition' | 'secondaryPosition' | 'dominantHand', string>
+  Record<'name' | 'dateOfBirth' | 'height' | 'teamName' | 'primaryPosition' | 'secondaryPosition' | 'dominantHand', string>
 >;
 
 /**
@@ -51,6 +54,7 @@ export function fieldMessages(t: T, errors: PlayerProfileErrors): PlayerFieldMes
   if (player.name) out.name = t(NAME[player.name]);
   if (player.dateOfBirth) out.dateOfBirth = t(DATE_OF_BIRTH[player.dateOfBirth]);
   if (player.heightCm) out.height = t(HEIGHT[player.heightCm]);
+  if (player.teamName) out.teamName = t(TEAM_NAME[player.teamName]);
   if (basketball.primaryPosition) out.primaryPosition = t(UNKNOWN_CODE[basketball.primaryPosition]);
   if (basketball.secondaryPosition) out.secondaryPosition = t(SECONDARY[basketball.secondaryPosition]);
   if (basketball.dominantHand) out.dominantHand = t(UNKNOWN_CODE[basketball.dominantHand]);

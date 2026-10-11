@@ -153,7 +153,7 @@ describe('migration v10 (taxonomy) on real SQLite', () => {
 
   it('fresh install: the two taxonomy tables, their indexes and triggers; every curated node seeded once, active', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(13);
+    expect(migration.to).toBe(14);
     expect(migration.applied).toContain('taxonomy');
     expect(await v10Objects(db as unknown as Db)).toEqual(V10_OBJECTS);
     const rows = await db.getAllAsync<{ id: string; builtin: number; active: number }>(
@@ -168,7 +168,7 @@ describe('migration v10 (taxonomy) on real SQLite', () => {
   it('upgrades a realistic v9 database: every existing row unchanged, same schema as a fresh install', async () => {
     const before = await createV9Database();
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 9, to: 13, applied: ['taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import'] });
+    expect(migration).toEqual({ from: 9, to: 14, applied: ['taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name'] });
     expectUnchangedExceptLaterSeeds(await dump(db as unknown as Db, PRE_V10_TABLES), before, 9);
     expect(await db.getFirstAsync('PRAGMA foreign_key_check')).toBeNull();
     // Today's repositories still read everything; the taxonomy reads on top.
@@ -207,7 +207,7 @@ describe('migration v10 (taxonomy) on real SQLite', () => {
     const state = await dump(first.db as unknown as Db, ['taxonomy_nodes', 'exercise_taxonomy']);
     await first.db.closeAsync();
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 13, to: 13, applied: [] });
+    expect(again.migration).toEqual({ from: 14, to: 14, applied: [] });
     expect(await dump(again.db as unknown as Db, ['taxonomy_nodes', 'exercise_taxonomy'])).toEqual(state);
     expect((await readTaxonomy(again.db)).node('BASKETBALL_REBOUNDING')!.active).toBe(false);
     await again.db.closeAsync();
@@ -225,7 +225,7 @@ describe('migration v10 (taxonomy) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 9, to: 13, applied: ['taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import'] });
+    expect(relaunch.migration).toEqual({ from: 9, to: 14, applied: ['taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name'] });
     expectUnchangedExceptLaterSeeds(await dump(relaunch.db as unknown as Db, PRE_V10_TABLES), before, 9);
     await relaunch.db.closeAsync();
   });

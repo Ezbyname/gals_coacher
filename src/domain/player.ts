@@ -13,6 +13,12 @@ export interface Player {
   readonly dateOfBirth: CalendarDate;
   /** Whole centimetres; current value only. */
   readonly heightCm: number | null;
+  /**
+   * The Player's current team, as the user wrote it (e.g. "הפועל חוף הכרמל"),
+   * or null. Metadata for schedule imports (filtering a league fixture list,
+   * home / away) — never identity, ownership or authorization (CAL-SCHEDULE-IMPORT-002A).
+   */
+  readonly teamName: string | null;
   /** Epoch milliseconds. */
   readonly createdAt: number;
   readonly updatedAt: number;
@@ -23,6 +29,8 @@ export interface PlayerCoreInput {
   readonly name: string;
   readonly dateOfBirth: { readonly year: number; readonly month: number; readonly day: number } | null;
   readonly heightCm?: number | null;
+  /** Omitted or blank = no team. */
+  readonly teamName?: string | null;
 }
 
 /** Validated generic fields, ready to persist. */
@@ -30,12 +38,17 @@ export interface PlayerCore {
   readonly name: string;
   readonly dateOfBirth: CalendarDate;
   readonly heightCm: number | null;
+  readonly teamName: string | null;
 }
+
+/** The longest team name a user may enter (characters, after trimming). */
+export const TEAM_NAME_MAX_LENGTH = 60;
 
 export type PlayerCoreErrors = {
   name?: 'REQUIRED';
   dateOfBirth?: 'REQUIRED' | 'INVALID_DATE' | 'IN_FUTURE';
   heightCm?: 'NOT_POSITIVE_INTEGER';
+  teamName?: 'TOO_LONG';
 };
 
 export type PlayerCoreValidation =
@@ -68,6 +81,10 @@ export function validatePlayerCore(input: PlayerCoreInput, today: CalendarDate):
     errors.heightCm = 'NOT_POSITIVE_INTEGER';
   }
 
+  const team = typeof input.teamName === 'string' ? input.teamName.trim() : '';
+  const teamName = team.length === 0 ? null : team;
+  if (teamName !== null && teamName.length > TEAM_NAME_MAX_LENGTH) errors.teamName = 'TOO_LONG';
+
   if (Object.keys(errors).length > 0 || dateOfBirth === null) return { ok: false, errors };
-  return { ok: true, value: { name, dateOfBirth, heightCm } };
+  return { ok: true, value: { name, dateOfBirth, heightCm, teamName } };
 }

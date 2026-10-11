@@ -772,4 +772,23 @@ export const migrations: readonly Migration[] = [
         WHERE import_batch_id IS NOT NULL;
     `,
   },
+  {
+    // CAL-SCHEDULE-IMPORT-002A. A Player may carry the name of their current
+    // team (e.g. "הפועל חוף הכרמל") so a league fixture list can be filtered to
+    // that team's games. Metadata only — never identity, ownership or
+    // authorization. Additive: one nullable column, every existing Player
+    // upgrades with NULL (no team). Stored trimmed and non-blank, at most 60
+    // characters (same CHECK style as the other optional texts). One current
+    // team in V1; a seasonal membership model may replace it later.
+    version: 14,
+    name: 'player_team_name',
+    sql: `
+      ALTER TABLE players
+        ADD COLUMN team_name TEXT
+        CHECK (
+          team_name IS NULL
+          OR (length(trim(team_name, ' ' || char(9, 10, 11, 12, 13))) > 0 AND length(team_name) <= 60)
+        );
+    `,
+  },
 ];

@@ -9,6 +9,7 @@ export type PlayerDataField =
   | 'name'
   | 'dateOfBirth'
   | 'heightCm'
+  | 'teamName'
   | 'createdAt'
   | 'updatedAt'
   | 'basketballProfile'

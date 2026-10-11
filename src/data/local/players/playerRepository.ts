@@ -7,6 +7,7 @@ import {
 import { formatCalendarDate, parseCalendarDate } from '@/domain/calendarDate';
 import { isUuid, type Uuid } from '@/domain/ids';
 import {
+  TEAM_NAME_MAX_LENGTH,
   validatePlayerCore,
   type Player,
   type PlayerCore,
@@ -113,14 +114,15 @@ export async function createPlayer(
   await writeTransaction(db, async () => {
     familyId = await ensureLocalFamily(db, deps.ids);
     await db.runAsync(
-      `INSERT INTO players (id, family_id, name, date_of_birth, height_cm, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO players (id, family_id, name, date_of_birth, height_cm, team_name, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         familyId,
         valid.core.name,
         formatCalendarDate(valid.core.dateOfBirth),
         valid.core.heightCm,
+        valid.core.teamName,
         now,
         now,
       ],
@@ -150,6 +152,8 @@ export async function createPlayer(
  * - inactive, `basketball: null` → personal fields only (profile untouched);
  * - inactive, Basketball given → REACTIVATED: the same assignment and the same
  *   profile row are reused (the profile updated as above); never a duplicate.
+ * An edit that does not mention the team name (`teamName` undefined) keeps the
+ * stored one; null / blank clears it.
  * Throws PlayerNotFoundError for an unknown id (never creates a Player).
  */
 export async function updatePlayer(
@@ -171,9 +175,10 @@ export async function updatePlayer(
     if (existing === null) throw new PlayerNotFoundError(id);
     const stored = existing.sports.find((assignment) => assignment.sport === BASKETBALL) ?? null;
 
+    const teamName = input.player.teamName === undefined ? existing.player.teamName : valid.core.teamName;
     await db.runAsync(
-      'UPDATE players SET name = ?, date_of_birth = ?, height_cm = ?, updated_at = ? WHERE id = ?',
-      [valid.core.name, formatCalendarDate(valid.core.dateOfBirth), valid.core.heightCm, now, id],
+      'UPDATE players SET name = ?, date_of_birth = ?, height_cm = ?, team_name = ?, updated_at = ? WHERE id = ?',
+      [valid.core.name, formatCalendarDate(valid.core.dateOfBirth), valid.core.heightCm, teamName, now, id],
     );
     if (valid.basketball !== null && input.basketball !== null) {
       if (stored === null) {
@@ -281,7 +286,7 @@ async function updateBasketballProfile(
 // from players on their own, so all four combinations are observable (none,
 // both, assignment only, profile only).
 const SELECT_PLAYERS = `
-  SELECT p.id, p.family_id, p.name, p.date_of_birth, p.height_cm, p.created_at, p.updated_at,
+  SELECT p.id, p.family_id, p.name, p.date_of_birth, p.height_cm, p.team_name, p.created_at, p.updated_at,
          ps.sport AS assignment_sport, ps.active AS assignment_active,
          b.player_id AS profile_player_id, b.sport AS profile_sport,
          b.primary_position, b.secondary_position, b.dominant_hand, b.experience, b.weekly_frequency
@@ -296,6 +301,7 @@ type PlayerRow = {
   name: unknown;
   date_of_birth: unknown;
   height_cm: unknown;
+  team_name: unknown;
   created_at: unknown;
   updated_at: unknown;
   assignment_sport: unknown;
@@ -339,13 +345,22 @@ function parsePlayerRow(row: PlayerRow): PlayerProfile {
     throw fail('heightCm', 'INVALID_VALUE');
   }
 
+  // Stored trimmed, non-blank, within the limit — nothing is normalized on read.
+  const teamName = row.team_name;
+  if (
+    teamName !== null &&
+    !(typeof teamName === 'string' && teamName.length > 0 && teamName === teamName.trim() && teamName.length <= TEAM_NAME_MAX_LENGTH)
+  ) {
+    throw fail('teamName', 'INVALID_VALUE');
+  }
+
   const { created_at: createdAt, updated_at: updatedAt } = row;
   if (typeof createdAt !== 'number' || !Number.isSafeInteger(createdAt))
     throw fail('createdAt', 'INVALID_VALUE');
   if (typeof updatedAt !== 'number' || !Number.isSafeInteger(updatedAt))
     throw fail('updatedAt', 'INVALID_VALUE');
 
-  const player: Player = { id: rawId, familyId, name, dateOfBirth, heightCm, createdAt, updatedAt };
+  const player: Player = { id: rawId, familyId, name, dateOfBirth, heightCm, teamName, createdAt, updatedAt };
   const hasAssignment = row.assignment_sport !== null;
   const hasProfile = row.profile_player_id !== null;
   if (!hasAssignment && !hasProfile) return { player, basketball: null, sports: [] };
