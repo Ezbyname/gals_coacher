@@ -38,7 +38,7 @@ export interface CalendarCompletion {
  * reinterpreted. New origins (e.g. another import format) are new codes here; the
  * database deliberately does not restrict the value set (no migration per code).
  */
-export const CALENDAR_EVENT_SOURCES = ['TEXT_IMPORT'] as const;
+export const CALENDAR_EVENT_SOURCES = ['TEXT_IMPORT', 'XLSX_IMPORT'] as const;
 export type CalendarEventSource = (typeof CALENDAR_EVENT_SOURCES)[number];
 
 export function isCalendarEventSource(value: unknown): value is CalendarEventSource {
@@ -47,7 +47,7 @@ export function isCalendarEventSource(value: unknown): value is CalendarEventSou
 
 /** Sources whose events always belong to an import batch (one confirmed import = one batch id). */
 export function sourceRequiresBatch(source: CalendarEventSource): boolean {
-  return source === 'TEXT_IMPORT';
+  return source === 'TEXT_IMPORT' || source === 'XLSX_IMPORT';
 }
 
 /**

@@ -56,7 +56,7 @@ export interface ParsedSession {
   readonly suggestedType: BuiltinActivityType | null;
 }
 
-export type UnparsedReason = 'NO_TIME' | 'NO_DAY' | 'INVALID_TIME';
+export type UnparsedReason = 'NO_TIME' | 'NO_DAY' | 'INVALID_TIME' | 'ROW_UNREADABLE';
 
 export interface UnparsedLine {
   readonly line: number;

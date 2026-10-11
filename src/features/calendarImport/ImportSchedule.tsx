@@ -9,7 +9,9 @@ import {
   undoCalendarImport,
   type UndoCalendarImportResult,
 } from '@/data/local/calendar/calendarEventRepository';
-import { getPlayer } from '@/data/local/players/playerRepository';
+import { getPlayer, setPlayerTeamName } from '@/data/local/players/playerRepository';
+import type { CalendarEventSource } from '@/domain/calendarEvent';
+import { fixtureCandidates } from '@/domain/scheduleImport';
 import { requiresTitle, selectableActivityTypes, type ActivityTypeId, type ActivityTypeRef } from '@/domain/activityType';
 import type { CalendarDate } from '@/domain/calendarDate';
 import {
@@ -45,10 +47,13 @@ import { StatusBadge } from '@/ui/StatusBadge';
 import { TextField } from '@/ui/TextField';
 import { colors, semantic, spacing, touch } from '@/ui/theme';
 
+import { ExcelSourcePanel, type ExcelSelection } from './ExcelSource';
 import { prepareImport } from './importConfirm';
 import { clock, dayLine, shortDate, timeRange, weekdayName } from './importFormat';
 import {
   acknowledge,
+  acknowledgeAll,
+  reviewFromCandidates,
   analyzeSchedule,
   editCandidate,
   removeCandidate,
@@ -69,7 +74,9 @@ import {
  * CalendarEvents for this Player (all or nothing; never re-parsed) → Done
  * (View calendar / Undo import) → Undone.
  */
-type Loaded = { types: ActivityTypeRef[]; sports: SportKey[]; name: string };
+type Loaded = { types: ActivityTypeRef[]; sports: SportKey[]; name: string; teamName: string | null };
+/** Where the schedule comes from (CAL-SCHEDULE-IMPORT-002B): pasted text or an Excel fixture file. */
+type SourceMode = 'text' | 'excel';
 type Phase = 'input' | 'review' | 'confirm' | 'done' | 'undone';
 type Saved = { importBatchId: string; candidates: ImportCandidate[] };
 
@@ -93,9 +100,18 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
   const [saved, setSaved] = useState<Saved | null>(null);
   const [undone, setUndone] = useState<UndoCalendarImportResult | null>(null);
   const [undoError, setUndoError] = useState(false);
+  const [mode, setMode] = useState<SourceMode>('text');
+  const [excel, setExcel] = useState<ExcelSelection | null>(null);
+  const [teamError, setTeamError] = useState(false);
+  /** Set at Analyze: what the reviewed batch will be written as, and each fixture's side. */
+  const [reviewed, setReviewed] = useState<{ source: CalendarEventSource; teamName: string | null; sides: Map<string, 'HOME' | 'AWAY' | null> }>(
+    { source: 'TEXT_IMPORT', teamName: null, sides: new Map() },
+  );
   const navigation = useNavigation();
   // Once the batch is saved there is nothing left to lose by leaving.
-  useUnsavedChangesGuard(phase !== 'done' && phase !== 'undone' && (text.trim().length > 0 || review !== null));
+  useUnsavedChangesGuard(
+    phase !== 'done' && phase !== 'undone' && (text.trim().length > 0 || review !== null || excel !== null),
+  );
 
   useEffect(() => {
     if (boot.status !== 'ready') return;
@@ -104,7 +120,12 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
       .then(([catalog, profile]) => {
         if (!active) return;
         const sports = profile ? sportsOf(profile) : [];
-        setLoaded({ types: selectableActivityTypes(catalog), sports, name: profile?.player.name ?? player.name });
+        setLoaded({
+          types: selectableActivityTypes(catalog),
+          sports,
+          name: profile?.player.name ?? player.name,
+          teamName: profile?.player.teamName ?? null,
+        });
         // Smart default: preselect the sport only when the Player has exactly one active sport.
         setSport(sports.length === 1 ? sports[0]! : null);
       })
@@ -133,15 +154,39 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
       AccessibilityInfo.announceForAccessibility(t('calendarImport.typeRequired'));
       return;
     }
-    if (text.trim().length === 0) return setInputError('text');
+    if (mode === 'excel') {
+      if (excel === null) return; // nothing read yet (the panel shows why)
+      if (excel.team === null) return setTeamError(true);
+    } else if (text.trim().length === 0) return setInputError('text');
     if (busy || boot.status !== 'ready') return;
     setBusy(true);
     setInputError(null);
+    setTeamError(false);
     try {
       // READ ONLY: this Player's events, for the conservative duplicate review.
       const events = await listCalendarEvents(boot.db, player.id);
       const now = localCalendarDateFromEpoch(services.clock.wallNow());
-      setReview(analyzeSchedule(text, week, typeId, events.map(toSlot), now));
+      if (mode === 'excel' && excel !== null && excel.team !== null) {
+        // Only the Player's TEAM's games (code or exact name — never "contains"); explicit dates, no week.
+        const games = fixtureCandidates(excel.fixtures, excel.team, typeId);
+        const state = reviewFromCandidates(games, events.map(toSlot), now);
+        const rowNumber = (ref: string) => Number(ref.slice(ref.lastIndexOf('!') + 1));
+        setReview({
+          ...state,
+          unparsed: excel.rejected.map((r) => ({ line: rowNumber(r.ref), text: `${r.ref} — ${r.text}`, reason: 'ROW_UNREADABLE' as const })),
+        });
+        setReviewed({ source: 'XLSX_IMPORT', teamName: excel.team.name, sides: new Map(games.map((g) => [g.key, g.matchup?.side ?? null])) });
+        if (excel.saveTeam) {
+          // Explicit choice only; a failure here never blocks the import.
+          await setPlayerTeamName(boot.db, player.id, excel.team.name, { clock: services.clock }).catch((e: unknown) =>
+            console.warn('[calendarImport] could not save the team name', e),
+          );
+          setLoaded({ ...loaded, teamName: excel.team.name });
+        }
+      } else {
+        setReview(analyzeSchedule(text, week, typeId, events.map(toSlot), now));
+        setReviewed({ source: 'TEXT_IMPORT', teamName: null, sides: new Map() });
+      }
       setAnalyzedFor(player.id);
       setEditing(null);
       setPhase('review');
@@ -183,7 +228,7 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
       const result = await createCalendarEventBatch(
         boot.db,
         player.id,
-        { events: prepared.inputs, source: 'TEXT_IMPORT' },
+        { events: prepared.inputs, source: reviewed.source },
         { ids: services.ids, clock: services.clock },
       );
       if (result.ok) {
@@ -322,10 +367,16 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
       <KeyboardSafeScrollView testID="import-scroll" contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         {header}
         <Text style={styles.muted} testID="import-review-header">
-          {t('calendarImport.header', {
-            type: typeId ? typeLabelOf(typeId) : '',
-            week: t('calendarImport.weekRange', { start: shortDate(week.start), end: shortDate(week.end) }),
-          })}
+          {review.week === null
+            ? t('calendarImport.excel.header', {
+                type: typeId ? typeLabelOf(typeId) : '',
+                count: review.candidates.length,
+                team: isolate(reviewed.teamName ?? ''),
+              })
+            : t('calendarImport.header', {
+                type: typeId ? typeLabelOf(typeId) : '',
+                week: t('calendarImport.weekRange', { start: shortDate(review.week.start), end: shortDate(review.week.end) }),
+              })}
         </Text>
         <BigButton
           testID="import-edit-text"
@@ -343,6 +394,7 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
             key={c.key}
             candidate={c}
             week={review.week}
+            side={reviewed.sides.get(c.key) ?? null}
             removed={review.removed.has(c.key)}
             issues={view.issues.get(c.key) ?? []}
             open={view.open.get(c.key) ?? []}
@@ -381,6 +433,18 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
             {t('calendarImport.noneIncluded')}
           </Text>
         ) : null}
+        {(() => {
+          // One explicit decision for many start-only games (their end stays NULL — never invented).
+          const noEnd = view.summary.includedKeys.filter((k) => (view.open.get(k) ?? []).includes('END_TIME_MISSING')).length;
+          return noEnd >= 2 ? (
+            <BigButton
+              testID="import-keep-all-no-end"
+              variant="secondary"
+              label={t('calendarImport.keepAllWithoutEnd', { count: noEnd })}
+              onPress={() => setReview(acknowledgeAll(review, 'END_TIME_MISSING'))}
+            />
+          ) : null;
+        })()}
         {blocked > 0 ? (
           <Text style={styles.warning} testID="import-blocked">
             {blocked === 1 ? t('calendarImport.blockedOne') : t('calendarImport.blockedMany', { count: blocked })}
@@ -425,6 +489,12 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
           />
         )}
       </RevealWhen>
+      {mode === 'excel' && typeId !== 'GAME' && types.some((x) => x.id === 'GAME') ? (
+        // A league fixture file suggests GAME — shown, never applied for the user.
+        <Text style={styles.muted} testID="import-type-suggestion">
+          {t('calendarImport.excel.suggestGame')}
+        </Text>
+      ) : null}
       {sports.length > 0 ? (
         <ChoiceChips<SportKey>
           testID="import-sport"
@@ -435,6 +505,33 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
         />
       ) : null}
 
+      <ChoiceChips<SourceMode>
+        testID="import-source"
+        label={t('calendarImport.source.label')}
+        choices={[
+          { value: 'text', label: t('calendarImport.source.text') },
+          { value: 'excel', label: t('calendarImport.source.excel') },
+        ]}
+        value={mode}
+        onChange={(v) => v !== null && setMode(v)}
+      />
+      {mode === 'excel' ? (
+        <>
+          <Text style={styles.heading}>{t('calendarImport.excel.step')}</Text>
+          <ExcelSourcePanel
+            playerName={loaded.name}
+            playerTeam={loaded.teamName}
+            value={excel}
+            onChange={(v) => {
+              setExcel(v);
+              setTeamError(false);
+            }}
+            teamError={teamError}
+          />
+          <BigButton testID="import-analyze" label={t('calendarImport.excel.analyze')} onPress={() => void analyze()} />
+        </>
+      ) : (
+      <>
       <Text style={styles.heading}>{t('calendarImport.stepWeek')}</Text>
       <View style={styles.weekRow}>
         <WeekButton
@@ -479,6 +576,8 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
         error={inputError === 'text' ? t('calendarImport.textRequired') : undefined}
       />
       <BigButton testID="import-analyze" label={t('calendarImport.analyze')} onPress={() => void analyze()} />
+      </>
+      )}
     </KeyboardSafeScrollView>
   );
 }
@@ -556,7 +655,10 @@ function RowAction({ testID, label, a11y, onPress }: { testID: string; label: st
 
 type RowProps = {
   candidate: ImportCandidate;
-  week: ImportWeek;
+  /** null for a fixture source (no week). */
+  week: ImportWeek | null;
+  /** The Player's side in a fixture (derived presentation; never ownership). */
+  side: 'HOME' | 'AWAY' | null;
   removed: boolean;
   issues: readonly ImportIssueCode[];
   open: readonly ImportIssueCode[];
@@ -613,6 +715,11 @@ function CandidateRow(props: RowProps) {
       <Text style={styles.body} testID={`${id}-time`}>
         {timeRange(c.start, c.end)}
       </Text>
+      {props.side !== null ? (
+        <Text style={styles.muted} testID={`${id}-side`}>
+          {t(`calendarImport.side.${props.side}`)}
+        </Text>
+      ) : null}
       {c.location !== null ? (
         <Text style={styles.body} testID={`${id}-location`}>
           {t('calendarImport.locationLine', { place: c.location })}
@@ -676,7 +783,8 @@ function CandidateRow(props: RowProps) {
           );
         }
         if (code === 'WEEKDAY_DATE_MISMATCH') {
-          const written = c.textWeekday === null ? '' : weekdayName(dateInWeek(props.week, c.textWeekday), language);
+          const written =
+            c.textWeekday === null || props.week === null ? '' : weekdayName(dateInWeek(props.week, c.textWeekday), language);
           return (
             <View key={code} style={styles.gap} testID={`${id}-issue-${code}`}>
               <Text style={styles.warning}>{t('calendarImport.dateMismatch')}</Text>

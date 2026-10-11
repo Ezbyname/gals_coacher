@@ -23,7 +23,8 @@ import {
  * READ by the screen and passed in; saving the reviewed batch is 001D.
  */
 export interface ImportReviewState {
-  readonly week: ImportWeek;
+  /** The weekly-text week; null for a fixture source (each candidate has its own explicit date). */
+  readonly week: ImportWeek | null;
   /** The candidates with the user's edits applied (message order). */
   readonly candidates: readonly ImportCandidate[];
   readonly unparsed: readonly UnparsedLine[];
@@ -86,6 +87,34 @@ export function viewOf(state: ImportReviewState): ImportReviewView {
     if (still.length > 0) open.set(key, still);
   }
   return { issues, open, duplicates, summary };
+}
+
+/**
+ * The reviewable state for candidates an import SOURCE produced (CAL-SCHEDULE-IMPORT-002:
+ * e.g. the games of the Player's team in an Excel fixture file). No week: explicit dates
+ * are authoritative. Same review rules, decisions, Confirm and batch write as text.
+ */
+export function reviewFromCandidates(
+  candidates: readonly ImportCandidate[],
+  existing: readonly ExistingSlot[],
+  today: CalendarDate | null,
+): ImportReviewState {
+  return { week: null, candidates, unparsed: [], removed: new Set(), acknowledged: new Map(), existing, today };
+}
+
+/**
+ * One explicit decision for many candidates: acknowledge a REVIEW issue on every
+ * INCLUDED candidate that currently has it (e.g. "Keep all without end time" —
+ * their end stays NULL; nothing is invented). BLOCKING issues cannot be.
+ */
+export function acknowledgeAll(state: ImportReviewState, code: ImportIssueCode): ImportReviewState {
+  if (ISSUE_SEVERITY[code] !== 'REVIEW') return state;
+  const view = viewOf(state);
+  let next = state;
+  for (const key of view.summary.includedKeys) {
+    if ((view.issues.get(key) ?? []).includes(code)) next = acknowledge(next, key, code);
+  }
+  return next;
 }
 
 export function removeCandidate(state: ImportReviewState, key: string): ImportReviewState {

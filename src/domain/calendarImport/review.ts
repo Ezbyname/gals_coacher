@@ -109,7 +109,8 @@ export function isPastDate(date: CalendarDate, today: CalendarDate): boolean {
  */
 export function candidateIssues(
   c: ImportCandidate,
-  week: ImportWeek,
+  /** null for a fixture source (explicit full dates, no week constraint — CAL-SCHEDULE-IMPORT-002B). */
+  week: ImportWeek | null,
   options: { readonly duplicate?: boolean; readonly today?: CalendarDate | null } = {},
 ): ImportIssueCode[] {
   const issues: ImportIssueCode[] = [];
@@ -119,7 +120,7 @@ export function candidateIssues(
   const past = options.today != null && isPastDate(c.date, options.today);
   if (past) issues.push('DATE_IN_PAST');
   else {
-    if (!isInWeek(week, c.date)) issues.push('DATE_OUTSIDE_WEEK');
+    if (week !== null && !isInWeek(week, c.date)) issues.push('DATE_OUTSIDE_WEEK');
     if (c.dateFrom === 'EXPLICIT_DATE' && c.textWeekday !== null && weekdayOf(c.date) !== c.textWeekday) {
       issues.push('WEEKDAY_DATE_MISMATCH');
     }

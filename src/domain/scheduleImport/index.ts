@@ -7,3 +7,5 @@
 export * from './candidate';
 export * from './adapter';
 export * from './teams';
+export * from './xlsx';
+export * from './fixtures';

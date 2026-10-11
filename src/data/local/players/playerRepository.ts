@@ -198,6 +198,30 @@ export async function updatePlayer(
   return { ok: true, profile: updated };
 }
 
+/**
+ * Sets only the Player's current team name (CAL-SCHEDULE-IMPORT-002B: "Save as this
+ * Player's team" after choosing the team in a fixture file — an explicit user
+ * choice, never automatic). Trimmed; blank / null clears it; over the limit →
+ * TOO_LONG (nothing written). Throws PlayerNotFoundError for an unknown id.
+ */
+export async function setPlayerTeamName(
+  db: PlayerDb,
+  id: string,
+  teamName: string | null,
+  deps: { clock: Clock },
+): Promise<{ ok: true; teamName: string | null } | { ok: false; error: 'TOO_LONG' }> {
+  const trimmed = (teamName ?? '').trim();
+  const value = trimmed.length === 0 ? null : trimmed;
+  if (value !== null && value.length > TEAM_NAME_MAX_LENGTH) return { ok: false, error: 'TOO_LONG' };
+  const now = deps.clock.wallNow();
+  await writeTransaction(db, async () => {
+    const existing = await db.getFirstAsync('SELECT id FROM players WHERE id = ?', [id]);
+    if (existing === null) throw new PlayerNotFoundError(id);
+    await db.runAsync('UPDATE players SET team_name = ?, updated_at = ? WHERE id = ?', [value, now, id]);
+  });
+  return { ok: true, teamName: value };
+}
+
 /** The Player with its Basketball profile, or null if no such Player exists. */
 export function getPlayer(db: PlayerDb, id: string): Promise<PlayerProfile | null> {
   return runSerialized(db, () => readPlayer(db, id));
