@@ -845,7 +845,7 @@ export const en = {
     },
     errors: {
       typeRequired: 'Choose an event type.',
-      titleTooLong: 'The title can have up to 35 characters.',
+      titleTooLong: 'The title can have up to 100 characters.',
       locationTooLong: 'The location can have up to 80 characters.',
       titleRequiredForOther: 'An event of type Other needs a title.',
       endAfterStart: 'The end must be after the start.',

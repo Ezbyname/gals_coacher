@@ -17,7 +17,8 @@ import {
 const T0 = new Date(2026, 9, 6, 12).getTime();
 const START = new Date(2026, 9, 10, 17).getTime();
 const LEGACY_ID = '00000000-0000-4000-8000-0000000000c9';
-const LEGACY_TITLE = 'אימון כוח ארוך במיוחד שנשמר לפני שהייתה מגבלה על אורך הכותרת'; // > 35
+const LEGACY_TITLE =
+  'אימון כוח ארוך במיוחד שנשמר לפני שהייתה מגבלה על אורך הכותרת, עם הרבה פרטים נוספים על התרגילים והמטרות של השבוע'; // > 100
 
 describe('calendar title limit on real SQLite', () => {
   let db: SQLiteDatabase;
@@ -49,18 +50,18 @@ describe('calendar title limit on real SQLite', () => {
   afterEach(() => db.closeAsync());
 
   it('the stored long title still reads in full', async () => {
-    expect(LEGACY_TITLE.length).toBeGreaterThan(35);
+    expect(LEGACY_TITLE.length).toBeGreaterThan(100);
     expect((await getCalendarEvent(db, gal, LEGACY_ID))!.title).toBe(LEGACY_TITLE);
     expect((await listCalendarEvents(db, gal)).map((e) => e.title)).toEqual([LEGACY_TITLE]);
   });
 
-  it('create: 35 characters are saved; 36 are a TOO_LONG result with nothing written', async () => {
+  it('create: 100 characters are saved; 101 are a TOO_LONG result with nothing written', async () => {
     expect(
       (
         await createCalendarEvent(
           db,
           gal,
-          { type: 'GAME', startAt: START, title: 'x'.repeat(35) },
+          { type: 'GAME', startAt: START, title: 'x'.repeat(100) },
           { ids, clock },
         )
       ).ok,
@@ -70,7 +71,7 @@ describe('calendar title limit on real SQLite', () => {
       await createCalendarEvent(
         db,
         gal,
-        { type: 'GAME', startAt: START, title: 'x'.repeat(36) },
+        { type: 'GAME', startAt: START, title: 'x'.repeat(101) },
         { ids, clock },
       ),
     ).toEqual({ ok: false, errors: { title: 'TOO_LONG' } });
@@ -95,7 +96,7 @@ describe('calendar title limit on real SQLite', () => {
         db,
         gal,
         LEGACY_ID,
-        { type: 'OTHER', startAt: START, title: LEGACY_TITLE.slice(0, 40) },
+        { type: 'OTHER', startAt: START, title: LEGACY_TITLE.slice(0, 105) },
         { clock },
       ),
     ).toEqual({ ok: false, errors: { title: 'TOO_LONG' } });
@@ -104,10 +105,10 @@ describe('calendar title limit on real SQLite', () => {
       db,
       gal,
       LEGACY_ID,
-      { type: 'OTHER', startAt: START, title: LEGACY_TITLE.slice(0, 35) },
+      { type: 'OTHER', startAt: START, title: LEGACY_TITLE.slice(0, 100) },
       { clock },
     );
-    expect(shortened.ok && shortened.event.title).toBe(LEGACY_TITLE.slice(0, 35).trim());
+    expect(shortened.ok && shortened.event.title).toBe(LEGACY_TITLE.slice(0, 100).trim());
   });
 
   it('other field rules are still checked before anything is read', async () => {

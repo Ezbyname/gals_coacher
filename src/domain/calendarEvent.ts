@@ -153,7 +153,7 @@ function readSport(value: unknown): SportKey | null | typeof INVALID {
 }
 
 /** The longest title a user may enter (characters, counted after trimming). */
-export const CALENDAR_TITLE_MAX_LENGTH = 35;
+export const CALENDAR_TITLE_MAX_LENGTH = 100;
 
 /** The longest location a user may enter (characters, after trimming). Owner may change it here. */
 export const CALENDAR_LOCATION_MAX_LENGTH = 80;

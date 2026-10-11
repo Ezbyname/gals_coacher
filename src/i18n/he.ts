@@ -848,7 +848,7 @@ export const he = {
     },
     errors: {
       typeRequired: 'יש לבחור סוג אירוע.',
-      titleTooLong: 'הכותרת יכולה להכיל עד 35 תווים.',
+      titleTooLong: 'הכותרת יכולה להכיל עד 100 תווים.',
       locationTooLong: 'המיקום יכול להכיל עד 80 תווים.',
       titleRequiredForOther: 'לאירוע מסוג "אחר" צריך כותרת.',
       endAfterStart: 'הסיום צריך להיות אחרי ההתחלה.',

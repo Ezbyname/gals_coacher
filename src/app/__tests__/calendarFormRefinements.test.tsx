@@ -18,7 +18,8 @@ const routes = appRoutes(resolve(__dirname, '..')) as never;
 const NOW = new Date(2026, 9, 6, 12).getTime();
 const START = new Date(2026, 9, 10, 17).getTime();
 const EVENT_ID = '00000000-0000-4000-8000-0000000000c9';
-const LEGACY_TITLE = 'אימון כוח ארוך במיוחד שנשמר לפני שהייתה מגבלה על אורך הכותרת'; // > 35
+const LEGACY_TITLE =
+  'אימון כוח ארוך במיוחד שנשמר לפני שהייתה מגבלה על אורך הכותרת, עם הרבה פרטים נוספים על התרגילים והמטרות של השבוע'; // > 100
 const EIGHT_LINES = ['שורה 1', 'שורה 2', 'line 3', 'line 4', 'line 5', 'line 6', 'line 7', 'שורה 8'].join(
   '\n',
 );
@@ -72,21 +73,21 @@ const event = () =>
     [EVENT_ID],
   );
 
-describe('Calendar title: at most 35 characters', () => {
-  it.each(['create', 'edit'] as const)('%s: the field stops new input at 35 characters', async (kind) => {
+describe('Calendar title: at most 100 characters', () => {
+  it.each(['create', 'edit'] as const)('%s: the field stops new input at 100 characters', async (kind) => {
     await openForm(kind);
-    expect(title().props.maxLength).toBe(35);
+    expect(title().props.maxLength).toBe(100);
   });
 
   it.each([
-    ['he', 'א'.repeat(35), 'א'.repeat(36), 'הכותרת יכולה להכיל עד 35 תווים.'],
-    ['en', 'x'.repeat(35), 'x'.repeat(36), 'The title can have up to 35 characters.'],
+    ['he', 'א'.repeat(100), 'א'.repeat(101), 'הכותרת יכולה להכיל עד 100 תווים.'],
+    ['en', 'x'.repeat(100), 'x'.repeat(101), 'The title can have up to 100 characters.'],
   ] as const)(
-    '%s create: 35 characters save; a 36th is refused by the domain with a message',
+    '%s create: 100 characters save; a 101st is refused by the domain with a message',
     async (language, ok, tooLong, message) => {
       const app = await openForm('create', language);
       fireEvent.press(screen.getByTestId('event-type-GAME'));
-      // Typed input cannot exceed maxLength on a device; a pasted / programmatic 36 still never saves.
+      // Typed input cannot exceed maxLength on a device; a pasted / programmatic 101 still never saves.
       fireEvent.changeText(title(), tooLong);
       fireEvent.press(screen.getByTestId('event-save'));
       expect(await screen.findByTestId('event-title-error')).toBeTruthy();
@@ -114,10 +115,10 @@ describe('Calendar title: at most 35 characters', () => {
 
   it('edit of a long legacy title: a changed title must meet the limit (nothing written otherwise)', async () => {
     await openForm('edit', 'en', { legacyTitle: LEGACY_TITLE });
-    fireEvent.changeText(title(), LEGACY_TITLE.slice(0, 40));
+    fireEvent.changeText(title(), LEGACY_TITLE.slice(0, 105));
     fireEvent.press(screen.getByTestId('event-save'));
     expect(await screen.findByTestId('event-title-error')).toBeTruthy();
-    expect(text('event-title-error')).toBe('The title can have up to 35 characters.');
+    expect(text('event-title-error')).toBe('The title can have up to 100 characters.');
     expect((await event())!.title).toBe(LEGACY_TITLE);
   });
 });
