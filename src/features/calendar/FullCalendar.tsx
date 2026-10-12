@@ -139,7 +139,9 @@ export function FullCalendar() {
             name: player.name,
             createdAt: player.createdAt,
           }));
-          setLoaded({ status: 'ready', rangeKey, players, events, types });
+          // Archived Players are off the roster: their events stay stored, not in the default calendar.
+          const roster = new Set(players.map((p) => p.id));
+          setLoaded({ status: 'ready', rangeKey, players, events: events.filter((e) => roster.has(e.playerId)), types });
         })
         .catch((e: unknown) => {
           console.warn('[calendar] full calendar failed', e);

@@ -5,7 +5,8 @@ import { colors, spacing, touch } from './theme';
 type Props = {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary';
+  /** `danger`: a destructive action (always confirmed by the caller before anything is removed). */
+  variant?: 'primary' | 'secondary' | 'danger';
   disabled?: boolean;
   /** Marks the current choice in a set (e.g. the active language). */
   selected?: boolean;
@@ -14,6 +15,7 @@ type Props = {
 
 export function BigButton({ label, onPress, variant = 'primary', disabled, selected, testID }: Props) {
   const primary = variant === 'primary';
+  const danger = variant === 'danger';
   return (
     <Pressable
       accessibilityRole="button"
@@ -23,11 +25,11 @@ export function BigButton({ label, onPress, variant = 'primary', disabled, selec
       testID={testID}
       style={({ pressed }) => [
         styles.base,
-        primary ? styles.primary : styles.secondary,
+        primary ? styles.primary : danger ? styles.danger : styles.secondary,
         pressed && { opacity: 0.8 },
         disabled && { opacity: 0.4 },
       ]}>
-      <Text style={[styles.label, primary ? styles.labelPrimary : styles.labelSecondary]}>
+      <Text style={[styles.label, primary ? styles.labelPrimary : danger ? styles.labelDanger : styles.labelSecondary]}>
         {label}
       </Text>
     </Pressable>
@@ -44,7 +46,9 @@ const styles = StyleSheet.create({
   },
   primary: { backgroundColor: colors.court },
   secondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+  danger: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.danger },
   label: { fontSize: 18, fontWeight: '700' },
+  labelDanger: { color: colors.danger },
   labelPrimary: { color: '#fff' },
   labelSecondary: { color: colors.ink },
 });

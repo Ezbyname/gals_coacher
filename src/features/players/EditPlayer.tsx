@@ -1,15 +1,17 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { PlayerDataError } from '@/data/local/players/errors';
 import {
+  archivePlayer,
   getPlayer,
   isSportActive,
   updatePlayer,
   type PlayerProfile,
 } from '@/data/local/players/playerRepository';
 import { useApp } from '@/features/AppProvider';
+import { isolate } from '@/i18n/bidi';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
@@ -84,6 +86,18 @@ export function EditPlayer({ playerId }: { playerId: string }) {
     );
   }
 
+  if (state.profile.player.archivedAt !== null) {
+    // Off the roster: no editing, no new activity (PLAYER-ARCHIVE-001). History stays stored.
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.muted} testID="player-archived">
+          {t('players.archive.archived')}
+        </Text>
+        <BigButton testID="player-back" variant="secondary" label={t('players.form.backToList')} onPress={backToPlayers} />
+      </View>
+    );
+  }
+
   const db = boot.status === 'ready' ? boot.db : null;
   return (
     <PlayerForm
@@ -94,6 +108,26 @@ export function EditPlayer({ playerId }: { playerId: string }) {
       }}
       onSaved={backToPlayers}
       onCancel={backToPlayers}
+      // PLAYER-ARCHIVE-001: always asks first; Cancel is the safe default. Nothing is deleted.
+      onArchive={async () => {
+        if (!db) throw new Error('database not ready');
+        const name = isolate(state.profile.player.name);
+        const confirmed = await new Promise<boolean>((done) =>
+          Alert.alert(
+            t('players.archive.title', { name }),
+            t('players.archive.body'),
+            [
+              { text: t('players.archive.cancel'), style: 'cancel', onPress: () => done(false) },
+              { text: t('players.archive.confirm'), style: 'destructive', onPress: () => done(true) },
+            ],
+            { cancelable: true, onDismiss: () => done(false) },
+          ),
+        );
+        if (!confirmed) return 'kept';
+        await archivePlayer(db, playerId, { clock: services.clock });
+        return 'archived';
+      }}
+      onArchived={backToPlayers}
       // Separate from the profile fields: Self-assessment for players with
       // Basketball (history only while it is inactive), then the Schedule and
       // Training for every player.

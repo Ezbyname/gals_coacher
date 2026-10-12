@@ -26,6 +26,7 @@ import type { IdService } from '@/services/ids/IdService';
 
 import { runSerialized } from '../connectionQueue';
 import { readExercisesUnserialized } from '../exercises/exerciseRepository';
+import { PlayerArchivedError } from '../players/errors';
 import type { PlayerDb } from '../players/playerDb';
 
 import { TrainingDataError, TrainingNotFoundError, TrainingRuleError } from './errors';
@@ -351,8 +352,9 @@ async function insertPlan(
   deps: { ids: IdService; clock: Clock },
 ): Promise<string> {
   const now = deps.clock.wallNow();
-  const player = await db.getFirstAsync('SELECT id FROM players WHERE id = ?', [input.playerId]);
+  const player = await db.getFirstAsync<{ archived_at: unknown }>('SELECT archived_at FROM players WHERE id = ?', [input.playerId]);
   if (player === null) throw new TrainingNotFoundError('player', input.playerId);
+  if (player.archived_at !== null) throw new PlayerArchivedError(input.playerId); // PLAYER-ARCHIVE-001
   const template = await readTemplate(db, input.templateId, await readExercisesUnserialized(db));
   if (!template.active) throw new TrainingRuleError('TEMPLATE_INACTIVE');
   const id = deps.ids.newUuid();

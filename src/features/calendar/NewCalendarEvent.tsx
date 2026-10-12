@@ -35,7 +35,7 @@ export function NewCalendarEvent({ playerId }: { playerId: string }) {
       .then(([profile, catalog]) => {
         if (!active) return;
         setState(
-          profile
+          profile && profile.player.archivedAt === null
             ? {
                 status: 'ready',
                 initialValues: newEventValues(services.clock.wallNow()),
@@ -43,7 +43,7 @@ export function NewCalendarEvent({ playerId }: { playerId: string }) {
                 // A new event offers only ACTIVE types (none chosen for the user).
                 types: selectableActivityTypes(catalog),
               }
-            : { status: 'error', message: 'calendar.errors.playerNotFound' },
+            : { status: 'error', message: profile ? 'players.archive.archived' : 'calendar.errors.playerNotFound' },
         );
       })
       .catch((e: unknown) => {

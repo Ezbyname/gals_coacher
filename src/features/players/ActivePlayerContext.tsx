@@ -52,7 +52,10 @@ export function ActivePlayerProvider({
           if (!active) return;
           setLoaded({
             forId: playerId,
-            value: profile
+            // An archived Player is never acted for: nothing new may be created for them.
+            value: profile?.player.archivedAt != null
+              ? { status: 'unresolved', reason: 'archived' }
+              : profile
               ? {
                   status: 'resolved',
                   activePlayerId: playerId,
@@ -106,7 +109,14 @@ export function RequireActivePlayer({ children }: { children: ReactNode }) {
   const context = useActivePlayer();
   if (context.status === 'loading') return <LoadingScreen />;
   if (context.status === 'unresolved') {
-    return <ErrorScreen testID="active-player-missing" message="training.errors.playerRequired" fallback="/children" />;
+    return (
+      <ErrorScreen
+        testID="active-player-missing"
+        // An archived Player is off the roster: say so, rather than "no Player" (PLAYER-ARCHIVE-001).
+        message={context.reason === 'archived' ? 'players.archive.archived' : 'training.errors.playerRequired'}
+        fallback="/children"
+      />
+    );
   }
   return <>{children}</>;
 }

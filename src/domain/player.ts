@@ -19,6 +19,12 @@ export interface Player {
    * home / away) — never identity, ownership or authorization (CAL-SCHEDULE-IMPORT-002A).
    */
   readonly teamName: string | null;
+  /**
+   * When the Player was archived (epoch ms), or null while active (PLAYER-ARCHIVE-001).
+   * An archived Player is off the active roster and gets no new activity; all of
+   * their history is kept, and restoring clears this.
+   */
+  readonly archivedAt: number | null;
   /** Epoch milliseconds. */
   readonly createdAt: number;
   readonly updatedAt: number;

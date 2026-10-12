@@ -10,8 +10,9 @@ import type { Clock } from '@/services/clock/Clock';
 import type { IdService } from '@/services/ids/IdService';
 
 import { runSerialized } from '../connectionQueue';
-import { PlayerNotFoundError, SportInactiveError } from '../players/errors';
+import { SportInactiveError } from '../players/errors';
 import type { PlayerDb } from '../players/playerDb';
+import { assertActivePlayer } from '../players/playerRepository';
 
 import {
   SelfAssessmentDataError,
@@ -31,7 +32,8 @@ export type CreateSelfAssessmentResult =
  * Saves a new, immutable self-assessment taken now (`clock.wallNow()`), with a
  * client-generated id. The answers are validated first (invalid → result,
  * nothing written). Then, one operation at a time per connection and inside
- * one transaction: the player must exist (PlayerNotFoundError) and have the
+ * one transaction: the player must exist (PlayerNotFoundError), be active
+ * (PlayerArchivedError — PLAYER-ARCHIVE-001) and have the
  * sport assignment (SelfAssessmentSportNotAssignedError) ACTIVE
  * (SportInactiveError — history stays listed), and the assessment
  * row and every rating row are inserted together — any failure rolls back
@@ -51,8 +53,7 @@ export async function createSelfAssessment(
   const id = deps.ids.newUuid();
   let saved = null as SelfAssessment | null;
   await writeTransaction(db, async () => {
-    const player = await db.getFirstAsync('SELECT id FROM players WHERE id = ?', [playerId]);
-    if (player === null) throw new PlayerNotFoundError(playerId);
+    await assertActivePlayer(db, playerId); // exists and is not archived
     const assignment = await db.getFirstAsync<{ active: unknown }>(
       'SELECT active FROM player_sports WHERE player_id = ? AND sport = ?',
       [playerId, valid.value.sport],

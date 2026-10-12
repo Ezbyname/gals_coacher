@@ -52,6 +52,14 @@ type Props = {
   onCancel: () => void;
   /** Rendered after Save / Cancel, outside the profile fields (e.g. Edit's self-assessment entry). */
   footer?: ReactNode;
+  /**
+   * Edit only (PLAYER-ARCHIVE-001): asks for confirmation and archives — nothing
+   * is deleted. Resolves 'archived' (then the form leaves without the
+   * unsaved-changes question: the Player is off the roster) or 'kept'. Throws on
+   * storage failure.
+   */
+  onArchive?: () => Promise<'archived' | 'kept'>;
+  onArchived?: () => void;
 };
 
 /** Storage errors on save → localized message; raw details are only logged. */
@@ -69,13 +77,15 @@ function saveErrorMessage(e: unknown): TranslationKey {
  * Cancel discards the change. Selecting an inactive Basketball again
  * reactivates it with its stored details (SPORT-LIFE-001).
  */
-export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }: Props) {
+export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer, onArchive, onArchived }: Props) {
   const { t } = useI18n();
   const { services } = useApp();
   const [values, setValues] = useState(initialValues);
   const [errors, setErrors] = useState<PlayerFieldMessages>({});
   const [saveError, setSaveError] = useState<TranslationKey | null>(null);
   const [saving, setSaving] = useState(false);
+  const [archiveError, setArchiveError] = useState(false);
+  const archiveInProgress = useRef(false);
   // A ref, not state: a second press in the same frame must see the guard immediately.
   const saveInProgress = useRef(false);
   // Leaving with unsaved changes asks first (NAV-DIRTY-001).
@@ -124,6 +134,23 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }:
     }
     saveInProgress.current = false;
     setSaving(false);
+  };
+
+  const archive = async () => {
+    if (!onArchive || archiveInProgress.current) return;
+    archiveInProgress.current = true;
+    setArchiveError(false);
+    try {
+      if ((await onArchive()) === 'archived') {
+        guard.release(); // off the roster: this form has nothing left to save
+        onArchived?.();
+        return;
+      }
+    } catch (e) {
+      console.warn('[players] archive failed', e);
+      setArchiveError(true);
+    }
+    archiveInProgress.current = false;
   };
 
   return (
@@ -286,6 +313,16 @@ export function PlayerForm({ initialValues, onSave, onSaved, onCancel, footer }:
         }}
       />
       {footer}
+      {onArchive ? (
+        <View style={styles.section} testID="player-section-archive">
+          <BigButton testID="player-archive" variant="danger" label={t('players.archive.button')} onPress={() => void archive()} />
+          {archiveError ? (
+            <Text style={styles.saveError} testID="player-archive-error">
+              {t('players.archive.failed')}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
     </KeyboardSafeScrollView>
   );
 }

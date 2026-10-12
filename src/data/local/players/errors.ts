@@ -10,6 +10,7 @@ export type PlayerDataField =
   | 'dateOfBirth'
   | 'heightCm'
   | 'teamName'
+  | 'archivedAt'
   | 'createdAt'
   | 'updatedAt'
   | 'basketballProfile'
@@ -56,6 +57,17 @@ export class SportInactiveError extends Error {
     this.name = 'SportInactiveError';
     this.playerId = playerId;
     this.sport = sport;
+  }
+}
+
+/** New Player-owned activity was attempted for an archived Player (PLAYER-ARCHIVE-001). Nothing was written. */
+export class PlayerArchivedError extends Error {
+  readonly playerId: string;
+
+  constructor(playerId: string) {
+    super(`Player is archived: ${playerId}`);
+    this.name = 'PlayerArchivedError';
+    this.playerId = playerId;
   }
 }
 

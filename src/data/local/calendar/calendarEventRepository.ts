@@ -26,6 +26,7 @@ import type { IdService } from '@/services/ids/IdService';
 import { runSerialized } from '../connectionQueue';
 import { PlayerNotFoundError, SportInactiveError } from '../players/errors';
 import type { PlayerDb } from '../players/playerDb';
+import { assertActivePlayer } from '../players/playerRepository';
 
 import {
   CalendarEventDataError,
@@ -62,6 +63,7 @@ export async function createCalendarEvent(
   const id = deps.ids.newUuid();
   let saved = null as CalendarEvent | null;
   await writeTransaction(db, async () => {
+    await assertActivePlayer(db, playerId); // a new event: never for an archived Player
     await assertPlayerAndSport(db, playerId, valid.value, null);
     await assertActivityType(db, valid.value.type, null);
     const v = valid.value;
@@ -135,6 +137,7 @@ export async function createCalendarEventBatch(
   let saved = null as CalendarEvent[] | null;
   await writeTransaction(db, async () => {
     const checkedTypes = new Set<string>();
+    await assertActivePlayer(db, playerId); // a new batch: never for an archived Player
     for (const v of values) {
       await assertPlayerAndSport(db, playerId, v, null);
       if (!checkedTypes.has(v.type)) {

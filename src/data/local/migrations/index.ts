@@ -791,4 +791,32 @@ export const migrations: readonly Migration[] = [
         );
     `,
   },
+  {
+    // PLAYER-ARCHIVE-001 (owner 2026-10-12). A Player leaves the active roster
+    // by ARCHIVE, never by deletion: training history is never destructively
+    // deleted (the TRAIN-002 triggers stay exactly as they are). archived_at =
+    // when (epoch ms); NULL = active; restoring sets it back to NULL. Additive:
+    // one nullable column (every existing Player upgrades active) and guards
+    // that refuse NEW Player-owned activity for an archived Player at the
+    // database itself. Existing rows stay readable and editable.
+    version: 15,
+    name: 'player_archive',
+    sql: `
+      ALTER TABLE players
+        ADD COLUMN archived_at INTEGER
+        CHECK (archived_at IS NULL OR (typeof(archived_at) = 'integer' AND archived_at > 0));
+      CREATE TRIGGER calendar_events_archived_player BEFORE INSERT ON calendar_events
+        WHEN (SELECT archived_at FROM players WHERE id = NEW.player_id) IS NOT NULL
+      BEGIN SELECT RAISE(ABORT, 'an archived player gets no new activity'); END;
+      CREATE TRIGGER self_assessments_archived_player BEFORE INSERT ON self_assessments
+        WHEN (SELECT archived_at FROM players WHERE id = NEW.player_id) IS NOT NULL
+      BEGIN SELECT RAISE(ABORT, 'an archived player gets no new activity'); END;
+      CREATE TRIGGER planned_workouts_archived_player BEFORE INSERT ON planned_workouts
+        WHEN (SELECT archived_at FROM players WHERE id = NEW.player_id) IS NOT NULL
+      BEGIN SELECT RAISE(ABORT, 'an archived player gets no new activity'); END;
+      CREATE TRIGGER training_sessions_archived_player BEFORE INSERT ON training_sessions
+        WHEN (SELECT archived_at FROM players WHERE id = NEW.player_id) IS NOT NULL
+      BEGIN SELECT RAISE(ABORT, 'an archived player gets no new activity'); END;
+    `,
+  },
 ];

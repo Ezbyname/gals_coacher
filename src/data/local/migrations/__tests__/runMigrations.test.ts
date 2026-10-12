@@ -70,7 +70,7 @@ describe('runMigrations', () => {
     expect(() => assertValidMigrations(migrations)).not.toThrow();
   });
 
-  it('ships exactly versions 1..14', () => {
+  it('ships exactly versions 1..15', () => {
     expect(migrations.map((m) => [m.version, m.name])).toEqual([
       [1, 'app_meta'],
       [2, 'players'],
@@ -86,6 +86,7 @@ describe('runMigrations', () => {
       [12, 'template_classification'],
       [13, 'calendar_event_import'],
       [14, 'player_team_name'],
+      [15, 'player_archive'],
     ]);
   });
 });

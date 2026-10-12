@@ -36,8 +36,8 @@ export type ActivePlayerContextValue =
     }
   /** The Player is known by id but not loaded yet: nothing may act for it yet. */
   | { readonly status: 'loading'; readonly activePlayerId: string; readonly source: ActivePlayerSource }
-  /** No Player: outside any Player context, unknown id, or the load failed. */
-  | { readonly status: 'unresolved'; readonly reason: 'none' | 'not-found' | 'error' };
+  /** No Player: outside any Player context, unknown id, an archived Player (PLAYER-ARCHIVE-001), or the load failed. */
+  | { readonly status: 'unresolved'; readonly reason: 'none' | 'not-found' | 'archived' | 'error' };
 
 /** Outside every provider: no Player. Never a default Player. */
 export const NO_ACTIVE_PLAYER: ActivePlayerContextValue = { status: 'unresolved', reason: 'none' };

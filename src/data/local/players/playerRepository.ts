@@ -21,7 +21,7 @@ import type { IdService } from '@/services/ids/IdService';
 
 import { runSerialized } from '../connectionQueue';
 
-import { PlayerDataError, PlayerNotFoundError, type PlayerDataField } from './errors';
+import { PlayerArchivedError, PlayerDataError, PlayerNotFoundError, type PlayerDataField } from './errors';
 import { ensureLocalFamily } from './localFamily';
 import type { PlayerDb } from './playerDb';
 
@@ -134,7 +134,7 @@ export async function createPlayer(
   return {
     ok: true,
     profile: {
-      player: { id, familyId, ...valid.core, createdAt: now, updatedAt: now },
+      player: { id, familyId, ...valid.core, archivedAt: null, createdAt: now, updatedAt: now },
       basketball: valid.basketball,
       sports: valid.basketball === null ? [] : [{ sport: BASKETBALL, active: true }],
     },
@@ -227,12 +227,62 @@ export function getPlayer(db: PlayerDb, id: string): Promise<PlayerProfile | nul
   return runSerialized(db, () => readPlayer(db, id));
 }
 
-/** All Players, oldest first (created_at, then id). Any malformed row fails the read. */
-export function listPlayers(db: PlayerDb): Promise<PlayerProfile[]> {
+/**
+ * The ACTIVE Players (the roster), oldest first (created_at, then id). Archived
+ * Players only when explicitly asked for (PLAYER-ARCHIVE-001). Any malformed row
+ * fails the read. A single Player — archived or not — is always readable by id
+ * (getPlayer), so history stays reachable.
+ */
+export function listPlayers(db: PlayerDb, options: { includeArchived?: boolean } = {}): Promise<PlayerProfile[]> {
+  const where = options.includeArchived === true ? '' : ' WHERE p.archived_at IS NULL';
   return runSerialized(db, async () => {
-    const rows = await db.getAllAsync<PlayerRow>(`${SELECT_PLAYERS} ORDER BY p.created_at, p.id`, []);
+    const rows = await db.getAllAsync<PlayerRow>(`${SELECT_PLAYERS}${where} ORDER BY p.created_at, p.id`, []);
     return rows.map(parsePlayerRow);
   });
+}
+
+/**
+ * PLAYER-ARCHIVE-001 — takes the Player off the active roster. Nothing is
+ * deleted: profile, sports, self-assessments, calendar events, planned workouts
+ * and training sessions all stay, and every reference stays valid. Archiving an
+ * archived Player keeps its original time. Throws PlayerNotFoundError for an
+ * unknown id (nothing written). Returns when the Player was archived.
+ */
+export async function archivePlayer(db: PlayerDb, id: string, deps: { clock: Clock }): Promise<number> {
+  const now = deps.clock.wallNow();
+  let archivedAt = now;
+  await writeTransaction(db, async () => {
+    const row = await db.getFirstAsync<{ archived_at: number | null }>('SELECT archived_at FROM players WHERE id = ?', [id]);
+    if (row === null) throw new PlayerNotFoundError(id);
+    if (row.archived_at !== null) {
+      archivedAt = row.archived_at;
+      return;
+    }
+    await db.runAsync('UPDATE players SET archived_at = ?, updated_at = ? WHERE id = ?', [now, now, id]);
+  });
+  return archivedAt;
+}
+
+/** Back on the active roster (archived_at = NULL), with all of their history. Throws PlayerNotFoundError. */
+export async function restorePlayer(db: PlayerDb, id: string, deps: { clock: Clock }): Promise<void> {
+  const now = deps.clock.wallNow();
+  await writeTransaction(db, async () => {
+    const row = await db.getFirstAsync<{ archived_at: number | null }>('SELECT archived_at FROM players WHERE id = ?', [id]);
+    if (row === null) throw new PlayerNotFoundError(id);
+    if (row.archived_at === null) return;
+    await db.runAsync('UPDATE players SET archived_at = NULL, updated_at = ? WHERE id = ?', [now, id]);
+  });
+}
+
+/**
+ * For repositories that CREATE Player-owned activity: the Player must exist
+ * (PlayerNotFoundError) and be active (PlayerArchivedError). Call inside the
+ * write transaction. Edits of existing rows do not call this: history stays editable.
+ */
+export async function assertActivePlayer(db: PlayerDb, id: string): Promise<void> {
+  const row = await db.getFirstAsync<{ archived_at: unknown }>('SELECT archived_at FROM players WHERE id = ?', [id]);
+  if (row === null) throw new PlayerNotFoundError(id);
+  if (row.archived_at !== null) throw new PlayerArchivedError(id);
 }
 
 /**
@@ -310,7 +360,7 @@ async function updateBasketballProfile(
 // from players on their own, so all four combinations are observable (none,
 // both, assignment only, profile only).
 const SELECT_PLAYERS = `
-  SELECT p.id, p.family_id, p.name, p.date_of_birth, p.height_cm, p.team_name, p.created_at, p.updated_at,
+  SELECT p.id, p.family_id, p.name, p.date_of_birth, p.height_cm, p.team_name, p.archived_at, p.created_at, p.updated_at,
          ps.sport AS assignment_sport, ps.active AS assignment_active,
          b.player_id AS profile_player_id, b.sport AS profile_sport,
          b.primary_position, b.secondary_position, b.dominant_hand, b.experience, b.weekly_frequency
@@ -326,6 +376,7 @@ type PlayerRow = {
   date_of_birth: unknown;
   height_cm: unknown;
   team_name: unknown;
+  archived_at: unknown;
   created_at: unknown;
   updated_at: unknown;
   assignment_sport: unknown;
@@ -384,7 +435,12 @@ function parsePlayerRow(row: PlayerRow): PlayerProfile {
   if (typeof updatedAt !== 'number' || !Number.isSafeInteger(updatedAt))
     throw fail('updatedAt', 'INVALID_VALUE');
 
-  const player: Player = { id: rawId, familyId, name, dateOfBirth, heightCm, teamName, createdAt, updatedAt };
+  const archivedAt = row.archived_at;
+  if (archivedAt !== null && !(typeof archivedAt === 'number' && Number.isSafeInteger(archivedAt) && archivedAt > 0)) {
+    throw fail('archivedAt', 'INVALID_VALUE');
+  }
+
+  const player: Player = { id: rawId, familyId, name, dateOfBirth, heightCm, teamName, archivedAt, createdAt, updatedAt };
   const hasAssignment = row.assignment_sport !== null;
   const hasProfile = row.profile_player_id !== null;
   if (!hasAssignment && !hasProfile) return { player, basketball: null, sports: [] };

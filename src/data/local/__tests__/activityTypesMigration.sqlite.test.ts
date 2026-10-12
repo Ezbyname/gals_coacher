@@ -102,7 +102,7 @@ describe('migration v7 (activity types) on real SQLite', () => {
 
   it('fresh install: the six built-ins exactly once, active, no name; deletion refused', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(14);
+    expect(migration.to).toBe(15);
     expect(migration.applied).toContain('activity_types');
     expect(await catalogRows(db as unknown as Db)).toEqual(SEEDED);
     expect(
@@ -124,8 +124,8 @@ describe('migration v7 (activity types) on real SQLite', () => {
     const before = await createV6Database();
 
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 6, to: 14, applied: ['activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name'] });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 14 });
+    expect(migration).toEqual({ from: 6, to: 15, applied: ['activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive'] });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 15 });
     // Byte-for-byte: no event row (type, dates, titles, notes, completion …) or other row changed.
     expect(await dumpV6Data(db as unknown as Db)).toEqual(before);
     expect(await catalogRows(db as unknown as Db)).toEqual(SEEDED);
@@ -169,7 +169,7 @@ describe('migration v7 (activity types) on real SQLite', () => {
 
     // Idempotent: reopening applies nothing and never re-seeds.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 14, to: 14, applied: [] });
+    expect(again.migration).toEqual({ from: 15, to: 15, applied: [] });
     expect(await catalogRows(again.db as unknown as Db)).toEqual(SEEDED);
     expect(await dumpV6Data(again.db as unknown as Db)).toEqual(before);
     await again.db.closeAsync();
@@ -198,16 +198,16 @@ describe('migration v7 (activity types) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 6, to: 14, applied: ['activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name'] });
+    expect(relaunch.migration).toEqual({ from: 6, to: 15, applied: ['activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive'] });
     expect(await catalogRows(relaunch.db as unknown as Db)).toEqual(SEEDED);
     await relaunch.db.closeAsync();
   });
 
   it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 15');
+    await newer.execAsync('PRAGMA user_version = 16');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v15 .* only knows v14\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v16 .* only knows v15\. Refusing to downgrade/);
   });
 });
 

@@ -566,6 +566,15 @@ export const en = {
         confirm: 'Make inactive',
       },
     },
+    archive: {
+      button: 'Archive player',
+      title: 'Archive {name}?',
+      body: 'The player will be removed from the active player lists, and their training history and data will be kept. They cannot get new trainings, events or imports. Nothing is deleted.',
+      cancel: 'Cancel',
+      confirm: 'Archive',
+      failed: 'The player was not archived. Please try again.',
+      archived: 'This player is archived. Their training history and data are kept.',
+    },
     errors: {
       nameRequired: 'Please enter a name.',
       dateOfBirthRequired: 'Please enter a date of birth.',
