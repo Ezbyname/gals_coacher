@@ -209,9 +209,10 @@ export function ReminderSettings({ permissions = expoReminderPermissions }: { pe
             </>
           ) : null}
           {exact === 'UNKNOWN' && notif !== 'UNAVAILABLE' ? (
+            // The exact-alarm grant is NOT observable from JS: neutral guidance, never "it is off".
             <>
-              <Text style={styles.warning} testID="reminders-exact-warning">
-                {t('reminders.permission.exactUnavailable')}
+              <Text style={styles.muted} testID="reminders-exact-info">
+                {t('reminders.permission.exactMayRequire')}
               </Text>
               <BigButton testID="reminders-exact-settings" variant="secondary" label={t('reminders.permission.openSettings')}
                 onPress={() => void permissions.openExactAlarmSettings()} />

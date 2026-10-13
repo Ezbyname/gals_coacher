@@ -580,7 +580,7 @@ export const en = {
       blocked: 'Notifications are blocked for this app. Turn them on in the phone settings.',
       openSettings: 'Open settings',
       unavailable: 'This version of the app cannot show notifications yet — an app update is needed.',
-      exactUnavailable: 'Precise timing may be unavailable — reminders may arrive later. Allow "Alarms & reminders" in the phone settings.',
+      exactMayRequire: 'Precise reminder timing may require enabling Alarms & reminders in Android settings.',
       askTitle: 'Allow notifications?',
       askBody: 'Reminders are shown as notifications. The phone will ask you to allow them.',
       notNow: 'Not now',

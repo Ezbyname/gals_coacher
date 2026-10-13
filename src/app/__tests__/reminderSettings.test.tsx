@@ -118,14 +118,35 @@ describe('Settings → Training reminders (001B)', () => {
     expect(mockCalls).toEqual(['request', 'notification-settings']);
   });
 
-  it('exact alarms unknown (Android 12+): a clear warning + Open settings; this app build without notifications says so', async () => {
+  it('exact alarms are NOT observable (Android 12+): neutral guidance + Open settings — never claimed off; the KNOWN notification state stays separate', async () => {
     await prepare('en', ['Daniel']);
     mockState.notif = 'GRANTED';
     await open();
     await act(async () => fireEvent(screen.getByTestId('reminders-enabled'), 'valueChange', true));
-    expect(text('reminders-exact-warning')).toContain('Precise timing may be unavailable');
+    expect(text('reminders-notif-granted')).toBe('Notifications are allowed.'); // known state
+    const guidance = text('reminders-exact-info'); // unknown state: guidance only
+    expect(guidance).toBe('Precise reminder timing may require enabling Alarms & reminders in Android settings.');
+    expect(guidance).not.toMatch(/\b(off|disabled|unavailable|denied|not allowed)\b/i);
+    expect(screen.queryByTestId('reminders-exact-warning')).toBeNull();
     await act(async () => press('reminders-exact-settings'));
     expect(mockCalls).toEqual(['exact-settings']);
+  });
+
+  it('Hebrew: the exact-alarm guidance is the neutral wording', async () => {
+    await prepare('he', ['Daniel']);
+    mockState.notif = 'GRANTED';
+    await open();
+    await act(async () => fireEvent(screen.getByTestId('reminders-enabled'), 'valueChange', true));
+    expect(text('reminders-exact-info')).toBe('ייתכן שנדרש לאפשר תזכורות מדויקות בהגדרות Android כדי לקבל תזכורות בזמן המדויק.');
+  });
+
+  it('exact-alarm guidance only where it applies: not on Android < 12 / iOS (NOT_REQUIRED)', async () => {
+    await prepare('en', ['Daniel']);
+    Object.assign(mockState, { notif: 'GRANTED', exact: 'NOT_REQUIRED' });
+    await open();
+    await act(async () => fireEvent(screen.getByTestId('reminders-enabled'), 'valueChange', true));
+    expect(screen.queryByTestId('reminders-exact-info')).toBeNull();
+    expect(screen.queryByTestId('reminders-exact-settings')).toBeNull();
   });
 
   it('UNAVAILABLE (no native notifications in this build): an honest notice, no prompt, no exact warning', async () => {
@@ -136,7 +157,7 @@ describe('Settings → Training reminders (001B)', () => {
     await act(async () => fireEvent(screen.getByTestId('reminders-enabled'), 'valueChange', true));
     expect(dialogs).toEqual([]);
     expect(text('reminders-notif-unavailable')).toContain('cannot show notifications yet');
-    expect(screen.queryByTestId('reminders-exact-warning')).toBeNull();
+    expect(screen.queryByTestId('reminders-exact-info')).toBeNull();
   });
 
   it('several Players: none preselected; ON without a Player warns; selecting one saves exactly that Player; archived not offered', async () => {
