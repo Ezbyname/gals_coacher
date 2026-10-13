@@ -32,7 +32,8 @@ import { pickSpreadsheet } from './pickSpreadsheet';
  * teams. Saving the chosen team to the Player is optional and explicit.
  */
 export interface ExcelSelection {
-  readonly fileName: string;
+  /** null when the picker did not give a real file name (shown as "Excel file"). */
+  readonly fileName: string | null;
   readonly fixtures: readonly FixtureRow[];
   readonly rejected: readonly RejectedRow[];
   readonly teams: readonly SourceTeam[];
@@ -57,12 +58,12 @@ export function ExcelSourcePanel({
   teamError: boolean;
 }) {
   const { t } = useI18n();
-  const [workbook, setWorkbook] = useState<{ name: string; wb: Workbook } | null>(null);
+  const [workbook, setWorkbook] = useState<{ name: string | null; wb: Workbook } | null>(null);
   const [sheetIndex, setSheetIndex] = useState<number | null>(null);
   const [error, setError] = useState<ExcelError | null>(null);
   const name = isolate(playerName);
 
-  const applySheet = (name: string, wb: Workbook, index: number) => {
+  const applySheet = (name: string | null, wb: Workbook, index: number) => {
     setSheetIndex(index);
     const sheet = wb.sheets[index]!;
     const header = findHeader(sheet);
@@ -125,7 +126,10 @@ export function ExcelSourcePanel({
       {value !== null ? (
         <>
           <Text style={styles.muted} testID="import-excel-file">
-            {t('calendarImport.excel.file', { name: isolate(value.fileName), count: value.fixtures.length })}
+            {t('calendarImport.excel.file', {
+              name: isolate(value.fileName ?? t('calendarImport.source.excel')),
+              count: value.fixtures.length,
+            })}
           </Text>
           <ChoiceChips<string>
             testID="import-excel-team"

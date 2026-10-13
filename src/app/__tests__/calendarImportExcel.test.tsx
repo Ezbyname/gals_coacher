@@ -204,6 +204,13 @@ describe('CAL-SCHEDULE-IMPORT-002B Excel fixture import', () => {
     expect((await getPlayer(db!, daniel))!.player.teamName).toBe('הפועל חוף');
   });
 
+  it('a picker that gives no real file name (Android document id) is shown as "Excel file", never the id', async () => {
+    await prepare('en', HOF);
+    picker.mockResolvedValue({ ...league(), name: null });
+    await openExcel();
+    expect(text('import-excel-file')).toBe('Excel file · 6 games in the file');
+  });
+
   it('GAME is suggested, never applied; a file without the required columns says which', async () => {
     await prepare('en', HOF);
     renderRouter(routes, { initialUrl: `/children/${daniel}/schedule/import` });
