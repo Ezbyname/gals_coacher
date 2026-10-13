@@ -7,3 +7,4 @@
 export * from './rules';
 export * from './preferences';
 export * from './schedule';
+export * from './editor';

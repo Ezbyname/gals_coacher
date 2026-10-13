@@ -45,6 +45,14 @@ export default function SettingsScreen() {
         />
       ))}
 
+      <Text style={[styles.label, styles.section]}>{t('reminders.title')}</Text>
+      <BigButton
+        testID="settings-reminders"
+        variant="secondary"
+        label={t('reminders.open')}
+        onPress={() => router.push('/settings/reminders')}
+      />
+
       <Text style={[styles.label, styles.section]}>{t('activityTypes.title')}</Text>
       <BigButton
         testID="settings-activity-types"
