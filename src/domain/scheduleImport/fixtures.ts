@@ -1,7 +1,8 @@
 import type { ActivityTypeId } from '../activityType';
 import { calendarDate, type CalendarDate } from '../calendarDate';
 import type { ParsedTime } from '../calendarImport';
-import { matchupTitle, type NormalizedImportCandidate } from './candidate';
+import type { Weekday } from '../calendarView';
+import { matchupTitle, type ImportSourceKind, type NormalizedImportCandidate } from './candidate';
 import { distinctTeams, normalizeTeamName, sideOf, type SourceTeam } from './teams';
 import type { CellValue, Sheet } from './xlsx';
 
@@ -63,8 +64,14 @@ export function findHeader(sheet: Sheet): HeaderResult {
 }
 
 export interface FixtureRow {
-  /** "<sheet>!<row number>" — shown to the user, kept as provenance. */
+  /** "<sheet>!<row number>" (XLSX) or "line <n>" (pasted text, 002C) — shown to the user, kept as provenance. */
   readonly ref: string;
+  /** The row number in the sheet, or the line number in the pasted text. */
+  readonly line: number;
+  readonly sourceKind: ImportSourceKind;
+  /** The weekday the source WROTE next to the date (text lists), else null. The date stays authoritative:
+   *  a disagreement is a review issue (WEEKDAY_DATE_MISMATCH), never a moved date. */
+  readonly writtenWeekday: Weekday | null;
   readonly date: CalendarDate;
   readonly start: ParsedTime;
   readonly end: ParsedTime | null;
@@ -76,6 +83,7 @@ export interface FixtureRow {
 
 export interface RejectedRow {
   readonly ref: string;
+  readonly line?: number;
   readonly reason: 'DATE_UNREADABLE' | 'TIME_UNREADABLE' | 'TEAM_MISSING';
   readonly text: string;
 }
@@ -137,22 +145,25 @@ export function readFixtures(
     const home = text(cell('home'));
     const away = text(cell('away'));
     if (home === null || away === null) {
-      rejected.push({ ref, reason: 'TEAM_MISSING', text: raw });
+      rejected.push({ ref, line: row.number, reason: 'TEAM_MISSING', text: raw });
       continue;
     }
     const date = readDate(cell('date'), date1904);
     if (date === null) {
-      rejected.push({ ref, reason: 'DATE_UNREADABLE', text: raw });
+      rejected.push({ ref, line: row.number, reason: 'DATE_UNREADABLE', text: raw });
       continue;
     }
     const start = readTime(cell('time'));
     if (start === null) {
-      rejected.push({ ref, reason: 'TIME_UNREADABLE', text: raw });
+      rejected.push({ ref, line: row.number, reason: 'TIME_UNREADABLE', text: raw });
       continue;
     }
     const endCell = cell('end');
     fixtures.push({
       ref,
+      line: row.number,
+      sourceKind: 'XLSX',
+      writtenWeekday: null,
       date,
       start,
       end: endCell === null || text(endCell) === null ? null : readTime(endCell),
@@ -189,11 +200,11 @@ export function fixtureCandidates(
     const title = matchupTitle({ home: f.home.name, away: f.away.name });
     out.push({
       key: `x${out.length + 1}`,
-      line: Number(f.ref.slice(f.ref.lastIndexOf('!') + 1)),
+      line: f.line,
       sourceText: title,
       date: f.date,
       dateFrom: 'EXPLICIT_DATE',
-      textWeekday: null,
+      textWeekday: f.writtenWeekday,
       start: f.start,
       end: f.end,
       location: f.venue,
@@ -201,7 +212,7 @@ export function fixtureCandidates(
       title,
       type,
       suggestedType: 'GAME',
-      source: { kind: 'XLSX', ref: f.ref, externalId: f.code },
+      source: { kind: f.sourceKind, ref: f.ref, externalId: f.code },
       matchup: { home: f.home.name, away: f.away.name, side },
     });
   }

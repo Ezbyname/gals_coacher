@@ -44,6 +44,22 @@ export interface ExcelSelection {
 
 type ExcelError = { kind: 'NOT_A_WORKBOOK' | 'NO_SHEETS' | 'NO_FIXTURES' } | { kind: 'MISSING_COLUMNS'; columns: FixtureColumn[] };
 
+/**
+ * The fixtures of a source (an Excel sheet or a pasted season list, 002C) as a
+ * selection: its teams, and the Player's team PRESELECTED only on an exact
+ * normalized match with the Player's Team Name (never "contains", never inferred).
+ */
+export function fixtureSelection(
+  fileName: string | null,
+  fixtures: readonly FixtureRow[],
+  rejected: readonly RejectedRow[],
+  playerTeam: string | null,
+): ExcelSelection {
+  const teams = fixtureTeams(fixtures);
+  const match = playerTeam === null ? null : findTeam(playerTeam, teams);
+  return { fileName, fixtures, rejected, teams, team: match?.kind === 'EXACT' ? match.team : null, saveTeam: false };
+}
+
 export function ExcelSourcePanel({
   playerName,
   playerTeam,
@@ -61,7 +77,6 @@ export function ExcelSourcePanel({
   const [workbook, setWorkbook] = useState<{ name: string | null; wb: Workbook } | null>(null);
   const [sheetIndex, setSheetIndex] = useState<number | null>(null);
   const [error, setError] = useState<ExcelError | null>(null);
-  const name = isolate(playerName);
 
   const applySheet = (name: string | null, wb: Workbook, index: number) => {
     setSheetIndex(index);
@@ -77,9 +92,7 @@ export function ExcelSourcePanel({
       return onChange(null);
     }
     setError(null);
-    const teams = fixtureTeams(fixtures);
-    const match = playerTeam === null ? null : findTeam(playerTeam, teams);
-    onChange({ fileName: name, fixtures, rejected, teams, team: match?.kind === 'EXACT' ? match.team : null, saveTeam: false });
+    onChange(fixtureSelection(name, fixtures, rejected, playerTeam));
   };
 
   const choose = async () => {
@@ -101,7 +114,6 @@ export function ExcelSourcePanel({
     }
   };
 
-  const matched = value !== null && value.team !== null && playerTeam !== null && sameTeam(value.team.name, playerTeam);
   return (
     <View style={styles.group}>
       <BigButton testID="import-excel-pick" variant="secondary" label={t('calendarImport.excel.pick')} onPress={() => void choose()} />
@@ -131,29 +143,67 @@ export function ExcelSourcePanel({
               count: value.fixtures.length,
             })}
           </Text>
-          <ChoiceChips<string>
-            testID="import-excel-team"
-            label={t('calendarImport.excel.team', { name })}
-            choices={value.teams.map((team, i) => ({ value: String(i), label: team.name }))}
-            value={value.team === null ? null : String(value.teams.indexOf(value.team))}
-            onChange={(v) => v !== null && onChange({ ...value, team: value.teams[Number(v)] ?? null, saveTeam: false })}
-            error={teamError ? t('calendarImport.excel.teamRequired', { name }) : undefined}
+          <TeamChooser
+            idPrefix="import-excel"
+            playerName={playerName}
+            playerTeam={playerTeam}
+            value={value}
+            onChange={onChange}
+            teamError={teamError}
           />
-          <Text style={styles.muted} testID="import-excel-team-hint">
-            {matched ? t('calendarImport.excel.teamMatched') : t('calendarImport.excel.teamChoose', { name })}
-          </Text>
-          {value.team !== null && !matched ? (
-            <ChoiceChips<'save'>
-              testID="import-excel-save-team"
-              label={t('calendarImport.excel.saveTeamLabel')}
-              choices={[{ value: 'save', label: t('calendarImport.excel.saveTeam', { team: isolate(value.team.name), name }) }]}
-              value={value.saveTeam ? 'save' : null}
-              onChange={(v) => onChange({ ...value, saveTeam: v === 'save' })}
-            />
-          ) : null}
         </>
       ) : null}
     </View>
+  );
+}
+
+/**
+ * "Which team is the Player's?" — shared by the Excel file and the pasted season
+ * list (002C). Preselected only on an exact Team Name match; otherwise the user
+ * chooses from the source's teams; saving the choice as the Player's Team Name is
+ * optional and explicit. The Player itself is never inferred from the source.
+ */
+export function TeamChooser({
+  idPrefix,
+  playerName,
+  playerTeam,
+  value,
+  onChange,
+  teamError,
+}: {
+  idPrefix: 'import-excel' | 'import-fixture';
+  playerName: string;
+  playerTeam: string | null;
+  value: ExcelSelection;
+  onChange: (value: ExcelSelection) => void;
+  teamError: boolean;
+}) {
+  const { t } = useI18n();
+  const name = isolate(playerName);
+  const matched = value.team !== null && playerTeam !== null && sameTeam(value.team.name, playerTeam);
+  return (
+    <>
+      <ChoiceChips<string>
+        testID={`${idPrefix}-team`}
+        label={t('calendarImport.excel.team', { name })}
+        choices={value.teams.map((team, i) => ({ value: String(i), label: team.name }))}
+        value={value.team === null ? null : String(value.teams.indexOf(value.team))}
+        onChange={(v) => v !== null && onChange({ ...value, team: value.teams[Number(v)] ?? null, saveTeam: false })}
+        error={teamError ? t('calendarImport.excel.teamRequired', { name }) : undefined}
+      />
+      <Text style={styles.muted} testID={`${idPrefix}-team-hint`}>
+        {matched ? t('calendarImport.excel.teamMatched') : t('calendarImport.excel.teamChoose', { name })}
+      </Text>
+      {value.team !== null && !matched ? (
+        <ChoiceChips<'save'>
+          testID={`${idPrefix}-save-team`}
+          label={t('calendarImport.excel.saveTeamLabel')}
+          choices={[{ value: 'save', label: t('calendarImport.excel.saveTeam', { team: isolate(value.team.name), name }) }]}
+          value={value.saveTeam ? 'save' : null}
+          onChange={(v) => onChange({ ...value, saveTeam: v === 'save' })}
+        />
+      ) : null}
+    </>
   );
 }
 

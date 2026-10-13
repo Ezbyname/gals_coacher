@@ -11,12 +11,13 @@ import {
 } from '@/data/local/calendar/calendarEventRepository';
 import { getPlayer, setPlayerTeamName } from '@/data/local/players/playerRepository';
 import type { CalendarEventSource } from '@/domain/calendarEvent';
-import { fixtureCandidates } from '@/domain/scheduleImport';
+import { fixtureCandidates, readFixtureText } from '@/domain/scheduleImport';
 import { requiresTitle, selectableActivityTypes, type ActivityTypeId, type ActivityTypeRef } from '@/domain/activityType';
 import type { CalendarDate } from '@/domain/calendarDate';
 import {
   canShowPreviousWeek,
   dateInWeek,
+  importWeekContaining,
   importWeekTiming,
   nextImportWeek,
   shiftImportWeek,
@@ -47,7 +48,7 @@ import { StatusBadge } from '@/ui/StatusBadge';
 import { TextField } from '@/ui/TextField';
 import { colors, semantic, spacing, touch } from '@/ui/theme';
 
-import { ExcelSourcePanel, type ExcelSelection } from './ExcelSource';
+import { ExcelSourcePanel, fixtureSelection, TeamChooser, type ExcelSelection } from './ExcelSource';
 import { prepareImport } from './importConfirm';
 import { clock, dayLine, shortDate, timeRange, weekdayName } from './importFormat';
 import {
@@ -103,6 +104,10 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
   const [mode, setMode] = useState<SourceMode>('text');
   const [excel, setExcel] = useState<ExcelSelection | null>(null);
   const [teamError, setTeamError] = useState(false);
+  /** 002C: the pasted text read as a SEASON FIXTURE LIST (its team still to choose / confirm). */
+  const [season, setSeason] = useState<ExcelSelection | null>(null);
+  /** 002C: the text MIGHT be a fixture list — the user decides how to read it. */
+  const [askKind, setAskKind] = useState(false);
   /** Set at Analyze: what the reviewed batch will be written as, and each fixture's side. */
   const [reviewed, setReviewed] = useState<{ source: CalendarEventSource; teamName: string | null; sides: Map<string, 'HOME' | 'AWAY' | null> }>(
     { source: 'TEXT_IMPORT', teamName: null, sides: new Map() },
@@ -148,7 +153,7 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
     return type ? activityTypeLabel(t, type) : id;
   };
 
-  const analyze = async () => {
+  const analyze = async (textKind: 'auto' | 'fixture' | 'weekly' = 'auto') => {
     if (typeId === null) {
       setInputError('type');
       AccessibilityInfo.announceForAccessibility(t('calendarImport.typeRequired'));
@@ -158,6 +163,25 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
       if (excel === null) return; // nothing read yet (the panel shows why)
       if (excel.team === null) return setTeamError(true);
     } else if (text.trim().length === 0) return setInputError('text');
+    // 002C: a season / league fixture list is read with explicit dates and the Player's team — never as a week.
+    let fixtureText: ExcelSelection | null = null;
+    if (mode === 'text' && textKind !== 'weekly') {
+      if (season !== null) {
+        if (season.team === null) return setTeamError(true);
+        fixtureText = season;
+      } else {
+        const read = readFixtureText(text);
+        if (read.confidence === 'HIGH' || (read.confidence !== 'NONE' && textKind === 'fixture')) {
+          const selection = fixtureSelection(null, read.fixtures, read.rejected, loaded.teamName);
+          setAskKind(false);
+          setSeason(selection);
+          if (selection.team === null) return; // choose the Player's team first (the panel shows the teams)
+          fixtureText = selection;
+        } else if (read.confidence === 'LOW') {
+          return setAskKind(true); // unsure: ask, never silently pick the wrong mode
+        }
+      }
+    }
     if (busy || boot.status !== 'ready') return;
     setBusy(true);
     setInputError(null);
@@ -166,22 +190,27 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
       // READ ONLY: this Player's events, for the conservative duplicate review.
       const events = await listCalendarEvents(boot.db, player.id);
       const now = localCalendarDateFromEpoch(services.clock.wallNow());
-      if (mode === 'excel' && excel !== null && excel.team !== null) {
+      const fixtures = mode === 'excel' ? excel : fixtureText;
+      if (fixtures !== null && fixtures.team !== null) {
         // Only the Player's TEAM's games (code or exact name — never "contains"); explicit dates, no week.
-        const games = fixtureCandidates(excel.fixtures, excel.team, typeId);
+        // One path for an Excel file (002B) and a pasted season list (002C).
+        const games = fixtureCandidates(fixtures.fixtures, fixtures.team, typeId);
         const state = reviewFromCandidates(games, events.map(toSlot), now);
-        const rowNumber = (ref: string) => Number(ref.slice(ref.lastIndexOf('!') + 1));
         setReview({
           ...state,
-          unparsed: excel.rejected.map((r) => ({ line: rowNumber(r.ref), text: `${r.ref} — ${r.text}`, reason: 'ROW_UNREADABLE' as const })),
+          unparsed: fixtures.rejected.map((r) => ({ line: r.line ?? 0, text: `${r.ref} — ${r.text}`, reason: 'ROW_UNREADABLE' as const })),
         });
-        setReviewed({ source: 'XLSX_IMPORT', teamName: excel.team.name, sides: new Map(games.map((g) => [g.key, g.matchup?.side ?? null])) });
-        if (excel.saveTeam) {
+        setReviewed({
+          source: mode === 'excel' ? 'XLSX_IMPORT' : 'TEXT_IMPORT',
+          teamName: fixtures.team.name,
+          sides: new Map(games.map((g) => [g.key, g.matchup?.side ?? null])),
+        });
+        if (fixtures.saveTeam) {
           // Explicit choice only; a failure here never blocks the import.
-          await setPlayerTeamName(boot.db, player.id, excel.team.name, { clock: services.clock }).catch((e: unknown) =>
+          await setPlayerTeamName(boot.db, player.id, fixtures.team.name, { clock: services.clock }).catch((e: unknown) =>
             console.warn('[calendarImport] could not save the team name', e),
           );
-          setLoaded({ ...loaded, teamName: excel.team.name });
+          setLoaded({ ...loaded, teamName: fixtures.team.name });
         }
       } else {
         setReview(analyzeSchedule(text, week, typeId, events.map(toSlot), now));
@@ -489,7 +518,7 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
           />
         )}
       </RevealWhen>
-      {mode === 'excel' && typeId !== 'GAME' && types.some((x) => x.id === 'GAME') ? (
+      {(mode === 'excel' || season !== null) && typeId !== 'GAME' && types.some((x) => x.id === 'GAME') ? (
         // A league fixture file suggests GAME — shown, never applied for the user.
         <Text style={styles.muted} testID="import-type-suggestion">
           {t('calendarImport.excel.suggestGame')}
@@ -570,11 +599,40 @@ export function ImportScheduleScreen({ prefill }: { prefill: string | null }) {
         onChangeText={(value) => {
           setText(value);
           setInputError(null);
+          // Another text: read it again (fixture list or weekly) at the next Analyze.
+          setSeason(null);
+          setAskKind(false);
+          setTeamError(false);
         }}
         multiline
         visibleLines={8}
         error={inputError === 'text' ? t('calendarImport.textRequired') : undefined}
       />
+      {askKind ? (
+        <View style={styles.gap} testID="import-season-ask">
+          <Text style={styles.body}>{t('calendarImport.season.ask')}</Text>
+          <BigButton testID="import-season-as-fixture" label={t('calendarImport.season.asFixture')} onPress={() => void analyze('fixture')} />
+          <BigButton testID="import-season-as-weekly" variant="secondary" label={t('calendarImport.season.asWeekly')} onPress={() => void analyze('weekly')} />
+        </View>
+      ) : null}
+      {season !== null ? (
+        <View style={styles.gap} testID="import-season">
+          <Text style={styles.muted} testID="import-season-detected">
+            {t('calendarImport.season.detected', { count: season.fixtures.length })}
+          </Text>
+          <TeamChooser
+            idPrefix="import-fixture"
+            playerName={loaded.name}
+            playerTeam={loaded.teamName}
+            value={season}
+            onChange={(v) => {
+              setSeason(v);
+              setTeamError(false);
+            }}
+            teamError={teamError}
+          />
+        </View>
+      ) : null}
       <BigButton testID="import-analyze" label={t('calendarImport.analyze')} onPress={() => void analyze()} />
       </>
       )}
@@ -783,8 +841,9 @@ function CandidateRow(props: RowProps) {
           );
         }
         if (code === 'WEEKDAY_DATE_MISMATCH') {
+          // The weekday the source wrote (a fixture list has no week: any date on that weekday names it).
           const written =
-            c.textWeekday === null || props.week === null ? '' : weekdayName(dateInWeek(props.week, c.textWeekday), language);
+            c.textWeekday === null ? '' : weekdayName(dateInWeek(props.week ?? importWeekContaining(c.date), c.textWeekday), language);
           return (
             <View key={code} style={styles.gap} testID={`${id}-issue-${code}`}>
               <Text style={styles.warning}>{t('calendarImport.dateMismatch')}</Text>

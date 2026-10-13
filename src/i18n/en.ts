@@ -753,6 +753,12 @@ export const en = {
       HOME: 'Home game',
       AWAY: 'Away game',
     },
+    season: {
+      detected: '{count} games found in a season fixture list. Dates are imported exactly as written; the selected week does not apply.',
+      ask: 'This text may be a season fixture list (games with their own dates). How should it be read?',
+      asFixture: 'As a season fixture list',
+      asWeekly: 'As a weekly schedule',
+    },
     excel: {
       step: '2 · Excel fixture file',
       pick: 'Choose an Excel file',
