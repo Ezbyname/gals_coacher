@@ -87,7 +87,9 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
   }
   if (state.status === 'loading') return <LoadingScreen />;
   const { session } = state;
-  const live = session.status === 'IN_PROGRESS';
+  // An archived Player's session is history: shown, never changed (no record / skip / finish / stop).
+  const archived = context.status === 'resolved' && context.archived === true;
+  const live = session.status === 'IN_PROGRESS' && !archived;
   const update: Change = (next) => setState({ status: 'ready', session: next });
 
   /** Runs one write; a refused write shows its reason and reloads the truth. */
@@ -144,6 +146,11 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
       {!live ? (
         <Text style={styles.muted} testID="session-read-only">
           {t('training.readOnly')}
+        </Text>
+      ) : null}
+      {archived ? (
+        <Text style={styles.muted} testID="session-archived">
+          {t('players.archive.archived')}
         </Text>
       ) : null}
 

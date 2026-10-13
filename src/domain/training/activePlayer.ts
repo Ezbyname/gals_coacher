@@ -33,6 +33,12 @@ export type ActivePlayerContextValue =
       readonly activePlayerId: string;
       readonly activePlayer: ActivePlayerRef;
       readonly source: ActivePlayerSource;
+      /**
+       * Only in a HISTORY scope (PLAYER-ARCHIVE-001, owner 2026-10-12): the Player is
+       * archived — their history is shown READ-ONLY; nothing may be recorded or created.
+       * Absent everywhere else (an archived Player never resolves in a normal scope).
+       */
+      readonly archived?: true;
     }
   /** The Player is known by id but not loaded yet: nothing may act for it yet. */
   | { readonly status: 'loading'; readonly activePlayerId: string; readonly source: ActivePlayerSource }

@@ -8,6 +8,8 @@ import { createCalendarEvent } from '@/data/local/calendar/calendarEventReposito
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
 import { archivePlayer, createPlayer, getPlayer, type PlayerProfileInput } from '@/data/local/players/playerRepository';
+import { planAndStart } from '@/data/local/training/trainingRepository';
+import { createBlock, createTemplate } from '@/data/local/training/workoutRepository';
 import type { Uuid } from '@/domain/ids';
 import { stripBidi } from '@/i18n/bidi';
 import { systemClock } from '@/services/clock/Clock';
@@ -145,6 +147,49 @@ describe('Archive Player (PLAYER-ARCHIVE-001)', () => {
     await screen.findByText('This player is archived. Their training history and data are kept.');
     expect(screen.queryByTestId('event-save')).toBeNull();
     expect((await db!.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM calendar_events'))!.n).toBe(2);
+  });
+
+  /** An in-progress session for `playerId` (plan + session + planned sets), through the repositories. */
+  async function startedSession(playerId: Uuid) {
+    const block = await createBlock(db!, { name: 'Strength', items: [{ exerciseId: 'BARBELL_BENCH_PRESS', prescription: { sets: 2, target: 10, loadKg: 50, restSec: 60 } }] }, { ids, clock });
+    if (!block.ok) throw new Error('block');
+    const template = await createTemplate(db!, { name: 'Gym', blockIds: [block.block.id] }, { ids, clock });
+    if (!template.ok) throw new Error('template');
+    return planAndStart(db!, { playerId, templateId: template.template.id }, { ids, clock });
+  }
+  const sessionRows = async () => ({
+    sessions: await db!.getAllAsync('SELECT * FROM training_sessions ORDER BY id'),
+    sets: await db!.getAllAsync('SELECT * FROM session_sets ORDER BY id'),
+    measurements: await db!.getAllAsync('SELECT * FROM set_measurements ORDER BY id'),
+  });
+
+  it("an archived Player's TrainingSession stays READABLE, read-only: no record / skip / add / finish / stop (AR-05)", async () => {
+    await prepare('en');
+    const session = await startedSession(daniel);
+    await archivePlayer(db!, daniel, { clock });
+    const before = await sessionRows();
+    renderRouter(routes, { initialUrl: `/children/${daniel}/training/session/${session.id}` });
+    await screen.findByTestId('session-name');
+    expect(text('session-name')).toBe(session.name);
+    expect(text('active-player-target')).toBe('Training for Daniel');
+    expect(screen.getByTestId('session-read-only')).toBeTruthy();
+    expect(text('session-archived')).toBe('This player is archived. Their training history and data are kept.');
+    for (const action of ['session-finish', 'session-abandon']) expect(screen.queryByTestId(action)).toBeNull();
+    expect(screen.queryAllByTestId(/-(save|skip|add-set)$/)).toHaveLength(0);
+    expect(screen.queryByTestId('active-player-missing')).toBeNull();
+    expect(await sessionRows()).toEqual(before); // reading writes nothing
+  });
+
+  it("the history scope does not weaken anything else: an ACTIVE Player's session is live; archived create paths still refuse", async () => {
+    await prepare('en');
+    const live = await startedSession(maya);
+    const app = renderRouter(routes, { initialUrl: `/children/${maya}/training/session/${live.id}` });
+    await screen.findByTestId('session-finish');
+    expect(screen.queryByTestId('session-archived')).toBeNull();
+    app.unmount();
+    await archivePlayer(db!, daniel, { clock });
+    renderRouter(routes, { initialUrl: `/children/${daniel}/training/new` });
+    await screen.findByTestId('active-player-missing');
   });
 
   it("the calendar shows the active roster's events only; the archived Player's events stay stored", async () => {

@@ -33,10 +33,13 @@ export type Loaded = { forId: string; value: ActivePlayerContextValue };
 export function ActivePlayerProvider({
   playerId,
   source,
+  history = false,
   children,
 }: {
   playerId: string;
   source: ActivePlayerSource;
+  /** A read-only history screen: an archived Player still resolves, flagged `archived`. */
+  history?: boolean;
   children: ReactNode;
 }) {
   const { boot } = useApp();
@@ -53,16 +56,19 @@ export function ActivePlayerProvider({
           setLoaded({
             forId: playerId,
             // An archived Player is never acted for: nothing new may be created for them.
-            value: profile?.player.archivedAt != null
-              ? { status: 'unresolved', reason: 'archived' }
-              : profile
-              ? {
-                  status: 'resolved',
-                  activePlayerId: playerId,
-                  activePlayer: { id: profile.player.id, name: profile.player.name },
-                  source,
-                }
-              : { status: 'unresolved', reason: 'not-found' },
+            // A history screen still shows their past, read-only (flagged `archived`).
+            value:
+              profile?.player.archivedAt != null && !history
+                ? { status: 'unresolved', reason: 'archived' }
+                : profile
+                  ? {
+                      status: 'resolved',
+                      activePlayerId: playerId,
+                      activePlayer: { id: profile.player.id, name: profile.player.name },
+                      source,
+                      ...(profile.player.archivedAt != null ? { archived: true as const } : {}),
+                    }
+                  : { status: 'unresolved', reason: 'not-found' },
           });
         })
         .catch((e: unknown) => {
@@ -72,7 +78,7 @@ export function ActivePlayerProvider({
       return () => {
         active = false;
       };
-    }, [boot, playerId, source]),
+    }, [boot, playerId, source, history]),
   );
 
   const value = deriveActivePlayer(playerId, source, boot.status === 'error', loaded);
@@ -125,9 +131,18 @@ export function RequireActivePlayer({ children }: { children: ReactNode }) {
  * A Player-specific screen under `/children/[id]/…`: the route's Player is the
  * active Player (source 'route') and the screen renders only once it resolved.
  */
-export function RoutePlayerScope({ playerId, children }: { playerId: string; children: ReactNode }) {
+export function RoutePlayerScope({
+  playerId,
+  history = false,
+  children,
+}: {
+  playerId: string;
+  /** Read-only history (e.g. a training session): an archived Player's past stays readable. */
+  history?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <ActivePlayerProvider playerId={playerId} source="route">
+    <ActivePlayerProvider playerId={playerId} source="route" history={history}>
       <RequireActivePlayer>{children}</RequireActivePlayer>
     </ActivePlayerProvider>
   );
