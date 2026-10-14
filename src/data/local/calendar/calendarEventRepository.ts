@@ -23,6 +23,7 @@ import {
 import type { Clock } from '@/services/clock/Clock';
 import type { IdService } from '@/services/ids/IdService';
 
+import { emitDataChanged } from '../../changes';
 import { runSerialized } from '../connectionQueue';
 import { PlayerNotFoundError, SportInactiveError } from '../players/errors';
 import type { PlayerDb } from '../players/playerDb';
@@ -412,7 +413,9 @@ export function listCalendarEventsInRange(db: PlayerDb, from: number, to: number
 
 /** One write transaction at a time per connection (the same queue as the other repositories). */
 function writeTransaction(db: PlayerDb, task: () => Promise<void>): Promise<void> {
-  return runSerialized(db, () => db.withTransactionAsync(task));
+  // After a COMMITTED write only: the reminder engine reconciles (CAL-SYNC-NOTIFY-001C). A rolled-back
+  // write emits nothing; a listener can never affect the write.
+  return runSerialized(db, () => db.withTransactionAsync(task)).then(() => emitDataChanged('calendar'));
 }
 
 /**

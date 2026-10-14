@@ -19,6 +19,7 @@ import type { Clock } from '@/services/clock/Clock';
 import { localCalendarDateFromEpoch } from '@/services/clock/localCalendarDate';
 import type { IdService } from '@/services/ids/IdService';
 
+import { emitDataChanged } from '../../changes';
 import { runSerialized } from '../connectionQueue';
 
 import { PlayerArchivedError, PlayerDataError, PlayerNotFoundError, type PlayerDataField } from './errors';
@@ -290,7 +291,8 @@ export async function assertActivePlayer(db: PlayerDb, id: string): Promise<void
  * Reads are queued too, so they never observe another save's uncommitted rows.
  */
 function writeTransaction(db: PlayerDb, task: () => Promise<void>): Promise<void> {
-  return runSerialized(db, () => db.withTransactionAsync(task));
+  // After a COMMITTED write only (e.g. archive / restore changes whose events may remind) — CAL-SYNC-NOTIFY-001C.
+  return runSerialized(db, () => db.withTransactionAsync(task)).then(() => emitDataChanged('players'));
 }
 
 /** Unqueued read; only for use inside an already-queued operation. */

@@ -4,6 +4,8 @@ import {
   type ReminderPreferences,
 } from '@/domain/reminders';
 
+import { emitDataChanged } from '@/data/changes';
+
 import { PREFERENCE_KEYS } from './keys';
 import { asyncStoragePreferenceStore, type PreferenceStore } from './store';
 
@@ -46,4 +48,5 @@ export async function saveReminderPreferences(
   const valid = parseReminderPreferences(prefs);
   if (valid === null) throw new RangeError('saveReminderPreferences: invalid reminder preference');
   await store.setItem(PREFERENCE_KEYS.reminders, JSON.stringify({ version: VERSION, ...valid }));
+  emitDataChanged('reminders'); // the engine reconciles with the new settings (CAL-SYNC-NOTIFY-001C)
 }

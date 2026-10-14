@@ -573,6 +573,10 @@ export const en = {
         TOO_LONG: 'A reminder can be at most one week before.',
       },
     },
+    notification: {
+      title: '{player} · {what}',
+      bodyAt: '{when} · {place}',
+    },
     permission: {
       granted: 'Notifications are allowed.',
       off: 'Notifications are off for this app — reminders cannot appear.',

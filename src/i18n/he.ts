@@ -574,6 +574,10 @@ export const he = {
         TOO_LONG: 'תזכורת יכולה להיות לכל היותר שבוע לפני.',
       },
     },
+    notification: {
+      title: '{player} · {what}',
+      bodyAt: '{when} · {place}',
+    },
     permission: {
       granted: 'ההתראות מותרות.',
       off: 'ההתראות כבויות לאפליקציה — התזכורות לא יוכלו להופיע.',
