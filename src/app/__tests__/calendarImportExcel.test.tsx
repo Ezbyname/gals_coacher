@@ -68,14 +68,25 @@ const BOUNDARY = ['planned_workouts', 'planned_workout_items', 'training_session
 const boundary = () => Promise.all(BOUNDARY.map((table) => count(table)));
 type Row = { player_id: string; type: string; title: string | null; start_at: number; end_at: number | null; location: string | null; source: string; import_batch_id: string };
 const xlsxRows = () => db!.getAllAsync<Row>("SELECT * FROM calendar_events WHERE source = 'XLSX_IMPORT' ORDER BY start_at, id");
-/** The team chip whose label is exactly `name` (chips are indexed by the file's team order). */
-const teamChip = (name: string) => {
-  for (let i = 0; ; i++) {
-    const label = screen.queryByTestId(`import-excel-team-${i}-label`);
-    if (label === null) throw new Error(`no team chip ${name}`);
-    if (stripBidi(String(label.props.children)) === name) return `import-excel-team-${i}`;
+/** Team picker helpers (UX 2026-10-14: the team list lives only in the picker). */
+const optionId = (prefix: string, name: string) => {
+  // Options keep their index in the import's team list (a search shows a subset): scan what is shown.
+  for (const node of screen.queryAllByTestId(new RegExp(`^${prefix}-team-option-\\d+-label$`))) {
+    if (stripBidi(String(node.props.children)).replace(/^[○◉]\s+/, '') === name) return String(node.props.testID).replace(/-label$/, '');
   }
+  throw new Error(`no team option ${name}`);
 };
+/** Opens the picker (Choose / Change team), selects `name`, optionally ticks "save", confirms. */
+function pickTeam(prefix: string, name: string, save = false) {
+  press(screen.queryByTestId(`${prefix}-team-choose`) !== null ? `${prefix}-team-choose` : `${prefix}-team-change`);
+  press(optionId(prefix, name));
+  if (save) {
+    expect(screen.getByTestId(`${prefix}-team-save`).props.accessibilityState?.checked).toBe(false); // unchecked by default
+    press(`${prefix}-team-save`);
+  }
+  press(`${prefix}-team-confirm`);
+  expect(screen.queryByTestId(`${prefix}-team-option-0`)).toBeNull(); // the list is gone again
+}
 
 async function openExcel() {
   renderRouter(routes, { initialUrl: `/children/${daniel}/schedule/import` });
@@ -94,11 +105,13 @@ describe('CAL-SCHEDULE-IMPORT-002B Excel fixture import', () => {
   it("Team Name matches exactly → preselected; 4 of 6 games (never the prefix-sharing club); titles, sides, venues, past blocked", async () => {
     await prepare('he', `  ${HOF} `);
     await openExcel();
-    expect(text('import-excel-file')).toBe('ליגה 2026.xlsx · 6 משחקים בקובץ');
-    expect(isSelected(teamChip(HOF))).toBe(true);
-    expect(isSelected(teamChip(MAAYAN))).toBe(false);
-    expect(text('import-excel-team-hint')).toBe('נבחרה לפי שם הקבוצה של השחקן.');
-    expect(screen.queryByTestId('import-excel-save-team')).toBeNull(); // nothing to save: it already matches
+    expect(text('import-excel-file')).toBe('ליגה 2026.xlsx · זוהו 6 משחקים');
+    // Compact: ONLY the matched team on the main screen — no list of every team.
+    expect(text('import-excel-team-selected')).toBe(`${HOF} ✓`);
+    expect(text('import-excel-team-games')).toBe('נמצאו 4 משחקים');
+    expect(screen.queryByTestId('import-excel-team-option-0')).toBeNull();
+    expect(screen.queryByTestId('import-excel-team-choose')).toBeNull();
+    expect(screen.queryByText(MAAYAN)).toBeNull();
     await analyze();
 
     expect(text('import-review-header')).toBe(`משחק · 4 משחקים של ${HOF}`);
@@ -179,14 +192,15 @@ describe('CAL-SCHEDULE-IMPORT-002B Excel fixture import', () => {
   it('no Team Name: nothing preselected, Analyze asks for the team; choosing one + "save" stores it on THIS Player only', async () => {
     await prepare('en', null);
     await openExcel();
-    expect(screen.queryByTestId('import-excel-save-team')).toBeNull();
-    expect(text('import-excel-team-hint')).toBe("Choose Daniel's team from the teams in the file.");
+    expect(text('import-excel-teams-count')).toBe('8 teams detected');
+    expect(text('import-excel-team-unknown')).toBe("We couldn't identify your team.");
+    expect(screen.queryByTestId('import-excel-team-option-0')).toBeNull(); // the list only in the picker
     press('import-analyze');
     expect(text('import-excel-team-error')).toBe("Choose Daniel's team first.");
     expect(screen.queryByTestId('import-continue')).toBeNull();
-    press(teamChip(HOF));
+    pickTeam('import-excel', HOF, true);
     expect(screen.queryByTestId('import-excel-team-error')).toBeNull();
-    press('import-excel-save-team-save');
+    expect(text('import-excel-team-selected')).toBe(`${HOF} ✓`);
     await analyze();
     expect(text('import-review-header')).toBe(`Game · 4 games of ${HOF}`);
     expect((await getPlayer(db!, daniel))!.player.teamName).toBe(HOF);
@@ -196,9 +210,15 @@ describe('CAL-SCHEDULE-IMPORT-002B Excel fixture import', () => {
   it('a wrong Team Name (only a prefix of a team) is never "contains"-matched; without "save" the Player is untouched', async () => {
     await prepare('en', 'הפועל חוף');
     await openExcel();
-    expect(screen.queryByTestId('import-excel-team-0')).not.toBeNull();
-    for (let i = 0; screen.queryByTestId(`import-excel-team-${i}`) !== null; i++) expect(isSelected(`import-excel-team-${i}`)).toBe(false);
-    press(teamChip(MAAYAN));
+    // The saved name has no EXACT match: said so, nothing chosen for the user (never fuzzy / contains).
+    expect(text('import-excel-team-saved-mismatch')).toBe('Saved team: הפועל חוף — no exact match in this file.');
+    expect(screen.queryByTestId('import-excel-team-selected')).toBeNull();
+    press('import-excel-team-choose');
+    for (let i = 0; screen.queryByTestId(`import-excel-team-option-${i}`) !== null; i++) {
+      expect(screen.getByTestId(`import-excel-team-option-${i}`).props.accessibilityState?.selected).toBe(false);
+    }
+    press('import-excel-team-cancel');
+    pickTeam('import-excel', MAAYAN);
     await analyze();
     expect(text('import-review-header')).toBe(`Game · 2 games of ${MAAYAN}`);
     expect((await getPlayer(db!, daniel))!.player.teamName).toBe('הפועל חוף');
@@ -208,7 +228,33 @@ describe('CAL-SCHEDULE-IMPORT-002B Excel fixture import', () => {
     await prepare('en', HOF);
     picker.mockResolvedValue({ ...league(), name: null });
     await openExcel();
-    expect(text('import-excel-file')).toBe('Excel file · 6 games in the file');
+    expect(text('import-excel-file')).toBe('Excel file · 6 games detected');
+  });
+
+  it('team picker: search filters; one selection; Cancel keeps the team; Change team reopens; save unticked → profile untouched', async () => {
+    await prepare('en', HOF);
+    await openExcel();
+    press('import-excel-team-change');
+    expect(screen.getByTestId(optionId('import-excel', HOF)).props.accessibilityState?.selected).toBe(true);
+    expect(screen.queryByTestId('import-excel-team-save')).toBeNull(); // already the saved team: nothing to save
+    fireEvent.changeText(screen.getByTestId('import-excel-team-search'), 'מעיין');
+    expect(screen.queryAllByTestId(/^import-excel-team-option-\d+$/)).toHaveLength(1);
+    press(optionId('import-excel', MAAYAN));
+    expect(screen.getByTestId(optionId('import-excel', MAAYAN)).props.accessibilityState?.selected).toBe(true);
+    fireEvent.changeText(screen.getByTestId('import-excel-team-search'), 'zzz');
+    expect(text('import-excel-team-no-results')).toBe('No team matches the search.');
+    press('import-excel-team-cancel'); // nothing changes
+    expect(text('import-excel-team-selected')).toBe(`${HOF} ✓`);
+    pickTeam('import-excel', MAAYAN); // Change team → another team, save left unticked
+    expect(text('import-excel-team-selected')).toBe(`${MAAYAN} ✓`);
+    expect(text('import-excel-team-games')).toBe('2 games found');
+    // Reopened on a chosen team that is not the saved one: "save" is offered, and still unticked.
+    press('import-excel-team-change');
+    expect(screen.getByTestId('import-excel-team-save').props.accessibilityState?.checked).toBe(false);
+    press('import-excel-team-cancel');
+    await analyze();
+    expect(text('import-review-header')).toBe(`Game · 2 games of ${MAAYAN}`);
+    expect((await getPlayer(db!, daniel))!.player.teamName).toBe(HOF); // profile untouched without "save"
   });
 
   it('GAME is suggested, never applied; a file without the required columns says which', async () => {
@@ -216,7 +262,7 @@ describe('CAL-SCHEDULE-IMPORT-002B Excel fixture import', () => {
     renderRouter(routes, { initialUrl: `/children/${daniel}/schedule/import` });
     await screen.findByTestId('import-source-excel');
     press('import-source-excel');
-    expect(text('import-type-suggestion')).toBe('Suggested type for a fixture file: Game');
+    expect(text('import-type-suggestion')).toBe('Suggested type for a fixture list: Game');
     expect(isSelected('import-type-GAME')).toBe(false);
     picker.mockResolvedValue({ name: 'x.xlsx', bytes: buildXlsx([{ name: 'S', rows: [['Date', 'Home Team', 'Venue'], ['19-11-2026', HOF, 'אולם']] }]) });
     press('import-excel-pick');
