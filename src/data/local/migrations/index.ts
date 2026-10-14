@@ -819,4 +819,28 @@ export const migrations: readonly Migration[] = [
       BEGIN SELECT RAISE(ABORT, 'an archived player gets no new activity'); END;
     `,
   },
+  {
+    // CAL-SYNC-NOTIFY-001D (owner 2026-10-14): optional one-way mirror of CalendarEvents into ONE
+    // device calendar. Each row records an external entry GALS COACHER created, so sync only ever
+    // updates / deletes its own entries (never other calendar events). CalendarEvent stays the source
+    // of truth; a link is device data, never event ownership. No FK: when an app event is deleted its
+    // link survives until the external entry is removed (then the row goes). synced_start_at decides
+    // future (managed) vs started / past (history, left untouched). Additive: one new table.
+    version: 16,
+    name: 'calendar_event_sync_links',
+    sql: `
+      CREATE TABLE calendar_event_sync_links (
+        event_id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(event_id)) > 0),
+        player_id TEXT NOT NULL CHECK (length(trim(player_id)) > 0),
+        calendar_id TEXT NOT NULL CHECK (length(trim(calendar_id)) > 0),
+        external_event_id TEXT CHECK (external_event_id IS NULL OR length(trim(external_event_id)) > 0),
+        state TEXT NOT NULL CHECK (state IN ('SYNCED', 'NEEDS_END_TIME', 'ERROR')),
+        synced_hash TEXT,
+        synced_start_at INTEGER NOT NULL,
+        synced_at INTEGER,
+        last_error TEXT
+      );
+      CREATE INDEX calendar_event_sync_links_player ON calendar_event_sync_links (player_id);
+    `,
+  },
 ];

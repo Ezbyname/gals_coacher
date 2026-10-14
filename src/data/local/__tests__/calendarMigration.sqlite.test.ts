@@ -109,8 +109,8 @@ describe('migration v4 (calendar events) on real SQLite', () => {
 
   it('fresh install: v4 creates exactly calendar_events and its (player_id, start_at) index', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(15);
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 15 });
+    expect(migration.to).toBe(16);
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 16 });
     // v13 (calendar_event_import) adds the import-batch index; covered in calendarImportMigration.
     expect(await v4Objects(db as unknown as Db)).toEqual([
       'calendar_events',
@@ -176,7 +176,7 @@ describe('migration v4 (calendar events) on real SQLite', () => {
     const { db, migration } = await openLocalDatabase();
     expect(migration).toEqual({
       from: 3,
-      to: 15,
+      to: 16,
       applied: [
         'calendar_events',
         'player_sports_active',
@@ -190,9 +190,10 @@ describe('migration v4 (calendar events) on real SQLite', () => {
         'calendar_event_import',
         'player_team_name',
         'player_archive',
+        'calendar_event_sync_links',
       ],
     });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 15 });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 16 });
     expect(await dumpV3Data(db as unknown as Db)).toEqual(before.data);
     // Read back through today's repository: players, Basketball (active) and the assessment intact.
     expect(
@@ -220,8 +221,8 @@ describe('migration v4 (calendar events) on real SQLite', () => {
 
     // Idempotent: the next launch applies nothing; schema, data and version unchanged.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 15, to: 15, applied: [] });
-    expect(await again.db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 15 });
+    expect(again.migration).toEqual({ from: 16, to: 16, applied: [] });
+    expect(await again.db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 16 });
     expect(
       await again.db.getAllAsync(
         "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name",
@@ -253,7 +254,7 @@ describe('migration v4 (calendar events) on real SQLite', () => {
     const relaunch = await openLocalDatabase();
     expect(relaunch.migration).toEqual({
       from: 3,
-      to: 15,
+      to: 16,
       applied: [
         'calendar_events',
         'player_sports_active',
@@ -267,6 +268,7 @@ describe('migration v4 (calendar events) on real SQLite', () => {
         'calendar_event_import',
         'player_team_name',
         'player_archive',
+        'calendar_event_sync_links',
       ],
     });
     expect(await dumpV3Data(relaunch.db as unknown as Db)).toEqual(before.data);
@@ -276,9 +278,9 @@ describe('migration v4 (calendar events) on real SQLite', () => {
 
   it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 16');
+    await newer.execAsync('PRAGMA user_version = 17');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v16 .* only knows v15\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v17 .* only knows v16\. Refusing to downgrade/);
   });
 });
 

@@ -8,4 +8,6 @@ export const PREFERENCE_KEYS = {
   rtlReloadTarget: '@gals-coacher/rtl.reloadTarget',
   /** CAL-SYNC-NOTIFY-001: this device's reminder preference (JSON, versioned). */
   reminders: '@gals-coacher/reminders.v1',
+  /** CAL-SYNC-NOTIFY-001D: this device's calendar-sync preference (JSON, versioned) — separate from reminders. */
+  calendarSync: '@gals-coacher/calendarSync.v1',
 } as const;

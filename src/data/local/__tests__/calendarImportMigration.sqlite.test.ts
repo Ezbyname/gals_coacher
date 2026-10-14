@@ -125,8 +125,8 @@ describe('migration v13 (calendar event import) on real SQLite', () => {
 
   it('fresh install reaches v13: three nullable columns, no default, a partial batch index', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(15);
-    expect(migration.applied.at(-1)).toBe('player_archive');
+    expect(migration.to).toBe(16);
+    expect(migration.applied.at(-1)).toBe('calendar_event_sync_links');
     expect(await v13Columns(db as unknown as Db)).toEqual([
       { name: 'location', type: 'TEXT', notnull: 0, dflt_value: null },
       { name: 'source', type: 'TEXT', notnull: 0, dflt_value: null },
@@ -145,8 +145,8 @@ describe('migration v13 (calendar event import) on real SQLite', () => {
     const before = await createV12Database();
 
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 12, to: 15, applied: ['calendar_event_import', 'player_team_name', 'player_archive'] });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 15 });
+    expect(migration).toEqual({ from: 12, to: 16, applied: ['calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links'] });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 16 });
     expect(await dump(db as unknown as Db)).toEqual(before);
     expect(
       await db.getAllAsync(
@@ -177,7 +177,7 @@ describe('migration v13 (calendar event import) on real SQLite', () => {
 
     // Idempotent: the next launch applies nothing and changes nothing.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 15, to: 15, applied: [] });
+    expect(again.migration).toEqual({ from: 16, to: 16, applied: [] });
     expect(await dump(again.db as unknown as Db)).toEqual(before);
     await again.db.closeAsync();
   });
@@ -210,7 +210,7 @@ describe('migration v13 (calendar event import) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 12, to: 15, applied: ['calendar_event_import', 'player_team_name', 'player_archive'] });
+    expect(relaunch.migration).toEqual({ from: 12, to: 16, applied: ['calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links'] });
     expect(await dump(relaunch.db as unknown as Db)).toEqual(before);
     await relaunch.db.closeAsync();
   });

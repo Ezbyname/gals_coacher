@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { AppProvider } from '@/features/AppProvider';
 import { MainNavBar } from '@/features/navigation/MainNavBar';
 import { ReminderSync } from '@/features/reminders/ReminderSync';
+import { CalendarSync } from '@/features/calendarSync/CalendarSync';
 import { UnsavedChangesProvider } from '@/features/navigation/unsavedChanges';
 import { keepNativeSplash } from '@/features/startup/nativeSplash';
 import { StartupReadySignal } from '@/features/startup/StartupReadySignal';
@@ -29,6 +30,7 @@ export default function RootLayout() {
           <StatusBar style="dark" />
           <StartupReadySignal />
           <ReminderSync />
+          <CalendarSync />
           <AppStack />
         </AppProvider>
       </I18nProvider>

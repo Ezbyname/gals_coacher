@@ -4,7 +4,7 @@
  * The reminder engine listens and reconciles. A listener can never affect the
  * write: it runs after the commit, and its errors are caught here.
  */
-export type DataTopic = 'calendar' | 'players' | 'reminders';
+export type DataTopic = 'calendar' | 'players' | 'reminders' | 'calendarSync';
 type Listener = (topic: DataTopic) => void;
 
 const listeners = new Set<Listener>();
