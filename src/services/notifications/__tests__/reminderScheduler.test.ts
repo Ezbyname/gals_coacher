@@ -3,7 +3,10 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 /** CAL-SYNC-NOTIFY-001C — the device scheduler adapter. */
 jest.mock('expo-modules-core', () => ({ ...jest.requireActual('expo-modules-core'), requireOptionalNativeModule: jest.fn() }));
 const mockLib = {
-  getAllScheduledNotificationsAsync: jest.fn(async () => [{ identifier: 'cal:e:0:1' }, { identifier: 'other' }]),
+  getAllScheduledNotificationsAsync: jest.fn(async () => [
+    { identifier: 'cal:e:0:1', content: { title: 'Daniel · Game', body: '15/10 · 19:00' } },
+    { identifier: 'other', content: { title: null, body: null } },
+  ]),
   scheduleNotificationAsync: jest.fn(async () => 'cal:e:0:1'),
   cancelScheduledNotificationAsync: jest.fn(async () => undefined),
   SchedulableTriggerInputTypes: { DATE: 'date' },
@@ -18,7 +21,7 @@ afterEach(() => jest.clearAllMocks());
 
 it('without the native module every call refuses (never a silent "scheduled")', async () => {
   native.mockReturnValue(null);
-  await expect(s.scheduledIds()).rejects.toBeInstanceOf(ReminderSchedulerUnavailable);
+  await expect(s.scheduled()).rejects.toBeInstanceOf(ReminderSchedulerUnavailable);
   await expect(s.schedule({ id: 'cal:e:0:1', at: 1, title: 't', body: 'b', data: { eventId: 'e', playerId: 'p' } })).rejects.toBeInstanceOf(ReminderSchedulerUnavailable);
   expect(mockLib.scheduleNotificationAsync).not.toHaveBeenCalled();
 });
@@ -32,7 +35,10 @@ it('schedules at the exact instant with OUR identifier on the reminders channel;
     content: { title: 'Daniel · Game', body: '15/10 · 19:00', data: { eventId: 'e', playerId: 'p' } },
     trigger: { type: 'date', date: new Date(at), channelId: 'training-reminders' },
   });
-  expect(await s.scheduledIds()).toEqual(['cal:e:0:1', 'other']);
+  expect(await s.scheduled()).toEqual([
+    { id: 'cal:e:0:1', title: 'Daniel · Game', body: '15/10 · 19:00' },
+    { id: 'other', title: '', body: '' },
+  ]);
   await s.cancel('cal:e:2:99');
   expect(mockLib.cancelScheduledNotificationAsync).toHaveBeenCalledWith('cal:e:2:99');
 });

@@ -29,7 +29,7 @@ let mockStateChecks = 0;
 jest.mock('@/services/notifications/reminderScheduler', () => ({
   ...jest.requireActual('@/services/notifications/reminderScheduler'),
   expoReminderScheduler: {
-    scheduledIds: async () => [...mockDevice.keys()],
+    scheduled: async () => [...mockDevice.values()].map(({ id, title, body }) => ({ id, title, body })),
     schedule: async (n: ReminderNotification) => void mockDevice.set(n.id, n),
     cancel: async (id: string) => void mockDevice.delete(id),
   },

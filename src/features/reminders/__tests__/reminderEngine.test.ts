@@ -27,17 +27,17 @@ const clock = { wallNow: () => NOW, monotonicNow: () => 0 };
 const deps0 = { ids, clock };
 
 class FakeDevice implements ReminderScheduler {
-  readonly scheduled = new Map<string, ReminderNotification>([['other-app:1', { id: 'other-app:1', at: NOW + 1, title: 'x', body: 'x', data: { eventId: '-', playerId: '-' } }]]);
+  readonly store = new Map<string, ReminderNotification>([['other-app:1', { id: 'other-app:1', at: NOW + 1, title: 'x', body: 'x', data: { eventId: '-', playerId: '-' } }]]);
   calls = { schedule: 0, cancel: 0 };
   failSchedule = false;
-  async scheduledIds() { return [...this.scheduled.keys()]; }
+  async scheduled() { return [...this.store.values()].map(({ id, title, body }) => ({ id, title, body })); }
   async schedule(n: ReminderNotification) {
     this.calls.schedule++;
     if (this.failSchedule) throw new Error('device refused');
-    this.scheduled.set(n.id, n);
+    this.store.set(n.id, n);
   }
-  async cancel(id: string) { this.calls.cancel++; this.scheduled.delete(id); }
-  ours() { return [...this.scheduled.values()].filter((n) => n.id.startsWith('cal:')).sort((a, b) => a.at - b.at); }
+  async cancel(id: string) { this.calls.cancel++; this.store.delete(id); }
+  ours() { return [...this.store.values()].filter((n) => n.id.startsWith('cal:')).sort((a, b) => a.at - b.at); }
 }
 
 const describe_: DescribeReminder = (e, player) => ({
@@ -206,7 +206,7 @@ describe('reconcile — safety', () => {
     await reconcile();
     prefs = { ...prefs, enabled: false };
     await reconcile();
-    expect([...device.scheduled.keys()]).toEqual(['other-app:1']);
+    expect([...device.store.keys()]).toEqual(['other-app:1']);
   });
 
   it('no native notifications in this build → UNAVAILABLE: nothing called, nothing claimed', async () => {

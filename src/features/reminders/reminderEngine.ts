@@ -2,6 +2,8 @@ import { listCalendarEventsInRange } from '@/data/local/calendar/calendarEventRe
 import type { PlayerDb } from '@/data/local/players/playerDb';
 import { listPlayers } from '@/data/local/players/playerRepository';
 import type { CalendarEvent } from '@/domain/calendarEvent';
+import { activityTypeLabel } from '@/features/calendar/calendarLabels';
+import type { TranslationKey, TranslationParams } from '@/i18n/types';
 import {
   desiredReminders,
   MAX_BEFORE_START_MINUTES,
@@ -19,7 +21,9 @@ import type { ReminderNotification, ReminderScheduler } from '@/services/notific
 /**
  * CAL-SYNC-NOTIFY-001C — the local notification engine: make the device's
  * scheduled reminders EXACTLY the desired ones (001A `desiredReminders`, 30-day
- * rolling window) — schedule the missing, cancel the stale. Idempotent: a second
+ * rolling window) — schedule the missing, cancel the stale, and rewrite one whose
+ * WORDS changed (app language, event title / location) under the SAME id (identity
+ * stays event + rule + instant). Idempotent: a second
  * run changes nothing. CalendarEvent is the source of truth; this only READS it,
  * so a scheduling failure can never corrupt or roll back calendar data (it is
  * counted, and the next reconcile retries). Notifications that are not ours
@@ -32,6 +36,27 @@ export const deviceLocalClock: LocalClock = { toLocal: epochToLocalDateTime, toE
 
 /** The notification's words (known event data only: no invented end, no empty location). */
 export type DescribeReminder = (event: CalendarEvent, playerName: string) => { title: string; body: string };
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/**
+ * The words of an event's reminder in the CURRENT app language: "<Player> · <title or type>"
+ * and "<d/m> · <start>[–<end>][ · <location>]" — the end and the location only when known.
+ */
+export function reminderWords(
+  t: (key: TranslationKey, params?: TranslationParams) => string,
+  event: CalendarEvent,
+  player: string,
+): { title: string; body: string } {
+  const start = epochToLocalDateTime(event.startAt);
+  const end = event.endAt === null ? null : epochToLocalDateTime(event.endAt);
+  const time = `${pad(start.hour)}:${pad(start.minute)}${end === null ? '' : `–${pad(end.hour)}:${pad(end.minute)}`}`;
+  const when = `${start.day}/${start.month} · ${time}`;
+  return {
+    title: t('reminders.notification.title', { player, what: event.title ?? activityTypeLabel(t, event.activityType) }),
+    body: event.location === null ? when : t('reminders.notification.bodyAt', { when, place: event.location }),
+  };
+}
 
 export interface ReconcileDeps {
   readonly db: PlayerDb;
@@ -54,7 +79,8 @@ export async function reconcileReminders(deps: ReconcileDeps): Promise<Reconcile
   const permission = await deps.permissions.notificationState();
   if (permission === 'UNAVAILABLE') return { status: 'UNAVAILABLE' };
   const now = deps.now();
-  const scheduled = await deps.scheduler.scheduledIds();
+  const onDevice = await deps.scheduler.scheduled();
+  const scheduled = onDevice.map((n) => n.id);
 
   const players = await listPlayers(deps.db); // the active roster: an archived Player's events never remind
   const ids = players.map((p) => p.player.id as string);
@@ -76,10 +102,24 @@ export async function reconcileReminders(deps: ReconcileDeps): Promise<Reconcile
     );
   }
 
+  const names = new Map(players.map((p) => [p.player.id as string, p.player.name]));
+  const notificationOf = (r: (typeof desired)[number]): ReminderNotification => {
+    const event = events.get(r.eventId)!;
+    const words = deps.describe(event, names.get(event.playerId) ?? '');
+    return { id: r.id, at: r.at, ...words, data: { eventId: event.id, playerId: event.playerId } };
+  };
+  const wanted = new Map(desired.map((r) => [r.id, notificationOf(r)]));
   const diff = reminderDiff(desired, scheduled);
+  // Same reminder, other words (e.g. the app language changed): rewrite it — cancel + schedule, same id.
+  const stale = onDevice.filter((n) => {
+    const w = wanted.get(n.id);
+    return w !== undefined && (w.title !== n.title || w.body !== n.body);
+  });
+  const toCancel = [...diff.cancel, ...stale.map((n) => n.id)];
+  const toSchedule = [...diff.schedule.map((r) => wanted.get(r.id)!), ...stale.map((n) => wanted.get(n.id)!)];
   let cancelled = 0;
   let failed = 0;
-  for (const id of diff.cancel) {
+  for (const id of toCancel) {
     try {
       await deps.scheduler.cancel(id);
       cancelled++;
@@ -90,18 +130,14 @@ export async function reconcileReminders(deps: ReconcileDeps): Promise<Reconcile
   }
   if (permission !== 'GRANTED') return { status: 'NO_PERMISSION', cancelled };
 
-  const names = new Map(players.map((p) => [p.player.id as string, p.player.name]));
   let made = 0;
-  for (const r of diff.schedule) {
-    const event = events.get(r.eventId)!;
-    const words = deps.describe(event, names.get(event.playerId) ?? '');
-    const notification: ReminderNotification = { id: r.id, at: r.at, ...words, data: { eventId: event.id, playerId: event.playerId } };
+  for (const notification of toSchedule) {
     try {
       await deps.scheduler.schedule(notification);
       made++;
     } catch (e) {
       failed++; // never claimed as scheduled; the next reconcile retries it
-      console.warn('[reminders] schedule failed', r.id, e);
+      console.warn('[reminders] schedule failed', notification.id, e);
     }
   }
   return { status: 'DONE', desired: desired.length, scheduled: made, cancelled, failed };

@@ -19,8 +19,15 @@ export interface ReminderNotification {
   readonly data: { readonly eventId: string; readonly playerId: string };
 }
 
+/** A notification the device has scheduled, as far as reconcile needs it (its id and its words). */
+export interface ScheduledReminder {
+  readonly id: string;
+  readonly title: string;
+  readonly body: string;
+}
+
 export interface ReminderScheduler {
-  scheduledIds(): Promise<string[]>;
+  scheduled(): Promise<ScheduledReminder[]>;
   schedule(notification: ReminderNotification): Promise<void>;
   cancel(id: string): Promise<void>;
 }
@@ -41,8 +48,12 @@ function notifications(): NotificationsModule {
 }
 
 export const expoReminderScheduler: ReminderScheduler = {
-  async scheduledIds() {
-    return (await notifications().getAllScheduledNotificationsAsync()).map((r) => r.identifier);
+  async scheduled() {
+    return (await notifications().getAllScheduledNotificationsAsync()).map((r) => ({
+      id: r.identifier,
+      title: r.content.title ?? '',
+      body: r.content.body ?? '',
+    }));
   },
   async schedule(n) {
     const lib = notifications();
