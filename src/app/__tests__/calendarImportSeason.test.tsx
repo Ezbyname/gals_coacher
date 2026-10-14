@@ -63,13 +63,25 @@ const BOUNDARY = ['planned_workouts', 'planned_workout_items', 'training_session
 const boundary = () => Promise.all(BOUNDARY.map((t) => count(t)));
 type Row = { player_id: string; type: string; title: string; start_at: number; end_at: number | null; location: string; source: string; import_batch_id: string };
 const rows = () => db!.getAllAsync<Row>("SELECT * FROM calendar_events WHERE source = 'TEXT_IMPORT' ORDER BY start_at, id");
-const teamChip = (name: string) => {
-  for (let i = 0; ; i++) {
-    const node = screen.queryByTestId(`import-fixture-team-${i}-label`);
-    if (node === null) throw new Error(`no team chip ${name}`);
-    if (stripBidi(String(node.props.children)) === name) return `import-fixture-team-${i}`;
+/** Team picker helpers (UX 2026-10-14: the team list lives only in the picker). */
+const optionId = (prefix: string, name: string) => {
+  // Options keep their index in the import's team list (a search shows a subset): scan what is shown.
+  for (const node of screen.queryAllByTestId(new RegExp(`^${prefix}-team-option-\\d+-label$`))) {
+    if (stripBidi(String(node.props.children)).replace(/^[○◉]\s+/, '') === name) return String(node.props.testID).replace(/-label$/, '');
   }
+  throw new Error(`no team option ${name}`);
 };
+/** Opens the picker (Choose / Change team), selects `name`, optionally ticks "save", confirms. */
+function pickTeam(prefix: string, name: string, save = false) {
+  press(screen.queryByTestId(`${prefix}-team-choose`) !== null ? `${prefix}-team-choose` : `${prefix}-team-change`);
+  press(optionId(prefix, name));
+  if (save) {
+    expect(screen.getByTestId(`${prefix}-team-save`).props.accessibilityState?.checked).toBe(false); // unchecked by default
+    press(`${prefix}-team-save`);
+  }
+  press(`${prefix}-team-confirm`);
+  expect(screen.queryByTestId(`${prefix}-team-option-0`)).toBeNull(); // the list is gone again
+}
 const ORACLE = readFixtureText(HOF_SEASON_TEXT).fixtures; // the parser is proven in fixtureText.test.ts
 
 async function paste(message: string, type = 'GAME') {
@@ -128,15 +140,17 @@ describe('CAL-SCHEDULE-IMPORT-002C season fixture text', () => {
     await screen.findByTestId('import-season-detected');
     expect(text('import-season-detected')).toBe(
       '22 games found in a season fixture list. Dates are imported exactly as written; the selected week does not apply.');
-    expect(teamChip(HOF)).not.toBe(teamChip(MAAYAN));
-    expect(isSelected(teamChip(HOF))).toBe(false);
+    expect(text('import-fixture-team-unknown')).toBe("We couldn't identify your team.");
+    expect(screen.queryByTestId('import-fixture-team-option-0')).toBeNull(); // the list only in the picker
+    press('import-fixture-team-choose');
+    expect(optionId('import-fixture', HOF)).not.toBe(optionId('import-fixture', MAAYAN)); // exact; prefix club separate
+    press('import-fixture-team-cancel');
     expect(text('import-type-suggestion')).toBe('Suggested type for a fixture list: Game');
     expect(isSelected('import-type-TEAM_TRAINING')).toBe(true); // never overridden
     expect(screen.queryByTestId('import-continue')).toBeNull();
     press('import-analyze');
     expect(text('import-fixture-team-error')).toBe("Choose Daniel's team first.");
-    press(teamChip(HOF));
-    press('import-fixture-save-team-save');
+    pickTeam('import-fixture', HOF, true);
     press('import-type-GAME');
     press('import-analyze');
     await screen.findByTestId('import-continue');

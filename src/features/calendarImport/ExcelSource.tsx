@@ -1,13 +1,15 @@
-import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import {
   findHeader,
   findTeam,
   fixtureTeams,
+  normalizeTeamName,
   readFixtures,
   readWorkbook,
   sameTeam,
+  sideOf,
   XlsxReadError,
   type FixtureColumn,
   type FixtureRow,
@@ -19,7 +21,9 @@ import { isolate } from '@/i18n/bidi';
 import { useI18n } from '@/i18n/I18nProvider';
 import { BigButton } from '@/ui/BigButton';
 import { ChoiceChips } from '@/ui/ChoiceChips';
-import { colors, spacing } from '@/ui/theme';
+import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
+import { TextField } from '@/ui/TextField';
+import { colors, spacing, touch } from '@/ui/theme';
 
 import { pickSpreadsheet } from './pickSpreadsheet';
 
@@ -159,9 +163,12 @@ export function ExcelSourcePanel({
 
 /**
  * "Which team is the Player's?" — shared by the Excel file and the pasted season
- * list (002C). Preselected only on an exact Team Name match; otherwise the user
- * chooses from the source's teams; saving the choice as the Player's Team Name is
- * optional and explicit. The Player itself is never inferred from the source.
+ * list (002C). The import screen stays compact (owner UX correction 2026-10-14):
+ * an exact Team Name match shows ONLY that team (+ its game count, "Change team");
+ * otherwise a short summary and "Choose team". The detected teams appear only in
+ * the picker (search, one selection). Saving the choice as the Player's Team Name
+ * is explicit and unchecked by default. The Player is never inferred from the source,
+ * and the Player profile is never filled with the detected teams.
  */
 export function TeamChooser({
   idPrefix,
@@ -179,36 +186,155 @@ export function TeamChooser({
   teamError: boolean;
 }) {
   const { t } = useI18n();
+  const [picking, setPicking] = useState(false);
   const name = isolate(playerName);
-  const matched = value.team !== null && playerTeam !== null && sameTeam(value.team.name, playerTeam);
+  const games = value.team === null ? 0 : value.fixtures.filter((f) => sideOf(value.team!, f.home, f.away) !== null).length;
   return (
-    <>
-      <ChoiceChips<string>
-        testID={`${idPrefix}-team`}
-        label={t('calendarImport.excel.team', { name })}
-        choices={value.teams.map((team, i) => ({ value: String(i), label: team.name }))}
-        value={value.team === null ? null : String(value.teams.indexOf(value.team))}
-        onChange={(v) => v !== null && onChange({ ...value, team: value.teams[Number(v)] ?? null, saveTeam: false })}
-        error={teamError ? t('calendarImport.excel.teamRequired', { name }) : undefined}
-      />
-      <Text style={styles.muted} testID={`${idPrefix}-team-hint`}>
-        {matched ? t('calendarImport.excel.teamMatched') : t('calendarImport.excel.teamChoose', { name })}
-      </Text>
-      {value.team !== null && !matched ? (
-        <ChoiceChips<'save'>
-          testID={`${idPrefix}-save-team`}
-          label={t('calendarImport.excel.saveTeamLabel')}
-          choices={[{ value: 'save', label: t('calendarImport.excel.saveTeam', { team: isolate(value.team.name), name }) }]}
-          value={value.saveTeam ? 'save' : null}
-          onChange={(v) => onChange({ ...value, saveTeam: v === 'save' })}
+    <View style={styles.group}>
+      {value.team !== null ? (
+        <View style={styles.gap}>
+          <Text style={styles.label}>{t('calendarImport.excel.yourTeam')}</Text>
+          <Text style={styles.team} testID={`${idPrefix}-team-selected`}>
+            {selectedLabel(value.team.name)}
+          </Text>
+          <Text style={styles.muted} testID={`${idPrefix}-team-games`}>
+            {t('calendarImport.excel.teamGames', { count: games })}
+          </Text>
+          <BigButton testID={`${idPrefix}-team-change`} variant="secondary" label={t('calendarImport.excel.changeTeam')}
+            onPress={() => setPicking(true)} />
+        </View>
+      ) : (
+        <View style={styles.gap}>
+          <Text style={styles.muted} testID={`${idPrefix}-teams-count`}>
+            {t('calendarImport.excel.teamsDetected', { count: value.teams.length })}
+          </Text>
+          {playerTeam !== null ? (
+            <Text style={styles.body} testID={`${idPrefix}-team-saved-mismatch`}>
+              {t('calendarImport.excel.savedTeamNoMatch', { team: isolate(playerTeam) })}
+            </Text>
+          ) : (
+            <Text style={styles.body} testID={`${idPrefix}-team-unknown`}>
+              {t('calendarImport.excel.teamUnknown')}
+            </Text>
+          )}
+          <BigButton testID={`${idPrefix}-team-choose`} label={t('calendarImport.excel.chooseTeam')} onPress={() => setPicking(true)} />
+          {teamError ? (
+            <Text style={styles.error} testID={`${idPrefix}-team-error`}>
+              {t('calendarImport.excel.teamRequired', { name })}
+            </Text>
+          ) : null}
+        </View>
+      )}
+      {picking ? (
+        <TeamPicker
+          idPrefix={idPrefix}
+          teams={value.teams}
+          initial={value.team}
+          playerTeam={playerTeam}
+          onCancel={() => setPicking(false)}
+          onConfirm={(team, saveTeam) => {
+            setPicking(false);
+            onChange({ ...value, team, saveTeam });
+          }}
         />
       ) : null}
-    </>
+    </View>
+  );
+}
+
+// Visual markers (not words), kept out of JSX literals.
+const selectedLabel = (team: string) => `${isolate(team)} ✓`;
+const optionLabel = (team: string, selected: boolean) => `${selected ? '◉' : '○'}  ${team}`;
+const checkboxLabel = (label: string, checked: boolean) => `${checked ? '☑' : '☐'}  ${label}`;
+
+/** The detected teams of THIS import only: search, one selection, optional explicit save. */
+function TeamPicker({
+  idPrefix,
+  teams,
+  initial,
+  playerTeam,
+  onCancel,
+  onConfirm,
+}: {
+  idPrefix: string;
+  teams: readonly SourceTeam[];
+  initial: SourceTeam | null;
+  playerTeam: string | null;
+  onCancel: () => void;
+  onConfirm: (team: SourceTeam, saveTeam: boolean) => void;
+}) {
+  const { t } = useI18n();
+  const [query, setQuery] = useState('');
+  const [chosen, setChosen] = useState<SourceTeam | null>(initial);
+  const [save, setSave] = useState(false); // unchecked by default (owner)
+  const shown = useMemo(() => {
+    const q = normalizeTeamName(query);
+    return teams.map((team, index) => ({ team, index })).filter(({ team }) => q === '' || normalizeTeamName(team.name).includes(q));
+  }, [teams, query]);
+  // Offered only when the choice is not already the Player's saved Team Name.
+  const canSave = chosen !== null && (playerTeam === null || !sameTeam(chosen.name, playerTeam));
+  return (
+    <Modal visible animationType="slide" onRequestClose={onCancel} testID={`${idPrefix}-team-picker`}>
+      <KeyboardSafeScrollView contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled" testID={`${idPrefix}-team-picker-scroll`}>
+        <Text style={styles.heading} accessibilityRole="header">
+          {t('calendarImport.excel.pickerTitle')}
+        </Text>
+        <TextField testID={`${idPrefix}-team-search`} label={t('calendarImport.excel.search')} value={query} onChangeText={setQuery} />
+        <View accessibilityRole="radiogroup" style={styles.gap}>
+          {shown.map(({ team, index }) => {
+            const selected = chosen === team;
+            return (
+              <Pressable
+                key={index}
+                testID={`${idPrefix}-team-option-${index}`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected, checked: selected }}
+                accessibilityLabel={team.name}
+                onPress={() => {
+                  setChosen(team);
+                  setSave(false);
+                }}
+                style={[styles.option, selected && styles.optionSelected]}>
+                <Text style={styles.body} testID={`${idPrefix}-team-option-${index}-label`}>
+                  {optionLabel(team.name, selected)}
+                </Text>
+              </Pressable>
+            );
+          })}
+          {shown.length === 0 ? (
+            <Text style={styles.muted} testID={`${idPrefix}-team-no-results`}>
+              {t('calendarImport.excel.noResults')}
+            </Text>
+          ) : null}
+        </View>
+        {canSave ? (
+          <Pressable
+            testID={`${idPrefix}-team-save`}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: save }}
+            onPress={() => setSave(!save)}
+            style={styles.option}>
+            <Text style={styles.body}>{checkboxLabel(t('calendarImport.excel.saveAsMine'), save)}</Text>
+          </Pressable>
+        ) : null}
+        <BigButton testID={`${idPrefix}-team-confirm`} label={t('calendarImport.excel.confirm')} disabled={chosen === null}
+          onPress={() => chosen !== null && onConfirm(chosen, canSave && save)} />
+        <BigButton testID={`${idPrefix}-team-cancel`} variant="secondary" label={t('common.cancel')} onPress={onCancel} />
+      </KeyboardSafeScrollView>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   group: { gap: spacing.md },
+  gap: { gap: spacing.sm },
+  sheet: { padding: spacing.lg, gap: spacing.md },
+  heading: { fontSize: 20, fontWeight: '800', color: colors.ink, textAlign: 'auto' },
+  label: { fontSize: 14, fontWeight: '600', color: colors.ink, textAlign: 'auto' },
+  team: { fontSize: 18, fontWeight: '700', color: colors.ink, textAlign: 'auto' },
+  body: { fontSize: 16, color: colors.ink, textAlign: 'auto' },
   muted: { fontSize: 14, color: colors.inkMuted, textAlign: 'auto' },
   error: { fontSize: 15, color: colors.danger, fontWeight: '600', textAlign: 'auto' },
+  option: { minHeight: touch.buttonMinHeight, justifyContent: 'center', paddingHorizontal: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: colors.border },
+  optionSelected: { borderColor: colors.court, borderWidth: 2 },
 });
