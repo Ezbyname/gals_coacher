@@ -216,7 +216,7 @@ describe('CAL-SCHEDULE-IMPORT-002B Excel fixture import', () => {
     renderRouter(routes, { initialUrl: `/children/${daniel}/schedule/import` });
     await screen.findByTestId('import-source-excel');
     press('import-source-excel');
-    expect(text('import-type-suggestion')).toBe('Suggested type for a fixture file: Game');
+    expect(text('import-type-suggestion')).toBe('Suggested type for a fixture list: Game');
     expect(isSelected('import-type-GAME')).toBe(false);
     picker.mockResolvedValue({ name: 'x.xlsx', bytes: buildXlsx([{ name: 'S', rows: [['Date', 'Home Team', 'Venue'], ['19-11-2026', HOF, 'אולם']] }]) });
     press('import-excel-pick');

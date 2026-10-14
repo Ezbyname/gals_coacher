@@ -771,7 +771,7 @@ export const en = {
       teamRequired: "Choose {name}'s team first.",
       saveTeamLabel: 'Team name',
       saveTeam: "Save \"{team}\" as {name}'s team",
-      suggestGame: 'Suggested type for a fixture file: Game',
+      suggestGame: 'Suggested type for a fixture list: Game',
       header: '{type} · {count} games of {team}',
       missingColumns: 'Required columns were not found in the file: {columns}.',
       column: {

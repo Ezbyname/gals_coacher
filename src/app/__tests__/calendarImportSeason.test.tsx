@@ -130,7 +130,7 @@ describe('CAL-SCHEDULE-IMPORT-002C season fixture text', () => {
       '22 games found in a season fixture list. Dates are imported exactly as written; the selected week does not apply.');
     expect(teamChip(HOF)).not.toBe(teamChip(MAAYAN));
     expect(isSelected(teamChip(HOF))).toBe(false);
-    expect(text('import-type-suggestion')).toBe('Suggested type for a fixture file: Game');
+    expect(text('import-type-suggestion')).toBe('Suggested type for a fixture list: Game');
     expect(isSelected('import-type-TEAM_TRAINING')).toBe(true); // never overridden
     expect(screen.queryByTestId('import-continue')).toBeNull();
     press('import-analyze');

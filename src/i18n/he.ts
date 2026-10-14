@@ -770,7 +770,7 @@ export const he = {
       teamRequired: 'קודם בוחרים את הקבוצה של {name}.',
       saveTeamLabel: 'שם הקבוצה',
       saveTeam: 'לשמור את "{team}" כקבוצה של {name}',
-      suggestGame: 'סוג מוצע לקובץ לוח משחקים: משחק',
+      suggestGame: 'סוג מוצע ללוח משחקים: משחק',
       header: '{type} · {count} משחקים של {team}',
       missingColumns: 'לא נמצאו בקובץ עמודות חובה: {columns}.',
       column: {
