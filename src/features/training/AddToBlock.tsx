@@ -112,7 +112,7 @@ export function AddToBlock({ exerciseId }: { exerciseId: string }) {
       <BigButton
         testID="add-to-block-new"
         label={t('training.addToBlockNew')}
-        onPress={() => router.push(newBlockWithExercisePath(exercise.id))}
+        onPress={() => router.replace(newBlockWithExercisePath(exercise.id))} // Save then returns to Exercise Details
       />
       <TextField testID="add-to-block-search" label={t('training.searchLabel')} value={query} onChangeText={setQuery} />
       {loaded.blocks.every((b) => !b.active) ? (
