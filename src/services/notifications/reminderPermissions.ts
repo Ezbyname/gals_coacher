@@ -13,6 +13,10 @@ import { Linking, Platform } from 'react-native';
  * Exact alarms (Android 12+: SCHEDULE_EXACT_ALARM, "Alarms & reminders"): no
  * JS API reads this grant (design §2), so on Android 12+ the state is UNKNOWN
  * and Settings says precise timing may be unavailable, with "Open settings".
+ * That button opens THIS app's own "Alarms & reminders" page: Android needs the
+ * `package:` data URI for it (an extra alone shows the list of every app), and
+ * only `expo-intent-launcher` (native) can send an intent with data — a build
+ * without that module keeps the older behaviour (the list), never crashes.
  *
  * `expo-notifications` is NATIVE code: an app build without it (e.g. the
  * current dev client) reports UNAVAILABLE instead of crashing — the library is
@@ -48,6 +52,25 @@ function stateOf(p: { granted: boolean; status: string; canAskAgain: boolean }):
   return p.canAskAgain ? 'DENIED' : 'BLOCKED';
 }
 
+type IntentLauncherModule = typeof import('expo-intent-launcher');
+
+function intentLauncher(): IntentLauncherModule | null {
+  if (requireOptionalNativeModule('ExpoIntentLauncher') === null) return null;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('expo-intent-launcher') as IntentLauncherModule;
+}
+
+/** `action` for THIS app's page (data `package:<id>`); without the native launcher, the extras route. */
+async function openAppIntent(action: string, fallback: () => Promise<void>): Promise<void> {
+  const launcher = Platform.OS === 'android' ? intentLauncher() : null;
+  if (launcher === null) return openIntent(action, fallback);
+  try {
+    await launcher.startActivityAsync(action, { data: `package:${PACKAGE}` });
+  } catch {
+    await openIntent(action, fallback);
+  }
+}
+
 async function openIntent(action: string, fallback: () => Promise<void>): Promise<void> {
   if (Platform.OS !== 'android') return fallback();
   try {
@@ -78,5 +101,5 @@ export const expoReminderPermissions: ReminderPermissions = {
     return Platform.OS === 'android' && typeof Platform.Version === 'number' && Platform.Version >= 31 ? 'UNKNOWN' : 'NOT_REQUIRED';
   },
   openNotificationSettings: () => openIntent('android.settings.APP_NOTIFICATION_SETTINGS', () => Linking.openSettings()),
-  openExactAlarmSettings: () => openIntent('android.settings.REQUEST_SCHEDULE_EXACT_ALARM', () => Linking.openSettings()),
+  openExactAlarmSettings: () => openAppIntent('android.settings.REQUEST_SCHEDULE_EXACT_ALARM', () => Linking.openSettings()),
 };

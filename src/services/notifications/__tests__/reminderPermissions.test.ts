@@ -10,6 +10,8 @@ const mockNotifications = {
   AndroidImportance: { HIGH: 4 },
 };
 jest.mock('expo-notifications', () => mockNotifications);
+const mockLauncher = { startActivityAsync: jest.fn(async () => ({ resultCode: 0 })) };
+jest.mock('expo-intent-launcher', () => mockLauncher);
 
 // eslint-disable-next-line import/first
 import { expoReminderPermissions as p, REMINDER_CHANNEL_ID } from '../reminderPermissions';
@@ -60,8 +62,32 @@ describe('reminder permissions', () => {
     expect(p.exactAlarmState()).toBe('NOT_REQUIRED');
   });
 
-  it('Open settings: the exact-alarm / notification screen for this app, else the app settings', async () => {
+  it('EA-01: Open settings (exact alarms) opens THIS app\'s own Alarms & reminders page (package: data URI)', async () => {
     jest.replaceProperty(Platform, 'OS', 'android');
+    native.mockImplementation((name: string) => (name === 'ExpoIntentLauncher' ? {} : null));
+    const send = jest.spyOn(Linking, 'sendIntent').mockResolvedValue(undefined);
+    await p.openExactAlarmSettings();
+    expect(mockLauncher.startActivityAsync).toHaveBeenCalledWith('android.settings.REQUEST_SCHEDULE_EXACT_ALARM', {
+      data: 'package:com.ezbyname.galscoacher',
+    });
+    expect(send).not.toHaveBeenCalled();
+    // the launcher refuses (no such screen on this phone) → the earlier route, then the app settings
+    mockLauncher.startActivityAsync.mockRejectedValueOnce(new Error('no activity'));
+    send.mockRejectedValueOnce(new Error('no activity'));
+    const open = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
+    await p.openExactAlarmSettings();
+    expect(send).toHaveBeenCalledWith('android.settings.REQUEST_SCHEDULE_EXACT_ALARM', [
+      { key: 'android.provider.extra.APP_PACKAGE', value: 'com.ezbyname.galscoacher' },
+    ]);
+    expect(open).toHaveBeenCalled();
+    // reading the grant is still impossible: the state stays UNKNOWN (never claimed)
+    jest.spyOn(Platform, 'Version', 'get').mockReturnValue(37);
+    expect(p.exactAlarmState()).toBe('UNKNOWN');
+  });
+
+  it('Open settings without the native launcher (older build): the extras route, else the app settings', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    native.mockReturnValue(null);
     const send = jest.spyOn(Linking, 'sendIntent').mockResolvedValue(undefined);
     const open = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
     await p.openExactAlarmSettings();

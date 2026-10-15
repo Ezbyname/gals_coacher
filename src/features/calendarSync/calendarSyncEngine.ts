@@ -3,7 +3,14 @@ import { deleteSyncLink, listSyncLinks, upsertSyncLink, type SyncLink } from '@/
 import type { PlayerDb } from '@/data/local/players/playerDb';
 import { listPlayers } from '@/data/local/players/playerRepository';
 import type { CalendarEvent } from '@/domain/calendarEvent';
-import { planCalendarSync, type CalendarSyncPreferences, type ExternalPayload, type SyncAction, type SyncEvent } from '@/domain/calendarSync';
+import {
+  planCalendarSync,
+  plainExternalPayload,
+  type CalendarSyncPreferences,
+  type ExternalPayload,
+  type SyncAction,
+  type SyncEvent,
+} from '@/domain/calendarSync';
 import { readCalendarSyncPreferences } from '@/preferences/calendarSyncPreference';
 import type { DeviceCalendar } from '@/services/calendar/deviceCalendar';
 
@@ -61,6 +68,9 @@ export async function syncDeviceCalendar(deps: CalendarSyncDeps): Promise<Calend
   const players = await listPlayers(deps.db); // ACTIVE roster: an archived Player is out of scope
   const names = new Map(players.map((p) => [p.player.id as string, p.player.name]));
   const raw = await listCalendarEventsInRange(deps.db, now, now + CALENDAR_SYNC_HORIZON_DAYS * DAY);
+  // Completion is NOT cancellation (owner 2026-10-15): a completed event keeps its phone entry — only its
+  // reminders stop (001C). Deletion / deselection / archive / sync OFF are the only removals.
+  // What is written to the phone calendar is plain text (no bidi controls): see plainExternalPayload.
   const events: SyncEvent[] = raw.map((e) => ({
     id: e.id,
     playerId: e.playerId,
@@ -68,7 +78,13 @@ export async function syncDeviceCalendar(deps: CalendarSyncDeps): Promise<Calend
     payload:
       e.endAt === null
         ? null
-        : { title: deps.title(e, names.get(e.playerId) ?? ''), startAt: e.startAt, endAt: e.endAt, location: e.location, notes: e.notes },
+        : plainExternalPayload({
+            title: deps.title(e, names.get(e.playerId) ?? ''),
+            startAt: e.startAt,
+            endAt: e.endAt,
+            location: e.location,
+            notes: e.notes,
+          }),
   }));
 
   // What the calendar holds now for our managed future entries (to restore outside edits / deletions).

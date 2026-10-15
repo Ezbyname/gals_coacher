@@ -2,13 +2,16 @@ import {
   createCalendarEvent,
   deleteCalendarEvent,
   getCalendarEvent,
+  markCalendarEventCompleted,
+  undoCalendarEventCompletion,
   updateCalendarEvent,
 } from '@/data/local/calendar/calendarEventRepository';
-import { listSyncLinks } from '@/data/local/calendarSync/syncLinkRepository';
+import { listSyncLinks, upsertSyncLink } from '@/data/local/calendarSync/syncLinkRepository';
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
 import { archivePlayer, createPlayer, restorePlayer } from '@/data/local/players/playerRepository';
-import type { CalendarSyncPreferences, ExternalPayload } from '@/domain/calendarSync';
+import { payloadHash, type CalendarSyncPreferences, type ExternalPayload } from '@/domain/calendarSync';
+import { isolate } from '@/i18n/bidi';
 import type { CalendarPermissionState, DeviceCalendar, WritableCalendar } from '@/services/calendar/deviceCalendar';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
@@ -48,8 +51,10 @@ let device: FakeCalendar;
 let prefs: CalendarSyncPreferences;
 let daniel: string;
 let maya: string;
-const sync = () => syncDeviceCalendar({ db, device, now: () => now, title: (e, player) => `${player} · ${e.title ?? e.type}`, readPrefs: async () => prefs });
-async function event(playerId: string, startAt: number, endAt: number | null, extra: { location?: string } = {}) {
+type Describe = Parameters<typeof syncDeviceCalendar>[0]['title'];
+const plainTitle: Describe = (e, player) => `${player} · ${e.title ?? e.type}`;
+const sync = (title: Describe = plainTitle) => syncDeviceCalendar({ db, device, now: () => now, title, readPrefs: async () => prefs });
+async function event(playerId: string, startAt: number, endAt: number | null, extra: { location?: string; title?: string } = {}) {
   const r = await createCalendarEvent(db, playerId, { type: 'GAME', startAt, endAt, ...extra }, { ids, clock });
   if (!r.ok) throw new Error('seed');
   return r.event;
@@ -175,5 +180,75 @@ describe('safety', () => {
     expect(await getCalendarEvent(db, daniel, e.id)).toEqual(e);
     device.fail = false;
     expect(await sync()).toMatchObject({ created: 1, failed: 0 });
+  });
+});
+
+describe('completed events (owner decision 2026-10-15): completion is NOT cancellation', () => {
+  it('completing a future event KEEPS its phone entry (nothing removed or rewritten); undoing changes nothing either', async () => {
+    const e = await event(daniel, at(15, 19), at(15, 20), { location: 'Gym' });
+    await sync();
+    const before = device.ours();
+    await markCalendarEventCompleted(db, daniel, e.id, { clock });
+    expect(await sync()).toEqual({ status: 'DONE', created: 0, updated: 0, removed: 0, released: 0, needsEndTime: 0, failed: 0 });
+    expect(device.ours()).toEqual(before);
+    expect((await listSyncLinks(db))[0]).toMatchObject({ eventId: e.id, state: 'SYNCED', externalEventId: 'gc-1' });
+    await undoCalendarEventCompletion(db, daniel, e.id);
+    expect(await sync()).toMatchObject({ created: 0, updated: 0, removed: 0 });
+    expect(device.ours()).toEqual(before);
+  });
+
+  it('a completed event still follows the removal rules (e.g. deleted in the app → its future entry goes)', async () => {
+    const e = await event(daniel, at(15, 19), at(15, 20));
+    await sync();
+    await markCalendarEventCompleted(db, daniel, e.id, { clock });
+    await deleteCalendarEvent(db, daniel, e.id);
+    expect(await sync()).toMatchObject({ removed: 1 });
+    expect(device.ours()).toEqual([]);
+  });
+});
+
+describe('phone-calendar text is plain (no bidi controls) — BC', () => {
+  const CONTROLS = /[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/;
+  // what the app's t() produces: interpolated values wrapped in isolates
+  const appTitle: Describe = (e, player) => `${isolate(player)} · ${isolate(e.title ?? 'משחק')}`;
+
+  it('BC-01: a Hebrew / mixed title keeps its visible text, without bidi controls', async () => {
+    const r = await createPlayer(db, { player: { name: 'דניאל', dateOfBirth: { year: 2013, month: 3, day: 4 } }, basketball: null }, { ids, clock });
+    if (!r.ok) throw new Error('seed');
+    prefs = { ...prefs, players: [r.profile.player.id] };
+    await event(r.profile.player.id, at(15, 19), at(15, 20), { title: 'Final 8 אליפות' });
+    await sync(appTitle);
+    const [entry] = device.ours();
+    expect(entry!.title).toBe('דניאל · Final 8 אליפות');
+    expect(entry!.title).not.toMatch(CONTROLS);
+  });
+
+  it('BC-02: the location (and notes) are plain, searchable text too', async () => {
+    await event(daniel, at(15, 19), at(15, 20), { location: '\u200Fאולם\u2066 3\u2069 Oranim' });
+    await sync(appTitle);
+    const [entry] = device.ours();
+    expect(entry!.location).toBe('אולם 3 Oranim');
+    expect(`${entry!.title}${entry!.location}${entry!.notes ?? ''}`).not.toMatch(CONTROLS);
+  });
+
+  it('BC-03: English text is unchanged', async () => {
+    await event(daniel, at(15, 19), at(15, 20), { title: 'Final game', location: 'Court 1' });
+    await sync();
+    expect(device.ours()[0]).toMatchObject({ title: 'Daniel · Final game', location: 'Court 1' });
+  });
+
+  it('BC-04: no false changes — repeated syncs write nothing; an entry written WITH controls (older build) is cleaned ONCE', async () => {
+    const e = await event(daniel, at(15, 19), at(15, 20), { location: 'Gym' });
+    await sync(appTitle);
+    expect(await sync(appTitle)).toMatchObject({ created: 0, updated: 0 });
+    expect(await sync(appTitle)).toMatchObject({ created: 0, updated: 0 });
+    // simulate the 001D build: the entry and its link hold the isolated title
+    const old: ExternalPayload = { title: `${isolate('Daniel')} · ${isolate('משחק')}`, startAt: e.startAt, endAt: e.endAt!, location: 'Gym', notes: null };
+    device.entries.set('gc-1', { ...old, calendarId: 'cal-1' });
+    const [link] = await listSyncLinks(db);
+    await upsertSyncLink(db, { ...link!, syncedHash: payloadHash('cal-1', old) });
+    expect(await sync(appTitle)).toMatchObject({ created: 0, updated: 1 });
+    expect(device.ours()[0]!.title).toBe('Daniel · משחק');
+    expect(await sync(appTitle)).toMatchObject({ created: 0, updated: 0 });
   });
 });
