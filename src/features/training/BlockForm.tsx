@@ -6,6 +6,7 @@ import { listExercises } from '@/data/local/exercises/exerciseRepository';
 import { readTaxonomy } from '@/data/local/taxonomy/taxonomyRepository';
 import {
   createBlock,
+  duplicateBlock,
   getBlock,
   setBlockActive,
   updateBlock,
@@ -35,7 +36,7 @@ import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
 
-import { formatNumber, targetLabelKey } from './trainingLabels';
+import { blockPath, formatNumber, targetLabelKey } from './trainingLabels';
 
 type Item = { exercise: Exercise; sets: string; target: string; load: string; rest: string };
 type Values = { name: string; items: Item[] };
@@ -84,7 +85,7 @@ const FIELD_ERRORS: Record<keyof PrescriptionErrors, TranslationKey> = {
  * changes anything already planned or performed. Leaving with changes asks
  * first; Save and Cancel leave on purpose.
  */
-export function BlockForm({ blockId }: { blockId?: string }) {
+export function BlockForm({ blockId, exerciseId }: { blockId?: string; exerciseId?: string }) {
   const { boot } = useApp();
   const [state, setState] = useState<
     | { status: 'loading' }
@@ -119,26 +120,34 @@ export function BlockForm({ blockId }: { blockId?: string }) {
     return <ErrorScreen testID="block-form-error" message="training.errors.notFound" fallback="/workouts" />;
   }
   if (state.status === 'loading') return <LoadingScreen />;
-  return <Form exercises={state.exercises} taxonomy={state.taxonomy} block={state.block} />;
+  // A NEW block can start with one Exercise (Exercise Details → Add to block → New block); only an ACTIVE one.
+  const startExercise = !blockId && exerciseId ? (state.exercises.find((e) => e.id === exerciseId && e.active) ?? null) : null;
+  return <Form exercises={state.exercises} taxonomy={state.taxonomy} block={state.block} startExercise={startExercise} />;
 }
 
 function Form({
   exercises,
   taxonomy,
   block,
+  startExercise,
 }: {
   exercises: Exercise[];
   taxonomy: Taxonomy;
   block: WorkoutBlock | null;
+  startExercise: Exercise | null;
 }) {
   const { boot, services } = useApp();
   const { t, language } = useI18n();
   const initial = useMemo<Values>(
     () => ({
       name: block?.name ?? '',
-      items: block ? block.items.map((i) => itemOf(i.exercise, i.prescription)) : [],
+      items: block
+        ? block.items.map((i) => itemOf(i.exercise, i.prescription))
+        : startExercise
+          ? [itemOf(startExercise, defaultPrescription(startExercise.measurement, startExercise.defaults))]
+          : [],
     }),
-    [block],
+    [block, startExercise],
   );
   const [values, setValues] = useState<Values>(initial);
   const [active, setActive] = useState(block?.active ?? true);
@@ -211,6 +220,32 @@ function Form({
     setSaving(false);
   };
 
+  const dirty = key(values) !== key(initial);
+  const duplicate = async () => {
+    if (!block || busy.current || boot.status !== 'ready') return;
+    busy.current = true;
+    setSaving(true);
+    setFailure(false);
+    try {
+      const copy = await duplicateBlock(boot.db, block.id, {
+        ids: services.ids,
+        clock: services.clock,
+        copyLabel: t('training.copySuffix'),
+      });
+      if (copy.ok) {
+        guard.release();
+        router.replace(blockPath(copy.block.id)); // open the copy: the user can rename and adjust it
+        return;
+      }
+      setErrors(copy.errors);
+    } catch (e) {
+      console.warn('[training] block duplicate failed', e);
+      setFailure(true);
+    }
+    busy.current = false;
+    setSaving(false);
+  };
+
   const toggle = () => {
     if (!block || boot.status !== 'ready') return;
     const apply = (next: boolean) =>
@@ -255,6 +290,11 @@ function Form({
       {errors.items ? (
         <Text style={styles.error} testID="block-form-items-error">
           {t('training.errors.itemsRequired')}
+        </Text>
+      ) : null}
+      {errors.inactiveItems ? (
+        <Text style={styles.error} testID="block-form-inactive-error">
+          {t('training.errors.inactiveItems')}
         </Text>
       ) : null}
       {values.items.map((item, index) => (
@@ -340,6 +380,20 @@ function Form({
           }}
           disabled={saving}
         />
+        {block && active ? (
+          <BigButton
+            testID="block-form-duplicate"
+            variant="secondary"
+            label={t('training.duplicate')}
+            onPress={() => void duplicate()}
+            disabled={saving || dirty}
+          />
+        ) : null}
+        {block && active && dirty ? (
+          <Text style={styles.muted} testID="block-form-duplicate-hint">
+            {t('training.duplicateSaveFirst')}
+          </Text>
+        ) : null}
         {block ? (
           <BigButton
             testID="block-form-toggle"

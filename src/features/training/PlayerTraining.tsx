@@ -1,7 +1,8 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { setExerciseActive } from '@/data/local/exercises/exerciseRepository';
 import {
   getPlannedWorkout,
   listTraining,
@@ -11,14 +12,20 @@ import {
   type PlannedWorkout,
   type TrainingOverview,
 } from '@/data/local/training/trainingRepository';
-import { listTemplates, type WorkoutTemplate } from '@/data/local/training/workoutRepository';
+import { TemplateUnavailableItemsError, type UnavailableItems } from '@/data/local/training/errors';
+import {
+  listTemplates,
+  setBlockActive,
+  unavailableItemsOf,
+  type WorkoutTemplate,
+} from '@/data/local/training/workoutRepository';
 import { MissingPlayerContextError, requireActivePlayer } from '@/domain/training/activePlayer';
 import { useApp } from '@/features/AppProvider';
 import { formatDateTime } from '@/features/calendar/formatEventTime';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
 import { PlayerTargetLabel, RoutePlayerScope, useActivePlayer } from '@/features/players/ActivePlayerContext';
 import { useI18n } from '@/i18n/I18nProvider';
-import { stripBidi } from '@/i18n/bidi';
+import { isolate, stripBidi } from '@/i18n/bidi';
 import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
@@ -31,6 +38,7 @@ import {
   prescriptionText,
   sessionPath,
   sessionStatusLabel,
+  templatePath,
   trainingErrorMessage,
   trainingPath,
 } from './trainingLabels';
@@ -38,7 +46,7 @@ import {
 /** Loads on focus with a memoized loader (`useCallback`), so a change of its inputs reloads. */
 type Db = Parameters<typeof listTraining>[0];
 
-function useLoad<T>(load: (db: Db) => Promise<T>) {
+function useLoad<T>(load: (db: Db) => Promise<T>, reloadKey = 0) {
   const { boot } = useApp();
   const [state, setState] = useState<
     { status: 'loading' } | { status: 'ready'; value: T } | { status: 'error' }
@@ -48,6 +56,7 @@ function useLoad<T>(load: (db: Db) => Promise<T>) {
   useFocusEffect(
     useCallback(() => {
       if (boot.status !== 'ready') return;
+      void reloadKey; // a changed key reloads (e.g. after items were restored)
       let active = true;
       load(boot.db)
         .then((value) => active && setState({ status: 'ready', value }))
@@ -58,7 +67,7 @@ function useLoad<T>(load: (db: Db) => Promise<T>) {
       return () => {
         active = false;
       };
-    }, [boot, load]),
+    }, [boot, load, reloadKey]),
   );
   return boot.status === 'error' ? ({ status: 'error' } as const) : state;
 }
@@ -196,8 +205,10 @@ export function ChooseWorkoutScreen({ playerId }: { playerId: string }) {
 function ChooseWorkoutView() {
   const context = useActivePlayer();
   const { boot, services } = useApp();
-  const { t } = useI18n();
-  const state = useLoad(listTemplates);
+  const { t, language } = useI18n();
+  // `version` changes after "Restore items" so the list reloads.
+  const [version, setVersion] = useState(0);
+  const state = useLoad(listTemplates, version);
   const [failure, setFailure] = useState<TranslationKey | null>(null);
   const busy = useRef(false);
   if (state.status === 'error') {
@@ -206,8 +217,44 @@ function ChooseWorkoutView() {
   if (state.status === 'loading') return <LoadingScreen />;
   const templates = state.value.filter((x: WorkoutTemplate) => x.active);
 
+  /**
+   * QB safety gate S2: a Template that still holds a hidden Block / inactive Exercise cannot start a NEW workout.
+   * Nothing is added or left out silently — the user edits the Template, restores the items, or cancels.
+   */
+  const explainUnavailable = (template: WorkoutTemplate, unavailable: UnavailableItems) => {
+    const lines = [
+      ...unavailable.blocks.map((b) => t('training.unavailableBlock', { name: isolate(b.name) })),
+      ...unavailable.exercises.map((e) => t('training.unavailableExercise', { name: isolate(e.name[language]) })),
+    ];
+    Alert.alert(t('training.unavailableTitle'), `${t('training.unavailableBody')}\n\n${lines.join('\n')}`, [
+      { text: t('training.unavailableCancel'), style: 'cancel' },
+      {
+        text: t('training.unavailableRestore'),
+        onPress: () => {
+          if (boot.status !== 'ready') return;
+          void (async () => {
+            try {
+              for (const b of unavailable.blocks) await setBlockActive(boot.db, b.id, true, { clock: services.clock });
+              for (const e of unavailable.exercises) await setExerciseActive(boot.db, e.id, true, { clock: services.clock });
+              setVersion((v) => v + 1);
+            } catch (e) {
+              console.warn('[training] restore items failed', e);
+              setFailure('training.errors.changeFailed');
+            }
+          })();
+        },
+      },
+      { text: t('training.unavailableEdit'), onPress: () => router.push(templatePath(template.id)) },
+    ]);
+  };
+
   const run = async (template: WorkoutTemplate, now: boolean) => {
     if (busy.current || boot.status !== 'ready') return;
+    const unavailable = unavailableItemsOf(template);
+    if (unavailable.blocks.length > 0 || unavailable.exercises.length > 0) {
+      explainUnavailable(template, unavailable);
+      return;
+    }
     busy.current = true;
     setFailure(null);
     try {
@@ -223,7 +270,8 @@ function ChooseWorkoutView() {
       }
     } catch (e) {
       console.warn('[training] start failed', e);
-      setFailure(e instanceof MissingPlayerContextError ? 'training.errors.playerRequired' : trainingErrorMessage(e));
+      if (e instanceof TemplateUnavailableItemsError) explainUnavailable(template, e.unavailable);
+      else setFailure(e instanceof MissingPlayerContextError ? 'training.errors.playerRequired' : trainingErrorMessage(e));
     }
     busy.current = false;
   };
@@ -250,6 +298,14 @@ function ChooseWorkoutView() {
                 {block.name}
               </Text>
             ))}
+            {(() => {
+              const u = unavailableItemsOf(template);
+              return u.blocks.length > 0 || u.exercises.length > 0 ? (
+                <Text style={styles.error} testID={`choose-${template.id}-unavailable`}>
+                  {t('training.unavailableBadge')}
+                </Text>
+              ) : null;
+            })()}
             <BigButton
               testID={`choose-${template.id}-start`}
               label={t('training.startNow')}

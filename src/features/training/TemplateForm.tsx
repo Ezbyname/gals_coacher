@@ -322,6 +322,11 @@ function Form({
           {t('training.errors.blocksRequired')}
         </Text>
       ) : null}
+      {errors.inactiveBlocks ? (
+        <Text style={styles.error} testID="template-form-inactive-error">
+          {t('training.errors.inactiveBlocks')}
+        </Text>
+      ) : null}
       {values.blocks.map((block, index) => {
         const id = `template-block-${index}`;
         return (

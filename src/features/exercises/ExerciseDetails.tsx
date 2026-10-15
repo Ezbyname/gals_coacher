@@ -7,6 +7,7 @@ import { bodyAreasOf, type Exercise, type LocalizedText } from '@/domain/exercis
 import { useApp } from '@/features/AppProvider';
 import { sportLabel } from '@/features/calendar/calendarLabels';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
+import { addToBlockPath } from '@/features/training/trainingLabels';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
@@ -243,6 +244,14 @@ export function ExerciseDetails({ exerciseId }: { exerciseId: string }) {
         <Text style={styles.error} testID="exercise-details-change-error">
           {t('exercises.changeFailed')}
         </Text>
+      ) : null}
+      {exercise.active ? (
+        <BigButton
+          testID="exercise-details-add-to-block"
+          label={t('training.addToBlock')}
+          onPress={() => router.push(addToBlockPath(exercise.id))}
+          disabled={changing}
+        />
       ) : null}
       {!exercise.builtin ? (
         <BigButton

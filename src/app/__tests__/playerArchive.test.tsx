@@ -8,7 +8,7 @@ import { createCalendarEvent } from '@/data/local/calendar/calendarEventReposito
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
 import { archivePlayer, createPlayer, getPlayer, type PlayerProfileInput } from '@/data/local/players/playerRepository';
-import { planAndStart } from '@/data/local/training/trainingRepository';
+import { abandonSession, findInProgressSessionId, planAndStart } from '@/data/local/training/trainingRepository';
 import { createBlock, createTemplate } from '@/data/local/training/workoutRepository';
 import type { Uuid } from '@/domain/ids';
 import { stripBidi } from '@/i18n/bidi';
@@ -166,7 +166,9 @@ describe('Archive Player (PLAYER-ARCHIVE-001)', () => {
   it("an archived Player's TrainingSession stays READABLE, read-only: no record / skip / add / finish / stop (AR-05)", async () => {
     await prepare('en');
     const session = await startedSession(daniel);
-    await archivePlayer(db!, daniel, { clock });
+    // QB safety gate S1: archiving during a workout is refused, so this LEGACY state (archived while the session was
+    // still IN_PROGRESS, from before the rule) is created out of band — the screen must keep it read-only.
+    await db!.runAsync('UPDATE players SET archived_at = ? WHERE id = ?', [NOW - 60_000, daniel]);
     const before = await sessionRows();
     renderRouter(routes, { initialUrl: `/children/${daniel}/training/session/${session.id}` });
     await screen.findByTestId('session-name');
@@ -178,6 +180,31 @@ describe('Archive Player (PLAYER-ARCHIVE-001)', () => {
     expect(screen.queryAllByTestId(/-(save|skip|add-set)$/)).toHaveLength(0);
     expect(screen.queryByTestId('active-player-missing')).toBeNull();
     expect(await sessionRows()).toEqual(before); // reading writes nothing
+  });
+
+  it('S1 (UI): Archive with a workout in progress explains why, offers the way back, and changes nothing; once stopped, archiving works', async () => {
+    const app = await openEdit('en');
+    const session = await startedSession(daniel);
+    const before = await sessionRows();
+    const dialogs = answerAlerts('cancel');
+    press('player-archive');
+    await waitFor(() => expect(dialogs).toHaveLength(1));
+    expect(dialogs[0]!.title).toBe('Cannot archive this player');
+    expect(dialogs[0]!.body).toBe('Cannot archive this player while a workout is in progress. Finish or stop the workout first.');
+    expect(dialogs[0]!.buttons.map((b) => [b.text, b.style])).toEqual([
+      ['Cancel', 'cancel'],
+      ['Back to the workout', undefined],
+    ]);
+    expect((await getPlayer(db!, daniel))!.player.archivedAt).toBeNull();
+    expect(await findInProgressSessionId(db!, daniel)).toBe(session.id); // never turned into ABANDONED
+    expect(await sessionRows()).toEqual(before);
+    expect(screen.getByDisplayValue('Daniel')).toBeTruthy(); // still on Edit
+    // "Back to the workout" opens it
+    dialogs[0]!.buttons[1]!.onPress!();
+    await waitFor(() => expect(app.getPathname()).toBe(`/children/${daniel}/training/session/${session.id}`));
+    // the user stops the workout themselves -> archiving is allowed again
+    await abandonSession(db!, session.id, { clock });
+    expect(await archivePlayer(db!, daniel, { clock })).toBeGreaterThan(0);
   });
 
   it("the history scope does not weaken anything else: an ACTIVE Player's session is live; archived create paths still refuse", async () => {

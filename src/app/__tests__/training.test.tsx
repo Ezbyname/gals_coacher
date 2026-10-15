@@ -200,13 +200,13 @@ describe('workout builder (WB)', () => {
     await screen.findByTestId('template-form-toggle');
     const dialogs = captureAlerts();
     press('template-form-toggle');
-    expect(dialogs[0]!.title).toBe('Make "Upper body" inactive?');
+    expect(dialogs[0]!.title).toBe('Hide "Upper body" from the library?');
     expect(dialogs[0]!.buttons.map((b) => [b.text, b.style])).toEqual([
-      ['Keep active', 'cancel'],
-      ['Make inactive', undefined],
+      ['Keep visible', 'cancel'],
+      ['Hide', undefined],
     ]);
     await act(async () => dialogs[0]!.buttons[1]!.onPress!());
-    await waitFor(() => expect(text('template-form-status')).toBe('Inactive'));
+    await waitFor(() => expect(text('template-form-status')).toBe('Hidden'));
 
     renderRouter(routes, { initialUrl: `/children/${playerId}/training/new` });
     await screen.findByTestId('choose-scroll');

@@ -29,8 +29,8 @@ import { readExercisesUnserialized } from '../exercises/exerciseRepository';
 import { PlayerArchivedError } from '../players/errors';
 import type { PlayerDb } from '../players/playerDb';
 
-import { TrainingDataError, TrainingNotFoundError, TrainingRuleError } from './errors';
-import { readTemplate, writeTransaction } from './workoutRepository';
+import { TemplateUnavailableItemsError, TrainingDataError, TrainingNotFoundError, TrainingRuleError } from './errors';
+import { readTemplate, unavailableItemsOf, writeTransaction } from './workoutRepository';
 
 /**
  * Planned workouts and training sessions (TRAIN-002, ARCHITECTURE §15).
@@ -206,6 +206,7 @@ export async function recordSet(
   let result = null as RecordSetResult | null;
   await writeTransaction(db, async () => {
     const { session, exercise } = await locateSet(db, setId);
+    await assertPlayerNotArchived(db, session.playerId);
     if (session.status !== 'IN_PROGRESS') throw new TrainingRuleError('SESSION_CLOSED');
     const valid = validateSetValues(exercise.exercise.measurement, values);
     if (!valid.ok) {
@@ -248,6 +249,7 @@ export async function skipSet(db: PlayerDb, setId: string, deps: { clock: Clock 
   let result = null as TrainingSession | null;
   await writeTransaction(db, async () => {
     const { session, set } = await locateSet(db, setId);
+    await assertPlayerNotArchived(db, session.playerId);
     if (session.status !== 'IN_PROGRESS') throw new TrainingRuleError('SESSION_CLOSED');
     if (set.status === 'DONE') throw new TrainingRuleError('SET_ALREADY_RECORDED');
     if (set.status === 'PENDING') {
@@ -277,6 +279,7 @@ export async function addSet(
     );
     if (row === null) throw new TrainingNotFoundError('sessionExercise', sessionExerciseId);
     const session = await readSession(db, row.session_id);
+    await assertPlayerNotArchived(db, session.playerId);
     if (session.status !== 'IN_PROGRESS') throw new TrainingRuleError('SESSION_CLOSED');
     const exercise = session.exercises.find((e) => e.id === sessionExerciseId)!;
     const next = Math.max(0, ...exercise.sets.map((s) => s.setNumber)) + 1;
@@ -325,6 +328,7 @@ async function close(
     const exists = await db.getFirstAsync('SELECT id FROM training_sessions WHERE id = ?', [id]);
     if (exists === null) throw new TrainingNotFoundError('session', id);
     const session = await readSession(db, id);
+    await assertPlayerNotArchived(db, session.playerId);
     if (session.status !== 'IN_PROGRESS') throw new TrainingRuleError('SESSION_CLOSED');
     const status = decide(session);
     await db.runAsync('UPDATE training_sessions SET status = ?, ended_at = ?, updated_at = ? WHERE id = ?', [
@@ -336,6 +340,27 @@ async function close(
     result = await readSession(db, id);
   });
   return result!;
+}
+
+/**
+ * QB safety gate S1: an archived Player's training is history — read, never changed. Every session write
+ * checks it here, at the repository boundary, so no screen (present or future) can bypass the rule.
+ * (Inside an open write transaction.)
+ */
+async function assertPlayerNotArchived(db: PlayerDb, playerId: string): Promise<void> {
+  const row = await db.getFirstAsync<{ archived_at: unknown }>('SELECT archived_at FROM players WHERE id = ?', [playerId]);
+  if (row !== null && row.archived_at !== null) throw new PlayerArchivedError(playerId);
+}
+
+/** The id of the Player's IN_PROGRESS session, or null (e.g. to explain why archiving is refused). */
+export function findInProgressSessionId(db: PlayerDb, playerId: string): Promise<string | null> {
+  return runSerialized(db, async () => {
+    const row = await db.getFirstAsync<{ id: string }>(
+      "SELECT id FROM training_sessions WHERE player_id = ? AND status = 'IN_PROGRESS'",
+      [playerId],
+    );
+    return row === null ? null : row.id;
+  });
 }
 
 async function touch(db: PlayerDb, sessionId: string, now: number): Promise<void> {
@@ -357,6 +382,12 @@ async function insertPlan(
   if (player.archived_at !== null) throw new PlayerArchivedError(input.playerId); // PLAYER-ARCHIVE-001
   const template = await readTemplate(db, input.templateId, await readExercisesUnserialized(db));
   if (!template.active) throw new TrainingRuleError('TEMPLATE_INACTIVE');
+  // QB safety gate S2: hidden Blocks / inactive Exercises are not available for NEW use. Nothing is silently
+  // copied or left out — the user resolves the Template first (edit it or restore the items).
+  const unavailable = unavailableItemsOf(template);
+  if (unavailable.blocks.length > 0 || unavailable.exercises.length > 0) {
+    throw new TemplateUnavailableItemsError(template.id, unavailable);
+  }
   const id = deps.ids.newUuid();
   await db.runAsync(
     'INSERT INTO planned_workouts (id, player_id, template_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',

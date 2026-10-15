@@ -4,5 +4,6 @@ import { BlockForm } from '@/features/training/BlockForm';
 
 export default function EditBlockScreen() {
   const { blockId } = useLocalSearchParams<{ blockId: string }>();
-  return <BlockForm blockId={String(blockId)} />;
+  // key: opening another block (e.g. the copy after Duplicate) replaces the form state instead of reusing it
+  return <BlockForm key={String(blockId)} blockId={String(blockId)} />;
 }

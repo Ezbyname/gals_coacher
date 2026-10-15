@@ -1,5 +1,6 @@
 import type { ExerciseMeasurement } from '@/domain/exercise/exercise';
 import type { MeasurementType } from '@/domain/measurement';
+import { PlayerArchivedError } from '@/data/local/players/errors';
 import { TrainingDataError, TrainingNotFoundError, TrainingRuleError } from '@/data/local/training/errors';
 import type { Measurement, SessionSet, TrainingSession } from '@/data/local/training/trainingRepository';
 import type { MeasurementKind, Prescription, SessionStatus } from '@/domain/training/training';
@@ -135,9 +136,12 @@ export function trainingErrorMessage(e: unknown): TranslationKey {
       SESSION_CLOSED: 'training.errors.sessionClosed',
       NOTHING_PERFORMED: 'training.errors.nothingPerformed',
       SET_ALREADY_RECORDED: 'training.errors.changeFailed',
+      BLOCK_INACTIVE: 'training.errors.blockInactive',
+      EXERCISE_INACTIVE: 'training.errors.exerciseInactive',
     };
     return keys[e.rule];
   }
+  if (e instanceof PlayerArchivedError) return 'training.errors.playerArchived';
   if (e instanceof TrainingNotFoundError) return 'training.errors.notFound';
   if (e instanceof TrainingDataError) return 'training.errors.loadFailed';
   return 'training.errors.changeFailed';
@@ -145,6 +149,10 @@ export function trainingErrorMessage(e: unknown): TranslationKey {
 
 export const workoutsPath = '/workouts';
 export const newBlockPath = '/workouts/blocks/new';
+/** A NEW block that starts with this Exercise (Exercise Details → Add to block → New block). */
+export const newBlockWithExercisePath = (exerciseId: string) =>
+  ({ pathname: '/workouts/blocks/new', params: { exerciseId } }) as const;
+export const addToBlockPath = (exerciseId: string) => `/exercises/${exerciseId}/add-to-block` as const;
 export const blockPath = (id: string) => `/workouts/blocks/${id}` as const;
 export const newTemplatePath = '/workouts/templates/new';
 export const templatePath = (id: string) => `/workouts/templates/${id}` as const;

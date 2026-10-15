@@ -12,7 +12,7 @@ import {
 import { migrations } from '../../migrations';
 import { runMigrations } from '../../migrations/runMigrations';
 import { createSelfAssessment, listSelfAssessments, type SelfAssessmentAnswers } from '../../selfAssessments/selfAssessmentRepository';
-import { getPlannedWorkout, getSession, listTraining, planAndStart, planWorkout, recordSet, startSession } from '../../training/trainingRepository';
+import { finishSession, getPlannedWorkout, getSession, listTraining, planAndStart, planWorkout, recordSet, startSession } from '../../training/trainingRepository';
 import { createBlock, createTemplate } from '../../training/workoutRepository';
 import { PlayerArchivedError, PlayerNotFoundError } from '../errors';
 import {
@@ -63,7 +63,10 @@ describe('Archive Player (schema v15)', () => {
     for (const t of tables) out[t] = await db.getAllAsync(`SELECT * FROM ${t} ORDER BY rowid`);
     return out;
   };
-  /** History in every table: an event, a self-assessment, an unstarted plan, and a started plan with a recorded set. */
+  /**
+   * History in every table: an event, a self-assessment, an unstarted plan, and a started plan with a recorded set
+   * that is FINISHED (QB safety gate S1: a Player cannot be archived while a workout is in progress).
+   */
   async function history(playerId: Uuid) {
     if (!(await createSelfAssessment(db, playerId, 'BASKETBALL', ANSWERS, deps)).ok) throw new Error('assessment');
     const event = await createCalendarEvent(db, playerId, { type: 'GYM', startAt: T0, endAt: T0 + HOUR }, deps);
@@ -72,7 +75,8 @@ describe('Archive Player (schema v15)', () => {
     const session = await planAndStart(db, { playerId, templateId }, deps);
     const recorded = await recordSet(db, session.exercises[0]!.sets[0]!.id, { REPETITIONS: 10, LOAD_KG: 50 }, deps);
     if (!recorded.ok) throw new Error('set');
-    return { event: event.event, plan, session: recorded.session };
+    const finished = await finishSession(db, recorded.session.id, deps);
+    return { event: event.event, plan, session: finished };
   }
 
   beforeEach(async () => {

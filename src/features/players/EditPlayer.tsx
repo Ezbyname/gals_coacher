@@ -2,7 +2,8 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
-import { PlayerDataError } from '@/data/local/players/errors';
+import { PlayerDataError, PlayerHasActiveSessionError } from '@/data/local/players/errors';
+import { findInProgressSessionId } from '@/data/local/training/trainingRepository';
 import {
   archivePlayer,
   getPlayer,
@@ -20,6 +21,7 @@ import { colors, spacing } from '@/ui/theme';
 import { ScheduleSection } from '@/features/calendar/ScheduleSection';
 import { SelfAssessmentSection } from '@/features/selfAssessment/SelfAssessmentSection';
 import { TrainingSection } from '@/features/training/PlayerTraining';
+import { sessionPath } from '@/features/training/trainingLabels';
 
 import { PlayerForm } from './PlayerForm';
 import { formValuesFromProfile } from './playerFormValues';
@@ -111,6 +113,17 @@ export function EditPlayer({ playerId }: { playerId: string }) {
       // PLAYER-ARCHIVE-001: always asks first; Cancel is the safe default. Nothing is deleted.
       onArchive={async () => {
         if (!db) throw new Error('database not ready');
+        // QB safety gate S1: never archive in the middle of a workout (and never invent ABANDONED for it).
+        const explainActiveWorkout = (sessionId: string) =>
+          Alert.alert(t('players.archive.activeWorkoutTitle'), t('players.archive.activeWorkoutBody'), [
+            { text: t('players.archive.cancel'), style: 'cancel' },
+            { text: t('players.archive.activeWorkoutBack'), onPress: () => router.push(sessionPath(playerId, sessionId)) },
+          ]);
+        const running = await findInProgressSessionId(db, playerId);
+        if (running !== null) {
+          explainActiveWorkout(running);
+          return 'kept';
+        }
         const name = isolate(state.profile.player.name);
         const confirmed = await new Promise<boolean>((done) =>
           Alert.alert(
@@ -124,7 +137,15 @@ export function EditPlayer({ playerId }: { playerId: string }) {
           ),
         );
         if (!confirmed) return 'kept';
-        await archivePlayer(db, playerId, { clock: services.clock });
+        try {
+          await archivePlayer(db, playerId, { clock: services.clock });
+        } catch (e) {
+          if (e instanceof PlayerHasActiveSessionError) {
+            explainActiveWorkout(e.sessionId); // a workout started after the check: the repository refused
+            return 'kept';
+          }
+          throw e;
+        }
         return 'archived';
       }}
       onArchived={backToPlayers}

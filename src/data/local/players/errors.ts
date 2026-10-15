@@ -81,3 +81,19 @@ export class PlayerNotFoundError extends Error {
     this.playerId = playerId;
   }
 }
+
+/**
+ * QB safety gate S1: a Player cannot be archived while a workout is IN_PROGRESS. The system never invents
+ * an ABANDONED status the user did not choose: finish or stop the workout first. Nothing was written.
+ */
+export class PlayerHasActiveSessionError extends Error {
+  readonly playerId: string;
+  readonly sessionId: string;
+
+  constructor(playerId: string, sessionId: string) {
+    super(`Player ${playerId} has a workout in progress (${sessionId})`);
+    this.name = 'PlayerHasActiveSessionError';
+    this.playerId = playerId;
+    this.sessionId = sessionId;
+  }
+}

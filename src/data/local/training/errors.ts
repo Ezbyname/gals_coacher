@@ -1,3 +1,5 @@
+import type { LocalizedText } from '@/domain/exercise/exercise';
+
 /**
  * Training persistence errors (TRAIN-002). Stable codes only — never
  * user-facing text; screens map them to localized messages.
@@ -48,6 +50,8 @@ export class TrainingNotFoundError extends Error {
  * - SESSION_CLOSED: a finished session is read-only.
  * - NOTHING_PERFORMED: a session with no performed set cannot be finished (abandon it).
  * - SET_ALREADY_RECORDED: a performed set cannot be skipped.
+ * - BLOCK_INACTIVE / EXERCISE_INACTIVE (QB-BLOCK-LIBRARY): inactive means "not available for NEW use" —
+ *   a hidden Block or an inactive Exercise cannot be newly added to a composition.
  */
 export type TrainingRule =
   | 'TEMPLATE_INACTIVE'
@@ -55,7 +59,9 @@ export type TrainingRule =
   | 'SESSION_IN_PROGRESS'
   | 'SESSION_CLOSED'
   | 'NOTHING_PERFORMED'
-  | 'SET_ALREADY_RECORDED';
+  | 'SET_ALREADY_RECORDED'
+  | 'BLOCK_INACTIVE'
+  | 'EXERCISE_INACTIVE';
 
 export class TrainingRuleError extends Error {
   readonly rule: TrainingRule;
@@ -63,5 +69,27 @@ export class TrainingRuleError extends Error {
     super(`Training rule refused the write: ${rule}`);
     this.name = 'TrainingRuleError';
     this.rule = rule;
+  }
+}
+
+/** What a Template contains that is no longer available for new use. */
+export interface UnavailableItems {
+  readonly blocks: readonly { readonly id: string; readonly name: string }[];
+  readonly exercises: readonly { readonly id: string; readonly name: LocalizedText }[];
+}
+
+/**
+ * QB safety gate S2: a NEW plan cannot be made from a Template that still contains a hidden Block or an
+ * inactive Exercise — nothing is silently added or left out. The user resolves it (edit the Template or
+ * restore the items) first. Nothing was written; existing plans and sessions are never touched.
+ */
+export class TemplateUnavailableItemsError extends Error {
+  readonly templateId: string;
+  readonly unavailable: UnavailableItems;
+  constructor(templateId: string, unavailable: UnavailableItems) {
+    super(`Template ${templateId} contains items that are no longer available`);
+    this.name = 'TemplateUnavailableItemsError';
+    this.templateId = templateId;
+    this.unavailable = unavailable;
   }
 }

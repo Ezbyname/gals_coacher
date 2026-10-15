@@ -10,6 +10,7 @@ import {
 } from '@/domain/taxonomy/templateClassification';
 import {
   adaptPrescription,
+  defaultPrescription,
   WORKOUT_NAME_MAX_LENGTH,
   validatePrescription,
   type Prescription,
@@ -25,7 +26,7 @@ import type { PlayerDb } from '../players/playerDb';
 import { TaxonomyNodeNotFoundError } from '../taxonomy/errors';
 import { readTaxonomyUnserialized } from '../taxonomy/taxonomyRepository';
 
-import { TrainingDataError, TrainingNotFoundError } from './errors';
+import { TrainingDataError, TrainingNotFoundError, TrainingRuleError, type UnavailableItems } from './errors';
 
 /**
  * Reusable Workout Blocks and Workout Templates (TRAIN-002). Owned by the
@@ -66,6 +67,8 @@ export interface BlockInput {
 export interface BlockErrors {
   name?: NameError;
   items?: 'REQUIRED';
+  /** Item indexes whose Exercise is inactive and would be NEWLY added (QB safety gate S2). */
+  inactiveItems?: number[];
   /** Prescription errors by item index. */
   itemErrors?: Record<number, PrescriptionErrors>;
 }
@@ -82,6 +85,8 @@ export interface TemplateInput {
 export interface TemplateErrors {
   name?: NameError;
   blocks?: 'REQUIRED';
+  /** Block ids that are hidden (inactive) and would be NEWLY added (QB safety gate S2). */
+  inactiveBlocks?: string[];
   categories?: Exclude<ClassificationError, 'UNKNOWN_NODE'>;
 }
 export type SaveTemplateResult =
@@ -110,22 +115,24 @@ export async function createBlock(
   const now = deps.clock.wallNow();
   let result = null as SaveBlockResult | null;
   await writeTransaction(db, async () => {
-    const exercises = await readExercisesUnserialized(db);
-    const checked = await validateBlock(db, input, exercises, null);
-    if (!checked.ok) {
-      result = checked;
-      return;
-    }
-    const familyId = await ensureLocalFamily(db, deps.ids);
-    const id = deps.ids.newUuid();
-    await db.runAsync(
-      'INSERT INTO workout_blocks (id, family_id, name, active, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)',
-      [id, familyId, checked.name, now, now],
-    );
-    await writeBlockItems(db, id, input);
-    result = { ok: true, block: await readBlock(db, id, exercises) };
+    result = await insertBlock(db, input, deps.ids, now);
   });
   return result!;
+}
+
+/** Validates and inserts a NEW block (every Exercise must be active), inside an open write transaction. */
+async function insertBlock(db: PlayerDb, input: BlockInput, ids: IdService, now: number): Promise<SaveBlockResult> {
+  const exercises = await readExercisesUnserialized(db);
+  const checked = await validateBlock(db, input, exercises, null, []);
+  if (!checked.ok) return checked;
+  const familyId = await ensureLocalFamily(db, ids);
+  const id = ids.newUuid();
+  await db.runAsync(
+    'INSERT INTO workout_blocks (id, family_id, name, active, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)',
+    [id, familyId, checked.name, now, now],
+  );
+  await writeBlockItems(db, id, input);
+  return { ok: true, block: await readBlock(db, id, exercises) };
 }
 
 /** Replaces a block's name and items (same id, createdAt kept). Planned workouts are not affected. */
@@ -138,23 +145,124 @@ export async function updateBlock(
   const now = deps.clock.wallNow();
   let result = null as SaveBlockResult | null;
   await writeTransaction(db, async () => {
-    const exercises = await readExercisesUnserialized(db);
-    await readBlock(db, id, exercises); // exists and is well-formed
-    const checked = await validateBlock(db, input, exercises, id);
-    if (!checked.ok) {
-      result = checked;
-      return;
-    }
-    await db.runAsync('UPDATE workout_blocks SET name = ?, updated_at = ? WHERE id = ?', [
-      checked.name,
-      now,
-      id,
-    ]);
-    await db.runAsync('DELETE FROM workout_block_items WHERE block_id = ?', [id]);
-    await writeBlockItems(db, id, input);
-    result = { ok: true, block: await readBlock(db, id, exercises) };
+    result = await applyBlockUpdate(db, id, input, now);
   });
   return result!;
+}
+
+/** The update itself, inside an open write transaction (shared by updateBlock and addExerciseToBlock). */
+async function applyBlockUpdate(db: PlayerDb, id: string, input: BlockInput, now: number): Promise<SaveBlockResult> {
+  const exercises = await readExercisesUnserialized(db);
+  const before = await readBlock(db, id, exercises); // exists and is well-formed
+  // Existing content stays as it was: only items NEWLY added must be active (QB safety gate S2).
+  const checked = await validateBlock(
+    db,
+    input,
+    exercises,
+    id,
+    before.items.map((i) => i.exercise.id),
+  );
+  if (!checked.ok) return checked;
+  await db.runAsync('UPDATE workout_blocks SET name = ?, updated_at = ? WHERE id = ?', [checked.name, now, id]);
+  await db.runAsync('DELETE FROM workout_block_items WHERE block_id = ?', [id]);
+  await writeBlockItems(db, id, input);
+  return { ok: true, block: await readBlock(db, id, exercises) };
+}
+
+/**
+ * QB-BLOCK-LIBRARY — a NEW, independent block with the same exercises and prescriptions (new id, active,
+ * own future edits; the original is never touched). The name is "<name> (<copyLabel>)", then
+ * "(<copyLabel> 2)"…, kept unique and within the name limit. A hidden block cannot be duplicated
+ * (BLOCK_INACTIVE) and a block holding an inactive Exercise is refused with `inactiveItems` (S2:
+ * inactive content is not available for NEW compositions).
+ */
+export async function duplicateBlock(
+  db: PlayerDb,
+  id: string,
+  deps: { ids: IdService; clock: Clock; copyLabel: string },
+): Promise<SaveBlockResult> {
+  const now = deps.clock.wallNow();
+  let result = null as SaveBlockResult | null;
+  await writeTransaction(db, async () => {
+    const exercises = await readExercisesUnserialized(db);
+    const source = await readBlock(db, id, exercises);
+    if (!source.active) throw new TrainingRuleError('BLOCK_INACTIVE');
+    const taken = new Set((await otherNames(db, 'workout_blocks', null)).map((n) => n.trim().toLocaleLowerCase()));
+    const name = copyName(source.name, deps.copyLabel, taken);
+    result = await insertBlock(
+      db,
+      {
+        name,
+        items: source.items.map((i) => ({ exerciseId: i.exercise.id, prescription: i.prescription })),
+      },
+      deps.ids,
+      now,
+    );
+  });
+  return result!;
+}
+
+/** "<name> (copy)", "<name> (copy 2)"…: unique (case-insensitive) and at most WORKOUT_NAME_MAX_LENGTH. */
+export function copyName(name: string, copyLabel: string, taken: ReadonlySet<string>): string {
+  for (let n = 1; n < 1000; n += 1) {
+    const suffix = ` (${n === 1 ? copyLabel : `${copyLabel} ${n}`})`;
+    const base = name.trim().slice(0, Math.max(1, WORKOUT_NAME_MAX_LENGTH - suffix.length)).trimEnd();
+    const candidate = `${base}${suffix}`;
+    if (!taken.has(candidate.toLocaleLowerCase())) return candidate;
+  }
+  throw new Error('no free copy name');
+}
+
+/**
+ * QB-BLOCK-LIBRARY — Exercise Details → Add to Block: appends the Exercise with its default prescription
+ * (the caller then opens the block to adjust it). The block must be active (BLOCK_INACTIVE) and the
+ * Exercise active (EXERCISE_INACTIVE); nothing is written otherwise.
+ */
+export async function addExerciseToBlock(
+  db: PlayerDb,
+  blockId: string,
+  exerciseId: string,
+  deps: { clock: Clock },
+): Promise<SaveBlockResult> {
+  const now = deps.clock.wallNow();
+  let result = null as SaveBlockResult | null;
+  await writeTransaction(db, async () => {
+    const exercises = await readExercisesUnserialized(db);
+    const block = await readBlock(db, blockId, exercises);
+    const exercise = exercises.find((e) => e.id === exerciseId);
+    if (!exercise) throw new TrainingNotFoundError('exercise', exerciseId);
+    if (!block.active) throw new TrainingRuleError('BLOCK_INACTIVE');
+    if (!exercise.active) throw new TrainingRuleError('EXERCISE_INACTIVE');
+    result = await applyBlockUpdate(
+      db,
+      blockId,
+      {
+        name: block.name,
+        items: [
+          ...block.items.map((i) => ({ exerciseId: i.exercise.id, prescription: i.prescription })),
+          { exerciseId, prescription: defaultPrescription(exercise.measurement, exercise.defaults) },
+        ],
+      },
+      now,
+    );
+  });
+  return result!;
+}
+
+/**
+ * QB safety gate S2 — what a Template still contains that is not available for new use: hidden Blocks and
+ * inactive Exercises (each listed once). A NEW plan from such a Template is refused until the user resolves it.
+ */
+export function unavailableItemsOf(template: WorkoutTemplate): UnavailableItems {
+  const blocks = new Map<string, { id: string; name: string }>();
+  const exercises = new Map<string, { id: string; name: Exercise['name'] }>();
+  for (const block of template.blocks) {
+    if (!block.active) blocks.set(block.id, { id: block.id, name: block.name });
+    for (const item of block.items) {
+      if (!item.exercise.active) exercises.set(item.exercise.id, { id: item.exercise.id, name: item.exercise.name });
+    }
+  }
+  return { blocks: [...blocks.values()], exercises: [...exercises.values()] };
 }
 
 export async function setBlockActive(
@@ -216,7 +324,13 @@ export async function updateTemplate(
   await writeTransaction(db, async () => {
     const exercises = await readExercisesUnserialized(db);
     const before = await readTemplate(db, id, exercises);
-    const checked = await validateTemplate(db, input, id, before.classification);
+    const checked = await validateTemplate(
+      db,
+      input,
+      id,
+      before.classification,
+      before.blocks.map((b) => b.id),
+    );
     if (!checked.ok) {
       result = checked;
       return;
@@ -297,23 +411,38 @@ async function otherNames(
   return rows.filter((r) => r.id !== except).map((r) => String(r.name));
 }
 
+/** One occurrence of `id` in `kept` is consumed when present: content the block already had stays allowed. */
+function takeExisting(kept: string[], id: string): boolean {
+  const at = kept.indexOf(id);
+  if (at < 0) return false;
+  kept.splice(at, 1);
+  return true;
+}
+
 async function validateBlock(
   db: PlayerDb,
   input: BlockInput,
   exercises: Exercise[],
   except: string | null,
+  /** Exercise ids the block already holds (an edit): inactive ones among them are kept, never newly added. */
+  existingExerciseIds: readonly string[],
 ): Promise<{ ok: true; name: string } | { ok: false; errors: BlockErrors }> {
   const errors: BlockErrors = {};
   const name = checkName(input.name, await otherNames(db, 'workout_blocks', except));
   if (!name.ok) errors.name = name.error;
   if (input.items.length === 0) errors.items = 'REQUIRED';
   const itemErrors: Record<number, PrescriptionErrors> = {};
+  const inactiveItems: number[] = [];
+  const kept = [...existingExerciseIds];
   input.items.forEach((item, index) => {
     const exercise = exercises.find((e) => e.id === item.exerciseId);
     if (!exercise) throw new TrainingNotFoundError('exercise', item.exerciseId);
+    const existing = takeExisting(kept, exercise.id);
+    if (!exercise.active && !existing) inactiveItems.push(index);
     const valid = validatePrescription(exercise.measurement, item.prescription);
     if (!valid.ok) itemErrors[index] = valid.errors;
   });
+  if (inactiveItems.length > 0) errors.inactiveItems = inactiveItems;
   if (Object.keys(itemErrors).length > 0) errors.itemErrors = itemErrors;
   return Object.keys(errors).length === 0 && name.ok ? { ok: true, name: name.name } : { ok: false, errors };
 }
@@ -323,15 +452,22 @@ async function validateTemplate(
   input: TemplateInput,
   except: string | null,
   previous: TemplateClassification = NO_CLASSIFICATION,
+  /** Block ids the template already holds (an edit): hidden ones among them are kept, never newly added. */
+  existingBlockIds: readonly string[] = [],
 ): Promise<{ ok: true; name: string } | { ok: false; errors: TemplateErrors }> {
   const errors: TemplateErrors = {};
   const name = checkName(input.name, await otherNames(db, 'workout_templates', except));
   if (!name.ok) errors.name = name.error;
   if (input.blockIds.length === 0) errors.blocks = 'REQUIRED';
+  const inactiveBlocks: string[] = [];
+  const kept = [...existingBlockIds];
   for (const blockId of input.blockIds) {
-    const row = await db.getFirstAsync('SELECT id FROM workout_blocks WHERE id = ?', [blockId]);
+    const row = await db.getFirstAsync<{ active: unknown }>('SELECT active FROM workout_blocks WHERE id = ?', [blockId]);
     if (row === null) throw new TrainingNotFoundError('block', blockId);
+    const existing = takeExisting(kept, blockId);
+    if (row.active !== 1 && !existing) inactiveBlocks.push(blockId);
   }
+  if (inactiveBlocks.length > 0) errors.inactiveBlocks = inactiveBlocks;
   if (input.classification) {
     // A NEW category must be selectable now (active, with an active exercise);
     // one the template already had stays, even if it has become inactive.

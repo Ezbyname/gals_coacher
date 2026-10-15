@@ -22,7 +22,7 @@ import type { IdService } from '@/services/ids/IdService';
 import { emitDataChanged } from '../../changes';
 import { runSerialized } from '../connectionQueue';
 
-import { PlayerArchivedError, PlayerDataError, PlayerNotFoundError, type PlayerDataField } from './errors';
+import { PlayerArchivedError, PlayerDataError, PlayerHasActiveSessionError, PlayerNotFoundError, type PlayerDataField } from './errors';
 import { ensureLocalFamily } from './localFamily';
 import type { PlayerDb } from './playerDb';
 
@@ -259,6 +259,12 @@ export async function archivePlayer(db: PlayerDb, id: string, deps: { clock: Clo
       archivedAt = row.archived_at;
       return;
     }
+    // QB safety gate S1: never archive in the middle of a workout (and never invent ABANDONED for it).
+    const running = await db.getFirstAsync<{ id: string }>(
+      "SELECT id FROM training_sessions WHERE player_id = ? AND status = 'IN_PROGRESS'",
+      [id],
+    );
+    if (running !== null) throw new PlayerHasActiveSessionError(id, running.id);
     await db.runAsync('UPDATE players SET archived_at = ?, updated_at = ? WHERE id = ?', [now, now, id]);
   });
   return archivedAt;
