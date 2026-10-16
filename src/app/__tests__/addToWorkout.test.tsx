@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 
-import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { router } from 'expo-router';
+import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { openDatabaseAsync } from 'expo-sqlite';
 import { Platform } from 'react-native';
 
@@ -317,5 +318,35 @@ describe('languages (WB-ENTRY-14)', () => {
     await screen.findByTestId('assign-done');
     expect(text('assign-done-title')).toBe('Added');
     expect(await planCount()).toBe(2);
+  });
+});
+
+describe('the screen shows what is true now', () => {
+  it('a workout that started, or a Player who was archived, while the screen was away is dropped from the choice (nothing fails later)', async () => {
+    await prepare('en', ['Daniel', 'Alice', 'Tom']);
+    const shooting = await block('Shooting', 'FREE_THROWS');
+    const alicePlan = await plan('Alice', 'Alice strength', 'PUSH_UP');
+    await openAssign('BLOCK', shooting.id);
+    pick('Daniel');
+    pick('Alice');
+    dest('Alice', alicePlan.id);
+    dest('Daniel', 'new');
+    await waitFor(() => expect(disabled('assign-continue')).toBe(false));
+    // meanwhile elsewhere: Alice's workout starts, Daniel is archived
+    await startSession(db!, alicePlan.id, deps);
+    await archivePlayer(db!, players.Daniel!, { clock: systemClock });
+    act(() => router.push('/exercises'));
+    await screen.findByTestId('exercises-scroll');
+    act(() => router.back());
+    await screen.findByTestId('assign-continue');
+    await waitFor(() => expect(has(`assign-player-${players.Daniel}`)).toBe(false));
+    expect(has(`assign-dest-${players.Alice}-${alicePlan.id}`)).toBe(false);
+    expect(has(`assign-nodest-${players.Alice}`)).toBe(true);
+    expect(disabled('assign-continue')).toBe(true); // Alice must choose again; the stale choice did not survive
+    dest('Alice', 'new');
+    await waitFor(() => expect(disabled('assign-continue')).toBe(false));
+    press('assign-continue'); // exactly one Player (Alice) + new workout → the Builder
+    await screen.findByTestId('builder-entry-0');
+    expect(await planCount()).toBe(1); // only Alice's started plan: nothing was added anywhere
   });
 });

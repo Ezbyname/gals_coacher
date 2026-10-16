@@ -69,6 +69,15 @@ export function AddToWorkout({ kind, id }: { kind: AssignKind; id: string }) {
         for (const p of players) editable[p.player.id] = [...(await listTraining(boot.db, p.player.id)).planned]; // planned = no session yet
         if (!active) return;
         setLoaded({ status: 'ready', subject, players, editable });
+        // the screen shows what is true NOW: a Player who is no longer active, or a workout that started meanwhile, is
+        // dropped from the selection instead of failing later (the repository refuses both anyway)
+        const offered = new Set<string>(players.map((p) => p.player.id));
+        setSelected((list) => list.filter((playerId) => offered.has(playerId)));
+        setChoices((c) =>
+          Object.fromEntries(
+            Object.entries(c).filter(([playerId, choice]) => offered.has(playerId) && (choice.type === 'NEW' || editable[playerId]!.some((plan) => plan.id === choice.planId))),
+          ),
+        );
         if (!preselected.current && players.length === 1) {
           preselected.current = true; // the one relevant Player is visibly preselected
           const only = players[0]!.player.id;
