@@ -440,6 +440,8 @@ export const en = {
       exerciseInactive: 'This exercise is inactive, so it cannot be added.',
       blockInactive: 'This block is hidden, so nothing can be added to it.',
       playerArchived: 'This player is archived, so the workout can no longer change.',
+      planEmpty: 'This workout has nothing in it yet. Add a block or an exercise first.',
+      positionOutOfRange: 'That place in the workout does not exist any more. Please try again.',
       categoriesTooMany: 'Up to 3 categories.',
       categoriesDuplicate: 'That category is already chosen.',
       categoriesPrimary: 'The primary category must be one of the chosen categories.',

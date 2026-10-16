@@ -276,7 +276,9 @@ describe('training on real SQLite', () => {
       );
       await updateTemplate(db, template.id, { name: 'Renamed', blockIds: [strength.id] }, { clock });
       expect(await getPlannedWorkout(db, plan.id)).toEqual(plan);
-      // SQL refuses any change or deletion of a plan.
+      // A plan is never deleted. It is editable until execution begins (v17), then SQL refuses any change:
+      await expect(db.runAsync('DELETE FROM planned_workouts', [])).rejects.toThrow(/never deleted/);
+      await startSession(db, plan.id, deps());
       await expect(db.runAsync("UPDATE planned_workouts SET name = 'x'", [])).rejects.toThrow(/frozen/);
       await expect(db.runAsync('UPDATE planned_workout_items SET sets = 9', [])).rejects.toThrow(/frozen/);
       await expect(db.runAsync('DELETE FROM planned_workout_items', [])).rejects.toThrow(/frozen/);

@@ -33,7 +33,7 @@ describe('schema v14 — players.team_name', () => {
 
   it('fresh install (latest, v16) has a nullable team_name and no default', async () => {
     db = await open();
-    expect(await version(db)).toBe(16);
+    expect(await version(db)).toBe(17);
     const col = await db.getFirstAsync<{ type: string; notnull: number; dflt_value: unknown }>(
       "SELECT type, \"notnull\", dflt_value FROM pragma_table_info('players') WHERE name = 'team_name'",
     );
@@ -51,7 +51,7 @@ describe('schema v14 — players.team_name', () => {
     const before = await db.getFirstAsync('SELECT * FROM players');
     await runMigrations(db, migrations);
     await runMigrations(db, migrations); // a second run changes nothing
-    expect(await version(db)).toBe(16);
+    expect(await version(db)).toBe(17);
     expect(await db.getFirstAsync('SELECT id, family_id, name, date_of_birth, height_cm, created_at, updated_at FROM players')).toEqual(before);
     expect((await getPlayer(db, PLAYER))!.player).toMatchObject({ name: 'Daniel', heightCm: 151, teamName: null });
   });

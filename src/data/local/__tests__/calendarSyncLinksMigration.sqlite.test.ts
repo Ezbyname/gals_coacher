@@ -14,7 +14,7 @@ describe('schema v16 — calendar_event_sync_links', () => {
     const db = openNodeSqlite(':memory:');
     await runMigrations(db, migrations.filter((m) => m.version <= 15));
     const before = await db.getAllAsync("SELECT name, sql FROM sqlite_master WHERE type IN ('table','index','trigger') ORDER BY name");
-    await runMigrations(db, migrations);
+    await runMigrations(db, migrations.filter((m) => m.version <= 16)); // this suite is about v16 (later versions have their own)
     expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 16 });
     const after = await db.getAllAsync<{ name: string }>("SELECT name, sql FROM sqlite_master WHERE type IN ('table','index','trigger') ORDER BY name");
     expect(after.filter((o) => !before.some((b) => (b as { name: string }).name === o.name)).map((o) => o.name)).toEqual([

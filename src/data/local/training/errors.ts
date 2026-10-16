@@ -50,6 +50,8 @@ export class TrainingNotFoundError extends Error {
  * - SESSION_CLOSED: a finished session is read-only.
  * - NOTHING_PERFORMED: a session with no performed set cannot be finished (abandon it).
  * - SET_ALREADY_RECORDED: a performed set cannot be skipped.
+ * - PLAN_EMPTY (QB-WORKOUT-BUILDER-001A): a planned workout with nothing in it cannot be started.
+ * - POSITION_OUT_OF_RANGE: a composition edit named an entry index that does not exist (nothing is clamped).
  * - BLOCK_INACTIVE / EXERCISE_INACTIVE (QB-BLOCK-LIBRARY): inactive means "not available for NEW use" —
  *   a hidden Block or an inactive Exercise cannot be newly added to a composition.
  */
@@ -61,7 +63,9 @@ export type TrainingRule =
   | 'NOTHING_PERFORMED'
   | 'SET_ALREADY_RECORDED'
   | 'BLOCK_INACTIVE'
-  | 'EXERCISE_INACTIVE';
+  | 'EXERCISE_INACTIVE'
+  | 'PLAN_EMPTY'
+  | 'POSITION_OUT_OF_RANGE';
 
 export class TrainingRuleError extends Error {
   readonly rule: TrainingRule;

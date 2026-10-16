@@ -1,5 +1,6 @@
 import type { Exercise } from '@/domain/exercise/exercise';
 import { isUuid } from '@/domain/ids';
+import { compositionProblem } from '@/domain/training/composition';
 import {
   finishedStatus,
   isMeasurementKind,
@@ -45,7 +46,12 @@ import { readTemplate, unavailableItemsOf, writeTransaction } from './workoutRep
 
 export interface PlannedItem {
   readonly position: number;
+  /** The copied Block's name (a section label), or null for a standalone Exercise. */
   readonly blockName: string | null;
+  /** One id per copied Block instance; null = standalone Exercise, or a legacy (v16) row. */
+  readonly sectionId: string | null;
+  /** Provenance ONLY: the reusable Block this section was copied from (never read back). */
+  readonly sourceBlockId: string | null;
   readonly exercise: ExerciseSnapshot;
   readonly prescription: Prescription;
 }
@@ -367,7 +373,7 @@ async function touch(db: PlayerDb, sessionId: string, now: number): Promise<void
   await db.runAsync('UPDATE training_sessions SET updated_at = ? WHERE id = ?', [now, sessionId]);
 }
 
-function snapshotOf(exercise: Exercise): ExerciseSnapshot {
+export function snapshotOf(exercise: Exercise): ExerciseSnapshot {
   return { exerciseId: exercise.id, name: exercise.name, measurement: exercise.measurement };
 }
 
@@ -395,35 +401,59 @@ async function insertPlan(
   );
   let position = 0;
   for (const block of template.blocks) {
+    const sectionId = deps.ids.newUuid(); // one section per copied Block instance (a block may repeat)
     for (const item of block.items) {
-      const s = snapshotOf(item.exercise);
-      const p = item.prescription;
-      await db.runAsync(
-        `INSERT INTO planned_workout_items
-           (planned_workout_id, position, block_name, exercise_id, exercise_name_he, exercise_name_en,
-            measurement_type, comparison_policy, uses_load, distance_m, sets, target, load_kg, rest_sec)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          id,
-          position,
-          block.name,
-          s.exerciseId,
-          s.name.he,
-          s.name.en,
-          s.measurement.type,
-          s.measurement.comparison,
-          s.measurement.usesLoad ? 1 : 0,
-          s.measurement.distanceM,
-          p.sets,
-          p.target,
-          p.loadKg,
-          p.restSec,
-        ],
-      );
+      await insertPlanItem(db, id, position, {
+        blockName: block.name,
+        sectionId,
+        sourceBlockId: block.id,
+        exercise: snapshotOf(item.exercise),
+        prescription: item.prescription,
+      });
       position += 1;
     }
   }
   return id;
+}
+
+/** An item as written into a plan (its position comes from the caller). */
+export interface NewPlanItem {
+  readonly blockName: string | null;
+  readonly sectionId: string | null;
+  readonly sourceBlockId: string | null;
+  readonly exercise: ExerciseSnapshot;
+  readonly prescription: Prescription;
+}
+
+/** The one INSERT of a plan item (inside an open write transaction). */
+export async function insertPlanItem(db: PlayerDb, planId: string, position: number, item: NewPlanItem): Promise<void> {
+  const s = item.exercise;
+  const p = item.prescription;
+  await db.runAsync(
+    `INSERT INTO planned_workout_items
+       (planned_workout_id, position, block_name, exercise_id, exercise_name_he, exercise_name_en,
+        measurement_type, comparison_policy, uses_load, distance_m, sets, target, load_kg, rest_sec,
+        section_id, source_block_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      planId,
+      position,
+      item.blockName,
+      s.exerciseId,
+      s.name.he,
+      s.name.en,
+      s.measurement.type,
+      s.measurement.comparison,
+      s.measurement.usesLoad ? 1 : 0,
+      s.measurement.distanceM,
+      p.sets,
+      p.target,
+      p.loadKg,
+      p.restSec,
+      item.sectionId,
+      item.sourceBlockId,
+    ],
+  );
 }
 
 async function insertSession(
@@ -436,6 +466,7 @@ async function insertSession(
   if (exists === null) throw new TrainingNotFoundError('plannedWorkout', plannedWorkoutId);
   const plan = await readPlan(db, plannedWorkoutId);
   if (plan.sessionId !== null) throw new TrainingRuleError('PLAN_ALREADY_STARTED');
+  if (plan.items.length === 0) throw new TrainingRuleError('PLAN_EMPTY');
   const running = await db.getFirstAsync(
     "SELECT id FROM training_sessions WHERE player_id = ? AND status = 'IN_PROGRESS'",
     [plan.playerId],
@@ -527,7 +558,7 @@ function readSnapshot(row: SnapshotRow, field: string, rowId: string): ExerciseS
 const nullableNumber = (v: unknown): number | null => (v === null ? null : typeof v === 'number' ? v : NaN);
 const isInt = (v: unknown): v is number => Number.isSafeInteger(v);
 
-async function readPlan(db: PlayerDb, id: string): Promise<PlannedWorkout> {
+export async function readPlan(db: PlayerDb, id: string): Promise<PlannedWorkout> {
   const row = await db.getFirstAsync<{
     id: unknown;
     player_id: unknown;
@@ -549,13 +580,45 @@ async function readPlan(db: PlayerDb, id: string): Promise<PlannedWorkout> {
       target: unknown;
       load_kg: unknown;
       rest_sec: unknown;
+      section_id?: unknown;
+      source_block_id?: unknown;
     }
   >('SELECT * FROM planned_workout_items WHERE planned_workout_id = ? ORDER BY position', [id]);
-  if (items.length === 0) throw new TrainingDataError('plan.items', 'MISSING_ROW', id);
   const session = await db.getFirstAsync<{ id: string }>(
     'SELECT id FROM training_sessions WHERE planned_workout_id = ?',
     [id],
   );
+  // An EMPTY plan is valid while it is being composed (no session); a plan that was performed always has items.
+  if (items.length === 0 && session !== null) throw new TrainingDataError('plan.items', 'MISSING_ROW', id);
+  const read = items.map((item) => {
+    const exercise = readSnapshot(item, 'plan', id);
+    const prescription: Prescription = {
+      sets: nullableNumber(item.sets) as number,
+      target: nullableNumber(item.target),
+      loadKg: nullableNumber(item.load_kg),
+      restSec: nullableNumber(item.rest_sec),
+    };
+    if (!validatePrescription(exercise.measurement, prescription).ok) {
+      throw new TrainingDataError('plan.prescription', 'INVALID_VALUE', id);
+    }
+    if (item.block_name !== null && typeof item.block_name !== 'string') {
+      throw new TrainingDataError('plan.blockName', 'INVALID_VALUE', id);
+    }
+    for (const field of [item.section_id, item.source_block_id]) {
+      if (field !== null && field !== undefined && (typeof field !== 'string' || field.trim() === '')) {
+        throw new TrainingDataError('plan.composition', 'INVALID_VALUE', id);
+      }
+    }
+    return {
+      position: item.position as number,
+      blockName: item.block_name,
+      sectionId: (item.section_id ?? null) as string | null,
+      sourceBlockId: (item.source_block_id ?? null) as string | null,
+      exercise,
+      prescription,
+    };
+  });
+  if (compositionProblem(read) !== null) throw new TrainingDataError('plan.composition', 'INVALID_VALUE', id);
   return {
     id: row.id,
     playerId: String(row.player_id),
@@ -563,22 +626,7 @@ async function readPlan(db: PlayerDb, id: string): Promise<PlannedWorkout> {
     name: row.name,
     createdAt: row.created_at,
     sessionId: session?.id ?? null,
-    items: items.map((item) => {
-      const exercise = readSnapshot(item, 'plan', id);
-      const prescription: Prescription = {
-        sets: nullableNumber(item.sets) as number,
-        target: nullableNumber(item.target),
-        loadKg: nullableNumber(item.load_kg),
-        restSec: nullableNumber(item.rest_sec),
-      };
-      if (!validatePrescription(exercise.measurement, prescription).ok) {
-        throw new TrainingDataError('plan.prescription', 'INVALID_VALUE', id);
-      }
-      if (item.block_name !== null && typeof item.block_name !== 'string') {
-        throw new TrainingDataError('plan.blockName', 'INVALID_VALUE', id);
-      }
-      return { position: item.position as number, blockName: item.block_name, exercise, prescription };
-    }),
+    items: read,
   };
 }
 

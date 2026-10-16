@@ -843,4 +843,79 @@ export const migrations: readonly Migration[] = [
       CREATE INDEX calendar_event_sync_links_player ON calendar_event_sync_links (player_id);
     `,
   },
+  {
+    // QB-WORKOUT-BUILDER-001A (owner 2026-10-15/16): a PlannedWorkout becomes the Player's editable COMPOSITION
+    // (copied Block sections + standalone Exercises, one deterministic order) until execution begins.
+    //
+    // Additive columns on planned_workout_items (nullable; legacy v16 rows are NOT rewritten and read as
+    // "no section identity"):
+    //   section_id       one id per copied Block instance (the same Block may be copied twice); NULL = standalone
+    //                    Exercise, or a legacy row.
+    //   source_block_id  provenance ONLY (which reusable Block it was copied from). The Block is never read back:
+    //                    editing it later never reaches a plan, editing a plan never reaches it. Set together with
+    //                    section_id (CHECK).
+    //
+    // DATA-INTEGRITY CHANGE — the freeze point moves from "always frozen" to "frozen once a TrainingSession exists":
+    //   - plan / items are EDITABLE while no session exists for the plan (the session is created when execution
+    //     begins, so freezing never waits for COMPLETED);
+    //   - once a session exists nothing can be inserted, updated or deleted (planned truth is immutable);
+    //   - identity is never rewritable (id, player, template provenance, created_at; an item's exercise snapshot,
+    //     section, position): only a plan's name / updated_at and an item's sets / target / load / rest can change;
+    //   - an archived Player's plan and items take no new activity (v15 rule extended to composition edits).
+    // Plans, items, sessions and results themselves are never deleted by the migration; the session-side
+    // snapshots, closed-session triggers and "never deleted" rules are untouched. No calendar link (v18, later).
+    version: 17,
+    name: 'planned_workout_composition',
+    sql: `
+      ALTER TABLE planned_workout_items
+        ADD COLUMN section_id TEXT
+        CHECK (section_id IS NULL OR length(trim(section_id)) > 0);
+      ALTER TABLE planned_workout_items
+        ADD COLUMN source_block_id TEXT REFERENCES workout_blocks (id)
+        CHECK ((source_block_id IS NULL) = (section_id IS NULL));
+
+      DROP TRIGGER planned_workouts_frozen_update;
+      DROP TRIGGER planned_items_frozen_update;
+      DROP TRIGGER planned_items_never_deleted;
+
+      -- A plan can be renamed / touched only while NO session exists for it; its identity never changes.
+      CREATE TRIGGER planned_workouts_frozen_update BEFORE UPDATE ON planned_workouts
+      WHEN EXISTS (SELECT 1 FROM training_sessions WHERE planned_workout_id = OLD.id)
+        OR NEW.id IS NOT OLD.id OR NEW.player_id IS NOT OLD.player_id
+        OR NEW.template_id IS NOT OLD.template_id OR NEW.created_at IS NOT OLD.created_at
+      BEGIN SELECT RAISE(ABORT, 'planned workouts are frozen'); END;
+
+      -- Items: only the prescription (sets / target / load / rest) can change, and only before a session exists.
+      CREATE TRIGGER planned_items_frozen_update BEFORE UPDATE ON planned_workout_items
+      WHEN EXISTS (SELECT 1 FROM training_sessions WHERE planned_workout_id = OLD.planned_workout_id)
+        OR NEW.planned_workout_id IS NOT OLD.planned_workout_id OR NEW.position IS NOT OLD.position
+        OR NEW.block_name IS NOT OLD.block_name OR NEW.section_id IS NOT OLD.section_id
+        OR NEW.source_block_id IS NOT OLD.source_block_id OR NEW.exercise_id IS NOT OLD.exercise_id
+        OR NEW.exercise_name_he IS NOT OLD.exercise_name_he OR NEW.exercise_name_en IS NOT OLD.exercise_name_en
+        OR NEW.measurement_type IS NOT OLD.measurement_type OR NEW.comparison_policy IS NOT OLD.comparison_policy
+        OR NEW.uses_load IS NOT OLD.uses_load OR NEW.distance_m IS NOT OLD.distance_m
+      BEGIN SELECT RAISE(ABORT, 'planned workouts are frozen'); END;
+      CREATE TRIGGER planned_items_frozen_delete BEFORE DELETE ON planned_workout_items
+      WHEN EXISTS (SELECT 1 FROM training_sessions WHERE planned_workout_id = OLD.planned_workout_id)
+      BEGIN SELECT RAISE(ABORT, 'planned workouts are frozen'); END;
+      -- (planned_items_frozen_insert and planned_workouts_never_deleted from v9 are unchanged.)
+
+      -- An archived Player's plan takes no new activity (v15 refused new plans / sessions; this covers edits).
+      CREATE TRIGGER planned_workouts_archived_player_update BEFORE UPDATE ON planned_workouts
+      WHEN (SELECT archived_at FROM players WHERE id = OLD.player_id) IS NOT NULL
+      BEGIN SELECT RAISE(ABORT, 'an archived player gets no new activity'); END;
+      CREATE TRIGGER planned_items_archived_player_insert BEFORE INSERT ON planned_workout_items
+      WHEN (SELECT p.archived_at FROM planned_workouts w JOIN players p ON p.id = w.player_id
+            WHERE w.id = NEW.planned_workout_id) IS NOT NULL
+      BEGIN SELECT RAISE(ABORT, 'an archived player gets no new activity'); END;
+      CREATE TRIGGER planned_items_archived_player_update BEFORE UPDATE ON planned_workout_items
+      WHEN (SELECT p.archived_at FROM planned_workouts w JOIN players p ON p.id = w.player_id
+            WHERE w.id = OLD.planned_workout_id) IS NOT NULL
+      BEGIN SELECT RAISE(ABORT, 'an archived player gets no new activity'); END;
+      CREATE TRIGGER planned_items_archived_player_delete BEFORE DELETE ON planned_workout_items
+      WHEN (SELECT p.archived_at FROM planned_workouts w JOIN players p ON p.id = w.player_id
+            WHERE w.id = OLD.planned_workout_id) IS NOT NULL
+      BEGIN SELECT RAISE(ABORT, 'an archived player gets no new activity'); END;
+    `,
+  },
 ];

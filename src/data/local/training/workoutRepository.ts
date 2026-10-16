@@ -600,7 +600,7 @@ async function readBlocks(db: PlayerDb, exercises: Exercise[]): Promise<WorkoutB
   });
 }
 
-async function readBlock(db: PlayerDb, id: string, exercises: Exercise[]): Promise<WorkoutBlock> {
+export async function readBlock(db: PlayerDb, id: string, exercises: Exercise[]): Promise<WorkoutBlock> {
   const found = (await readBlocks(db, exercises)).find((b) => b.id === id);
   if (!found) throw new TrainingNotFoundError('block', id);
   return found;

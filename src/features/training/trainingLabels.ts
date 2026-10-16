@@ -138,6 +138,8 @@ export function trainingErrorMessage(e: unknown): TranslationKey {
       SET_ALREADY_RECORDED: 'training.errors.changeFailed',
       BLOCK_INACTIVE: 'training.errors.blockInactive',
       EXERCISE_INACTIVE: 'training.errors.exerciseInactive',
+      PLAN_EMPTY: 'training.errors.planEmpty',
+      POSITION_OUT_OF_RANGE: 'training.errors.positionOutOfRange',
     };
     return keys[e.rule];
   }
