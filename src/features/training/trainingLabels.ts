@@ -160,6 +160,8 @@ export const newTemplatePath = '/workouts/templates/new';
 export const templatePath = (id: string) => `/workouts/templates/${id}` as const;
 export const trainingPath = (playerId: string) => `/children/${playerId}/training` as const;
 export const chooseWorkoutPath = (playerId: string) => `/children/${playerId}/training/new` as const;
+export const builderPath = (playerId: string) => `/children/${playerId}/training/builder/new` as const;
+export const editPlanPath = (playerId: string, planId: string) => `/children/${playerId}/training/builder/${planId}` as const;
 export const planPath = (playerId: string, planId: string) =>
   `/children/${playerId}/training/plan/${planId}` as const;
 export const sessionPath = (playerId: string, sessionId: string) =>

@@ -196,6 +196,127 @@ export async function updatePlannedItem(
   return result!;
 }
 
+// ---------------------------------------------------------------- builder save (one atomic write)
+
+/**
+ * What the Workout Builder saves: an ordered list of entries, each a REFERENCE the repository resolves itself
+ * (it never trusts exercise names / measurements sent from the screen):
+ * - KEEP: items of the saved plan, by their stored positions, with the (possibly edited) prescriptions;
+ * - BLOCK: a reusable Block to copy as a NEW section (active Block, active Exercises);
+ * - EXERCISE: a standalone Exercise (active).
+ */
+export type SaveEntry =
+  | { readonly kind: 'KEEP'; readonly positions: readonly number[]; readonly prescriptions: readonly Prescription[] }
+  | { readonly kind: 'BLOCK'; readonly blockId: string; readonly prescriptions: readonly Prescription[] }
+  | { readonly kind: 'EXERCISE'; readonly exerciseId: string; readonly prescription: Prescription };
+export interface SavePlanInput {
+  /** null = a NEW plan (created only now); otherwise the saved plan being edited. */
+  readonly planId: string | null;
+  readonly playerId: string;
+  readonly name: string;
+  readonly entries: readonly SaveEntry[];
+}
+export interface SavePlanErrors {
+  name?: PlanNameError;
+  /** Prescription errors by "entryIndex.itemIndex". */
+  items?: Record<string, PrescriptionErrors>;
+}
+export type SavePlanResult =
+  | { readonly ok: true; readonly plan: PlannedWorkout }
+  | { readonly ok: false; readonly errors: SavePlanErrors };
+
+/**
+ * Saves the Builder's composition in ONE transaction: creates the plan (only now, never when the Builder opens) or
+ * replaces an editable plan's name and items. Validation problems are returned and nothing is written; a rule
+ * refusal throws and nothing is written: an empty composition (PLAN_EMPTY), an archived Player, a plan that already
+ * has a session (PLAN_ALREADY_STARTED), an inactive Block / Exercise among the NEW content, a position that does
+ * not exist. Items kept from the saved plan stay as they were (existing content), only their prescription changes.
+ */
+export async function savePlannedWorkout(
+  db: PlayerDb,
+  input: SavePlanInput,
+  deps: { ids: IdService; clock: Clock },
+): Promise<SavePlanResult> {
+  const now = deps.clock.wallNow();
+  const name = input.name.trim();
+  const errors: SavePlanErrors = {};
+  if (name.length === 0) errors.name = 'REQUIRED';
+  else if (name.length > WORKOUT_NAME_MAX_LENGTH) errors.name = 'TOO_LONG';
+  let result = null as SavePlanResult | null;
+  await writeTransaction(db, async () => {
+    let stored: PlannedWorkout | null = null;
+    if (input.planId === null) {
+      const player = await db.getFirstAsync<{ archived_at: unknown }>('SELECT archived_at FROM players WHERE id = ?', [input.playerId]);
+      if (player === null) throw new TrainingNotFoundError('player', input.playerId);
+      if (player.archived_at !== null) throw new PlayerArchivedError(input.playerId);
+    } else {
+      stored = await editablePlan(db, input.planId);
+      if (stored.playerId !== input.playerId) throw new TrainingNotFoundError('plannedWorkout', input.planId);
+    }
+    const exercises = await readExercisesUnserialized(db);
+    const items: NewPlanItem[] = [];
+    const itemErrors: Record<string, PrescriptionErrors> = {};
+    const used = new Set<number>();
+    const check = (key: string, item: NewPlanItem) => {
+      const valid = validatePrescription(item.exercise.measurement, item.prescription);
+      if (!valid.ok) itemErrors[key] = valid.errors;
+      items.push(item);
+    };
+    for (const [e, entry] of input.entries.entries()) {
+      if (entry.kind === 'KEEP') {
+        if (stored === null || entry.prescriptions.length !== entry.positions.length) {
+          throw new TrainingRuleError('POSITION_OUT_OF_RANGE');
+        }
+        for (const [i, position] of entry.positions.entries()) {
+          const old = stored.items.find((x) => x.position === position);
+          if (!old || used.has(position)) throw new TrainingRuleError('POSITION_OUT_OF_RANGE');
+          used.add(position);
+          check(`${e}.${i}`, { ...asNew(old), prescription: entry.prescriptions[i]! });
+        }
+      } else if (entry.kind === 'BLOCK') {
+        const block = await readBlock(db, entry.blockId, exercises);
+        if (!block.active) throw new TrainingRuleError('BLOCK_INACTIVE');
+        if (block.items.some((i) => !i.exercise.active)) throw new TrainingRuleError('EXERCISE_INACTIVE');
+        if (entry.prescriptions.length !== block.items.length) throw new TrainingRuleError('POSITION_OUT_OF_RANGE');
+        const sectionId = deps.ids.newUuid(); // every copy is its own section (the same Block may be copied twice)
+        for (const [i, item] of block.items.entries()) {
+          check(`${e}.${i}`, {
+            blockName: block.name,
+            sectionId,
+            sourceBlockId: block.id,
+            exercise: snapshotOf(item.exercise),
+            prescription: entry.prescriptions[i]!,
+          });
+        }
+      } else {
+        const exercise = exercises.find((x) => x.id === entry.exerciseId);
+        if (!exercise) throw new TrainingNotFoundError('exercise', entry.exerciseId);
+        if (!exercise.active) throw new TrainingRuleError('EXERCISE_INACTIVE');
+        check(`${e}.0`, { blockName: null, sectionId: null, sourceBlockId: null, exercise: snapshotOf(exercise), prescription: entry.prescription });
+      }
+    }
+    if (errors.name || Object.keys(itemErrors).length > 0) {
+      result = { ok: false, errors: { ...errors, ...(Object.keys(itemErrors).length > 0 ? { items: itemErrors } : {}) } };
+      return;
+    }
+    if (items.length === 0) throw new TrainingRuleError('PLAN_EMPTY');
+    let planId = input.planId;
+    if (planId === null) {
+      planId = deps.ids.newUuid();
+      await db.runAsync(
+        'INSERT INTO planned_workouts (id, player_id, template_id, name, created_at, updated_at) VALUES (?, ?, NULL, ?, ?, ?)',
+        [planId, input.playerId, name, now, now],
+      );
+    } else {
+      await db.runAsync('DELETE FROM planned_workout_items WHERE planned_workout_id = ?', [planId]);
+      await db.runAsync('UPDATE planned_workouts SET name = ?, updated_at = ? WHERE id = ?', [name, now, planId]);
+    }
+    for (const [position, item] of items.entries()) await insertPlanItem(db, planId, position, item);
+    result = { ok: true, plan: await readPlan(db, planId) };
+  });
+  return result!;
+}
+
 // ---------------------------------------------------------------- internals
 
 /** The plan, only if it can be edited now: it exists, its Player is active, and NO session exists for it. */

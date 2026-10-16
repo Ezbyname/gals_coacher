@@ -20,6 +20,7 @@ import {
   type WorkoutTemplate,
 } from '@/data/local/training/workoutRepository';
 import { MissingPlayerContextError, requireActivePlayer } from '@/domain/training/activePlayer';
+import { groupEntries } from '@/domain/training/composition';
 import { useApp } from '@/features/AppProvider';
 import { formatDateTime } from '@/features/calendar/formatEventTime';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
@@ -31,8 +32,11 @@ import { BigButton } from '@/ui/BigButton';
 import { SafeAreaScrollView } from '@/ui/SafeAreaScrollView';
 import { colors, spacing, touch } from '@/ui/theme';
 
+import { Small } from './BlockForm';
 import {
+  builderPath,
   chooseWorkoutPath,
+  editPlanPath,
   performedText,
   planPath,
   prescriptionText,
@@ -78,9 +82,26 @@ function useLoad<T>(load: (db: Db) => Promise<T>, reloadKey = 0) {
  */
 export function TrainingSection({ playerId }: { playerId: string }) {
   const { t } = useI18n();
+  const { boot, services } = useApp();
   const state = useLoad(useCallback((db: Db) => listTraining(db, playerId), [playerId]));
+  const [failure, setFailure] = useState<TranslationKey | null>(null);
+  const busy = useRef(false);
   const running =
     state.status === 'ready' ? state.value.sessions.find((s) => s.status === 'IN_PROGRESS') : undefined;
+  const planned = state.status === 'ready' ? state.value.planned : [];
+  const startPlan = async (plan: PlannedWorkout) => {
+    if (busy.current || boot.status !== 'ready') return;
+    busy.current = true;
+    setFailure(null);
+    try {
+      const session = await startSession(boot.db, plan.id, { ids: services.ids, clock: services.clock });
+      router.push(sessionPath(playerId, session.id));
+    } catch (e) {
+      console.warn('[training] start failed', e);
+      setFailure(trainingErrorMessage(e));
+    }
+    busy.current = false;
+  };
   return (
     <View style={styles.section} testID="training-section">
       <Text style={styles.title}>{t('training.sectionTitle')}</Text>
@@ -109,9 +130,44 @@ export function TrainingSection({ playerId }: { playerId: string }) {
         />
       )}
       <BigButton
+        testID="training-create-workout"
+        variant="secondary"
+        label={t('training.builder.create')}
+        onPress={() => router.push(builderPath(playerId))}
+      />
+      {planned.length > 0 ? (
+        <>
+          <Text style={styles.heading} accessibilityRole="header" testID="training-planned-title">
+            {t('training.builder.plannedTitle')}
+          </Text>
+          {planned.slice(0, 3).map((plan) => (
+            <View key={plan.id} style={styles.plannedCard} testID={`training-planned-${plan.id}`}>
+              <Text style={styles.name} testID={`training-planned-${plan.id}-name`}>
+                {plan.name}
+              </Text>
+              <Text style={styles.muted} testID={`training-planned-${plan.id}-summary`}>
+                {t('training.builder.plannedSummary', { count: groupEntries(plan.items).length })}
+              </Text>
+              <View style={styles.plannedActions}>
+                <Small testID={`training-planned-${plan.id}-view`} label={t('training.builder.view')} onPress={() => router.push(planPath(playerId, plan.id))} />
+                <Small testID={`training-planned-${plan.id}-edit`} label={t('training.builder.edit')} onPress={() => router.push(editPlanPath(playerId, plan.id))} />
+                {!running && plan.items.length > 0 ? (
+                  <Small testID={`training-planned-${plan.id}-start`} label={t('training.builder.start')} onPress={() => void startPlan(plan)} />
+                ) : null}
+              </View>
+            </View>
+          ))}
+        </>
+      ) : null}
+      {failure ? (
+        <Text style={styles.error} testID="training-section-failed">
+          {t(failure)}
+        </Text>
+      ) : null}
+      <BigButton
         testID="training-open"
         variant="secondary"
-        label={t('training.history')}
+        label={planned.length > 3 ? t('training.builder.allPlanned') : t('training.history')}
         onPress={() => router.push(trainingPath(playerId))}
       />
     </View>
@@ -160,7 +216,7 @@ function TrainingOverviewView() {
             key={plan.id}
             testID={`training-plan-${plan.id}`}
             title={plan.name}
-            lines={[t('training.plannedOn', { when: formatDateTime(plan.createdAt, language) })]}
+            lines={[t('training.builder.plannedSummary', { count: groupEntries(plan.items).length })]}
             onPress={() => router.push(planPath(playerId, plan.id))}
           />
         ))
@@ -370,9 +426,6 @@ function PlannedWorkoutView({ planId }: { planId: string }) {
       <Text style={styles.title} testID="plan-name" accessibilityRole="header">
         {plan.name}
       </Text>
-      <Text style={styles.muted} testID="plan-when">
-        {t('training.plannedOn', { when: formatDateTime(plan.createdAt, language) })}
-      </Text>
       <Text style={styles.muted}>{t('training.frozenNote')}</Text>
       {plan.items.map((item, i) => {
         // A block's name heads its first exercise.
@@ -397,7 +450,17 @@ function PlannedWorkoutView({ planId }: { planId: string }) {
         </Text>
       ) : null}
       {plan.sessionId === null ? (
-        <BigButton testID="plan-start" label={t('training.startPlan')} onPress={() => void start()} />
+        <>
+          {plan.items.length > 0 ? (
+            <BigButton testID="plan-start" label={t('training.startPlan')} onPress={() => void start()} />
+          ) : null}
+          <BigButton
+            testID="plan-edit"
+            variant="secondary"
+            label={t('training.builder.editPlan')}
+            onPress={() => router.push(editPlanPath(playerId, plan.id))}
+          />
+        </>
       ) : (
         <BigButton
           testID="plan-open-session"
@@ -451,6 +514,15 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
+  plannedCard: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  plannedActions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   row: {
     minHeight: touch.buttonMinHeight,
     gap: 2,
