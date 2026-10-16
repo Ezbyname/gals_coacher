@@ -140,6 +140,7 @@ export function trainingErrorMessage(e: unknown): TranslationKey {
       EXERCISE_INACTIVE: 'training.errors.exerciseInactive',
       PLAN_EMPTY: 'training.errors.planEmpty',
       POSITION_OUT_OF_RANGE: 'training.errors.positionOutOfRange',
+      ASSIGNMENT_INVALID: 'training.errors.changeFailed',
     };
     return keys[e.rule];
   }
@@ -156,11 +157,17 @@ export const newBlockWithExercisePath = (exerciseId: string) =>
   ({ pathname: '/workouts/blocks/new', params: { exerciseId } }) as const;
 export const addToBlockPath = (exerciseId: string) => `/exercises/${exerciseId}/add-to-block` as const;
 export const blockPath = (id: string) => `/workouts/blocks/${id}` as const;
+/** QB-WORKOUT-BUILDER-001C: Exercise / Block Details -> Add to workout. */
+export type AssignKind = 'EXERCISE' | 'BLOCK';
+export const addToWorkoutPath = (kind: AssignKind, id: string) => ({ pathname: '/workouts/add-to-workout', params: { kind, id } }) as const;
 export const newTemplatePath = '/workouts/templates/new';
 export const templatePath = (id: string) => `/workouts/templates/${id}` as const;
 export const trainingPath = (playerId: string) => `/children/${playerId}/training` as const;
 export const chooseWorkoutPath = (playerId: string) => `/children/${playerId}/training/new` as const;
 export const builderPath = (playerId: string) => `/children/${playerId}/training/builder/new` as const;
+/** The Builder for a NEW workout that starts with this Exercise / Block (still a local draft until Save). */
+export const seededBuilderPath = (playerId: string, kind: AssignKind, id: string) =>
+  ({ pathname: '/children/[id]/training/builder/new', params: { id: playerId, seedKind: kind, seedId: id } }) as const;
 export const editPlanPath = (playerId: string, planId: string) => `/children/${playerId}/training/builder/${planId}` as const;
 export const planPath = (playerId: string, planId: string) =>
   `/children/${playerId}/training/plan/${planId}` as const;

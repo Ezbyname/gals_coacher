@@ -36,7 +36,7 @@ import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
 
-import { blockPath, formatNumber, targetLabelKey } from './trainingLabels';
+import { addToWorkoutPath, blockPath, formatNumber, targetLabelKey } from './trainingLabels';
 
 type Item = { exercise: Exercise; sets: string; target: string; load: string; rest: string };
 type Values = { name: string; items: Item[] };
@@ -380,6 +380,15 @@ function Form({
           }}
           disabled={saving}
         />
+        {block && active ? (
+          <BigButton
+            testID="block-form-add-to-workout"
+            variant="secondary"
+            label={t('training.assign.button')}
+            onPress={() => router.push(addToWorkoutPath('BLOCK', block.id))}
+            disabled={saving || dirty}
+          />
+        ) : null}
         {block && active ? (
           <BigButton
             testID="block-form-duplicate"

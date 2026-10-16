@@ -20,7 +20,7 @@ import { readExercisesUnserialized } from '../exercises/exerciseRepository';
 import { PlayerArchivedError } from '../players/errors';
 import type { PlayerDb } from '../players/playerDb';
 
-import { TrainingNotFoundError, TrainingRuleError } from './errors';
+import { AssignmentFailedError, TrainingNotFoundError, TrainingRuleError } from './errors';
 import {
   insertPlanItem,
   readPlan,
@@ -92,26 +92,7 @@ export async function addBlockToPlannedWorkout(
   deps: { ids: IdService; clock: Clock },
   at?: number,
 ): Promise<PlannedWorkout> {
-  return edit(db, planId, deps, async (plan) => {
-    const exercises = await readExercisesUnserialized(db);
-    const block = await readBlock(db, blockId, exercises);
-    if (!block.active) throw new TrainingRuleError('BLOCK_INACTIVE');
-    if (block.items.some((i) => !i.exercise.active)) throw new TrainingRuleError('EXERCISE_INACTIVE');
-    const sectionId = deps.ids.newUuid();
-    const section: CompositionEntry<NewPlanItem> = {
-      kind: 'SECTION',
-      sectionId,
-      blockName: block.name,
-      items: block.items.map((i) => ({
-        blockName: block.name,
-        sectionId,
-        sourceBlockId: block.id,
-        exercise: snapshotOf(i.exercise),
-        prescription: { ...i.prescription },
-      })),
-    };
-    return placed(plan, section, at);
-  });
+  return edit(db, planId, deps, async (plan) => placed(plan, await blockSection(db, blockId, deps), at));
 }
 
 /**
@@ -317,7 +298,128 @@ export async function savePlannedWorkout(
   return result!;
 }
 
+// ---------------------------------------------------------------- assign (Exercise / Block -> Player workouts)
+
+/** The content being assigned: one active Exercise (standalone) or one active Block (copied as its own section). */
+export type AssignContent =
+  | { readonly kind: 'EXERCISE'; readonly exerciseId: string }
+  | { readonly kind: 'BLOCK'; readonly blockId: string };
+/** Where it goes for ONE Player: an editable plan of that Player, or a NEW workout (created together with the content). */
+export type AssignDestination =
+  | { readonly type: 'EXISTING'; readonly planId: string }
+  | { readonly type: 'NEW'; readonly name: string };
+export interface AssignTarget {
+  readonly playerId: string;
+  readonly destination: AssignDestination;
+}
+export interface AssignedPlan {
+  readonly playerId: string;
+  readonly planId: string;
+  readonly planName: string;
+  readonly created: boolean;
+}
+
+/**
+ * Adds the content to each target Player's OWN workout, in ONE write transaction: either every Player gets it or
+ * nobody does (a refusal for any Player throws AssignmentFailedError naming that Player; nothing is written for the
+ * others). Never one shared plan: each target gets its own plan / its own copied section. An existing destination must
+ * be that Player's own editable plan (no session yet); archived Players, inactive content and a frozen plan are
+ * refused exactly like a single edit. A NEW destination creates the plan WITH the content (never an empty plan).
+ */
+export async function assignContentToPlayers(
+  db: PlayerDb,
+  content: AssignContent,
+  targets: readonly AssignTarget[],
+  deps: { ids: IdService; clock: Clock },
+): Promise<AssignedPlan[]> {
+  if (targets.length === 0 || new Set(targets.map((t) => t.playerId)).size !== targets.length) {
+    throw new TrainingRuleError('ASSIGNMENT_INVALID');
+  }
+  const now = deps.clock.wallNow();
+  const assigned: AssignedPlan[] = [];
+  await writeTransaction(db, async () => {
+    for (const target of targets) {
+      try {
+        assigned.push(await assignOne(db, content, target, deps, now));
+      } catch (e) {
+        throw new AssignmentFailedError(target.playerId, e); // rolls the whole transaction back
+      }
+    }
+  });
+  return assigned;
+}
+
+async function assignOne(
+  db: PlayerDb,
+  content: AssignContent,
+  target: AssignTarget,
+  deps: { ids: IdService; clock: Clock },
+  now: number,
+): Promise<AssignedPlan> {
+  const entry = async (): Promise<CompositionEntry<NewPlanItem>> =>
+    content.kind === 'BLOCK' ? blockSection(db, content.blockId, deps) : exerciseEntry(db, content.exerciseId);
+  const destination = target.destination;
+  if (destination.type === 'EXISTING') {
+    const plan = await editablePlan(db, destination.planId);
+    if (plan.playerId !== target.playerId) throw new TrainingNotFoundError('plannedWorkout', destination.planId);
+    await replaceItems(db, plan.id, placed(plan, await entry(), undefined), now);
+    return { playerId: target.playerId, planId: plan.id, planName: plan.name, created: false };
+  }
+  const name = destination.name.trim();
+  if (name.length === 0 || name.length > WORKOUT_NAME_MAX_LENGTH) throw new TrainingRuleError('ASSIGNMENT_INVALID');
+  const player = await db.getFirstAsync<{ archived_at: unknown }>('SELECT archived_at FROM players WHERE id = ?', [target.playerId]);
+  if (player === null) throw new TrainingNotFoundError('player', target.playerId);
+  if (player.archived_at !== null) throw new PlayerArchivedError(target.playerId);
+  const content1 = await entry(); // resolved BEFORE the plan row exists, so a refused item never leaves an empty plan
+  const planId = deps.ids.newUuid();
+  await db.runAsync(
+    'INSERT INTO planned_workouts (id, player_id, template_id, name, created_at, updated_at) VALUES (?, ?, NULL, ?, ?, ?)',
+    [planId, target.playerId, name, now, now],
+  );
+  for (const [position, item] of flattenEntries([content1]).entries()) await insertPlanItem(db, planId, position, item);
+  return { playerId: target.playerId, planId, planName: name, created: true };
+}
+
 // ---------------------------------------------------------------- internals
+
+/** A Block as a NEW section copy: the Block and every Exercise in it must be active. */
+async function blockSection(db: PlayerDb, blockId: string, deps: { ids: IdService }): Promise<CompositionEntry<NewPlanItem>> {
+  const exercises = await readExercisesUnserialized(db);
+  const block = await readBlock(db, blockId, exercises);
+  if (!block.active) throw new TrainingRuleError('BLOCK_INACTIVE');
+  if (block.items.some((i) => !i.exercise.active)) throw new TrainingRuleError('EXERCISE_INACTIVE');
+  const sectionId = deps.ids.newUuid();
+  return {
+    kind: 'SECTION',
+    sectionId,
+    blockName: block.name,
+    items: block.items.map((i) => ({
+      blockName: block.name,
+      sectionId,
+      sourceBlockId: block.id,
+      exercise: snapshotOf(i.exercise),
+      prescription: { ...i.prescription },
+    })),
+  };
+}
+
+/** An active Exercise as a standalone entry with its default prescription (no fake Block around it). */
+async function exerciseEntry(db: PlayerDb, exerciseId: string): Promise<CompositionEntry<NewPlanItem>> {
+  const exercises = await readExercisesUnserialized(db);
+  const exercise = exercises.find((e) => e.id === exerciseId);
+  if (!exercise) throw new TrainingNotFoundError('exercise', exerciseId);
+  if (!exercise.active) throw new TrainingRuleError('EXERCISE_INACTIVE');
+  const prescription = defaultPrescription(exercise.measurement, exercise.defaults);
+  if (!validatePrescription(exercise.measurement, prescription).ok) throw new TrainingRuleError('ASSIGNMENT_INVALID');
+  return { kind: 'EXERCISE', item: { blockName: null, sectionId: null, sourceBlockId: null, exercise: snapshotOf(exercise), prescription } };
+}
+
+/** Replaces the plan's items with the ordered entries and touches the plan (inside the caller's transaction). */
+async function replaceItems(db: PlayerDb, planId: string, entries: CompositionEntry<NewPlanItem>[], now: number): Promise<void> {
+  await db.runAsync('DELETE FROM planned_workout_items WHERE planned_workout_id = ?', [planId]);
+  for (const [position, item] of flattenEntries(entries).entries()) await insertPlanItem(db, planId, position, item);
+  await db.runAsync('UPDATE planned_workouts SET updated_at = ? WHERE id = ?', [now, planId]);
+}
 
 /** The plan, only if it can be edited now: it exists, its Player is active, and NO session exists for it. */
 async function editablePlan(db: PlayerDb, planId: string): Promise<PlannedWorkout> {
@@ -364,9 +466,7 @@ async function edit(
       result = plan;
       return;
     }
-    await db.runAsync('DELETE FROM planned_workout_items WHERE planned_workout_id = ?', [planId]);
-    for (const [position, item] of flattenEntries(next).entries()) await insertPlanItem(db, planId, position, item);
-    await db.runAsync('UPDATE planned_workouts SET updated_at = ? WHERE id = ?', [now, planId]);
+    await replaceItems(db, planId, next, now);
     result = await readPlan(db, planId);
   });
   return result!;

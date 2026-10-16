@@ -40,7 +40,7 @@ import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
 
 import { Small } from './BlockForm';
-import { formatNumber, prescriptionText, targetLabelKey, trainingErrorMessage } from './trainingLabels';
+import { formatNumber, prescriptionText, targetLabelKey, trainingErrorMessage, type AssignKind } from './trainingLabels';
 
 /**
  * QB-WORKOUT-BUILDER-001B — the Workout Builder. The Player's workout is composed in a LOCAL DRAFT: opening it (or
@@ -55,6 +55,7 @@ type Origin =
   | { type: 'KEEP'; positions: number[] }
   | { type: 'BLOCK'; blockId: string }
   | { type: 'EXERCISE'; exerciseId: string };
+export type Seed = { kind: AssignKind; id: string };
 type DEntry = { key: string; kind: 'SECTION' | 'EXERCISE'; name: string | null; origin: Origin; items: DItem[] };
 
 const text = (n: number | null) => (n === null ? '' : formatNumber(n));
@@ -77,6 +78,29 @@ function prescriptionOf(item: DItem): Prescription {
     loadKg: numberOf(item.load, false),
     restSec: numberOf(item.rest, false),
   };
+}
+const blockEntryOf = (key: string, block: WorkoutBlock): DEntry => ({
+  key,
+  kind: 'SECTION',
+  name: block.name,
+  origin: { type: 'BLOCK', blockId: block.id },
+  items: block.items.map((i) => itemOf(snapshotOf(i.exercise), i.prescription)),
+});
+const exerciseEntryOf = (key: string, exercise: Exercise): DEntry => ({
+  key,
+  kind: 'EXERCISE',
+  name: null,
+  origin: { type: 'EXERCISE', exerciseId: exercise.id },
+  items: [itemOf(snapshotOf(exercise), defaultPrescription(exercise.measurement, exercise.defaults))],
+});
+/** QB-WORKOUT-BUILDER-001C: the first entry of a NEW workout opened from Exercise / Block Details (null = no longer available). */
+function seedEntry(seed: Seed, exercises: readonly Exercise[], blocks: readonly WorkoutBlock[]): DEntry | null {
+  if (seed.kind === 'BLOCK') {
+    const block = blocks.find((b) => b.id === seed.id);
+    return block && block.active && block.items.every((i) => i.exercise.active) ? blockEntryOf('seed', block) : null;
+  }
+  const exercise = exercises.find((e) => e.id === seed.id);
+  return exercise && exercise.active ? exerciseEntryOf('seed', exercise) : null;
 }
 const signature = (name: string, entries: readonly DEntry[]) =>
   JSON.stringify([name, entries.map((e) => [e.origin, e.items.map((i) => [i.snapshot.exerciseId, i.sets, i.target, i.load, i.rest])])]);
@@ -103,17 +127,17 @@ type Loaded =
   | { status: 'ready'; exercises: Exercise[]; taxonomy: Taxonomy; blocks: WorkoutBlock[]; plan: PlannedWorkout | null };
 
 /** Route entry: the Player is the route's (an archived / missing Player gets the usual "no Player" screen). */
-export function WorkoutBuilderScreen({ playerId, planId }: { playerId: string; planId?: string }) {
+export function WorkoutBuilderScreen({ playerId, planId, seed }: { playerId: string; planId?: string; seed?: Seed }) {
   return (
     <RoutePlayerScope playerId={playerId}>
       <RequireActivePlayer>
-        <BuilderLoader playerId={playerId} planId={planId} />
+        <BuilderLoader playerId={playerId} planId={planId} seed={seed} />
       </RequireActivePlayer>
     </RoutePlayerScope>
   );
 }
 
-function BuilderLoader({ playerId, planId }: { playerId: string; planId?: string }) {
+function BuilderLoader({ playerId, planId, seed }: { playerId: string; planId?: string; seed?: Seed }) {
   const { boot } = useApp();
   const [state, setState] = useState<Loaded>({ status: 'loading' });
   useFocusEffect(
@@ -145,17 +169,19 @@ function BuilderLoader({ playerId, planId }: { playerId: string; planId?: string
     return <ErrorScreen testID="builder-error" message="training.errors.notFound" fallback="/children" />;
   }
   if (state.status === 'loading') return <LoadingScreen />;
-  return <Builder playerId={playerId} {...state} />;
+  return <Builder playerId={playerId} seed={planId ? undefined : seed} {...state} />;
 }
 
 function Builder({
   playerId,
+  seed,
   exercises,
   taxonomy,
   blocks,
   plan,
 }: {
   playerId: string;
+  seed: Seed | undefined;
   exercises: Exercise[];
   taxonomy: Taxonomy;
   blocks: WorkoutBlock[];
@@ -165,16 +191,18 @@ function Builder({
   const { t } = useI18n();
   const counter = useRef(0);
   const nextKey = () => `e${counter.current++}`;
+  const seeded = useMemo(() => (plan === null && seed ? seedEntry(seed, exercises, blocks) : null), [plan, seed, exercises, blocks]);
+  const seedMissing = plan === null && seed !== undefined && seeded === null;
   const initialEntries = useMemo<DEntry[]>(
     () =>
       plan === null
-        ? []
+        ? seeded === null ? [] : [seeded]
         : groupEntries(plan.items).map((e): DEntry =>
             e.kind === 'SECTION'
               ? { key: `k${e.items[0]!.position}`, kind: 'SECTION', name: e.blockName, origin: { type: 'KEEP', positions: e.items.map((i) => i.position) }, items: e.items.map((i) => itemOf(i.exercise, i.prescription)) }
               : { key: `k${e.item.position}`, kind: 'EXERCISE', name: null, origin: { type: 'KEEP', positions: [e.item.position] }, items: [itemOf(e.item.exercise, e.item.prescription)] },
           ),
-    [plan],
+    [plan, seeded],
   );
   const initialName = plan?.name ?? t('training.builder.defaultName');
   const [name, setName] = useState(initialName);
@@ -202,17 +230,11 @@ function Builder({
     });
   const remove = (key: string) => setEntries((list) => list.filter((e) => e.key !== key));
   const addBlock = (block: WorkoutBlock) => {
-    setEntries((list) => [
-      ...list,
-      { key: nextKey(), kind: 'SECTION', name: block.name, origin: { type: 'BLOCK', blockId: block.id }, items: block.items.map((i) => itemOf(snapshotOf(i.exercise), i.prescription)) },
-    ]);
+    setEntries((list) => [...list, blockEntryOf(nextKey(), block)]);
     setBlockOpen(false);
   };
   const addExercise = (exercise: Exercise) => {
-    setEntries((list) => [
-      ...list,
-      { key: nextKey(), kind: 'EXERCISE', name: null, origin: { type: 'EXERCISE', exerciseId: exercise.id }, items: [itemOf(snapshotOf(exercise), defaultPrescription(exercise.measurement, exercise.defaults))] },
-    ]);
+    setEntries((list) => [...list, exerciseEntryOf(nextKey(), exercise)]);
     setExerciseOpen(false);
     setBrowsing(false);
   };
@@ -268,6 +290,11 @@ function Builder({
         />
       )}
 
+      {seedMissing ? (
+        <Text style={styles.error} testID="builder-seed-unavailable">
+          {t('training.assign.seedUnavailable')}
+        </Text>
+      ) : null}
       {entries.length === 0 ? (
         <Text style={styles.muted} testID="builder-empty">
           {t('training.builder.empty')}
