@@ -121,7 +121,8 @@ export interface CalendarEventCore {
 export type CalendarEventErrors = {
   type?: 'UNKNOWN_TYPE';
   sport?: 'UNSUPPORTED_SPORT';
-  startAt?: 'INVALID_TIMESTAMP';
+  /** BEFORE_NOW (QB-WORKOUT-BUILDER-001D): a scheduled workout is never scheduled or moved into the past. */
+  startAt?: 'INVALID_TIMESTAMP' | 'BEFORE_NOW';
   endAt?: 'INVALID_TIMESTAMP' | 'NOT_AFTER_START';
   title?: 'INVALID_VALUE' | 'REQUIRED_FOR_OTHER' | 'TOO_LONG';
   notes?: 'INVALID_VALUE';

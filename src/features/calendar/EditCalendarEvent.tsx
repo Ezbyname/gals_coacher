@@ -1,7 +1,7 @@
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 
-import { getCalendarEvent, updateCalendarEvent } from '@/data/local/calendar/calendarEventRepository';
+import { getCalendarEvent, getEventWorkout, updateCalendarEvent } from '@/data/local/calendar/calendarEventRepository';
 import { listActivityTypes } from '@/data/local/activityTypes/activityTypeRepository';
 import { getPlayer } from '@/data/local/players/playerRepository';
 import { selectableActivityTypes, type ActivityTypeRef } from '@/domain/activityType';
@@ -17,7 +17,7 @@ import { ErrorScreen, LoadingScreen } from './StatusScreen';
 
 type FormState =
   | { status: 'loading' }
-  | { status: 'ready'; initialValues: CalendarFormValues; sports: SportKey[]; types: ActivityTypeRef[] }
+  | { status: 'ready'; initialValues: CalendarFormValues; sports: SportKey[]; types: ActivityTypeRef[]; lockedTitle: string | null }
   | { status: 'error'; message: TranslationKey };
 
 /**
@@ -41,8 +41,10 @@ export function EditCalendarEvent({ playerId, eventId }: { playerId: string; eve
       const event = await getCalendarEvent(boot.db, playerId, eventId);
       if (event === null) return { status: 'error', message: 'calendar.errors.eventNotFound' };
       const catalog = await listActivityTypes(boot.db);
+      const workout = await getEventWorkout(boot.db, eventId); // QB-WORKOUT-BUILDER-001D
       return {
         status: 'ready',
+        lockedTitle: workout !== null ? workout.name : null,
         initialValues: valuesFromEvent(event),
         sports: sportsOf(profile, event.sport),
         // Active types, plus this event's own type even when it is now inactive.
@@ -86,6 +88,7 @@ export function EditCalendarEvent({ playerId, eventId }: { playerId: string; eve
       initialValues={state.initialValues}
       sports={state.sports}
       types={state.types}
+      lockedTitle={state.lockedTitle}
       onSave={(input) => {
         if (!db) throw new Error('database not ready');
         return updateCalendarEvent(db, playerId, eventId, input, { clock: services.clock });

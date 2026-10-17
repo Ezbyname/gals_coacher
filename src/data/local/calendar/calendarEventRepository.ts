@@ -33,6 +33,7 @@ import {
   CalendarEventDataError,
   CalendarEventNotFoundError,
   CalendarSportNotAssignedError,
+  WorkoutScheduleError,
   type CalendarEventDataField,
   type CalendarEventDataReason,
 } from './errors';
@@ -85,13 +86,14 @@ async function insertEvent(
   source: CalendarEventSource | null,
   importBatchId: string | null,
   now: number,
+  plannedWorkoutId: string | null = null,
 ): Promise<void> {
   await db.runAsync(
     `INSERT INTO calendar_events
        (id, player_id, type, sport, start_at, end_at, title, notes, location, source, import_batch_id,
-        created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, playerId, v.type, v.sport, v.startAt, v.endAt, v.title, v.notes, v.location, source, importBatchId, now, now],
+        created_at, updated_at, planned_workout_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, playerId, v.type, v.sport, v.startAt, v.endAt, v.title, v.notes, v.location, source, importBatchId, now, now, plannedWorkoutId],
   );
 }
 
@@ -258,7 +260,11 @@ export async function updateCalendarEvent(
     const existing = await readEvent(db, playerId, eventId);
     if (existing === null) throw new CalendarEventNotFoundError(playerId, eventId);
     // An edit that does not mention the location keeps the stored one (today's form has no location field).
-    const edited: CalendarEventInput = input.location === undefined ? { ...input, location: existing.location } : input;
+    const withLocation: CalendarEventInput = input.location === undefined ? { ...input, location: existing.location } : input;
+    // QB-WORKOUT-BUILDER-001D: a scheduled workout's title IS the workout's name (PlannedWorkout = WHAT; the name
+    // never changes once the plan is frozen, and follows a rename until then). The event keeps owning WHEN.
+    const link = await readWorkoutLink(db, eventId);
+    const edited: CalendarEventInput = link !== null ? { ...withLocation, title: link.name } : withLocation;
     // A title / location over the limit is accepted only when it is the stored one, unchanged.
     const valid = validateCalendarEvent(edited, { storedTitle: existing.title, storedLocation: existing.location });
     if (!valid.ok) {
@@ -270,6 +276,11 @@ export async function updateCalendarEvent(
     // Likewise the type it already has, even if that type is now inactive (never reactivated).
     await assertActivityType(db, valid.value.type, existing.type);
     const v = valid.value;
+    // A scheduled workout is never moved into the past (history stays readable; other fields stay editable).
+    if (link !== null && v.startAt !== existing.startAt && v.startAt < startOfMinute(now)) {
+      rejected = { ok: false, errors: { startAt: 'BEFORE_NOW' } };
+      return; // nothing written
+    }
     await db.runAsync(
       // Provenance (source, import_batch_id) is written once at creation and never edited.
       `UPDATE calendar_events
@@ -409,6 +420,176 @@ export function listCalendarEventsInRange(db: PlayerDb, from: number, to: number
     );
     return rows.map(parseEventRow);
   });
+}
+
+// ------------------------------------------------------------------------------------------------ scheduling
+// QB-WORKOUT-BUILDER-001D: PlannedWorkout = WHAT, CalendarEvent = WHEN. The link (calendar_events.planned_workout_id)
+// is written only when the event is created; unschedule = delete the event; the workout is never touched.
+
+/** The activity type a scheduled workout starts as (the user can change it afterwards like any event). */
+export const SCHEDULED_WORKOUT_TYPE = 'PERSONAL_TRAINING';
+
+const MINUTE = 60_000;
+/** "Now" for scheduling is the current MINUTE: a time picked for this minute is allowed, an earlier one never. */
+const startOfMinute = (t: number) => t - (t % MINUTE);
+
+/** The workout behind an event, read inside a transaction (null: a plain event). */
+async function readWorkoutLink(db: PlayerDb, eventId: string): Promise<{ planId: string; name: string } | null> {
+  const row = await db.getFirstAsync<{ id: string; name: string }>(
+    `SELECT w.id AS id, w.name AS name FROM calendar_events e JOIN planned_workouts w ON w.id = e.planned_workout_id WHERE e.id = ?`,
+    [eventId],
+  );
+  return row === null ? null : { planId: row.id, name: row.name };
+}
+
+export type ScheduleWorkoutErrors = {
+  startAt?: 'INVALID_TIMESTAMP' | 'BEFORE_NOW';
+  endAt?: 'INVALID_TIMESTAMP' | 'NOT_AFTER_START';
+};
+export type ScheduleWorkoutResult =
+  | { readonly ok: true; readonly event: CalendarEvent }
+  | { readonly ok: false; readonly errors: ScheduleWorkoutErrors };
+
+/**
+ * Schedules an unscheduled PlannedWorkout: creates ONE new CalendarEvent linked to it, in one transaction.
+ * - now / future only (a start before the current minute is returned as BEFORE_NOW, nothing written);
+ * - the end is OPTIONAL and never invented (null stays null; the phone-calendar sync then reports NEEDS_END_TIME);
+ * - the event starts as PERSONAL_TRAINING titled with the workout name; the user's Player owns both;
+ * - refused (nothing written): an archived Player, another Player's workout (PLAYER_MISMATCH), a workout that
+ *   is already performed (PLAN_ALREADY_STARTED: the database refuses it, this layer only names the refusal), a workout
+ *   with nothing in it (PLAN_EMPTY), a workout that already has an event (ALREADY_SCHEDULED).
+ * The normal calendar-change signal fires after the commit (reminders and the phone-calendar sync reconcile).
+ */
+export async function scheduleWorkout(
+  db: PlayerDb,
+  input: { playerId: string; planId: string; startAt: number; endAt?: number | null },
+  deps: { ids: IdService; clock: Clock },
+): Promise<ScheduleWorkoutResult> {
+  const now = deps.clock.wallNow();
+  const endAt = input.endAt ?? null;
+  const timing = validateCalendarEvent({ type: SCHEDULED_WORKOUT_TYPE, startAt: input.startAt, endAt, title: null });
+  const errors: ScheduleWorkoutErrors = {};
+  if (!timing.ok) {
+    if (timing.errors.startAt === 'INVALID_TIMESTAMP') errors.startAt = 'INVALID_TIMESTAMP';
+    if (timing.errors.endAt) errors.endAt = timing.errors.endAt;
+  } else if (input.startAt < startOfMinute(now)) {
+    errors.startAt = 'BEFORE_NOW';
+  }
+  if (Object.keys(errors).length > 0) return { ok: false, errors };
+
+  const id = deps.ids.newUuid();
+  let saved = null as CalendarEvent | null;
+  await writeTransaction(db, async () => {
+    await assertActivePlayer(db, input.playerId);
+    const plan = await db.getFirstAsync<{ player_id: string; name: string }>(
+      'SELECT player_id, name FROM planned_workouts WHERE id = ?',
+      [input.planId],
+    );
+    if (plan === null) throw new WorkoutScheduleError('PLAN_NOT_FOUND', input.planId);
+    if (plan.player_id !== input.playerId) throw new WorkoutScheduleError('PLAYER_MISMATCH', input.planId);
+    if ((await db.getFirstAsync('SELECT 1 FROM calendar_events WHERE planned_workout_id = ?', [input.planId])) !== null) {
+      throw new WorkoutScheduleError('ALREADY_SCHEDULED', input.planId);
+    }
+    if ((await db.getFirstAsync('SELECT 1 FROM planned_workout_items WHERE planned_workout_id = ?', [input.planId])) === null) {
+      throw new WorkoutScheduleError('PLAN_EMPTY', input.planId); // nothing to do at that time: it could never start
+    }
+    const valid = validateCalendarEvent({ type: SCHEDULED_WORKOUT_TYPE, sport: null, startAt: input.startAt, endAt, title: plan.name });
+    if (!valid.ok) throw new Error(`scheduleWorkout: the workout name is not a valid event title (${JSON.stringify(valid.errors)})`);
+    await assertActivityType(db, valid.value.type, null);
+    try {
+      await insertEvent(db, id, input.playerId, valid.value, null, null, now, input.planId);
+    } catch (e) {
+      // the calendar never inspects execution data: the database guard (v18) refuses a started workout, we name it
+      if (/started workout cannot be newly scheduled/.test(String((e as { message?: unknown } | null)?.message ?? e))) {
+        throw new WorkoutScheduleError('PLAN_ALREADY_STARTED', input.planId);
+      }
+      throw e;
+    }
+    saved = await readEvent(db, input.playerId, id);
+  });
+  if (saved === null) throw new Error('scheduleWorkout: transaction finished without the saved row');
+  return { ok: true, event: saved };
+}
+
+/** A workout's calendar event: when it is (the workout itself holds no date). */
+export interface WorkoutSchedule {
+  readonly planId: string;
+  readonly eventId: string;
+  readonly startAt: number;
+  readonly endAt: number | null;
+}
+
+interface ScheduleRow {
+  plan_id: string;
+  event_id: string;
+  start_at: number;
+  end_at: number | null;
+}
+const toSchedule = (r: ScheduleRow): WorkoutSchedule => ({ planId: r.plan_id, eventId: r.event_id, startAt: r.start_at, endAt: r.end_at });
+
+/** Every scheduled workout of a Player (one per plan). */
+export function listWorkoutSchedules(db: PlayerDb, playerId: string): Promise<WorkoutSchedule[]> {
+  return runSerialized(db, async () => {
+    const rows = await db.getAllAsync<ScheduleRow>(
+      `SELECT planned_workout_id AS plan_id, id AS event_id, start_at, end_at FROM calendar_events
+        WHERE player_id = ? AND planned_workout_id IS NOT NULL ORDER BY start_at ASC, id ASC`,
+      [playerId],
+    );
+    return rows.map(toSchedule);
+  });
+}
+
+/** The calendar event of one workout, or null when it is not scheduled. */
+export function getWorkoutSchedule(db: PlayerDb, planId: string): Promise<WorkoutSchedule | null> {
+  return runSerialized(db, async () => {
+    const row = await db.getFirstAsync<ScheduleRow>(
+      'SELECT planned_workout_id AS plan_id, id AS event_id, start_at, end_at FROM calendar_events WHERE planned_workout_id = ?',
+      [planId],
+    );
+    return row === null ? null : toSchedule(row);
+  });
+}
+
+/** The workout an event schedules (null for a plain event). */
+export function getEventWorkout(db: PlayerDb, eventId: string): Promise<{ planId: string; name: string } | null> {
+  return runSerialized(db, () => readWorkoutLink(db, eventId));
+}
+
+/**
+ * Moves a scheduled workout's event to a new time (the same event, the same link). now / future only: moving it
+ * into the past is returned as BEFORE_NOW. The end stays optional (null removes it, never replaced by a duration).
+ */
+export async function rescheduleWorkout(
+  db: PlayerDb,
+  input: { playerId: string; planId: string; startAt: number; endAt?: number | null },
+  deps: { clock: Clock },
+): Promise<SaveCalendarEventResult> {
+  const schedule = await getWorkoutSchedule(db, input.planId);
+  if (schedule === null) throw new WorkoutScheduleError('NOT_SCHEDULED', input.planId);
+  const event = await getCalendarEvent(db, input.playerId, schedule.eventId);
+  if (event === null) throw new WorkoutScheduleError('PLAYER_MISMATCH', input.planId);
+  return updateCalendarEvent(
+    db,
+    input.playerId,
+    event.id,
+    {
+      type: event.type,
+      sport: event.sport,
+      startAt: input.startAt,
+      endAt: input.endAt ?? null,
+      title: event.title,
+      notes: event.notes,
+      location: event.location,
+    },
+    deps,
+  );
+}
+
+/** Unschedules a workout: deletes its calendar event. The workout, its sessions and history are never touched. */
+export async function unscheduleWorkout(db: PlayerDb, playerId: string, planId: string): Promise<void> {
+  const schedule = await getWorkoutSchedule(db, planId);
+  if (schedule === null) throw new WorkoutScheduleError('NOT_SCHEDULED', planId);
+  await deleteCalendarEvent(db, playerId, schedule.eventId);
 }
 
 /** One write transaction at a time per connection (the same queue as the other repositories). */

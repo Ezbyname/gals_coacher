@@ -44,7 +44,7 @@ describe('local database on real SQLite', () => {
     const { db, migration } = await openLocalDatabase();
     expect(migration).toEqual({
       from: 0,
-      to: 17,
+      to: 18,
       applied: [
         'app_meta',
         'players',
@@ -63,9 +63,10 @@ describe('local database on real SQLite', () => {
         'player_archive',
         'calendar_event_sync_links',
         'planned_workout_composition',
+        'planned_workout_calendar_link',
       ],
     });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 17 });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 18 });
     expect(await db.getFirstAsync("SELECT name FROM sqlite_master WHERE name = 'app_meta'")).toEqual({
       name: 'app_meta',
     });
@@ -78,7 +79,7 @@ describe('local database on real SQLite', () => {
     await first.db.closeAsync();
 
     const second = await openLocalDatabase();
-    expect(second.migration).toEqual({ from: 17, to: 17, applied: [] });
+    expect(second.migration).toEqual({ from: 18, to: 18, applied: [] });
     expect(await second.db.getFirstAsync('SELECT value FROM app_meta WHERE key = ?', ['probe'])).toEqual({
       value: 'kept',
     });
@@ -134,7 +135,7 @@ describe('local database on real SQLite', () => {
       const { db, migration } = await openLocalDatabase();
       expect(migration).toEqual({
         from: 1,
-        to: 17,
+        to: 18,
         applied: [
           'players',
           'self_assessments',
@@ -152,15 +153,16 @@ describe('local database on real SQLite', () => {
         'player_archive',
         'calendar_event_sync_links',
         'planned_workout_composition',
+        'planned_workout_calendar_link',
         ],
       });
-      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 17 });
+      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 18 });
       expect(await v2Tables(db)).toEqual(V2_TABLES);
       expect(await db.getAllAsync('SELECT key, value FROM app_meta')).toEqual([{ key: 'probe', value: 'kept' }]);
       await db.closeAsync();
 
       const reopened = await openLocalDatabase();
-      expect(reopened.migration).toEqual({ from: 17, to: 17, applied: [] });
+      expect(reopened.migration).toEqual({ from: 18, to: 18, applied: [] });
       await reopened.db.closeAsync();
     });
 
@@ -173,7 +175,7 @@ describe('local database on real SQLite', () => {
       const fresh = openNodeSqlite(':memory:');
       expect(await runMigrations(fresh, migrations)).toEqual({
         from: 0,
-        to: 17,
+        to: 18,
         applied: [
           'app_meta',
           'players',
@@ -192,6 +194,7 @@ describe('local database on real SQLite', () => {
         'player_archive',
         'calendar_event_sync_links',
         'planned_workout_composition',
+        'planned_workout_calendar_link',
         ],
       });
       expect(await schema(fresh)).toEqual(upgradedSchema);
@@ -203,7 +206,8 @@ describe('local database on real SQLite', () => {
       // + v16 calendar_event_sync_links: 1 table + 1 index
       // + v17 planned_workout_composition: 4 "archived player gets no new activity" triggers on plan edits
       //   (the v9 freeze triggers are replaced in place: same count; two columns are not schema objects)
-      expect(upgradedSchema).toHaveLength(73); // v13 adds calendar_events_player_import_batch
+      // + v18 planned_workout_calendar_link: 1 unique index + 4 guard triggers (the column is not a schema object)
+      expect(upgradedSchema).toHaveLength(78); // v13 adds calendar_events_player_import_batch
       await fresh.closeAsync();
     });
 
@@ -222,7 +226,7 @@ describe('local database on real SQLite', () => {
       const relaunch = await openLocalDatabase();
       expect(relaunch.migration).toEqual({
         from: 1,
-        to: 17,
+        to: 18,
         applied: [
           'players',
           'self_assessments',
@@ -240,6 +244,7 @@ describe('local database on real SQLite', () => {
         'player_archive',
         'calendar_event_sync_links',
         'planned_workout_composition',
+        'planned_workout_calendar_link',
         ],
       });
       await relaunch.db.closeAsync();
@@ -247,9 +252,9 @@ describe('local database on real SQLite', () => {
 
     it('still refuses to open a newer schema (downgrade)', async () => {
       const newer = openTracked(file);
-      await newer.execAsync('PRAGMA user_version = 18');
+      await newer.execAsync('PRAGMA user_version = 19');
       await newer.closeAsync();
-      await expect(openLocalDatabase()).rejects.toThrow(/v18 .* only knows v17\. Refusing to downgrade/);
+      await expect(openLocalDatabase()).rejects.toThrow(/v19 .* only knows v18\. Refusing to downgrade/);
     });
   });
 
@@ -263,7 +268,7 @@ describe('local database on real SQLite', () => {
 
     it('closes the opened database before rethrowing a migration failure (downgrade refusal)', async () => {
       const newer = openTracked(file);
-      await newer.execAsync('PRAGMA user_version = 18');
+      await newer.execAsync('PRAGMA user_version = 19');
       await newer.closeAsync();
 
       const { handle, close } = nextAppHandle();
@@ -297,7 +302,7 @@ describe('local database on real SQLite', () => {
       expect(db).toBe(handle);
       expect(close).not.toHaveBeenCalled();
       expect(handle.raw.isOpen).toBe(true);
-      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 17 });
+      expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 18 });
       await db.closeAsync();
     });
   });

@@ -168,6 +168,8 @@ export const builderPath = (playerId: string) => `/children/${playerId}/training
 /** The Builder for a NEW workout that starts with this Exercise / Block (still a local draft until Save). */
 export const seededBuilderPath = (playerId: string, kind: AssignKind, id: string) =>
   ({ pathname: '/children/[id]/training/builder/new', params: { id: playerId, seedKind: kind, seedId: id } }) as const;
+/** QB-WORKOUT-BUILDER-001D: schedule (or reschedule) a planned workout. */
+export const scheduleWorkoutPath = (playerId: string, planId: string) => `/children/${playerId}/training/schedule/${planId}` as const;
 export const editPlanPath = (playerId: string, planId: string) => `/children/${playerId}/training/builder/${planId}` as const;
 export const planPath = (playerId: string, planId: string) =>
   `/children/${playerId}/training/plan/${planId}` as const;

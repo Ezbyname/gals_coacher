@@ -41,7 +41,7 @@ function fieldErrors(errors: CalendarEventErrors): FieldErrors {
   const out: FieldErrors = {};
   if (errors.type) out.type = 'calendar.errors.typeRequired';
   if (errors.sport) out.sport = 'calendar.errors.invalidValue';
-  if (errors.startAt) out.start = 'calendar.errors.invalidValue';
+  if (errors.startAt) out.start = errors.startAt === 'BEFORE_NOW' ? 'calendar.errors.startInPast' : 'calendar.errors.invalidValue';
   if (errors.endAt) {
     out.end =
       errors.endAt === 'NOT_AFTER_START' ? 'calendar.errors.endAfterStart' : 'calendar.errors.invalidValue';
@@ -78,6 +78,8 @@ type Props = {
   onSave: (input: CalendarEventInput) => Promise<SaveCalendarEventResult>;
   onSaved: (event: CalendarEvent) => void;
   onCancel: () => void;
+  /** A scheduled workout's title is the workout's name (rename the workout to change it): shown, not editable. */
+  lockedTitle?: string | null;
 };
 
 /**
@@ -86,7 +88,7 @@ type Props = {
  * an invalid Save writes nothing, keeps every value and marks the fields.
  * Navigation is the caller's (onSaved / onCancel).
  */
-export function CalendarEventForm({ initialValues, sports, types, onSave, onSaved, onCancel }: Props) {
+export function CalendarEventForm({ initialValues, sports, types, onSave, onSaved, onCancel, lockedTitle = null }: Props) {
   const { t, language } = useI18n();
   const [values, setValues] = useState<CalendarFormValues>(initialValues);
   // Leaving with unsaved changes asks first (NAV-DIRTY-001); loaded / default values are clean.
@@ -334,6 +336,16 @@ export function CalendarEventForm({ initialValues, sports, types, onSave, onSave
             )}
 
             <View ref={titleBox} collapsable={false} testID="event-title-box">
+              {lockedTitle !== null ? (
+                <View style={styles.group}>
+                  <Text style={styles.notice} testID="event-title-locked">
+                    {lockedTitle}
+                  </Text>
+                  <Text style={styles.notice} testID="event-title-locked-hint">
+                    {t('calendar.field.titleFollowsWorkout')}
+                  </Text>
+                </View>
+              ) : (
               <TextField
                 onFocus={onTitleFocus}
                 onBlur={onFieldBlur}
@@ -348,6 +360,7 @@ export function CalendarEventForm({ initialValues, sports, types, onSave, onSave
                 onChangeText={(title) => change('title', title, ['title'])}
                 error={message(errors.title)}
               />
+              )}
             </View>
             <View ref={locationBox} collapsable={false} testID="event-location-box">
               <TextField

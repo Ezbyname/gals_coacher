@@ -14,6 +14,7 @@ import {
   type PrescriptionErrors,
 } from '@/domain/training/training';
 import type { Clock } from '@/services/clock/Clock';
+import { emitDataChanged } from '../../changes';
 import type { IdService } from '@/services/ids/IdService';
 
 import { readExercisesUnserialized } from '../exercises/exerciseRepository';
@@ -224,6 +225,7 @@ export async function savePlannedWorkout(
   if (name.length === 0) errors.name = 'REQUIRED';
   else if (name.length > WORKOUT_NAME_MAX_LENGTH) errors.name = 'TOO_LONG';
   let result = null as SavePlanResult | null;
+  let retitled = false; // QB-WORKOUT-BUILDER-001D: the linked CalendarEvent's title followed a rename
   await writeTransaction(db, async () => {
     let stored: PlannedWorkout | null = null;
     if (input.planId === null) {
@@ -291,10 +293,20 @@ export async function savePlannedWorkout(
     } else {
       await db.runAsync('DELETE FROM planned_workout_items WHERE planned_workout_id = ?', [planId]);
       await db.runAsync('UPDATE planned_workouts SET name = ?, updated_at = ? WHERE id = ?', [name, now, planId]);
+      // PlannedWorkout = WHAT, CalendarEvent = WHEN: while the plan is editable its name is the scheduled event's title.
+      const linked = await db.getFirstAsync<{ id: string; title: string | null }>(
+        'SELECT id, title FROM calendar_events WHERE planned_workout_id = ?',
+        [planId],
+      );
+      if (linked !== null && linked.title !== name) {
+        await db.runAsync('UPDATE calendar_events SET title = ?, updated_at = ? WHERE id = ?', [name, now, linked.id]);
+        retitled = true;
+      }
     }
     for (const [position, item] of items.entries()) await insertPlanItem(db, planId, position, item);
     result = { ok: true, plan: await readPlan(db, planId) };
   });
+  if (retitled) emitDataChanged('calendar'); // after the commit: reminders and the phone calendar reconcile
   return result!;
 }
 

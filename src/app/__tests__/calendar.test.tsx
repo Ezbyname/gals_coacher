@@ -140,7 +140,7 @@ function answerAlerts(answer: 'confirm' | 'cancel') {
 }
 
 describe('route tree', () => {
-  it('the five schedule screens exist under the Player route, named with `/` on every OS', () => {
+  it('the five schedule screens (+ the workout scheduling screen) exist under the Player route, named with `/` on every OS', () => {
     expect(
       Object.keys(routes)
         .filter((r) => r.includes('schedule'))
@@ -152,6 +152,7 @@ describe('route tree', () => {
       'children/[id]/schedule/import',
       'children/[id]/schedule/index',
       'children/[id]/schedule/new',
+      'children/[id]/training/schedule/[planId]', // QB-WORKOUT-BUILDER-001D: schedule a planned workout
     ]);
     // Route names use Expo `/` separators on every OS (path.relative gives `\\` on Windows).
     expect(Object.keys(routes).every((name) => !name.includes('\\'))).toBe(true);
@@ -946,6 +947,7 @@ describe('edit', () => {
         location: null,
         source: null,
         import_batch_id: null,
+        planned_workout_id: null,
       },
     ]);
     // Details reloads on focus with the new values.

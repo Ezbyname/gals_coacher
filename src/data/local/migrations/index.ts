@@ -918,4 +918,42 @@ export const migrations: readonly Migration[] = [
       BEGIN SELECT RAISE(ABORT, 'an archived player gets no new activity'); END;
     `,
   },
+  {
+    // QB-WORKOUT-BUILDER-001D (owner 2026-10-17): a PlannedWorkout (WHAT) is scheduled by a CalendarEvent (WHEN).
+    // CalendarEvent stays the only schedule and the source of truth for time; the plan holds no date.
+    //
+    // One nullable column on calendar_events (every existing event upgrades as unlinked: NULL) and a partial UNIQUE index
+    // (one plan -> zero or one event). The link is written ONLY when the event is created (scheduling a workout):
+    //   - the event's Player must be the plan's Player;
+    //   - a plan that already has a TrainingSession cannot be newly scheduled (an existing link is untouched when a
+    //     session starts later);
+    //   - the link never changes afterwards (no attach to an existing event, no swap): unschedule = delete the event,
+    //     the plan stays (planned_workouts_never_deleted from v9 keeps protecting plans; the FK has no cascade);
+    //   - a linked event never moves to another Player.
+    // The archived-Player guard on INSERT (v15) already covers a linked insert. "Not in the past" depends on the app
+    // clock, so the repository enforces it. Additive: no table rebuild, no data rewritten.
+    version: 18,
+    name: 'planned_workout_calendar_link',
+    sql: `
+      ALTER TABLE calendar_events
+        ADD COLUMN planned_workout_id TEXT REFERENCES planned_workouts (id);
+      CREATE UNIQUE INDEX calendar_events_one_per_plan ON calendar_events (planned_workout_id)
+        WHERE planned_workout_id IS NOT NULL;
+
+      CREATE TRIGGER calendar_events_plan_same_player BEFORE INSERT ON calendar_events
+      WHEN NEW.planned_workout_id IS NOT NULL
+       AND (SELECT player_id FROM planned_workouts WHERE id = NEW.planned_workout_id) IS NOT NEW.player_id
+      BEGIN SELECT RAISE(ABORT, 'a workout is scheduled for its own player only'); END;
+      CREATE TRIGGER calendar_events_plan_not_started BEFORE INSERT ON calendar_events
+      WHEN NEW.planned_workout_id IS NOT NULL
+       AND EXISTS (SELECT 1 FROM training_sessions WHERE planned_workout_id = NEW.planned_workout_id)
+      BEGIN SELECT RAISE(ABORT, 'a started workout cannot be newly scheduled'); END;
+      CREATE TRIGGER calendar_events_plan_link_fixed BEFORE UPDATE OF planned_workout_id ON calendar_events
+      WHEN NEW.planned_workout_id IS NOT OLD.planned_workout_id
+      BEGIN SELECT RAISE(ABORT, 'the link between an event and its workout never changes'); END;
+      CREATE TRIGGER calendar_events_plan_player_fixed BEFORE UPDATE OF player_id ON calendar_events
+      WHEN OLD.planned_workout_id IS NOT NULL AND NEW.player_id IS NOT OLD.player_id
+      BEGIN SELECT RAISE(ABORT, 'a scheduled workout stays with its own player'); END;
+    `,
+  },
 ];

@@ -64,3 +64,31 @@ export class CalendarEventNotFoundError extends Error {
     this.eventId = eventId;
   }
 }
+
+/**
+ * QB-WORKOUT-BUILDER-001D: a rule refused scheduling / unscheduling a PlannedWorkout. Nothing was written.
+ * - PLAN_NOT_FOUND / NOT_SCHEDULED: no such workout / it has no calendar event.
+ * - PLAYER_MISMATCH: the workout belongs to another Player.
+ * - PLAN_ALREADY_STARTED: a workout that already has a TrainingSession cannot be newly scheduled.
+ * - PLAN_EMPTY: a workout with nothing in it can never start, so it is not scheduled.
+ * - ALREADY_SCHEDULED: a workout has at most one calendar event.
+ */
+export type WorkoutScheduleReason =
+  | 'PLAN_NOT_FOUND'
+  | 'PLAYER_MISMATCH'
+  | 'PLAN_ALREADY_STARTED'
+  | 'PLAN_EMPTY'
+  | 'ALREADY_SCHEDULED'
+  | 'NOT_SCHEDULED';
+
+export class WorkoutScheduleError extends Error {
+  readonly reason: WorkoutScheduleReason;
+  readonly planId: string;
+
+  constructor(reason: WorkoutScheduleReason, planId: string) {
+    super(`Workout ${planId} cannot be scheduled: ${reason}`);
+    this.name = 'WorkoutScheduleError';
+    this.reason = reason;
+    this.planId = planId;
+  }
+}

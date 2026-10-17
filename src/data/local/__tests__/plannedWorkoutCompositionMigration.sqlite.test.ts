@@ -139,9 +139,9 @@ it('MIG-17-01: a fresh database reaches v17 with the two nullable columns, the n
   dbs.push(d);
   await d.execAsync('PRAGMA foreign_keys = ON');
   const result = await runMigrations(d, migrations);
-  expect(result.to).toBe(17);
-  expect(result.applied.at(-1)).toBe('planned_workout_composition');
-  expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 17 });
+  expect(result.to).toBe(18);
+  expect(result.applied.at(-2)).toBe('planned_workout_composition'); // v18 (calendar link) follows; proven in its own suite
+  expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 18 });
   const cols = await d.getAllAsync("SELECT name, type, \"notnull\" AS not_null, dflt_value FROM pragma_table_info('planned_workout_items') WHERE name IN ('section_id', 'source_block_id') ORDER BY cid");
   expect(cols).toEqual([
     { name: 'section_id', type: 'TEXT', not_null: 0, dflt_value: null },
@@ -181,15 +181,16 @@ describe('upgrade from a realistic v16 database', () => {
     expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 16 });
 
     const result = await runMigrations(db, migrations);
-    expect(result).toEqual({ from: 16, to: 17, applied: ['planned_workout_composition'] });
+    expect(result).toEqual({ from: 16, to: 18, applied: ['planned_workout_composition', 'planned_workout_calendar_link'] });
 
     expect(await dumpWith(db, before)).toEqual(rowsBefore); // nothing rewritten, nothing lost, in ANY table
     expect(await db.getAllAsync('SELECT section_id, source_block_id FROM planned_workout_items')).toEqual(rowsBefore.planned_workout_items!.map(() => ({ section_id: null, source_block_id: null })));
     const triggersAfter = await triggers(db);
     expect(triggersBefore.filter((n) => !triggersAfter.includes(n))).toEqual(['planned_items_never_deleted']); // renamed: planned_items_frozen_delete
-    expect(triggersAfter.filter((n) => !triggersBefore.includes(n))).toEqual(NEW_TRIGGERS);
+    expect(triggersAfter.filter((n) => !triggersBefore.includes(n) && !n.startsWith('calendar_events_plan_'))).toEqual(NEW_TRIGGERS); // v18's own triggers: see plannedWorkoutCalendarLinkMigration
     // every other schema object is byte-for-byte what it was
-    const unchanged = (o: { type: string; name: string }) => !OLD_TRIGGERS.includes(o.name) && o.name !== 'planned_workout_items';
+    const unchanged = (o: { type: string; name: string }) =>
+      !OLD_TRIGGERS.includes(o.name) && o.name !== 'planned_workout_items' && o.name !== 'calendar_events'; // v18 adds a column to calendar_events
     const after = await objects(db);
     expect(after.filter(unchanged).filter((o) => objectsBefore.some((b) => b.name === o.name))).toEqual(objectsBefore.filter(unchanged));
     expect(await db.getAllAsync('PRAGMA foreign_key_check')).toEqual([]);
@@ -205,10 +206,10 @@ describe('upgrade from a realistic v16 database', () => {
     const objectsAfter = await objects(db);
     const columns = await columnsOf(db);
     const rows = await dumpWith(db, columns);
-    expect(await runMigrations(db, migrations)).toEqual({ from: 17, to: 17, applied: [] });
+    expect(await runMigrations(db, migrations)).toEqual({ from: 18, to: 18, applied: [] });
     expect(await objects(db)).toEqual(objectsAfter);
     expect(await dumpWith(db, columns)).toEqual(rows);
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 17 });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 18 });
   });
 
   it('MIG-17-04: existing plans stay readable (legacy: no section id, no provenance), with their exact content and grouping', async () => {
@@ -339,6 +340,6 @@ describe('upgrade from a realistic v16 database', () => {
     expect(await triggers(db)).toEqual(triggersBefore); // the old freeze triggers are back / never left
     expect(await dumpWith(db, columns)).toEqual(rows);
     // and the same database then migrates cleanly
-    expect((await runMigrations(db, migrations)).to).toBe(17);
+    expect((await runMigrations(db, migrations)).to).toBe(18);
   });
 });

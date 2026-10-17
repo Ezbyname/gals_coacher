@@ -117,7 +117,7 @@ describe('migration v9 (training) on real SQLite', () => {
 
   it('fresh install: the ten training tables, empty', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(17);
+    expect(migration.to).toBe(18);
     expect(migration.applied).toContain('training');
     expect(await trainingObjects(db as unknown as Db)).toEqual(TRAINING_TABLES);
     for (const table of TRAINING_TABLES) {
@@ -129,7 +129,7 @@ describe('migration v9 (training) on real SQLite', () => {
   it('upgrades a realistic v8 database: every existing row unchanged; same schema as a fresh install', async () => {
     const before = await createV8Database();
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 8, to: 17, applied: ['training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition'] });
+    expect(migration).toEqual({ from: 8, to: 18, applied: ['training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link'] });
     expectUnchangedExceptLaterSeeds(await dumpV8Data(db as unknown as Db), before, 8);
     expect(await db.getFirstAsync('PRAGMA foreign_key_check')).toBeNull();
     // Today's repositories still read everything.
@@ -145,7 +145,7 @@ describe('migration v9 (training) on real SQLite', () => {
     await db.closeAsync();
 
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 17, to: 17, applied: [] });
+    expect(again.migration).toEqual({ from: 18, to: 18, applied: [] });
     await again.db.closeAsync();
 
     const fresh = openNodeSqlite(':memory:');
@@ -170,15 +170,15 @@ describe('migration v9 (training) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 8, to: 17, applied: ['training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition'] });
+    expect(relaunch.migration).toEqual({ from: 8, to: 18, applied: ['training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link'] });
     await relaunch.db.closeAsync();
   });
 
   it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 18');
+    await newer.execAsync('PRAGMA user_version = 19');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v18 .* only knows v17\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v19 .* only knows v18\. Refusing to downgrade/);
   });
 
   it('structural constraints: ownership references, one in-progress session per player, status ⇔ end time', async () => {

@@ -5,10 +5,14 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import {
   deleteCalendarEvent,
   getCalendarEvent,
+  getEventWorkout,
   markCalendarEventCompleted,
   undoCalendarEventCompletion,
 } from '@/data/local/calendar/calendarEventRepository';
+import { getPlannedWorkout, getSession, startSession } from '@/data/local/training/trainingRepository';
 import type { CalendarEvent } from '@/domain/calendarEvent';
+import { groupEntries } from '@/domain/training/composition';
+import { sessionPath, trainingErrorMessage } from '@/features/training/trainingLabels';
 import { useApp } from '@/features/AppProvider';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
@@ -27,9 +31,19 @@ import {
 import { formatDateTime } from './formatEventTime';
 import { ErrorScreen, LoadingScreen } from './StatusScreen';
 
+/** QB-WORKOUT-BUILDER-001D: the workout a scheduled event stands for (WHAT); the event itself stays the WHEN. */
+type LinkedWorkout = {
+  planId: string;
+  name: string;
+  sections: number;
+  startable: boolean;
+  sessionId: string | null;
+  inProgress: boolean;
+};
+
 type DetailsState =
   | { status: 'loading' }
-  | { status: 'ready'; event: CalendarEvent }
+  | { status: 'ready'; event: CalendarEvent; workout: LinkedWorkout | null }
   | { status: 'error'; message: TranslationKey };
 
 /**
@@ -51,6 +65,8 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
   const [completing, setCompleting] = useState(false);
   const [completionError, setCompletionError] = useState<TranslationKey | null>(null);
   const completionInProgress = useRef(false);
+  const [startFailure, setStartFailure] = useState<TranslationKey | null>(null);
+  const startInProgress = useRef(false);
   const state: DetailsState =
     boot.status === 'error' ? { status: 'error', message: 'calendar.errors.loadFailed' } : loaded;
 
@@ -58,12 +74,31 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
     useCallback(() => {
       if (boot.status !== 'ready') return;
       let active = true;
-      getCalendarEvent(boot.db, playerId, eventId)
-        .then((event) => {
+      (async () => {
+        const event = await getCalendarEvent(boot.db, playerId, eventId);
+        if (event === null) return null;
+        const link = await getEventWorkout(boot.db, eventId);
+        if (link === null) return { event, workout: null };
+        const plan = await getPlannedWorkout(boot.db, link.planId);
+        const session = plan?.sessionId ? await getSession(boot.db, plan.sessionId) : null;
+        const workout: LinkedWorkout | null =
+          plan === null
+            ? null
+            : {
+                planId: plan.id,
+                name: plan.name,
+                sections: groupEntries(plan.items).length,
+                startable: plan.items.length > 0,
+                sessionId: plan.sessionId,
+                inProgress: session?.status === 'IN_PROGRESS',
+              };
+        return { event, workout };
+      })()
+        .then((loadedEvent) => {
           if (!active) return;
           setState(
-            event
-              ? { status: 'ready', event }
+            loadedEvent
+              ? { status: 'ready', event: loadedEvent.event, workout: loadedEvent.workout }
               : { status: 'error', message: 'calendar.errors.eventNotFound' },
           );
         })
@@ -117,7 +152,7 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
       const updated = complete
         ? await markCalendarEventCompleted(boot.db, playerId, eventId, { clock: services.clock })
         : await undoCalendarEventCompletion(boot.db, playerId, eventId);
-      setState({ status: 'ready', event: updated });
+      setState((s) => ({ status: 'ready', event: updated, workout: s.status === 'ready' ? s.workout : null }));
     } catch (e) {
       console.warn('[calendar] completion failed', e);
       setCompletionError(calendarErrorMessage(e, 'calendar.errors.completionFailed'));
@@ -126,8 +161,22 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
     setCompleting(false);
   };
 
+  const startWorkout = async (planId: string) => {
+    if (startInProgress.current || boot.status !== 'ready') return;
+    startInProgress.current = true;
+    setStartFailure(null);
+    try {
+      const session = await startSession(boot.db, planId, { ids: services.ids, clock: services.clock });
+      router.push(sessionPath(playerId, session.id));
+    } catch (e) {
+      console.warn('[calendar] start workout failed', e);
+      setStartFailure(trainingErrorMessage(e));
+    }
+    startInProgress.current = false;
+  };
+
   const confirmDelete = () =>
-    Alert.alert(t('calendar.deleteConfirm.title'), t('calendar.deleteConfirm.body'), [
+    Alert.alert(t('calendar.deleteConfirm.title'), t(state.workout ? 'calendar.deleteConfirm.workoutBody' : 'calendar.deleteConfirm.body'), [
       { text: t('calendar.deleteConfirm.cancel'), style: 'cancel' },
       { text: t('calendar.deleteConfirm.confirm'), style: 'destructive', onPress: () => void remove() },
     ]);
@@ -181,6 +230,35 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
           <Text style={styles.line} testID="event-details-notes">
             {event.notes}
           </Text>
+        </View>
+      ) : null}
+
+      {state.workout ? (
+        <View style={styles.card} testID="event-workout-section">
+          <Text style={styles.label}>{t('training.schedule.eventWorkout')}</Text>
+          <Text style={styles.line} testID="event-workout-name">
+            {state.workout.name}
+          </Text>
+          <Text style={styles.muted} testID="event-workout-summary">
+            {t('training.schedule.eventSummary', { count: state.workout.sections })}
+          </Text>
+          {startFailure ? (
+            <Text style={styles.error} testID="event-workout-failed">
+              {t(startFailure)}
+            </Text>
+          ) : null}
+          {state.workout.sessionId === null ? (
+            state.workout.startable ? (
+              <BigButton testID="event-workout-start" label={t('training.schedule.startWorkout')} onPress={() => void startWorkout(state.workout!.planId)} disabled={deleting || completing} />
+            ) : null
+          ) : (
+            <BigButton
+              testID={state.workout.inProgress ? 'event-workout-continue' : 'event-workout-view'}
+              label={t(state.workout.inProgress ? 'training.schedule.continueWorkout' : 'training.schedule.viewWorkout')}
+              onPress={() => router.push(sessionPath(playerId, state.workout!.sessionId!))}
+              disabled={deleting || completing}
+            />
+          )}
         </View>
       ) : null}
 

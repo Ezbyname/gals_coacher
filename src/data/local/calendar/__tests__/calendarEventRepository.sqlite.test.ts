@@ -151,6 +151,7 @@ describe('calendar event repository on real SQLite', () => {
           location: null,
           source: null,
           import_batch_id: null,
+          planned_workout_id: null,
         },
       ]);
       expect(await getCalendarEvent(db, gal, saved.id)).toEqual(saved);
@@ -681,19 +682,26 @@ describe('calendar persistence boundaries', () => {
     },
   );
 
-  it('exports exactly create, get, list, the range read, update, delete, the explicit completion pair and the import batch trio', () => {
+  it('exports exactly create, get, list, the range read, update, delete, the explicit completion pair, the import batch trio and the workout scheduling set (QB-WORKOUT-BUILDER-001D)', () => {
     const exported = Object.keys(jest.requireActual('../calendarEventRepository'));
     expect(exported.sort()).toEqual([
+      'SCHEDULED_WORKOUT_TYPE',
       'createCalendarEvent',
       'createCalendarEventBatch',
       'deleteCalendarEvent',
       'getCalendarEvent',
+      'getEventWorkout',
+      'getWorkoutSchedule',
       'listCalendarEventBatch',
       'listCalendarEvents',
       'listCalendarEventsInRange',
+      'listWorkoutSchedules',
       'markCalendarEventCompleted',
+      'rescheduleWorkout',
+      'scheduleWorkout',
       'undoCalendarEventCompletion',
       'undoCalendarImport',
+      'unscheduleWorkout',
       'updateCalendarEvent',
     ]);
   });

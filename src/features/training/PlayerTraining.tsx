@@ -2,6 +2,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { listWorkoutSchedules, unscheduleWorkout } from '@/data/local/calendar/calendarEventRepository';
 import { setExerciseActive } from '@/data/local/exercises/exerciseRepository';
 import {
   getPlannedWorkout,
@@ -40,6 +41,7 @@ import {
   performedText,
   planPath,
   prescriptionText,
+  scheduleWorkoutPath,
   sessionPath,
   sessionStatusLabel,
   templatePath,
@@ -81,9 +83,30 @@ function useLoad<T>(load: (db: Db) => Promise<T>, reloadKey = 0) {
  * any), Start a workout, and the planned workouts / history.
  */
 export function TrainingSection({ playerId }: { playerId: string }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { boot, services } = useApp();
   const state = useLoad(useCallback((db: Db) => listTraining(db, playerId), [playerId]));
+  const [scheduleReload, setScheduleReload] = useState(0);
+  const schedules = useLoad(useCallback((db: Db) => listWorkoutSchedules(db, playerId), [playerId]), scheduleReload);
+  const scheduleOf = (planId: string) => (schedules.status === 'ready' ? schedules.value.find((s) => s.planId === planId) : undefined);
+  const unschedule = (plan: PlannedWorkout) =>
+    Alert.alert(t('training.schedule.unscheduleTitle'), t('training.schedule.unscheduleBody'), [
+      { text: t('training.schedule.keep'), style: 'cancel' },
+      {
+        text: t('training.schedule.unscheduleConfirm'),
+        style: 'destructive',
+        onPress: () => {
+          if (boot.status !== 'ready') return;
+          setFailure(null);
+          unscheduleWorkout(boot.db, playerId, plan.id)
+            .then(() => setScheduleReload((n) => n + 1))
+            .catch((e: unknown) => {
+              console.warn('[training] unschedule failed', e);
+              setFailure('training.schedule.unscheduleFailed');
+            });
+        },
+      },
+    ]);
   const [failure, setFailure] = useState<TranslationKey | null>(null);
   const busy = useRef(false);
   const running =
@@ -148,7 +171,18 @@ export function TrainingSection({ playerId }: { playerId: string }) {
               <Text style={styles.muted} testID={`training-planned-${plan.id}-summary`}>
                 {t('training.builder.plannedSummary', { count: groupEntries(plan.items).length })}
               </Text>
+              <Text style={styles.muted} testID={`training-planned-${plan.id}-when`}>
+                {scheduleOf(plan.id) ? t('training.schedule.when', { when: formatDateTime(scheduleOf(plan.id)!.startAt, language) }) : t('training.schedule.notScheduled')}
+              </Text>
               <View style={styles.plannedActions}>
+                {scheduleOf(plan.id) ? (
+                  <>
+                    <Small testID={`training-planned-${plan.id}-reschedule`} label={t('training.schedule.reschedule')} onPress={() => router.push(scheduleWorkoutPath(playerId, plan.id))} />
+                    <Small testID={`training-planned-${plan.id}-unschedule`} label={t('training.schedule.unschedule')} onPress={() => unschedule(plan)} />
+                  </>
+                ) : plan.items.length > 0 ? (
+                  <Small testID={`training-planned-${plan.id}-schedule`} label={t('training.schedule.button')} onPress={() => router.push(scheduleWorkoutPath(playerId, plan.id))} />
+                ) : null}
                 <Small testID={`training-planned-${plan.id}-view`} label={t('training.builder.view')} onPress={() => router.push(planPath(playerId, plan.id))} />
                 <Small testID={`training-planned-${plan.id}-edit`} label={t('training.builder.edit')} onPress={() => router.push(editPlanPath(playerId, plan.id))} />
                 {!running && plan.items.length > 0 ? (

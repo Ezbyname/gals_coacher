@@ -88,6 +88,7 @@ function ScreenStack() {
       />
       <Stack.Screen name="children/[id]/training/index" options={{ title: t('training.overviewTitle') }} />
       <Stack.Screen name="children/[id]/training/new" options={{ title: t('training.chooseTitle') }} />
+      <Stack.Screen name="children/[id]/training/schedule/[planId]" options={{ title: t('training.schedule.title') }} />
       <Stack.Screen name="children/[id]/training/builder/new" options={{ title: t('training.builder.newTitle') }} />
       <Stack.Screen name="children/[id]/training/builder/[planId]" options={{ title: t('training.builder.editTitle') }} />
       <Stack.Screen
