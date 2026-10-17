@@ -350,3 +350,30 @@ describe('the screen shows what is true now', () => {
     expect(await planCount()).toBe(1); // only Alice's started plan: nothing was added anywhere
   });
 });
+
+describe('editable before a session exists (WB-ENTRY-15)', () => {
+  it('WB-ENTRY-15: a workout created through the Add-to-workout flow has no session, can be reopened, edited and saved, and the edit persists', async () => {
+    await prepare('en');
+    const shooting = await block('Shooting', 'FREE_THROWS', 'PLANK');
+    await openAssign('BLOCK', shooting.id);
+    press('assign-continue'); // one Player + new workout → the seeded Builder
+    await screen.findByTestId('builder-entry-0');
+    press('builder-save');
+    await waitFor(async () => expect(await planCount()).toBe(1));
+    const saved = (await plansOf('Daniel'))[0]!;
+    expect((await db!.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM training_sessions'))!.n).toBe(0); // nothing started
+    expect(saved.sessionId).toBeNull();
+    // reopen the saved workout and edit it
+    act(() => router.push(`/children/${players.Daniel}/training/builder/${saved.id}` as never)); // the same app: open the saved workout for edit
+    await screen.findByTestId('builder-entry-0-item-0-sets');
+    expect(has('builder-readonly')).toBe(false); // editable: no session exists
+    fireEvent.changeText(screen.getByTestId('builder-entry-0-item-0-sets'), '7');
+    fireEvent.changeText(screen.getByTestId('builder-name'), 'Daniel Shooting');
+    press('builder-save');
+    await waitFor(async () => expect((await getPlannedWorkout(db!, saved.id))!.name).toBe('Daniel Shooting'));
+    const after = (await getPlannedWorkout(db!, saved.id))!;
+    expect(after.items[0]!.prescription.sets).toBe(7);
+    expect(after.items.map((i) => i.exercise.exerciseId)).toEqual(['FREE_THROWS', 'PLANK']); // composition kept
+    expect(await planCount()).toBe(1); // edited in place, no second plan
+  });
+});
