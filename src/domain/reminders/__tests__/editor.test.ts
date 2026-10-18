@@ -45,7 +45,7 @@ describe('reminder rule editor', () => {
   });
 
   it('Players: only the one tapped is added / removed — never "all"', () => {
-    const prefs = { enabled: true, rules: DEFAULT_REMINDER_RULES, players: ['a'] };
+    const prefs = { enabled: true, rules: DEFAULT_REMINDER_RULES, players: ['a'], typeRules: {}, eventRules: {} };
     expect(togglePlayer(prefs, 'b').players).toEqual(['a', 'b']);
     expect(togglePlayer(prefs, 'a').players).toEqual([]);
   });

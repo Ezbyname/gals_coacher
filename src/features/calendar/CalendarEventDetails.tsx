@@ -11,7 +11,10 @@ import {
 } from '@/data/local/calendar/calendarEventRepository';
 import { getPlannedWorkout, getSession, startSession } from '@/data/local/training/trainingRepository';
 import type { CalendarEvent } from '@/domain/calendarEvent';
+import { effectiveRules, type ReminderRule } from '@/domain/reminders';
 import { groupEntries } from '@/domain/training/composition';
+import { rulesSummary } from '@/features/reminders/ruleLabel';
+import { readReminderPreferences } from '@/preferences/reminderPreference';
 import { sessionPath, trainingErrorMessage } from '@/features/training/trainingLabels';
 import { useApp } from '@/features/AppProvider';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -41,9 +44,23 @@ type LinkedWorkout = {
   inProgress: boolean;
 };
 
+/** CAL-REMINDER-RULES-002: the reminders that apply to this event (read-only here), or null when they cannot be read. */
+type EventReminders = { enabled: boolean; source: 'EVENT' | 'TYPE' | 'GENERAL'; rules: readonly ReminderRule[] };
+
+async function loadEventReminders(event: CalendarEvent): Promise<EventReminders | null> {
+  try {
+    const prefs = await readReminderPreferences([]);
+    const { rules, source } = effectiveRules(prefs, event);
+    return { enabled: prefs.enabled, source, rules };
+  } catch (e) {
+    console.warn('[calendar] reminder summary failed', e);
+    return null;
+  }
+}
+
 type DetailsState =
   | { status: 'loading' }
-  | { status: 'ready'; event: CalendarEvent; workout: LinkedWorkout | null }
+  | { status: 'ready'; event: CalendarEvent; workout: LinkedWorkout | null; reminders: EventReminders | null }
   | { status: 'error'; message: TranslationKey };
 
 /**
@@ -78,7 +95,8 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
         const event = await getCalendarEvent(boot.db, playerId, eventId);
         if (event === null) return null;
         const link = await getEventWorkout(boot.db, eventId);
-        if (link === null) return { event, workout: null };
+        const reminders = await loadEventReminders(event);
+        if (link === null) return { event, workout: null, reminders };
         const plan = await getPlannedWorkout(boot.db, link.planId);
         const session = plan?.sessionId ? await getSession(boot.db, plan.sessionId) : null;
         const workout: LinkedWorkout | null =
@@ -92,13 +110,13 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
                 sessionId: plan.sessionId,
                 inProgress: session?.status === 'IN_PROGRESS',
               };
-        return { event, workout };
+        return { event, workout, reminders };
       })()
         .then((loadedEvent) => {
           if (!active) return;
           setState(
             loadedEvent
-              ? { status: 'ready', event: loadedEvent.event, workout: loadedEvent.workout }
+              ? { status: 'ready', event: loadedEvent.event, workout: loadedEvent.workout, reminders: loadedEvent.reminders }
               : { status: 'error', message: 'calendar.errors.eventNotFound' },
           );
         })
@@ -152,7 +170,12 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
       const updated = complete
         ? await markCalendarEventCompleted(boot.db, playerId, eventId, { clock: services.clock })
         : await undoCalendarEventCompletion(boot.db, playerId, eventId);
-      setState((s) => ({ status: 'ready', event: updated, workout: s.status === 'ready' ? s.workout : null }));
+      setState((s) => ({
+        status: 'ready',
+        event: updated,
+        workout: s.status === 'ready' ? s.workout : null,
+        reminders: s.status === 'ready' ? s.reminders : null,
+      }));
     } catch (e) {
       console.warn('[calendar] completion failed', e);
       setCompletionError(calendarErrorMessage(e, 'calendar.errors.completionFailed'));
@@ -259,6 +282,27 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
               disabled={deleting || completing}
             />
           )}
+        </View>
+      ) : null}
+
+      {state.reminders !== null ? (
+        <View style={styles.card} testID="event-reminders-section">
+          <Text style={styles.label}>{t('reminders.event.detailsTitle')}</Text>
+          {!state.reminders.enabled ? (
+            <Text style={styles.muted} testID="event-reminders-off">
+              {t('reminders.event.off')}
+            </Text>
+          ) : null}
+          <Text style={styles.line} testID="event-reminders-effective">
+            {t(
+              state.reminders.source === 'EVENT'
+                ? 'reminders.event.fromEvent'
+                : state.reminders.source === 'TYPE'
+                  ? 'reminders.event.fromType'
+                  : 'reminders.event.fromGeneral',
+              { rules: rulesSummary(t, state.reminders.rules) },
+            )}
+          </Text>
         </View>
       ) : null}
 

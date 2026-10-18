@@ -265,7 +265,7 @@ describe('signals reach reminders and the phone-calendar sync (WB-SCHED-12)', ()
 
       // reminders: the linked event is an ordinary event to the reminder planner
       const clockStub: LocalClock = { toLocal: () => ({ year: 2026, month: 10, day: 21, hour: 18, minute: 0 }), toEpoch: () => null };
-      const prefs = { enabled: true, players: [daniel], rules: [{ kind: 'BEFORE_START', minutes: 30 }] } as const;
+      const prefs = { enabled: true, players: [daniel], rules: [{ kind: 'BEFORE_START', minutes: 30 }], typeRules: {}, eventRules: {} } as const;
       const events = await listCalendarEventsInRange(db, now, now + 30 * 24 * HOUR);
       const reminders = desiredReminders(events, prefs, now, clockStub);
       expect(reminders.map((x) => [x.eventId, x.at])).toEqual([[r.event.id, FUTURE() - 30 * MIN]]);

@@ -1,4 +1,4 @@
-import { listCalendarEventsInRange } from '@/data/local/calendar/calendarEventRepository';
+import { listCalendarEventIds, listCalendarEventsInRange } from '@/data/local/calendar/calendarEventRepository';
 import type { PlayerDb } from '@/data/local/players/playerDb';
 import { listPlayers } from '@/data/local/players/playerRepository';
 import type { CalendarEvent } from '@/domain/calendarEvent';
@@ -7,13 +7,14 @@ import type { TranslationKey, TranslationParams } from '@/i18n/types';
 import {
   desiredReminders,
   MAX_BEFORE_START_MINUTES,
+  pruneEventRules,
   REMINDER_WINDOW_DAYS,
   reminderDiff,
   subscribedPlayers,
   type LocalClock,
   type ReminderPreferences,
 } from '@/domain/reminders';
-import { readReminderPreferences } from '@/preferences/reminderPreference';
+import { readReminderPreferences, saveReminderPreferences } from '@/preferences/reminderPreference';
 import { epochToLocalDateTime, localDateTimeToEpoch } from '@/services/clock/localCalendarDate';
 import type { ReminderPermissions } from '@/services/notifications/reminderPermissions';
 import type { ReminderNotification, ReminderScheduler } from '@/services/notifications/reminderScheduler';
@@ -66,6 +67,8 @@ export interface ReconcileDeps {
   readonly describe: DescribeReminder;
   readonly clock?: LocalClock;
   readonly readPrefs?: (playerIds: readonly string[]) => Promise<ReminderPreferences>;
+  /** Persists the preference after orphaned event overrides were pruned (default: the device preference store). */
+  readonly savePrefs?: (prefs: ReminderPreferences) => Promise<void>;
 }
 
 export type ReconcileResult =
@@ -84,7 +87,18 @@ export async function reconcileReminders(deps: ReconcileDeps): Promise<Reconcile
 
   const players = await listPlayers(deps.db); // the active roster: an archived Player's events never remind
   const ids = players.map((p) => p.player.id as string);
-  const prefs = await (deps.readPrefs ?? readReminderPreferences)(ids);
+  let prefs = await (deps.readPrefs ?? readReminderPreferences)(ids);
+  // Device-local event overrides never outlive their event (deleted, or removed by Undo Import): prune the orphans.
+  // CalendarEvent data is only READ here; a failed save is retried by the next reconcile.
+  const pruned = pruneEventRules(prefs, new Set(await listCalendarEventIds(deps.db)));
+  if (pruned !== prefs) {
+    prefs = pruned;
+    try {
+      await (deps.savePrefs ?? saveReminderPreferences)(pruned);
+    } catch (e) {
+      console.warn('[reminders] could not prune orphaned event reminders', e);
+    }
+  }
   const subscribed = subscribedPlayers(prefs, ids);
 
   let desired: ReturnType<typeof desiredReminders> = [];
@@ -95,7 +109,7 @@ export async function reconcileReminders(deps: ReconcileDeps): Promise<Reconcile
     const wanted = new Set(subscribed);
     for (const e of await listCalendarEventsInRange(deps.db, now, until)) if (wanted.has(e.playerId)) events.set(e.id, e);
     desired = desiredReminders(
-      [...events.values()].map((e) => ({ id: e.id, playerId: e.playerId, startAt: e.startAt, completion: e.completion })),
+      [...events.values()].map((e) => ({ id: e.id, playerId: e.playerId, startAt: e.startAt, type: e.type, completion: e.completion })),
       { ...prefs, players: subscribed },
       now,
       deps.clock ?? deviceLocalClock,

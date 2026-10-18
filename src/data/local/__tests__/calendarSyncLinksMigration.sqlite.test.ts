@@ -29,14 +29,14 @@ describe('schema v16 — calendar_event_sync_links', () => {
 
 describe('calendar-sync preference — separate from reminders', () => {
   const memory = new Map<string, string>();
-  const store = { getItem: async (k: string) => memory.get(k) ?? null, setItem: async (k: string, v: string) => void memory.set(k, v) } as unknown as PreferenceStore;
+  const store = { getItem: async (k: string) => memory.get(k) ?? null, setItem: async (k: string, v: string) => void memory.set(k, v), removeItem: async (k: string) => void memory.delete(k) } as unknown as PreferenceStore;
 
   it('OFF with nothing chosen by default; saving it never changes the reminder Players (and vice versa); it signals the sync', async () => {
     memory.clear();
     expect(await readCalendarSyncPreferences(store)).toEqual({ enabled: false, calendarId: null, players: [] });
     const topics: string[] = [];
     const off = onDataChanged((t) => topics.push(t));
-    await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: ['daniel'] }, store);
+    await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: ['daniel'], typeRules: {}, eventRules: {} }, store);
     await saveCalendarSyncPreferences({ enabled: true, calendarId: 'cal-1', players: ['maya'] }, store);
     off();
     expect((await readReminderPreferences(['daniel', 'maya'], store)).players).toEqual(['daniel']);

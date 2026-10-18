@@ -8,6 +8,8 @@ import { selectableActivityTypes, type ActivityTypeRef } from '@/domain/activity
 import type { SportKey } from '@/domain/sport';
 import { useApp } from '@/features/AppProvider';
 import type { TranslationKey } from '@/i18n/types';
+import { readReminderPreferences, saveEventReminders } from '@/preferences/reminderPreference';
+import type { ReminderPreferences } from '@/domain/reminders';
 
 import { CalendarEventForm } from './CalendarEventForm';
 import { calendarErrorMessage } from './calendarLabels';
@@ -17,8 +19,18 @@ import { ErrorScreen, LoadingScreen } from './StatusScreen';
 
 type FormState =
   | { status: 'loading' }
-  | { status: 'ready'; initialValues: CalendarFormValues; sports: SportKey[]; types: ActivityTypeRef[]; lockedTitle: string | null }
+  | { status: 'ready'; initialValues: CalendarFormValues; sports: SportKey[]; types: ActivityTypeRef[]; lockedTitle: string | null; prefs: ReminderPreferences | undefined }
   | { status: 'error'; message: TranslationKey };
+
+/** The device-local reminder preference, or undefined when it cannot be read (the form then simply has no reminders field). */
+async function loadReminderPrefs(): Promise<ReminderPreferences | undefined> {
+  try {
+    return await readReminderPreferences([]);
+  } catch (e) {
+    console.warn('[calendar] reminder preference load failed', e);
+    return undefined;
+  }
+}
 
 /**
  * Edits one saved event with the same form as New. The repository keeps its
@@ -42,9 +54,11 @@ export function EditCalendarEvent({ playerId, eventId }: { playerId: string; eve
       if (event === null) return { status: 'error', message: 'calendar.errors.eventNotFound' };
       const catalog = await listActivityTypes(boot.db);
       const workout = await getEventWorkout(boot.db, eventId); // QB-WORKOUT-BUILDER-001D
+      const prefs = await loadReminderPrefs();
       return {
         status: 'ready',
         lockedTitle: workout !== null ? workout.name : null,
+        prefs,
         initialValues: valuesFromEvent(event),
         sports: sportsOf(profile, event.sport),
         // Active types, plus this event's own type even when it is now inactive.
@@ -89,6 +103,7 @@ export function EditCalendarEvent({ playerId, eventId }: { playerId: string; eve
       sports={state.sports}
       types={state.types}
       lockedTitle={state.lockedTitle}
+      reminders={state.prefs ? { prefs: state.prefs, initial: state.prefs.eventRules[eventId] ?? null, onSave: (event, rules) => saveEventReminders(event.id, rules) } : undefined}
       onSave={(input) => {
         if (!db) throw new Error('database not ready');
         return updateCalendarEvent(db, playerId, eventId, input, { clock: services.clock });

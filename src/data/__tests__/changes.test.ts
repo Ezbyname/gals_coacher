@@ -63,8 +63,8 @@ it('a write that fails (rolled back) signals nothing', async () => {
 it('archiving a Player signals "players"; saving the reminder settings signals "reminders"', async () => {
   await archivePlayer(db, player, { clock });
   const memory = new Map<string, string>();
-  const store: PreferenceStore = { getItem: async (k) => memory.get(k) ?? null, setItem: async (k, v) => void memory.set(k, v) } as PreferenceStore;
-  await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [player] }, store);
+  const store: PreferenceStore = { getItem: async (k) => memory.get(k) ?? null, setItem: async (k, v) => void memory.set(k, v), removeItem: async (k) => void memory.delete(k) } as PreferenceStore;
+  await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [player], typeRules: {}, eventRules: {} }, store);
   expect(seen).toEqual(['players', 'reminders']);
 });
 

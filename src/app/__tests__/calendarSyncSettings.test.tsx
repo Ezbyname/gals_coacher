@@ -89,7 +89,7 @@ async function open() {
 describe('Settings → Phone calendar (001D)', () => {
   it('OFF by default; NO Player preselected (even a single one); the reminder Players are not reused; nothing asked at open', async () => {
     const [daniel] = await prepare('en', ['Daniel']);
-    await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [daniel!] });
+    await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [daniel!], typeRules: {}, eventRules: {} });
     await open();
     expect(screen.getByTestId('calsync-enabled').props.on).toBe(false); // Android host Switch
     expect(isSelected(`calsync-players-${daniel}`)).toBe(false);

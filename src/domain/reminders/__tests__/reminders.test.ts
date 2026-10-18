@@ -26,10 +26,11 @@ const event = (id: string, startAt: number, extra: Partial<ReminderEvent> = {}):
   id,
   playerId: DANIEL,
   startAt,
+  type: 'PERSONAL_TRAINING',
   completion: null,
   ...extra,
 });
-const on: ReminderPreferences = { enabled: true, rules: DEFAULT_REMINDER_RULES, players: [DANIEL] };
+const on: ReminderPreferences = { enabled: true, rules: DEFAULT_REMINDER_RULES, players: [DANIEL], typeRules: {}, eventRules: {} };
 const NOW = at(10, 9, 12); // Fri 9 Oct 2026, 12:00
 const when = (ms: number) => {
   const l = epochToLocalDateTime(ms);
@@ -84,7 +85,7 @@ describe('Player targeting — never a silent subscription to every Player', () 
     expect(preselectedPlayers([DANIEL])).toEqual([DANIEL]);
     expect(preselectedPlayers([])).toEqual([]);
     expect(preselectedPlayers([DANIEL, MAYA])).toEqual([]);
-    expect(defaultReminderPreferences([DANIEL, MAYA])).toEqual({ enabled: false, rules: DEFAULT_REMINDER_RULES, players: [] });
+    expect(defaultReminderPreferences([DANIEL, MAYA])).toEqual({ enabled: false, rules: DEFAULT_REMINDER_RULES, players: [], typeRules: {}, eventRules: {} });
     expect(defaultReminderPreferences([DANIEL]).players).toEqual([DANIEL]);
   });
 
@@ -95,10 +96,12 @@ describe('Player targeting — never a silent subscription to every Player', () 
   });
 
   it('a stored preference is accepted only when every field is valid (never repaired)', () => {
-    expect(parseReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [DANIEL, DANIEL] })).toEqual({
+    expect(parseReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [DANIEL, DANIEL], typeRules: {}, eventRules: {} })).toEqual({
       enabled: true,
       rules: DEFAULT_REMINDER_RULES,
       players: [DANIEL],
+      typeRules: {},
+      eventRules: {},
     });
     expect(parseReminderPreferences({ enabled: 'yes', rules: [], players: [] })).toBeNull();
     expect(parseReminderPreferences({ enabled: true, rules: [{ kind: 'BEFORE_START', minutes: 0 }], players: [] })).toBeNull();
@@ -110,12 +113,8 @@ describe('Player targeting — never a silent subscription to every Player', () 
 describe('desiredReminders (30-day window, skips, no catch-up)', () => {
   it('Tuesday 18:40 → 08:00 that day, 16:40 and 18:10', () => {
     const r = desiredReminders([event('e1', at(10, 13, 18, 40))], on, NOW, clock);
-    expect(r.map((x) => [when(x.at), x.ruleIndex])).toEqual([
-      ['13/10 08:00', 0],
-      ['13/10 16:40', 1],
-      ['13/10 18:10', 2],
-    ]);
-    expect(r[0]!.id).toBe(reminderId('e1', 0, at(10, 13, 8)));
+    expect(r.map((x) => when(x.at))).toEqual(['13/10 08:00', '13/10 16:40', '13/10 18:10']);
+    expect(r[0]!.id).toBe(reminderId('e1', at(10, 13, 8)));
   });
 
   it('a day-of time after the start is skipped, never moved (07:00 training: no 08:00 reminder)', () => {
@@ -151,7 +150,7 @@ describe('desiredReminders (30-day window, skips, no catch-up)', () => {
   it('a local time that does not exist (DST gap) is skipped, never shifted', () => {
     const gap: LocalClock = { toLocal: epochToLocalDateTime, toEpoch: () => null };
     const r = desiredReminders([event('e1', at(10, 13, 18, 40))], on, NOW, gap);
-    expect(r.map((x) => x.ruleIndex)).toEqual([1, 2]);
+    expect(r.map((x) => when(x.at))).toEqual(['13/10 16:40', '13/10 18:10']); // the 08:00 rule is skipped, the others stay
   });
 
   it('ids are deterministic and change when the event time changes', () => {
@@ -168,7 +167,7 @@ describe('reminderDiff (what the engine changes)', () => {
   const desired = desiredReminders([event('e1', at(10, 13, 18, 40))], on, NOW, clock);
 
   it('schedules the missing, cancels our stale ones, never touches other notifications; idempotent', () => {
-    const stale = reminderId('deleted', 0, at(10, 12, 8));
+    const stale = reminderId('deleted', at(10, 12, 8));
     const d = reminderDiff(desired, [desired[0]!.id, stale, 'other-app-thing']);
     expect(d.schedule.map((x) => x.id)).toEqual([desired[1]!.id, desired[2]!.id]);
     expect(d.cancel).toEqual([stale]);

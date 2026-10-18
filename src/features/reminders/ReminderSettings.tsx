@@ -1,29 +1,22 @@
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, AppState, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 
+import { listActivityTypes } from '@/data/local/activityTypes/activityTypeRepository';
 import { listPlayers } from '@/data/local/players/playerRepository';
 import {
-  addRule,
-  BEFORE_UNITS,
-  beforeStartParts,
-  beforeStartRule,
+  inheritedRules,
   MAX_REMINDER_RULES,
-  removeRule,
-  replaceRule,
   togglePlayer,
-  type BeforeUnit,
   type ReminderPreferences,
-  type ReminderRule,
-  type RuleEditError,
 } from '@/domain/reminders';
+import type { ActivityType } from '@/domain/activityType';
 import { useApp } from '@/features/AppProvider';
+import { activityTypeLabel } from '@/features/calendar/calendarLabels';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
-import { isolate, ltr, stripBidi } from '@/i18n/bidi';
+import { isolate, stripBidi } from '@/i18n/bidi';
 import { useI18n } from '@/i18n/I18nProvider';
-import type { TranslationKey } from '@/i18n/types';
 import { readReminderPreferences, saveReminderPreferences } from '@/preferences/reminderPreference';
-import type { LocalDateTime } from '@/services/clock/localCalendarDate';
 import {
   expoReminderPermissions,
   type NotificationPermissionState,
@@ -31,12 +24,16 @@ import {
 } from '@/services/notifications/reminderPermissions';
 import { BigButton } from '@/ui/BigButton';
 import { Card } from '@/ui/Card';
-import { ChoiceChips } from '@/ui/ChoiceChips';
-import { DateTimeField } from '@/ui/DateTimeField';
 import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { MultiChoiceChips } from '@/ui/MultiChoiceChips';
-import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
+
+import { RuleListEditor } from './RuleListEditor';
+import { rulesSummary } from './ruleLabel';
+
+export { ruleLabel } from './ruleLabel';
+
+export const reminderTypePath = (typeId: string) => `/settings/reminder-type/${typeId}` as const;
 
 /**
  * CAL-SYNC-NOTIFY-001B — Settings → Training reminders. Edits THIS device's
@@ -45,32 +42,17 @@ import { colors, spacing, touch } from '@/ui/theme';
  * notification / exact-alarm permission state with the way to fix it.
  * Nothing is scheduled here (001C).
  */
-type Editor = {
-  readonly index: number | null; // null = a new rule
-  readonly kind: ReminderRule['kind'];
-  readonly time: { readonly hour: number; readonly minute: number };
-  readonly value: string;
-  readonly unit: BeforeUnit;
+type Loaded = {
+  readonly prefs: ReminderPreferences;
+  readonly players: readonly { id: string; name: string }[];
+  readonly types: readonly ActivityType[];
 };
-type Loaded = { readonly prefs: ReminderPreferences; readonly players: readonly { id: string; name: string }[] };
-
-const pad = (n: number) => String(n).padStart(2, '0');
-const NEW_EDITOR: Editor = { index: null, kind: 'BEFORE_START', time: { hour: 8, minute: 0 }, value: '60', unit: 'MINUTES' };
-
-export function ruleLabel(t: (key: TranslationKey, params?: Record<string, string | number>) => string, rule: ReminderRule): string {
-  if (rule.kind === 'DAY_OF_AT') return t('reminders.rule.dayOfAt', { time: ltr(`${pad(rule.hour)}:${pad(rule.minute)}`) });
-  const { value, unit } = beforeStartParts(rule.minutes);
-  const key = `reminders.rule.before${unit === 'MINUTES' ? 'Minutes' : unit === 'HOURS' ? 'Hours' : 'Days'}${value === 1 ? 'One' : ''}`;
-  return t(key as TranslationKey, { value });
-}
 
 export function ReminderSettings({ permissions = expoReminderPermissions }: { permissions?: ReminderPermissions }) {
   const { boot } = useApp();
   const { t } = useI18n();
   const [loaded, setLoaded] = useState<Loaded | 'error' | null>(null);
   const [notif, setNotif] = useState<NotificationPermissionState | null>(null);
-  const [editor, setEditor] = useState<Editor | null>(null);
-  const [editError, setEditError] = useState<RuleEditError | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
 
   useFocusEffect(
@@ -81,7 +63,8 @@ export function ReminderSettings({ permissions = expoReminderPermissions }: { pe
         .then(async (profiles) => {
           const players = profiles.map((p) => ({ id: p.player.id as string, name: p.player.name }));
           const prefs = await readReminderPreferences(players.map((p) => p.id));
-          if (active) setLoaded({ prefs, players });
+          const types = (await listActivityTypes(boot.db)).filter((type) => type.active);
+          if (active) setLoaded({ prefs, players, types });
         })
         .catch((e: unknown) => {
           console.warn('[reminders] settings load failed', e);
@@ -113,10 +96,10 @@ export function ReminderSettings({ permissions = expoReminderPermissions }: { pe
     return <ErrorScreen testID="reminders-error" message="reminders.loadFailed" fallback="/settings" />;
   }
   if (loaded === null) return <LoadingScreen />;
-  const { prefs, players } = loaded;
+  const { prefs, players, types } = loaded;
 
   const save = (next: ReminderPreferences) => {
-    setLoaded({ prefs: next, players });
+    setLoaded({ prefs: next, players, types });
     setSaveFailed(false);
     saveReminderPreferences(next).catch((e: unknown) => {
       console.warn('[reminders] save failed', e);
@@ -136,33 +119,7 @@ export function ReminderSettings({ permissions = expoReminderPermissions }: { pe
     }
   };
 
-  const openEditor = (index: number | null) => {
-    setEditError(null);
-    if (index === null) return setEditor(NEW_EDITOR);
-    const rule = prefs.rules[index]!;
-    setEditor(
-      rule.kind === 'DAY_OF_AT'
-        ? { ...NEW_EDITOR, index, kind: 'DAY_OF_AT', time: { hour: rule.hour, minute: rule.minute } }
-        : { ...NEW_EDITOR, index, kind: 'BEFORE_START', value: String(beforeStartParts(rule.minutes).value), unit: beforeStartParts(rule.minutes).unit },
-    );
-  };
-  const saveEditor = () => {
-    if (editor === null) return;
-    let rule: ReminderRule;
-    if (editor.kind === 'DAY_OF_AT') rule = { kind: 'DAY_OF_AT', hour: editor.time.hour, minute: editor.time.minute };
-    else {
-      const built = beforeStartRule(editor.value, editor.unit);
-      if (!built.ok) return setEditError(built.error);
-      rule = built.rule;
-    }
-    const result = editor.index === null ? addRule(prefs.rules, rule) : replaceRule(prefs.rules, editor.index, rule);
-    if (!result.ok) return setEditError(result.error);
-    save({ ...prefs, rules: result.rules });
-    setEditor(null);
-  };
-
   const exact = permissions.exactAlarmState();
-  const timeValue: LocalDateTime | null = editor === null ? null : { year: 2026, month: 1, day: 1, ...editor.time };
 
   return (
     <KeyboardSafeScrollView testID="reminders-scroll" contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
@@ -243,89 +200,34 @@ export function ReminderSettings({ permissions = expoReminderPermissions }: { pe
       ) : null}
 
       <Text style={styles.section}>{t('reminders.rulesLabel', { max: MAX_REMINDER_RULES })}</Text>
-      {prefs.rules.length === 0 ? (
-        <Text style={styles.muted} testID="reminders-rules-none">
-          {t('reminders.noRules')}
-        </Text>
-      ) : null}
-      {prefs.rules.map((rule, i) => {
-        const text = ruleLabel(t, rule);
+      <RuleListEditor prefix="reminders" rules={prefs.rules} onChange={(rules) => save({ ...prefs, rules })} />
+
+      <Text style={styles.section}>{t('reminders.types.title')}</Text>
+      <Text style={styles.muted}>{t('reminders.types.hint')}</Text>
+      {types.map((type) => {
+        const own = prefs.typeRules[type.id];
+        const name = activityTypeLabel(t, type);
         return (
-          <Card key={`${rule.kind}-${i}`} testID={`reminders-rule-${i}`} style={styles.ruleRow}>
-            <Text style={[styles.body, styles.flex]} testID={`reminders-rule-${i}-text`}>
-              {text}
-            </Text>
-            <RowAction testID={`reminders-rule-${i}-edit`} label={t('reminders.edit')} a11y={t('reminders.editA11y', { rule: text })}
-              onPress={() => openEditor(i)} />
-            <RowAction testID={`reminders-rule-${i}-remove`} label={t('reminders.remove')} a11y={t('reminders.removeA11y', { rule: text })}
-              onPress={() => save({ ...prefs, rules: removeRule(prefs.rules, i) })} />
+          <Card key={type.id} testID={`reminders-type-${type.id}`} style={styles.ruleRow}>
+            <View style={styles.flex}>
+              <Text style={styles.body} testID={`reminders-type-${type.id}-name`}>
+                {name}
+              </Text>
+              <Text style={styles.muted} testID={`reminders-type-${type.id}-summary`}>
+                {own === undefined
+                  ? t('reminders.types.inherits', { rules: rulesSummary(t, inheritedRules(prefs, type.id).rules) })
+                  : rulesSummary(t, own)}
+              </Text>
+            </View>
+            <RowAction
+              testID={`reminders-type-${type.id}-edit`}
+              label={t('reminders.edit')}
+              a11y={t('reminders.types.editA11y', { name })}
+              onPress={() => router.push(reminderTypePath(type.id))}
+            />
           </Card>
         );
       })}
-
-      {editor !== null ? (
-        <Card testID="reminders-editor" style={styles.gap}>
-          <ChoiceChips<ReminderRule['kind']>
-            testID="reminders-editor-kind"
-            label={t('reminders.editor.kind')}
-            choices={[
-              { value: 'DAY_OF_AT', label: t('reminders.editor.dayOfAt') },
-              { value: 'BEFORE_START', label: t('reminders.editor.beforeStart') },
-            ]}
-            value={editor.kind}
-            onChange={(kind) => kind !== null && setEditor({ ...editor, kind })}
-          />
-          {editor.kind === 'DAY_OF_AT' && timeValue !== null ? (
-            <DateTimeField
-              testID="reminders-editor-time"
-              label={t('reminders.editor.time')}
-              mode="time"
-              value={timeValue}
-              displayValue={ltr(`${pad(editor.time.hour)}:${pad(editor.time.minute)}`)}
-              onSelect={(v) => setEditor({ ...editor, time: { hour: v.hour, minute: v.minute } })}
-            />
-          ) : (
-            <>
-              <TextField
-                testID="reminders-editor-value"
-                label={t('reminders.editor.value')}
-                value={editor.value}
-                onChangeText={(value) => setEditor({ ...editor, value })}
-                numeric
-                keyboardType="number-pad"
-                maxLength={5}
-              />
-              <ChoiceChips<BeforeUnit>
-                testID="reminders-editor-unit"
-                label={t('reminders.editor.unit')}
-                choices={BEFORE_UNITS.map((u) => ({ value: u, label: t(`reminders.editor.units.${u}`) }))}
-                value={editor.unit}
-                onChange={(unit) => unit !== null && setEditor({ ...editor, unit })}
-              />
-            </>
-          )}
-          {editError !== null ? (
-            <Text style={styles.error} testID="reminders-editor-error">
-              {t(`reminders.editor.errors.${editError}`, { max: MAX_REMINDER_RULES })}
-            </Text>
-          ) : null}
-          <BigButton testID="reminders-editor-save" label={t('reminders.editor.save')} onPress={saveEditor} />
-          <BigButton testID="reminders-editor-cancel" variant="secondary" label={t('common.cancel')} onPress={() => setEditor(null)} />
-        </Card>
-      ) : (
-        <BigButton
-          testID="reminders-add"
-          variant="secondary"
-          label={t('reminders.add')}
-          disabled={prefs.rules.length >= MAX_REMINDER_RULES}
-          onPress={() => openEditor(null)}
-        />
-      )}
-      {editor === null && prefs.rules.length >= MAX_REMINDER_RULES ? (
-        <Text style={styles.muted} testID="reminders-max">
-          {t('reminders.max', { max: MAX_REMINDER_RULES })}
-        </Text>
-      ) : null}
       {saveFailed ? (
         <Text style={styles.error} testID="reminders-save-error">
           {t('reminders.saveFailed')}

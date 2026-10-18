@@ -410,6 +410,11 @@ export function listCalendarEvents(db: PlayerDb, playerId: string): Promise<Cale
  * [start_at, end_at); one without an end occupies its start instant only.
  * Any malformed event in the range fails the whole read (as listCalendarEvents).
  */
+/** Every event id (any Player): the reminder engine prunes device-local overrides of events that no longer exist. */
+export function listCalendarEventIds(db: PlayerDb): Promise<string[]> {
+  return runSerialized(db, async () => (await db.getAllAsync<{ id: string }>('SELECT id FROM calendar_events', [])).map((r) => r.id));
+}
+
 export function listCalendarEventsInRange(db: PlayerDb, from: number, to: number): Promise<CalendarEvent[]> {
   return runSerialized(db, async () => {
     const rows = await db.getAllAsync<EventRow>(

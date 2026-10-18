@@ -682,7 +682,7 @@ describe('calendar persistence boundaries', () => {
     },
   );
 
-  it('exports exactly create, get, list, the range read, update, delete, the explicit completion pair, the import batch trio and the workout scheduling set (QB-WORKOUT-BUILDER-001D)', () => {
+  it('exports exactly create, get, list, the range read, update, delete, the explicit completion pair, the import batch trio and the workout scheduling set (QB-WORKOUT-BUILDER-001D) and the id list reminder pruning reads (CAL-REMINDER-RULES-002)', () => {
     const exported = Object.keys(jest.requireActual('../calendarEventRepository'));
     expect(exported.sort()).toEqual([
       'SCHEDULED_WORKOUT_TYPE',
@@ -693,6 +693,7 @@ describe('calendar persistence boundaries', () => {
       'getEventWorkout',
       'getWorkoutSchedule',
       'listCalendarEventBatch',
+      'listCalendarEventIds',
       'listCalendarEvents',
       'listCalendarEventsInRange',
       'listWorkoutSchedules',

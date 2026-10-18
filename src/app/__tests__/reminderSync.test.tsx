@@ -76,7 +76,7 @@ const ours = () => [...mockDevice.values()].sort((a, b) => a.at - b.at);
 
 it('start → reconciled; a calendar write → reconciled; foreground → reconciled (HE notification text)', async () => {
   await prepare('he');
-  await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [daniel] });
+  await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [daniel], typeRules: {}, eventRules: {} });
   const e = await createCalendarEvent(db!, daniel, { type: 'GAME', startAt: at(15, 19), endAt: at(15, 20, 30), location: 'אולם מי עמי' }, deps);
   if (!e.ok) throw new Error('seed');
   renderRouter(routes, { initialUrl: '/' });
@@ -105,7 +105,7 @@ it('start → reconciled; a calendar write → reconciled; foreground → reconc
 it('this app build has no native notifications → the app runs normally and nothing is scheduled or claimed', async () => {
   await prepare('en');
   mockPermission = 'UNAVAILABLE';
-  await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [daniel] });
+  await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [daniel], typeRules: {}, eventRules: {} });
   await createCalendarEvent(db!, daniel, { type: 'GAME', startAt: at(15, 19), endAt: null }, deps);
   renderRouter(routes, { initialUrl: '/' });
   await screen.findByTestId('home-quick-training');

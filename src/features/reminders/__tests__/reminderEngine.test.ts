@@ -73,7 +73,7 @@ beforeEach(async () => {
   maya = b.profile.player.id;
   device = new FakeDevice();
   permission = 'GRANTED';
-  prefs = { enabled: true, rules: DEFAULT_REMINDER_RULES, players: [daniel] };
+  prefs = { enabled: true, rules: DEFAULT_REMINDER_RULES, players: [daniel], typeRules: {}, eventRules: {} };
 });
 afterEach(() => db.closeAsync());
 
@@ -82,7 +82,7 @@ describe('reconcile — which reminders', () => {
     const e = await event(daniel, at(15, 19));
     expect(await reconcile()).toEqual({ status: 'DONE', desired: 3, scheduled: 3, cancelled: 0, failed: 0 });
     expect(times()).toEqual(['08:00', '17:00', '18:30']);
-    expect(device.ours().map((n) => n.id)).toEqual([0, 1, 2].map((i) => expect.stringMatching(new RegExp(`^cal:${e.id}:${i}:\\d+$`))));
+    expect(device.ours().map((n) => n.id)).toEqual([0, 1, 2].map(() => expect.stringMatching(new RegExp(`^cal:${e.id}:\\d+$`))));
     expect(device.ours()[0]).toMatchObject({ title: 'Daniel · GAME', body: `${at(15, 19)}|∅|∅`, data: { eventId: e.id, playerId: daniel } });
   });
 
@@ -256,5 +256,126 @@ describe('reconcile runner — serialized, coalesced', () => {
     runner.request();
     await jest.advanceTimersByTimeAsync(200);
     expect(runs).toBe(2);
+  });
+});
+
+/** CAL-REMINDER-RULES-002 — event override → type default → general, end to end on real SQLite. */
+describe('reconcile — the reminder hierarchy', () => {
+  const before = (minutes: number): ReminderRule => ({ kind: 'BEFORE_START', minutes });
+  async function training(playerId: string, startAt: number) {
+    const r = await createCalendarEvent(db, playerId, { type: 'PERSONAL_TRAINING', startAt, endAt: null }, deps0);
+    if (!r.ok) throw new Error(JSON.stringify(r.errors));
+    return r.event;
+  }
+  let saved: ReminderPreferences[];
+  const reconcileSaving = () =>
+    reconcileReminders({
+      db, scheduler: device, permissions: { notificationState: async () => permission }, now: () => NOW, describe: describe_,
+      readPrefs: async () => prefs, savePrefs: async (p) => void saved.push(p),
+    });
+  beforeEach(() => { saved = []; });
+
+  it('Game uses its type default (1 reminder); Training keeps the general reminders (3)', async () => {
+    const game = await event(daniel, at(15, 19));
+    const train = await training(daniel, at(16, 19));
+    prefs = { ...prefs, typeRules: { GAME: [before(30)] } };
+    await reconcile();
+    const byEvent = (id: string) => device.ours().filter((n) => n.data.eventId === id);
+    expect(byEvent(game.id)).toHaveLength(1);
+    expect(byEvent(train.id)).toHaveLength(3);
+  });
+
+  it('a type with NO key inherits the general list; a type with an EMPTY list has no reminders', async () => {
+    const game = await event(daniel, at(15, 19));
+    await reconcile();
+    expect(device.ours().filter((n) => n.data.eventId === game.id)).toHaveLength(3);
+    prefs = { ...prefs, typeRules: { GAME: [] } };
+    await reconcile();
+    expect(device.ours()).toEqual([]);
+  });
+
+  it('an EMPTY event override silences that event only; clearing it inherits again', async () => {
+    const a = await event(daniel, at(15, 19));
+    const b = await event(daniel, at(16, 19));
+    prefs = { ...prefs, eventRules: { [a.id]: [] } };
+    await reconcile();
+    expect(new Set(device.ours().map((n) => n.data.eventId))).toEqual(new Set([b.id]));
+    prefs = { ...prefs, eventRules: {} };
+    await reconcile();
+    expect(device.ours()).toHaveLength(6);
+  });
+
+  it('an event override beats the type default; AT_START reminds exactly at the start', async () => {
+    const e = await event(daniel, at(15, 19));
+    prefs = { ...prefs, typeRules: { GAME: [before(30)] }, eventRules: { [e.id]: [{ kind: 'AT_START' }] } };
+    await reconcile();
+    expect(times()).toEqual(['19:00']);
+  });
+
+  it('the same instant from two rules is ONE notification; reordering the rules changes nothing on the device', async () => {
+    await event(daniel, at(15, 19));
+    prefs = { ...prefs, rules: [before(30), { kind: 'DAY_OF_AT', hour: 18, minute: 30 }] };
+    expect(await reconcile()).toMatchObject({ desired: 1, scheduled: 1 });
+    prefs = { ...prefs, rules: [{ kind: 'DAY_OF_AT', hour: 18, minute: 30 }, before(30)] };
+    expect(await reconcile()).toMatchObject({ desired: 1, scheduled: 0, cancelled: 0 });
+  });
+
+  it('the master switch, an unsubscribed Player and an archived Player still gate every level', async () => {
+    const e = await event(daniel, at(15, 19));
+    prefs = { ...prefs, eventRules: { [e.id]: [before(15)] } };
+    await reconcile();
+    expect(times()).toEqual(['18:45']);
+    prefs = { ...prefs, enabled: false };
+    await reconcile();
+    expect(device.ours()).toEqual([]);
+    prefs = { ...prefs, enabled: true, players: [maya] };
+    await reconcile();
+    expect(device.ours()).toEqual([]);
+  });
+
+  it('a completed event reminds nothing even with its own override', async () => {
+    const e = await event(daniel, at(15, 19));
+    prefs = { ...prefs, eventRules: { [e.id]: [before(15)] } };
+    await markCalendarEventCompleted(db, daniel, e.id, { clock });
+    await reconcile();
+    expect(device.ours()).toEqual([]);
+  });
+
+  it('a deleted event: its override is pruned from the preference and its notifications cancelled', async () => {
+    const e = await event(daniel, at(15, 19));
+    const keep = await event(daniel, at(16, 19));
+    prefs = { ...prefs, eventRules: { [e.id]: [before(15)], [keep.id]: [before(20)] } };
+    await reconcileSaving();
+    expect(saved).toHaveLength(0); // nothing orphaned yet
+    await deleteCalendarEvent(db, daniel, e.id);
+    await reconcileSaving();
+    expect(saved).toHaveLength(1);
+    expect(saved[0]!.eventRules).toEqual({ [keep.id]: [before(20)] });
+    expect(new Set(device.ours().map((n) => n.data.eventId))).toEqual(new Set([keep.id]));
+  });
+
+  it('Undo Import with an override-only customization: the events go, the overrides are pruned, cal:* are cancelled', async () => {
+    const batch = await createCalendarEventBatch(db, daniel, {
+      events: [{ type: 'GAME', startAt: at(22, 17, 30), endAt: null }, { type: 'GAME', startAt: at(29, 19), endAt: null }],
+      source: 'XLSX_IMPORT',
+    }, deps0);
+    if (!batch.ok) throw new Error('batch');
+    const imported = batch.events.map((x) => x.id);
+    prefs = { ...prefs, rules: [], eventRules: { [imported[0]!]: [before(10)] } }; // only an override reminds
+    await reconcileSaving();
+    expect(device.ours()).toHaveLength(1);
+    await undoCalendarImport(db, daniel, batch.importBatchId);
+    await reconcileSaving();
+    expect(device.ours()).toEqual([]);
+    expect(saved.at(-1)!.eventRules).toEqual({});
+  });
+
+  it('a moved or edited event keeps its override (the id is the event, not the time)', async () => {
+    const e = await event(daniel, at(15, 19));
+    prefs = { ...prefs, eventRules: { [e.id]: [before(15)] } };
+    await reconcile();
+    await updateCalendarEvent(db, daniel, e.id, { type: 'GAME', startAt: at(16, 10), endAt: null }, { clock });
+    await reconcile();
+    expect(times()).toEqual(['09:45']);
   });
 });

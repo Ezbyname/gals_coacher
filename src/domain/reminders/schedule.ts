@@ -1,4 +1,4 @@
-import type { ReminderPreferences } from './preferences';
+import { effectiveRules, type ReminderPreferences } from './preferences';
 import type { ReminderRule } from './rules';
 
 /**
@@ -26,27 +26,29 @@ export interface ReminderEvent {
   readonly id: string;
   readonly playerId: string;
   readonly startAt: number;
+  /** The event's Activity Type id: its type default applies unless the event has its own override. */
+  readonly type: string;
   /** Non-null when the event was marked completed. */
   readonly completion: unknown;
 }
 
 export interface DesiredReminder {
-  /** Deterministic: event + rule position + instant (an edit → a new id). */
+  /** Stable: event + trigger minute. Reordering rules, or a rule that comes from another level but triggers at the same minute, keeps the id. */
   readonly id: string;
   readonly eventId: string;
-  readonly ruleIndex: number;
   /** Epoch ms. */
   readonly at: number;
 }
 
 export const REMINDER_ID_PREFIX = 'cal:';
 
-export function reminderId(eventId: string, ruleIndex: number, at: number): string {
-  return `${REMINDER_ID_PREFIX}${eventId}:${ruleIndex}:${Math.floor(at / MINUTE)}`;
+export function reminderId(eventId: string, at: number): string {
+  return `${REMINDER_ID_PREFIX}${eventId}:${Math.floor(at / MINUTE)}`;
 }
 
 /** The instant of one rule for one event, or null when the rule does not apply to it. */
 export function reminderInstant(rule: ReminderRule, startAt: number, clock: LocalClock): number | null {
+  if (rule.kind === 'AT_START') return startAt;
   if (rule.kind === 'BEFORE_START') return startAt - rule.minutes * MINUTE;
   const day = clock.toLocal(startAt);
   const at = clock.toEpoch({ year: day.year, month: day.month, day: day.day, hour: rule.hour, minute: rule.minute });
@@ -61,17 +63,21 @@ export function desiredReminders(
   clock: LocalClock,
   windowDays: number = REMINDER_WINDOW_DAYS,
 ): DesiredReminder[] {
-  if (!prefs.enabled || prefs.rules.length === 0) return [];
+  if (!prefs.enabled) return []; // the master switch gates every level, an event override included
   const players = new Set(prefs.players);
   const until = now + windowDays * DAY;
   const out: DesiredReminder[] = [];
   for (const event of events) {
-    if (!players.has(event.playerId) || event.completion != null) continue;
-    prefs.rules.forEach((rule, ruleIndex) => {
+    if (!players.has(event.playerId) || event.completion != null) continue; // not subscribed / archived / completed
+    const seen = new Set<string>();
+    for (const rule of effectiveRules(prefs, event).rules) {
       const at = reminderInstant(rule, event.startAt, clock);
-      if (at === null || at <= now || at > until) return; // past (no catch-up) or beyond the window
-      out.push({ id: reminderId(event.id, ruleIndex, at), eventId: event.id, ruleIndex, at });
-    });
+      if (at === null || at <= now || at > until) continue; // past (no catch-up) or beyond the window
+      const id = reminderId(event.id, at);
+      if (seen.has(id)) continue; // one managed notification per event and trigger minute
+      seen.add(id);
+      out.push({ id, eventId: event.id, at });
+    }
   }
   return out.sort((a, b) => a.at - b.at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }

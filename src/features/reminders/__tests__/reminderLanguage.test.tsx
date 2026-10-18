@@ -57,7 +57,7 @@ beforeEach(async () => {
   const e = await createCalendarEvent(db, daniel, { type: 'GAME', startAt: at(15, 19), endAt: at(15, 20, 30), location: 'אולם מי עמי' }, deps0);
   if (!e.ok) throw new Error('seed');
   eventId = e.event.id;
-  await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [daniel] });
+  await saveReminderPreferences({ enabled: true, rules: DEFAULT_REMINDER_RULES, players: [daniel], typeRules: {}, eventRules: {} });
   device = new FakeDevice();
 });
 afterEach(() => db.closeAsync());

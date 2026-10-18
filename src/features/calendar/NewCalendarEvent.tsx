@@ -8,6 +8,8 @@ import { selectableActivityTypes, type ActivityTypeRef } from '@/domain/activity
 import type { SportKey } from '@/domain/sport';
 import { useApp } from '@/features/AppProvider';
 import type { TranslationKey } from '@/i18n/types';
+import { readReminderPreferences, saveEventReminders } from '@/preferences/reminderPreference';
+import type { ReminderPreferences } from '@/domain/reminders';
 
 import { CalendarEventForm } from './CalendarEventForm';
 import { calendarErrorMessage } from './calendarLabels';
@@ -17,8 +19,18 @@ import { ErrorScreen, LoadingScreen } from './StatusScreen';
 
 type FormState =
   | { status: 'loading' }
-  | { status: 'ready'; initialValues: CalendarFormValues; sports: SportKey[]; types: ActivityTypeRef[] }
+  | { status: 'ready'; initialValues: CalendarFormValues; sports: SportKey[]; types: ActivityTypeRef[]; prefs: ReminderPreferences | undefined }
   | { status: 'error'; message: TranslationKey };
+
+/** The device-local reminder preference, or undefined when it cannot be read (the form then simply has no reminders field). */
+async function loadReminderPrefs(): Promise<ReminderPreferences | undefined> {
+  try {
+    return await readReminderPreferences([]);
+  } catch (e) {
+    console.warn('[calendar] reminder preference load failed', e);
+    return undefined;
+  }
+}
 
 /** Adds an event to this Player's schedule; Save and Cancel both return to the schedule. */
 export function NewCalendarEvent({ playerId }: { playerId: string }) {
@@ -31,8 +43,8 @@ export function NewCalendarEvent({ playerId }: { playerId: string }) {
   useEffect(() => {
     if (boot.status !== 'ready') return;
     let active = true;
-    Promise.all([getPlayer(boot.db, playerId), listActivityTypes(boot.db)])
-      .then(([profile, catalog]) => {
+    Promise.all([getPlayer(boot.db, playerId), listActivityTypes(boot.db), loadReminderPrefs()])
+      .then(([profile, catalog, prefs]) => {
         if (!active) return;
         setState(
           profile && profile.player.archivedAt === null
@@ -42,6 +54,7 @@ export function NewCalendarEvent({ playerId }: { playerId: string }) {
                 sports: sportsOf(profile),
                 // A new event offers only ACTIVE types (none chosen for the user).
                 types: selectableActivityTypes(catalog),
+                prefs,
               }
             : { status: 'error', message: profile ? 'players.archive.archived' : 'calendar.errors.playerNotFound' },
         );
@@ -76,6 +89,7 @@ export function NewCalendarEvent({ playerId }: { playerId: string }) {
         if (!db) throw new Error('database not ready');
         return createCalendarEvent(db, playerId, input, { ids: services.ids, clock: services.clock });
       }}
+      reminders={state.prefs ? { prefs: state.prefs, initial: null, onSave: (event, rules) => saveEventReminders(event.id, rules) } : undefined}
       onSaved={back}
       onCancel={back}
     />

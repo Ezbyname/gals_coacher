@@ -10,7 +10,9 @@ import {
   type CalendarEventErrors,
   type CalendarEventInput,
 } from '@/domain/calendarEvent';
+import type { ReminderPreferences, ReminderRule } from '@/domain/reminders';
 import type { SportKey } from '@/domain/sport';
+import { EventRemindersField } from '@/features/reminders/EventRemindersField';
 import { ltr } from '@/i18n/bidi';
 import { isFormDirty } from '@/features/navigation/formDirty';
 import { useUnsavedChangesGuard } from '@/features/navigation/unsavedChanges';
@@ -80,6 +82,16 @@ type Props = {
   onCancel: () => void;
   /** A scheduled workout's title is the workout's name (rename the workout to change it): shown, not editable. */
   lockedTitle?: string | null;
+  /**
+   * CAL-REMINDER-RULES-002: this event's own reminders. Omitted (preferences not loaded) = no reminders field.
+   * `initial` null = the event inherits. Saved by `onSaveReminders` AFTER the event itself; the two stores cannot be
+   * saved atomically, so a failure there is reported honestly (the event IS saved).
+   */
+  reminders?: {
+    readonly prefs: ReminderPreferences;
+    readonly initial: readonly ReminderRule[] | null;
+    readonly onSave: (event: CalendarEvent, rules: readonly ReminderRule[] | null) => Promise<void>;
+  };
 };
 
 /**
@@ -88,11 +100,15 @@ type Props = {
  * an invalid Save writes nothing, keeps every value and marks the fields.
  * Navigation is the caller's (onSaved / onCancel).
  */
-export function CalendarEventForm({ initialValues, sports, types, onSave, onSaved, onCancel, lockedTitle = null }: Props) {
+export function CalendarEventForm({ initialValues, sports, types, onSave, onSaved, onCancel, lockedTitle = null, reminders }: Props) {
   const { t, language } = useI18n();
   const [values, setValues] = useState<CalendarFormValues>(initialValues);
   // Leaving with unsaved changes asks first (NAV-DIRTY-001); loaded / default values are clean.
-  const guard = useUnsavedChangesGuard(isFormDirty(values, initialValues));
+  const [eventRules, setEventRules] = useState<readonly ReminderRule[] | null>(reminders?.initial ?? null);
+  const remindersDirty = reminders !== undefined && JSON.stringify(eventRules) !== JSON.stringify(reminders.initial);
+  /** Set when the event saved but its reminders did not: the honest message with a Done button. */
+  const [savedEvent, setSavedEvent] = useState<CalendarEvent | null>(null);
+  const guard = useUnsavedChangesGuard(isFormDirty(values, initialValues) || remindersDirty);
   // New titles stop at the limit; a longer title stored before the limit is shown in full
   // (never cut by the field) and may be kept or shortened (the domain decides on Save).
   const titleMaxLength = Math.max(CALENDAR_TITLE_MAX_LENGTH, initialValues.title.length);
@@ -185,6 +201,15 @@ export function CalendarEventForm({ initialValues, sports, types, onSave, onSave
         const result = await onSave(prepared.input);
         if (result.ok) {
           guard.release(); // saved: leaving is safe
+          if (reminders !== undefined && remindersDirty) {
+            try {
+              await reminders.onSave(result.event, eventRules);
+            } catch (e) {
+              console.warn('[calendar] event reminders save failed', e);
+              setSavedEvent(result.event); // the event IS saved: say so, never claim the reminders were
+              return;
+            }
+          }
           onSaved(result.event); // stays guarded: the screen is leaving
           return;
         }
@@ -389,6 +414,18 @@ export function CalendarEventForm({ initialValues, sports, types, onSave, onSave
               />
             </View>
 
+            {reminders !== undefined ? (
+              <EventRemindersField prefs={reminders.prefs} typeId={values.type} value={eventRules} onChange={setEventRules} />
+            ) : null}
+
+            {savedEvent !== null ? (
+              <>
+                <Text style={styles.error} testID="event-reminders-save-error">
+                  {t('reminders.event.saveFailed')}
+                </Text>
+                <BigButton testID="event-reminders-done" label={t('reminders.event.done')} onPress={() => onSaved(savedEvent)} />
+              </>
+            ) : null}
             {saveError ? (
               <Text style={styles.error} testID="event-save-error">
                 {t(saveError)}
@@ -399,7 +436,7 @@ export function CalendarEventForm({ initialValues, sports, types, onSave, onSave
               testID="event-save"
               label={saving ? t('calendar.saving') : t('calendar.save')}
               onPress={save}
-              disabled={saving}
+              disabled={saving || savedEvent !== null}
             />
             <BigButton
               testID="event-cancel"
