@@ -143,8 +143,31 @@ const BASKETBALL: TaxonomyNodeDefinition[] = [
   ]),
 ];
 
+// SPORT-CONTENT-001: Football and Surfing domains (content sports; not Player / Calendar sports).
+const FOOTBALL: TaxonomyNodeDefinition[] = [
+  root('FOOTBALL', 'FOOTBALL'),
+  ...children('FOOTBALL', [
+    'FOOTBALL_BALL_MASTERY',
+    'FOOTBALL_DRIBBLING',
+    'FOOTBALL_PASSING',
+    'FOOTBALL_SHOOTING',
+    'FOOTBALL_POSSESSION',
+    'FOOTBALL_GAMES',
+  ]),
+];
+
+const SURFING: TaxonomyNodeDefinition[] = [
+  root('SURFING', 'SURFING'),
+  ...children('SURFING', ['SURFING_POP_UP_STANCE', 'SURFING_PADDLING', 'SURFING_WAVE_READING', 'SURFING_TURNS']),
+];
+
 /** Every built-in node, domains first, siblings in display order. */
-export const BUILTIN_TAXONOMY_NODES: readonly TaxonomyNodeDefinition[] = [...FITNESS, ...BASKETBALL];
+export const BUILTIN_TAXONOMY_NODES: readonly TaxonomyNodeDefinition[] = [
+  ...FITNESS,
+  ...BASKETBALL,
+  ...FOOTBALL,
+  ...SURFING,
+];
 
 const BY_KEY = new Map(BUILTIN_TAXONOMY_NODES.map((n) => [n.key, n]));
 

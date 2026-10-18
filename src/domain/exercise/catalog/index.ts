@@ -2,8 +2,10 @@ import type { ExerciseDefinition } from '../exercise';
 
 import { BASKETBALL } from './basketball';
 import { CORE } from './core';
+import { FOOTBALL } from './football';
 import { LOWER_BODY } from './lowerBody';
 import { POWER_SPEED_CONDITIONING } from './powerSpeed';
+import { SURFING } from './surfing';
 import { UPPER_BODY } from './upperBody';
 import { WARMUP_MOBILITY } from './warmupMobility';
 
@@ -23,6 +25,8 @@ export const BUILTIN_EXERCISES: readonly ExerciseDefinition[] = [
   ...CORE,
   ...POWER_SPEED_CONDITIONING,
   ...BASKETBALL,
+  ...SURFING,
+  ...FOOTBALL,
 ];
 
 const BY_ID = new Map(BUILTIN_EXERCISES.map((exercise) => [exercise.id, exercise]));

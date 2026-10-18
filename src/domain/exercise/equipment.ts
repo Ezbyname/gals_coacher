@@ -40,6 +40,9 @@ export const EQUIPMENT = [
   'AGILITY_LADDER',
   'BASKETBALL',
   'BASKETBALL_HOOP',
+  'SOCCER_BALL',
+  'SOCCER_GOAL',
+  'SURFBOARD',
   'RUNNING_AREA',
   'MAT',
 ] as const;

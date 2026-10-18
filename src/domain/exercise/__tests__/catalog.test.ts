@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { defaultComparisonPolicy } from '../../comparison';
-import { V1_ENABLED_SPORTS } from '../../sport';
+import { CONTENT_SPORTS } from '../../sport';
 import { BUILTIN_EXERCISES, builtinExercise } from '../catalog';
 import { EQUIPMENT, isEquipmentId, needsNoEquipment } from '../equipment';
 import { bodyAreasOf, exerciseComparison, isSkillOnly, loadApplies } from '../exercise';
@@ -64,7 +64,7 @@ describe('every entry is coherent', () => {
       expect(option.length).toBeGreaterThan(0);
       expect(option.every(isEquipmentId)).toBe(true);
     }
-    for (const sport of e.sports) expect(V1_ENABLED_SPORTS).toContain(sport);
+    for (const sport of e.sports) expect(CONTENT_SPORTS).toContain(sport);
     // Measurement: a comparison is always resolvable (never guessed), a load only where it applies.
     expect(() => exerciseComparison(e.measurement)).not.toThrow();
     if (defaultComparisonPolicy(e.measurement.type) === null) expect(e.measurement.comparison).not.toBeNull();

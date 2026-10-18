@@ -64,7 +64,11 @@ export function calendarErrorMessage(e: unknown, fallback: TranslationKey): Tran
 }
 
 /** Translated sport names for the sports a calendar event can carry today. */
-const SPORT_LABELS: Partial<Record<SportKey, TranslationKey>> = { BASKETBALL: 'basketball.sportName' };
+const SPORT_LABELS: Partial<Record<SportKey, TranslationKey>> = {
+  BASKETBALL: 'basketball.sportName',
+  FOOTBALL: 'football.sportName',
+  SURFING: 'surfing.sportName',
+};
 
 export function sportLabel(t: T, sport: SportKey): string {
   const key = SPORT_LABELS[sport];

@@ -956,4 +956,50 @@ export const migrations: readonly Migration[] = [
       BEGIN SELECT RAISE(ABORT, 'a scheduled workout stays with its own player'); END;
     `,
   },
+  {
+    // SPORT-CONTENT-001: the Surfing and Football starter catalog. DATA ONLY: one row per new built-in Exercise (stable id,
+    // active state; content stays in code, like v8 / v11) and one row per new taxonomy node (like v10). No CREATE / ALTER,
+    // no table rebuild, no user data, plan, session or history row touched. The six professional workouts are read-only
+    // code and need no rows at all.
+    version: 19,
+    name: 'sport_content_001',
+    sql: `
+      INSERT INTO exercises (id, builtin, name, active, created_at, updated_at) VALUES
+        ('SURF_POP_UP', 1, NULL, 1, 0, 0),
+        ('SURF_PADDLING', 1, NULL, 1, 0, 0),
+        ('SURF_TAKE_OFF', 1, NULL, 1, 0, 0),
+        ('SURF_DUCK_DIVE', 1, NULL, 1, 0, 0),
+        ('SURF_WAVE_SELECTION_POSITIONING', 1, NULL, 1, 0, 0),
+        ('SURF_TRIM_AND_SPEED', 1, NULL, 1, 0, 0),
+        ('SURF_BOTTOM_TURN', 1, NULL, 1, 0, 0),
+        ('SURF_TOP_TURN', 1, NULL, 1, 0, 0),
+        ('SURF_CUTBACK', 1, NULL, 1, 0, 0),
+        ('SURF_HEAT_SIMULATION', 1, NULL, 1, 0, 0),
+        ('FB_BALL_MASTERY', 1, NULL, 1, 0, 0),
+        ('FB_DRIBBLING_COURSE', 1, NULL, 1, 0, 0),
+        ('FB_PASS_AND_CONTROL', 1, NULL, 1, 0, 0),
+        ('FB_FIRST_TOUCH_AND_TURN', 1, NULL, 1, 0, 0),
+        ('FB_DRIBBLE_AND_SHOOT', 1, NULL, 1, 0, 0),
+        ('FB_SHOOTING_ACCURACY', 1, NULL, 1, 0, 0),
+        ('FB_COMBINATION_PLAY', 1, NULL, 1, 0, 0),
+        ('FB_RONDO', 1, NULL, 1, 0, 0),
+        ('FB_SMALL_SIDED_GAME', 1, NULL, 1, 0, 0),
+        ('FB_ATTACKING_TRANSITION_OVERLOAD', 1, NULL, 1, 0, 0),
+        ('FB_FINISHING_UNDER_PRESSURE', 1, NULL, 1, 0, 0);
+
+      INSERT INTO taxonomy_nodes (id, builtin, active, created_at, updated_at) VALUES
+        ('FOOTBALL', 1, 1, 0, 0),
+        ('FOOTBALL_BALL_MASTERY', 1, 1, 0, 0),
+        ('FOOTBALL_DRIBBLING', 1, 1, 0, 0),
+        ('FOOTBALL_PASSING', 1, 1, 0, 0),
+        ('FOOTBALL_SHOOTING', 1, 1, 0, 0),
+        ('FOOTBALL_POSSESSION', 1, 1, 0, 0),
+        ('FOOTBALL_GAMES', 1, 1, 0, 0),
+        ('SURFING', 1, 1, 0, 0),
+        ('SURFING_POP_UP_STANCE', 1, 1, 0, 0),
+        ('SURFING_PADDLING', 1, 1, 0, 0),
+        ('SURFING_WAVE_READING', 1, 1, 0, 0),
+        ('SURFING_TURNS', 1, 1, 0, 0);
+    `,
+  },
 ];

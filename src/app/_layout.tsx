@@ -112,6 +112,8 @@ function ScreenStack() {
       <Stack.Screen name="exercises/new" options={{ title: t('exercises.newTitle') }} />
       <Stack.Screen name="exercises/[exerciseId]/index" options={{ title: t('exercises.detailsTitle') }} />
       <Stack.Screen name="exercises/[exerciseId]/edit" options={{ title: t('exercises.editTitle') }} />
+      <Stack.Screen name="workouts/professional/index" options={{ title: t('training.professional.title') }} />
+      <Stack.Screen name="workouts/professional/[workoutId]" options={{ title: t('training.professional.title') }} />
       <Stack.Screen name="workouts/add-to-workout" options={{ title: t('training.assign.title') }} />
       <Stack.Screen name="exercises/[exerciseId]/add-to-block" options={{ title: t('training.addToBlockTitle') }} />
       <Stack.Screen name="exercises/categories/[nodeKey]" options={{ title: t('taxonomy.title') }} />

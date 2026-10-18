@@ -13,6 +13,7 @@ import {
   seedV6CalendarHistory,
 } from '@/test-support/legacyFixtures';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
+import { expectUnchangedExceptLaterSeeds } from '@/test-support/migrationSeeds';
 import { selectPreV13 } from '@/test-support/preV13Columns';
 
 import { getCalendarEvent, listCalendarEvents } from '../calendar/calendarEventRepository';
@@ -125,8 +126,8 @@ describe('migration v13 (calendar event import) on real SQLite', () => {
 
   it('fresh install reaches v13: three nullable columns, no default, a partial batch index', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(18);
-    expect(migration.applied.at(-1)).toBe('planned_workout_calendar_link');
+    expect(migration.to).toBe(19);
+    expect(migration.applied.at(-1)).toBe('sport_content_001');
     expect(await v13Columns(db as unknown as Db)).toEqual([
       { name: 'location', type: 'TEXT', notnull: 0, dflt_value: null },
       { name: 'source', type: 'TEXT', notnull: 0, dflt_value: null },
@@ -145,9 +146,9 @@ describe('migration v13 (calendar event import) on real SQLite', () => {
     const before = await createV12Database();
 
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 12, to: 18, applied: ['calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link'] });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 18 });
-    expect(await dump(db as unknown as Db)).toEqual(before);
+    expect(migration).toEqual({ from: 12, to: 19, applied: ['calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001'] });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 19 });
+    expectUnchangedExceptLaterSeeds(await dump(db as unknown as Db), before, 12);
     expect(
       await db.getAllAsync(
         'SELECT DISTINCT location, source, import_batch_id FROM calendar_events',
@@ -177,8 +178,8 @@ describe('migration v13 (calendar event import) on real SQLite', () => {
 
     // Idempotent: the next launch applies nothing and changes nothing.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 18, to: 18, applied: [] });
-    expect(await dump(again.db as unknown as Db)).toEqual(before);
+    expect(again.migration).toEqual({ from: 19, to: 19, applied: [] });
+    expectUnchangedExceptLaterSeeds(await dump(again.db as unknown as Db), before, 12);
     await again.db.closeAsync();
   });
 
@@ -206,12 +207,12 @@ describe('migration v13 (calendar event import) on real SQLite', () => {
     expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 12 });
     expect(await v13Columns(db)).toEqual([]);
     expect(await batchIndex(db)).toBeNull();
-    expect(await dump(db)).toEqual(before);
+    expect(await dump(db)).toEqual(before); // rolled back: nothing newer was applied
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 12, to: 18, applied: ['calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link'] });
-    expect(await dump(relaunch.db as unknown as Db)).toEqual(before);
+    expect(relaunch.migration).toEqual({ from: 12, to: 19, applied: ['calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001'] });
+    expectUnchangedExceptLaterSeeds(await dump(relaunch.db as unknown as Db), before, 12);
     await relaunch.db.closeAsync();
   });
 });

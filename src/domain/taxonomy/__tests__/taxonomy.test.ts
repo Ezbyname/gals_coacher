@@ -49,7 +49,7 @@ describe('taxonomy structure', () => {
     for (const d of BUILTIN_TAXONOMY_NODES) if (d.parent !== null) expect(keys).toContain(d.parent);
     expect(t.nodes).toHaveLength(BUILTIN_TAXONOMY_NODES.length);
     expect(Math.max(...t.nodes.map((n) => n.depth))).toBe(2);
-    expect(childKeys(t, null)).toEqual(['FITNESS', 'BASKETBALL']);
+    expect(childKeys(t, null)).toEqual(['FITNESS', 'BASKETBALL', 'FOOTBALL', 'SURFING']);
   });
 
   it('ordering is stable: siblings in curated order, parents before children, identical on every build', () => {
@@ -321,12 +321,12 @@ describe('visibility: inactive and empty nodes are hidden from NEW selection', (
     expect(under(inactive, 'FITNESS_LEGS')).toContain('GOBLET_SQUAT');
     // An inactive domain hides everything below it.
     const noBasketball = curated((key) => key !== 'BASKETBALL');
-    expect(visibleChildren(noBasketball, null, activeExercises).map((n) => n.key)).toEqual(['FITNESS']);
+    expect(visibleChildren(noBasketball, null, activeExercises).map((n) => n.key)).toEqual(['FITNESS', 'FOOTBALL', 'SURFING']);
     expect(visibleChildren(noBasketball, 'BASKETBALL', activeExercises)).toEqual([]);
     expect(isVisible(noBasketball, 'BASKETBALL_SHOOTING', activeExercises)).toBe(false);
   });
 
   it('both domains are offered when everything is active', () => {
-    expect(visibleChildren(t, null, activeExercises).map((n) => n.key)).toEqual(['FITNESS', 'BASKETBALL']);
+    expect(visibleChildren(t, null, activeExercises).map((n) => n.key)).toEqual(['FITNESS', 'BASKETBALL', 'FOOTBALL', 'SURFING']);
   });
 });

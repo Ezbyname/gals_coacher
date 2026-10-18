@@ -158,8 +158,10 @@ export const newBlockWithExercisePath = (exerciseId: string) =>
 export const addToBlockPath = (exerciseId: string) => `/exercises/${exerciseId}/add-to-block` as const;
 export const blockPath = (id: string) => `/workouts/blocks/${id}` as const;
 /** QB-WORKOUT-BUILDER-001C: Exercise / Block Details -> Add to workout. */
-export type AssignKind = 'EXERCISE' | 'BLOCK';
+export type AssignKind = 'EXERCISE' | 'BLOCK' | 'PROFESSIONAL';
 export const addToWorkoutPath = (kind: AssignKind, id: string) => ({ pathname: '/workouts/add-to-workout', params: { kind, id } }) as const;
+export const professionalListPath = '/workouts/professional';
+export const professionalPath = (id: string) => `/workouts/professional/${id}` as const;
 export const newTemplatePath = '/workouts/templates/new';
 export const templatePath = (id: string) => `/workouts/templates/${id}` as const;
 export const trainingPath = (playerId: string) => `/children/${playerId}/training` as const;

@@ -25,6 +25,7 @@ export type TrainingEntity =
   | 'template'
   | 'player'
   | 'plannedWorkout'
+  | 'professionalWorkout'
   | 'session'
   | 'sessionExercise'
   | 'set'

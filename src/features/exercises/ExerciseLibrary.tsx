@@ -11,7 +11,7 @@ import {
 } from '@/domain/exercise/exercise';
 import { BODY_AREAS, DIFFICULTIES, MUSCLE_GROUPS, TRAINING_CATEGORIES } from '@/domain/exercise/taxonomy';
 import { visibleChildren } from '@/domain/taxonomy/taxonomy';
-import { V1_ENABLED_SPORTS, type SportKey } from '@/domain/sport';
+import { CONTENT_SPORTS, type SportKey } from '@/domain/sport';
 import { sportLabel } from '@/features/calendar/calendarLabels';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -187,7 +187,7 @@ export function ExerciseLibrary() {
           <MultiChoiceChips<SportKey>
             testID="exercises-filter-sport"
             label={t('exercises.filterSport')}
-            choices={V1_ENABLED_SPORTS.map((value) => ({ value, label: sportLabel(t, value) }))}
+            choices={CONTENT_SPORTS.map((value) => ({ value, label: sportLabel(t, value) }))}
             selected={filter.sports}
             onToggle={(value) => set({ sports: toggle(filter.sports, value) })}
             selectedLabel={selectedLabel}

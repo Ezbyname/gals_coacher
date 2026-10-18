@@ -13,6 +13,7 @@ import {
   type Prescription,
   type PrescriptionErrors,
 } from '@/domain/training/training';
+import { professionalWorkout } from '@/domain/training/professional';
 import type { Clock } from '@/services/clock/Clock';
 import { emitDataChanged } from '../../changes';
 import type { IdService } from '@/services/ids/IdService';
@@ -315,7 +316,9 @@ export async function savePlannedWorkout(
 /** The content being assigned: one active Exercise (standalone) or one active Block (copied as its own section). */
 export type AssignContent =
   | { readonly kind: 'EXERCISE'; readonly exerciseId: string }
-  | { readonly kind: 'BLOCK'; readonly blockId: string };
+  | { readonly kind: 'BLOCK'; readonly blockId: string }
+  // SPORT-CONTENT-001: a read-only professional workout, COPIED as named sections (legacy grouping, no Block behind them).
+  | { readonly kind: 'PROFESSIONAL'; readonly workoutId: string; readonly language: 'he' | 'en' };
 /** Where it goes for ONE Player: an editable plan of that Player, or a NEW workout (created together with the content). */
 export type AssignDestination =
   | { readonly type: 'EXISTING'; readonly planId: string }
@@ -368,13 +371,23 @@ async function assignOne(
   deps: { ids: IdService; clock: Clock },
   now: number,
 ): Promise<AssignedPlan> {
-  const entry = async (): Promise<CompositionEntry<NewPlanItem>> =>
-    content.kind === 'BLOCK' ? blockSection(db, content.blockId, deps) : exerciseEntry(db, content.exerciseId);
+  const entries = async (): Promise<CompositionEntry<NewPlanItem>[]> =>
+    content.kind === 'BLOCK'
+      ? [await blockSection(db, content.blockId, deps)]
+      : content.kind === 'PROFESSIONAL'
+        ? professionalEntries(db, content.workoutId, content.language)
+        : [await exerciseEntry(db, content.exerciseId)];
   const destination = target.destination;
   if (destination.type === 'EXISTING') {
     const plan = await editablePlan(db, destination.planId);
     if (plan.playerId !== target.playerId) throw new TrainingNotFoundError('plannedWorkout', destination.planId);
-    await replaceItems(db, plan.id, placed(plan, await entry(), undefined), now);
+    let next = entriesOf(plan);
+    for (const e of await entries()) {
+      const inserted = insertEntry(next, e);
+      if (inserted === null) throw new TrainingRuleError('POSITION_OUT_OF_RANGE');
+      next = inserted;
+    }
+    await replaceItems(db, plan.id, next, now);
     return { playerId: target.playerId, planId: plan.id, planName: plan.name, created: false };
   }
   const name = destination.name.trim();
@@ -382,13 +395,13 @@ async function assignOne(
   const player = await db.getFirstAsync<{ archived_at: unknown }>('SELECT archived_at FROM players WHERE id = ?', [target.playerId]);
   if (player === null) throw new TrainingNotFoundError('player', target.playerId);
   if (player.archived_at !== null) throw new PlayerArchivedError(target.playerId);
-  const content1 = await entry(); // resolved BEFORE the plan row exists, so a refused item never leaves an empty plan
+  const content1 = await entries(); // resolved BEFORE the plan row exists, so a refused item never leaves an empty plan
   const planId = deps.ids.newUuid();
   await db.runAsync(
     'INSERT INTO planned_workouts (id, player_id, template_id, name, created_at, updated_at) VALUES (?, ?, NULL, ?, ?, ?)',
     [planId, target.playerId, name, now, now],
   );
-  for (const [position, item] of flattenEntries([content1]).entries()) await insertPlanItem(db, planId, position, item);
+  for (const [position, item] of flattenEntries(content1).entries()) await insertPlanItem(db, planId, position, item);
   return { playerId: target.playerId, planId, planName: name, created: true };
 }
 
@@ -413,6 +426,39 @@ async function blockSection(db: PlayerDb, blockId: string, deps: { ids: IdServic
       prescription: { ...i.prescription },
     })),
   };
+}
+
+/**
+ * A professional workout as NEW sections: one named run of items per section (the legacy grouping — no Block, so
+ * `section_id` and `source_block_id` stay NULL together and the schema is unchanged). Every Exercise must be active;
+ * each prescription is the item's own dosage or the Exercise's defaults and must validate. The source is only READ.
+ */
+async function professionalEntries(
+  db: PlayerDb,
+  workoutId: string,
+  language: 'he' | 'en',
+): Promise<CompositionEntry<NewPlanItem>[]> {
+  const workout = professionalWorkout(workoutId);
+  if (workout === null) throw new TrainingNotFoundError('professionalWorkout', workoutId);
+  const exercises = await readExercisesUnserialized(db);
+  return workout.sections.map((section): CompositionEntry<NewPlanItem> => {
+    const blockName = language === 'he' ? section.name[0] : section.name[1];
+    return {
+      kind: 'SECTION',
+      sectionId: null,
+      blockName,
+      items: section.items.map((item) => {
+        const exercise = exercises.find((e) => e.id === item.exerciseId);
+        if (!exercise) throw new TrainingNotFoundError('exercise', item.exerciseId);
+        if (!exercise.active) throw new TrainingRuleError('EXERCISE_INACTIVE');
+        const prescription: Prescription = item.dosage
+          ? { sets: item.dosage.sets, target: item.dosage.target, loadKg: null, restSec: item.dosage.restSec }
+          : defaultPrescription(exercise.measurement, exercise.defaults);
+        if (!validatePrescription(exercise.measurement, prescription).ok) throw new TrainingRuleError('ASSIGNMENT_INVALID');
+        return { blockName, sectionId: null, sourceBlockId: null, exercise: snapshotOf(exercise), prescription };
+      }),
+    };
+  });
 }
 
 /** An active Exercise as a standalone entry with its default prescription (no fake Block around it). */

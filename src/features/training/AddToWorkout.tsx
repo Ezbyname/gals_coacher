@@ -7,11 +7,13 @@ import { listPlayers, type PlayerProfile } from '@/data/local/players/playerRepo
 import { AssignmentFailedError } from '@/data/local/training/errors';
 import {
   assignContentToPlayers,
+  type AssignContent,
   type AssignedPlan,
   type AssignTarget,
 } from '@/data/local/training/plannedWorkoutCompositionRepository';
 import { listTraining, type PlannedWorkout } from '@/data/local/training/trainingRepository';
 import { getBlock } from '@/data/local/training/workoutRepository';
+import { professionalWorkout } from '@/domain/training/professional';
 import { useApp } from '@/features/AppProvider';
 import { ErrorScreen, LoadingScreen } from '@/features/calendar/StatusScreen';
 import { exerciseName } from '@/features/exercises/exerciseLabels';
@@ -60,9 +62,14 @@ export function AddToWorkout({ kind, id }: { kind: AssignKind; id: string }) {
       let active = true;
       (async () => {
         const subject: Subject | null =
-          kind === 'BLOCK'
-            ? await getBlock(boot.db, id).then((b) => (b ? { name: b.name, active: b.active } : null))
-            : await getExercise(boot.db, id).then((e) => (e ? { name: exerciseName(e, language), active: e.active } : null));
+          kind === 'PROFESSIONAL'
+            ? (() => {
+                const w = professionalWorkout(id);
+                return w ? { name: language === 'he' ? w.name[0] : w.name[1], active: true } : null; // exercises are checked on write
+              })()
+            : kind === 'BLOCK'
+              ? await getBlock(boot.db, id).then((b) => (b ? { name: b.name, active: b.active } : null))
+              : await getExercise(boot.db, id).then((e) => (e ? { name: exerciseName(e, language), active: e.active } : null));
         if (subject === null) return setLoaded({ status: 'error' });
         const players = await listPlayers(boot.db); // active Players only (archived ones are never offered)
         const editable: Record<string, PlannedWorkout[]> = {};
@@ -128,7 +135,7 @@ export function AddToWorkout({ kind, id }: { kind: AssignKind; id: string }) {
   const submit = async () => {
     if (busy.current || !ready || boot.status !== 'ready') return;
     const only = selected.length === 1 ? selected[0]! : null;
-    if (only !== null && choices[only]!.type === 'NEW') {
+    if (kind !== 'PROFESSIONAL' && only !== null && choices[only]!.type === 'NEW') {
       router.replace(seededBuilderPath(only, kind, id)); // the same Builder: a local draft, nothing stored yet
       return;
     }
@@ -139,11 +146,16 @@ export function AddToWorkout({ kind, id }: { kind: AssignKind; id: string }) {
       const choice = choices[playerId]!;
       return {
         playerId,
-        destination: choice.type === 'EXISTING' ? { type: 'EXISTING', planId: choice.planId } : { type: 'NEW', name: t('training.builder.defaultName') },
+        destination:
+          choice.type === 'EXISTING'
+            ? { type: 'EXISTING', planId: choice.planId }
+            : { type: 'NEW', name: kind === 'PROFESSIONAL' ? subject.name : t('training.builder.defaultName') },
       };
     });
     try {
-      const assigned = await assignContentToPlayers(boot.db, kind === 'BLOCK' ? { kind, blockId: id } : { kind, exerciseId: id }, targets, {
+      const content: AssignContent =
+        kind === 'BLOCK' ? { kind, blockId: id } : kind === 'PROFESSIONAL' ? { kind, workoutId: id, language } : { kind, exerciseId: id };
+      const assigned = await assignContentToPlayers(boot.db, content, targets, {
         ids: services.ids,
         clock: services.clock,
       });

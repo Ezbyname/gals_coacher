@@ -72,7 +72,7 @@ describe('Workout Builder: choose by training category', () => {
     await screen.findByTestId('taxonomy-picker');
     expect(text('taxonomy-picker-title')).toBe('Choose an exercise');
     expect(text('taxonomy-breadcrumb')).toBe('Training categories');
-    expect(nodes()).toEqual(['FITNESS', 'BASKETBALL']);
+    expect(nodes()).toEqual(['FITNESS', 'BASKETBALL', 'FOOTBALL', 'SURFING']);
     expect(screen.queryByTestId('taxonomy-back')).toBeNull(); // top level: nothing to go back to
 
     press('taxonomy-node-BASKETBALL');

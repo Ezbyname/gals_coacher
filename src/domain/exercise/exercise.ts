@@ -247,7 +247,13 @@ export type CustomExerciseCore = Omit<
 const uniq = <T>(values: readonly T[]) => [...new Set(values)];
 
 /** Basketball skill / shooting drills train a skill, not a muscle group: muscles are optional for them. */
-export const SKILL_CATEGORIES: readonly TrainingCategory[] = ['BASKETBALL_SKILL', 'BASKETBALL_SHOOTING'];
+export const SKILL_CATEGORIES: readonly TrainingCategory[] = [
+  'BASKETBALL_SKILL',
+  'BASKETBALL_SHOOTING',
+  'FOOTBALL_SKILL',
+  'FOOTBALL_SHOOTING',
+  'SURF_SKILL',
+];
 export function isSkillOnly(categories: readonly string[]): boolean {
   return (
     categories.length > 0 && categories.every((c) => (SKILL_CATEGORIES as readonly string[]).includes(c))
