@@ -106,7 +106,7 @@ describe('Archive Player (schema v15)', () => {
       if (!p.ok) throw new Error('seed');
       const before = await old.getFirstAsync('SELECT * FROM players');
       await runMigrations(old, migrations);
-      expect(await old.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 19 });
+      expect(await old.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 20 });
       expect(await old.getFirstAsync('SELECT * FROM players')).toEqual({ ...(before as object), archived_at: null });
       expect(await old.getFirstAsync("SELECT type, \"notnull\", dflt_value FROM pragma_table_info('players') WHERE name = 'archived_at'"))
         .toEqual({ type: 'INTEGER', notnull: 0, dflt_value: null });

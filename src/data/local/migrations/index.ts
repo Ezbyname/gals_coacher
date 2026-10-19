@@ -1002,4 +1002,15 @@ export const migrations: readonly Migration[] = [
         ('SURFING_TURNS', 1, 1, 0, 0);
     `,
   },
+  {
+    // SPORT-CONTENT-002: ONE new built-in Exercise (the Basketball box-out drill). DATA ONLY, exactly like v19 / v11: one row
+    // (stable id, active state; content stays in code). No CREATE / ALTER, no user data, plan, session or history row touched.
+    // The nine new professional workouts are read-only code and need no rows.
+    version: 20,
+    name: 'sport_content_002',
+    sql: `
+      INSERT INTO exercises (id, builtin, name, active, created_at, updated_at) VALUES
+        ('BOX_OUT_DRILL', 1, NULL, 1, 0, 0);
+    `,
+  },
 ];

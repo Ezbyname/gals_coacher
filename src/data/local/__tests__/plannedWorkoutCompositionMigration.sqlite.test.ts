@@ -144,9 +144,9 @@ it('MIG-17-01: a fresh database reaches v17 with the two nullable columns, the n
   dbs.push(d);
   await d.execAsync('PRAGMA foreign_keys = ON');
   const result = await runMigrations(d, migrations);
-  expect(result.to).toBe(19);
-  expect(result.applied.at(-3)).toBe('planned_workout_composition'); // v18 (calendar link) follows; proven in its own suite
-  expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 19 });
+  expect(result.to).toBe(20);
+  expect(result.applied.at(-4)).toBe('planned_workout_composition'); // v18 (calendar link) follows; proven in its own suite
+  expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 20 });
   const cols = await d.getAllAsync("SELECT name, type, \"notnull\" AS not_null, dflt_value FROM pragma_table_info('planned_workout_items') WHERE name IN ('section_id', 'source_block_id') ORDER BY cid");
   expect(cols).toEqual([
     { name: 'section_id', type: 'TEXT', not_null: 0, dflt_value: null },
@@ -186,7 +186,7 @@ describe('upgrade from a realistic v16 database', () => {
     expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 16 });
 
     const result = await runMigrations(db, migrations);
-    expect(result).toEqual({ from: 16, to: 19, applied: ['planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001'] });
+    expect(result).toEqual({ from: 16, to: 20, applied: ['planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002'] });
 
     expectUnchangedExceptLaterSeeds(await dumpWith(db, before), rowsBefore, 16); // nothing rewritten, nothing lost, in ANY table (the v19 content seeds are the only additions)
     expect(await db.getAllAsync('SELECT section_id, source_block_id FROM planned_workout_items')).toEqual(rowsBefore.planned_workout_items!.map(() => ({ section_id: null, source_block_id: null })));
@@ -211,10 +211,10 @@ describe('upgrade from a realistic v16 database', () => {
     const objectsAfter = await objects(db);
     const columns = await columnsOf(db);
     const rows = await dumpWith(db, columns);
-    expect(await runMigrations(db, migrations)).toEqual({ from: 19, to: 19, applied: [] });
+    expect(await runMigrations(db, migrations)).toEqual({ from: 20, to: 20, applied: [] });
     expect(await objects(db)).toEqual(objectsAfter);
     expect(await dumpWith(db, columns)).toEqual(rows);
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 19 });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 20 });
   });
 
   it('MIG-17-04: existing plans stay readable (legacy: no section id, no provenance), with their exact content and grouping', async () => {
@@ -345,6 +345,6 @@ describe('upgrade from a realistic v16 database', () => {
     expect(await triggers(db)).toEqual(triggersBefore); // the old freeze triggers are back / never left
     expect(await dumpWith(db, columns)).toEqual(rows);
     // and the same database then migrates cleanly
-    expect((await runMigrations(db, migrations)).to).toBe(19);
+    expect((await runMigrations(db, migrations)).to).toBe(20);
   });
 });

@@ -600,3 +600,32 @@ const ENTRIES: Entry[] = [
 ];
 
 export const BASKETBALL = ENTRIES.map(define);
+
+/**
+ * SPORT-CONTENT-002: the one Basketball drill added after the original catalog (the box-out). Kept apart so the original
+ * Basketball entries stay byte-identical, and listed AFTER the Surfing / Football content to match migration order.
+ */
+const EXPANSION: Entry[] = [
+  // --- SPORT-CONTENT-002: rebounding position (the catalog had only the tip drill)
+  {
+    id: 'BOX_OUT_DRILL',
+    name: ['חסימה לריבאונד (Box-Out)', 'Box-Out Drill'],
+    cat: ['BASKETBALL_SKILL'],
+    prim: [],
+    diff: 'BEGINNER',
+    sports: ['BASKETBALL'],
+    eq: [['BASKETBALL']],
+    m: drillReps(),
+    d: [3, 8, 45],
+    how: [
+      'עם בן זוג: מוצאים את השחקן, מסתובבים אליו, תופסים עמדה רחבה ונמוכה עם הגב אליו ומחזיקים אותו מאחור, ואז עוקבים אחרי הכדור. מגע גופני מבוקר, בלי דחיפה.',
+      'With a partner: find the opponent, pivot to face the basket with your back to them, take a wide low stance to hold the position behind you, then go to the ball. Keep the body contact controlled, without pushing.',
+    ],
+    cues: [
+      ['קודם מוצאים את השחקן ואז הולכים לכדור', 'Find your player first, then go to the ball'],
+      ['עמדה רחבה ונמוכה, ידיים למעלה', 'Wide, low stance, hands up'],
+    ],
+  },
+];
+
+export const BASKETBALL_EXPANSION = EXPANSION.map(define);

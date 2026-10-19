@@ -105,7 +105,7 @@ const NEW_TRIGGERS = ['calendar_events_plan_link_fixed', 'calendar_events_plan_n
 describe('migration v18 (planned workout ↔ calendar link) on real SQLite', () => {
   it('MIG-18-01: a fresh database reaches v18: a nullable FK column, the partial unique index and the four guards', async () => {
     const d = await open();
-    expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 19 });
+    expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 20 });
     const col = await d.getAllAsync("SELECT name, type, \"notnull\" AS not_null, dflt_value FROM pragma_table_info('calendar_events') WHERE name = 'planned_workout_id'");
     expect(col).toEqual([{ name: 'planned_workout_id', type: 'TEXT', not_null: 0, dflt_value: null }]);
     expect(await d.getAllAsync("SELECT \"table\", \"from\", \"to\" FROM pragma_foreign_key_list('calendar_events') WHERE \"from\" = 'planned_workout_id'")).toEqual([
@@ -125,8 +125,8 @@ describe('migration v18 (planned workout ↔ calendar link) on real SQLite', () 
     const before = await objects(db);
     const result = await runMigrations(db, migrations);
     expect(result.from).toBe(17);
-    expect(result.to).toBe(19);
-    expect(result.applied).toEqual(['planned_workout_calendar_link', 'sport_content_001']);
+    expect(result.to).toBe(20);
+    expect(result.applied).toEqual(['planned_workout_calendar_link', 'sport_content_001', 'sport_content_002']);
     expectUnchangedExceptLaterSeeds(await dumpWith(db, columns), rows, 17); // byte-for-byte what it was
     expect(await db.getAllAsync('SELECT DISTINCT planned_workout_id FROM calendar_events')).toEqual([{ planned_workout_id: null }]);
     const after = await objects(db);
@@ -145,7 +145,7 @@ describe('migration v18 (planned workout ↔ calendar link) on real SQLite', () 
     const rows = await dumpWith(db, columns);
     const objs = await objects(db);
     const again = await runMigrations(db, migrations);
-    expect(again).toEqual({ from: 19, to: 19, applied: [] });
+    expect(again).toEqual({ from: 20, to: 20, applied: [] });
     expect(await columnsOf(db)).toEqual(columns);
     expect(await dumpWith(db, columns)).toEqual(rows);
     expect(await objects(db)).toEqual(objs);
@@ -218,6 +218,6 @@ describe('migration v18 (planned workout ↔ calendar link) on real SQLite', () 
     expect(await names(db, 'trigger')).toEqual(triggersBefore);
     expect(await names(db, 'index')).toEqual(indexesBefore);
     expect(await dumpWith(db, columns)).toEqual(rows);
-    expect((await runMigrations(db, migrations)).to).toBe(19); // the same database then migrates cleanly
+    expect((await runMigrations(db, migrations)).to).toBe(20); // the same database then migrates cleanly
   });
 });

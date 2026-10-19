@@ -35,7 +35,15 @@ export function ProfessionalWorkoutDetails({ workoutId }: { workoutId: string })
       <Text style={styles.meta} testID="professional-details-level">
         {t('training.professional.card', { sport: sportLabel(t, workout.sport), level: t(`training.professional.level.${workout.difficulty}`) })}
       </Text>
+      <Text style={styles.muted} testID="professional-details-focus">
+        {t(`training.professional.focus.${workout.focus}`)}
+      </Text>
       <Text style={styles.muted}>{t('training.professional.levelNote')}</Text>
+      {workout.difficulty === 'ADVANCED' ? (
+        <Text style={styles.muted} testID="professional-advanced-note">
+          {t('training.professional.advancedNote')}
+        </Text>
+      ) : null}
       <Text style={styles.body} testID="professional-details-summary">
         {pick(workout.summary)}
       </Text>

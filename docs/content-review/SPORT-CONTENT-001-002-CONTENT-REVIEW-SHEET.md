@@ -1,31 +1,44 @@
-# CONTENT-REVIEW-SHEET — SPORT-CONTENT-001 (Surfing + Football starter catalog)
+# CONTENT-REVIEW-SHEET — SPORT-CONTENT-001 + SPORT-CONTENT-002 (one combined sheet)
 
-Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and no APK is built until a human approves this sheet.
+Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published as approved until a human approves this sheet.
 
-- Everything here is **Gals Coacher's own programming, informed by public sources**. It is not official FIFA, ISA or Surfing Australia programming.
+Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) and **15 professional workouts** (6 from SPORT-CONTENT-001, 9 from SPORT-CONTENT-002). The nine SPORT-CONTENT-002 workouts reuse the existing catalog; the only new Exercise they add is the Basketball box-out.
+
+- Everything here is **Gals Coacher's own programming, informed by public sources**. It is not official FIFA, ISA, Surfing Australia or USA Basketball programming.
 - **Every dosage (sets, targets, rest, durations, counts) is an `ORIGINAL_RECOMMENDATION`** — no source gives dosages for these drills.
 - Evidence classes: `SOURCE_SUPPORTED` (an opened source states the topic), `SYNTHESIZED` (our coaching synthesis), `ORIGINAL_RECOMMENDATION` (our own recommendation), `UNVERIFIED` (not stated by any opened source; kept as our synthesis pending verification).
-- Sources marked _listing only_ were seen only as a search-result summary and must be opened before anything that rests on them is published.
-- Difficulty is content progression metadata, never a medical or readiness assessment.
-- Surf safety wording (locked): no claim that ocean conditions are safe; conditions, currents, weather and level are judged by the surfer, coach or responsible adult. No breath-hold training.
+- Sources marked _listing only_ were seen only as a search-result summary; _owner-cited, not opened_ were cited to us and not opened. Neither is relied on for anything beyond what is written here.
+- Difficulty is content progression metadata, never a medical or readiness assessment. Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.
+- Surf safety: ocean sessions keep the locked wording (no claim that conditions are safe; conditions, currents, weather and level are judged by the surfer, coach or responsible adult). Dry-land surf workouts use ordinary strength-training wording. No breath-hold training anywhere.
 
 ## Points that need a human decision
 
-1. **Surf safety wording** (HE and EN) — shown on every surf Exercise and surf workout.
-2. **Youth suitability of the advanced Football workout** (`FOOTBALL-PERFORMANCE-01`, 2v1 / 3v2 transition and finishing under pressure): FIFA gives the 3v2 drill with no age, and the counter-press rule comes from an elite youth session; the app tells the coach to adjust intensity and contact.
+**From SPORT-CONTENT-001**
+
+1. **Surf ocean-safety wording** (HE and EN) — shown on every surf Exercise and every Surf Technique workout.
+2. **Youth suitability of the advanced Football workouts** (`FOOTBALL-PERFORMANCE-01`, and now `FOOTBALL-TRANSITION-PRESSING-01`): FIFA gives the 3v2 drill with no age, and the counter-press rule comes from an elite youth session. Every ADVANCED workout now also shows the neutral "may require adjustment by a coach or responsible adult" note.
 3. **`SURF_TAKE_OFF`** is `UNVERIFIED` (no opened source states a whitewater take-off).
-4. **Bottom turn / top turn / cutback** are `SYNTHESIZED`: Surfing Australia lists them only as abilities expected of Progression-coach candidates, not as course content.
-5. **Hebrew names, instructions and cues** (all 21 Exercises and 6 workouts) need a native-speaker coach review.
+4. **Bottom turn / top turn / cutback** are `SYNTHESIZED`: Surfing Australia lists them only as abilities expected of Progression-coach candidates.
+5. **Hebrew names, instructions and cues** (all new Exercises and workouts) need a native-speaker coach review.
 6. **Dosage** for every item (all `ORIGINAL_RECOMMENDATION`).
 
-## A. New Exercises (21: Surfing 10, Football 11)
+**New in SPORT-CONTENT-002**
 
-### A1. Surfing
+7. **Surf dry-land evidence**: only the Surfing Australia camp schedule (strength & mobility, pre-surf activation, recovery) was opened. The upper-/lower-body split, surf-specific fitness, the ISA Surf Strength and Mobility education and the physiology research are **owner-cited, not opened** — please supply the specific citations if you want them recorded as sources.
+8. **Basketball workouts have no external source** (built from the app's own drills). Say whether that is acceptable or whether you want USA Basketball material consulted before publication.
+9. **`BOX_OUT_DRILL`** is a new Basketball Exercise (the catalog had no box-out / rebounding-position drill); it is `SYNTHESIZED`, with no external source.
+10. **Equipment**: the Paddle Endurance workout uses a ski erg and battle ropes (with a rowing-machine / battle-rope alternative in the coach note).
+11. **Surf Technique vs Surf Strength & Fitness** are shown as separate groups in the Professional workouts list; the Football 001 workouts are tagged "All-round progression".
+
+## A. New Exercises (22)
+
+### A1. Surfing (SPORT-CONTENT-001)
 
 ### SURF_POP_UP
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | קימה על הלוח ויציבה (על היבשה) |
 | **EN name** | Pop-up and Stance (on Land) |
 | **Sport** | SURFING |
@@ -67,6 +80,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | טכניקת חתירה |
 | **EN name** | Paddling Technique |
 | **Sport** | SURFING |
@@ -106,6 +120,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | קימה בגלי קצף |
 | **EN name** | Whitewater Take-off |
 | **Sport** | SURFING |
@@ -144,6 +159,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | צלילת ברווז |
 | **EN name** | Duck-Dive Technique |
 | **Sport** | SURFING |
@@ -183,6 +199,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | בחירת גל ומיקום |
 | **EN name** | Wave Selection and Positioning |
 | **Sport** | SURFING |
@@ -221,6 +238,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | רכיבה, יצירת מהירות ויציאה מבוקרת |
 | **EN name** | Trim, Speed Generation and Controlled Exit |
 | **Sport** | SURFING |
@@ -260,6 +278,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | בוטום טרן |
 | **EN name** | Bottom Turn |
 | **Sport** | SURFING |
@@ -299,6 +318,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | טופ טרן (כולל שילוב בוטום-טופ) |
 | **EN name** | Top Turn (incl. Bottom-to-Top Combination) |
 | **Sport** | SURFING |
@@ -338,6 +358,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | קאטבק (ריאנטרי כגרסה מתקדמת) |
 | **EN name** | Cutback (Re-entry as an Advanced Variant) |
 | **Sport** | SURFING |
@@ -377,6 +398,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | סימולציית היט |
 | **EN name** | Heat Simulation |
 | **Sport** | SURFING |
@@ -411,12 +433,13 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 **ORIGINAL_RECOMMENDATION:** every set, target and rest value above.
 
-### A2. Football
+### A2. Football (SPORT-CONTENT-001)
 
 ### FB_BALL_MASTERY
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | שליטה בכדור |
 | **EN name** | Ball Mastery |
 | **Sport** | FOOTBALL |
@@ -456,6 +479,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | דריבל בין קונוסים ושינוי כיוון |
 | **EN name** | Cone Dribbling and Change of Direction |
 | **Sport** | FOOTBALL |
@@ -495,6 +519,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | מסירה ושליטה |
 | **EN name** | Passing and First Touch |
 | **Sport** | FOOTBALL |
@@ -535,6 +560,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | מגע ראשון והסתובבות |
 | **EN name** | First Touch and Turn into Space |
 | **Sport** | FOOTBALL |
@@ -574,6 +600,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | דריבל ובעיטה |
 | **EN name** | Dribble and Shoot |
 | **Sport** | FOOTBALL |
@@ -613,6 +640,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | בעיטות למטרה |
 | **EN name** | Target Shooting |
 | **Sport** | FOOTBALL |
@@ -652,6 +680,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | משחק קומבינציות |
 | **EN name** | Combination Play |
 | **Sport** | FOOTBALL |
@@ -692,6 +721,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | רונדו (שמירת כדור) |
 | **EN name** | Rondo (Keep-Ball) |
 | **Sport** | FOOTBALL |
@@ -733,6 +763,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | משחק קטן |
 | **EN name** | Small-Sided Game |
 | **Sport** | FOOTBALL |
@@ -774,6 +805,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | מעבר להתקפה ביתרון מספרי |
 | **EN name** | Attacking Transition with a Numerical Advantage |
 | **Sport** | FOOTBALL |
@@ -813,6 +845,7 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 |
 | **HE name** | גימור תחת לחץ |
 | **EN name** | Finishing under Pressure |
 | **Sport** | FOOTBALL |
@@ -848,14 +881,59 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 
 **ORIGINAL_RECOMMENDATION:** every set, target and rest value above.
 
-## B. Professional workouts (6)
+### A3. Basketball (SPORT-CONTENT-002)
+
+### BOX_OUT_DRILL
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-002 |
+| **HE name** | חסימה לריבאונד (Box-Out) |
+| **EN name** | Box-Out Drill |
+| **Sport** | BASKETBALL |
+| **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
+| **Measurement** | repetitions |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 3 × 8 reps, rest 45 s |
+| **Equipment** | BASKETBALL |
+| **Evidence class** | topic: `SYNTHESIZED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Instructions — HE:** עם בן זוג: מוצאים את השחקן, מסתובבים אליו, תופסים עמדה רחבה ונמוכה עם הגב אליו ומחזיקים אותו מאחור, ואז עוקבים אחרי הכדור. מגע גופני מבוקר, בלי דחיפה.
+
+**Instructions — EN:** With a partner: find the opponent, pivot to face the basket with your back to them, take a wide low stance to hold the position behind you, then go to the ball. Keep the body contact controlled, without pushing.
+
+**Coaching cues — HE:**
+  - קודם מוצאים את השחקן ואז הולכים לכדור
+  - עמדה רחבה ונמוכה, ידיים למעלה
+
+**Coaching cues — EN:**
+  - Find your player first, then go to the ball
+  - Wide, low stance, hands up
+
+**Safety — HE:** — (none written)
+
+**Safety — EN:** — (none written)
+
+**Source / provenance:**
+- No external source was consulted.
+
+**Exactly what the source supports:** No external source was consulted for this drill in this slice.
+
+**What is Gals Coacher synthesis:** A standard basketball fundamental added because the existing Basketball catalog had no box-out / rebounding-position drill. Technique cues, wording and every dosage are Gals Coacher's own.
+
+**ORIGINAL_RECOMMENDATION:** every set, target and rest value above.
+
+## B. Professional workouts (15)
+
+### B1. SPORT-CONTENT-001 (6, unchanged)
 
 ### SURF-FOUNDATION-01 — Surfing — Beginner / גלישה — מתחילים
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 (unchanged) |
 | **Sport** | SURFING |
 | **Difficulty** | BEGINNER |
+| **Focus** | SURF_TECHNIQUE |
 | **Length** | about 45–60 minutes |
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
@@ -907,12 +985,20 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 - Surf Life Saving NSW — rip currents — https://www.surflifesaving.com.au/beach-safety/rip-currents/ _(opened)_
 - ISA — courses — https://isasurf.org/isa-courses/ _(listing only)_
 
+**Exactly what the sources support:** See the Sources list: the topics of the drills come from the opened Surfing Australia, Surf Life Saving NSW and FIFA Training Centre pages; none gives dosages.
+
+**What is Gals Coacher synthesis:** Selection, order, sectioning and every dosage.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
 ### SURF-PROGRESSION-01 — Surfing — Intermediate / גלישה — בינוני
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 (unchanged) |
 | **Sport** | SURFING |
 | **Difficulty** | INTERMEDIATE |
+| **Focus** | SURF_TECHNIQUE |
 | **Length** | about 60–75 minutes |
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
@@ -967,12 +1053,20 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 - Surfing Australia — Progression Surf Coach — https://surfingaustralia.com/progression-surf-coach/ _(opened)_
 - Surf Life Saving NSW — rip currents — https://www.surflifesaving.com.au/beach-safety/rip-currents/ _(opened)_
 
+**Exactly what the sources support:** See the Sources list: the topics of the drills come from the opened Surfing Australia, Surf Life Saving NSW and FIFA Training Centre pages; none gives dosages.
+
+**What is Gals Coacher synthesis:** Selection, order, sectioning and every dosage.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
 ### SURF-PERFORMANCE-01 — Surfing — Advanced / גלישה — מתקדמים
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 (unchanged) |
 | **Sport** | SURFING |
 | **Difficulty** | ADVANCED |
+| **Focus** | SURF_TECHNIQUE |
 | **Length** | about 75–90 minutes |
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
@@ -1030,12 +1124,20 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 - Surfing Australia — Progression Surf Coach — https://surfingaustralia.com/progression-surf-coach/ _(opened)_
 - Surf Life Saving NSW — rip currents — https://www.surflifesaving.com.au/beach-safety/rip-currents/ _(opened)_
 
+**Exactly what the sources support:** See the Sources list: the topics of the drills come from the opened Surfing Australia, Surf Life Saving NSW and FIFA Training Centre pages; none gives dosages.
+
+**What is Gals Coacher synthesis:** Selection, order, sectioning and every dosage.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
 ### FOOTBALL-FOUNDATION-01 — Football — Beginner / כדורגל — מתחילים
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 (unchanged) |
 | **Sport** | FOOTBALL |
 | **Difficulty** | BEGINNER |
+| **Focus** | ALL_ROUND |
 | **Length** | about 45–55 minutes |
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
@@ -1075,9 +1177,9 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 - HE: המשחק הקטן (1 נגד 1 או 2 נגד 2) מתאים כשיש פרטנר; בלי פרטנר אפשר לדלג עליו.
 - EN: The small game (1v1 or 2v2) suits when there is a partner; without one it can be skipped.
 
-**Safety — HE:** — (none; a football workout)
+**Safety — HE:** — (none)
 
-**Safety — EN:** — (none; a football workout)
+**Safety — EN:** — (none)
 
 **Sources:**
 - FIFA Training Centre — ages 8–12, once-a-week sessions — https://www.fifatrainingcentre.com/en/practice/grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/sessions-for-once-a-week-training.php _(opened)_
@@ -1087,12 +1189,20 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 - FIFA Training Centre — ages 8–12, dribbling, shooting and teamwork — https://www.fifatrainingcentre.com/en/practice/grassroots/8-to-12/dribbling-shooting-and-teamwork.php _(listing only)_
 - FIFA Training Centre — ages 8–12, training technique — https://www.fifatrainingcentre.com/en/practice/grassroots/8-to-12/training-technique.php _(listing only)_
 
+**Exactly what the sources support:** See the Sources list: the topics of the drills come from the opened Surfing Australia, Surf Life Saving NSW and FIFA Training Centre pages; none gives dosages.
+
+**What is Gals Coacher synthesis:** Selection, order, sectioning and every dosage.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
 ### FOOTBALL-PROGRESSION-01 — Football — Intermediate / כדורגל — בינוני
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 (unchanged) |
 | **Sport** | FOOTBALL |
 | **Difficulty** | INTERMEDIATE |
+| **Focus** | ALL_ROUND |
 | **Length** | about 60–70 minutes |
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
@@ -1130,9 +1240,9 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 - HE: המסירה והשליטה בסעיף הזה מתמקדות ברגל החלשה: כל שלושת הסטים ברגל החלשה.
 - EN: The passing and control item here focuses on the weaker foot: all three sets with the weaker foot.
 
-**Safety — HE:** — (none; a football workout)
+**Safety — HE:** — (none)
 
-**Safety — EN:** — (none; a football workout)
+**Safety — EN:** — (none)
 
 **Sources:**
 - FIFA Training Centre — ages 8–12, pass-receiving drill — https://www.fifatrainingcentre.com/en/practice/grassroots/8-to-12/pass-receiving-drill.php _(opened)_
@@ -1142,12 +1252,20 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 - FIFA Training Centre — ages 12–15, passing and movement — https://www.fifatrainingcentre.com/en/practice/grassroots/12-to-15/passing-and-movement.php _(listing only)_
 - FIFA Training Centre — elite, directing the first touch — https://www.fifatrainingcentre.com/en/practice/elite-sessions/in-possession/directing-the-ball-with-the-first-touch.php _(listing only)_
 
+**Exactly what the sources support:** See the Sources list: the topics of the drills come from the opened Surfing Australia, Surf Life Saving NSW and FIFA Training Centre pages; none gives dosages.
+
+**What is Gals Coacher synthesis:** Selection, order, sectioning and every dosage.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
 ### FOOTBALL-PERFORMANCE-01 — Football — Advanced / כדורגל — מתקדמים
 
 | | |
 |---|---|
+| **Slice** | SPORT-CONTENT-001 (unchanged) |
 | **Sport** | FOOTBALL |
 | **Difficulty** | ADVANCED |
+| **Focus** | ALL_ROUND |
 | **Length** | about 70–85 minutes |
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
@@ -1186,9 +1304,9 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 - HE: ההתאמה של האימון המתקדם לגיל ולרמה של השחקן נקבעת על ידי המאמן; מתאימים את העצימות ואת המגע.
 - EN: Whether this advanced session suits the player's age and level is the coach's decision; adjust the intensity and the contact.
 
-**Safety — HE:** — (none; a football workout)
+**Safety — HE:** — (none)
 
-**Safety — EN:** — (none; a football workout)
+**Safety — EN:** — (none)
 
 **Sources:**
 - FIFA Training Centre — ages 12–15, finishing an attack — https://www.fifatrainingcentre.com/en/practice/grassroots/12-to-15/finishing-an-attack.php _(opened)_
@@ -1198,3 +1316,630 @@ Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published and n
 - FIFA Talent Coach Programme — 1v1 finishing — https://www.fifatrainingcentre.com/en/practice/talent-coach-programme/create-and-finish/1v1-finishing-beating-the-defender-and-score.php _(opened)_
 - FIFA Training Centre — Mexico U15 boys, counter-pressing (elite youth) — https://www.fifatrainingcentre.com/en/practice/elite-sessions/youth-national-teams/mexico-u15-boys-/defensive-phase-and-pressing-flores.php _(opened)_
 - FIFA Training Centre — ages 12–15, transition — https://www.fifatrainingcentre.com/en/practice/grassroots/12-to-15/transition.php _(opened)_
+
+**Exactly what the sources support:** See the Sources list: the topics of the drills come from the opened Surfing Australia, Surf Life Saving NSW and FIFA Training Centre pages; none gives dosages.
+
+**What is Gals Coacher synthesis:** Selection, order, sectioning and every dosage.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### B2. SPORT-CONTENT-002 (9, new)
+
+### SURF-FITNESS-FOUNDATION-01 — Surf Strength — Beginner / כוח וכושר לגלישה — מתחילים
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-002 (new) |
+| **Sport** | SURFING |
+| **Difficulty** | BEGINNER |
+| **Focus** | SURF_STRENGTH_FITNESS |
+| **Length** | about 45–60 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** בסיס גופני לגלישה על היבשה: כתפיים ושכמות, גב עליון, דחיפה, יציבות הגו, ירכיים ורגליים ומוביליטי.
+
+**Summary — EN:** A dry-land physical base for surfing: shoulders and shoulder blades, upper back, pushing, trunk stability, hips and legs, and mobility.
+
+**Section 1 — Warm-up and shoulder activation / חימום והפעלת כתפיים**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 4 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — Foundation strength / כוח בסיס**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | BAND_ROW | Band Row | חתירה בגומייה | 3 × 12 reps, rest 45 s |
+| 2 | PUSH_UP | Push-Up | שכיבות סמיכה | 3 × 8 reps, rest 60 s |
+| 3 | FACE_PULL | Face Pull | משיכה לפנים | 3 × 12 reps, rest 45 s |
+| 4 | GOBLET_SQUAT | Goblet Squat | סקוואט גביע | 3 × 10 reps, rest 60 s |
+| 5 | REVERSE_LUNGE | Reverse Lunge | מכרע לאחור | 2 × 8 reps, rest 45 s |
+| 6 | GLUTE_BRIDGE | Glute Bridge | גשר עכוז | 3 × 12 reps, rest 45 s |
+
+**Section 3 — Trunk stability / יציבות הגו**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | PLANK | Plank | פלאנק | 3 × 30s, rest 30 s |
+| 2 | DEAD_BUG | Dead Bug | חיפושית מתה | 3 × 8 reps, rest 30 s |
+| 3 | BIRD_DOG | Bird Dog | ציפור-כלב | 3 × 8 reps, rest 30 s |
+
+**Section 4 — Mobility cooldown / מוביליטי ושחרור**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: תרגילי הכושר כאן תומכים בדרישות הגלישה, אבל אינם זהים לחתירה או לגלישה, והם לא מחליפים אימון במים.
+- EN: The fitness exercises here support the demands of surfing, but they are not the same as paddling or surfing and do not replace time in the water.
+- HE: האימון הזה מתבצע על היבשה. אימוני הים (טכניקת גלישה) נושאים את אזהרת תנאי הים.
+- EN: This workout is done on dry land. The ocean sessions (Surf Technique workouts) carry the ocean-conditions warning.
+
+**Safety — HE:** מתאימים את המשקל ואת העצימות ליכולת, שומרים על טכניקה נקייה, מתחממים לפני ועוצרים אם יש כאב. תוכן מתקדם עשוי לדרוש התאמה על ידי מאמן או מבוגר אחראי לפי גיל, ניסיון ויכולת גופנית.
+
+**Safety — EN:** Match the load and intensity to the person, keep the technique clean, warm up first and stop if there is pain. Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.
+
+**Sources:**
+- Surfing Australia — camp schedule — https://surfingaustralia.com/hpc/camp-schedule/ _(opened)_
+- ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(owner-cited, not opened)_
+- Published surfing performance / physiology research (cardiorespiratory fitness, muscular endurance, strength, anaerobic power, upper-torso demand, repeated paddling) — cited by the owner, no specific paper supplied _(owner-cited, not opened)_
+
+**Exactly what the sources support:** Surfing Australia camp schedule lists strength & mobility, pre-surf activation and recovery sessions (SA-SCHED, opened). The owner additionally cites upper-body and lower-body strength & mobility and surf-specific fitness on the Surfing Australia HPC pages, ISA Surf Strength and Mobility education (resistance training, cardio, mobility) and published surfing-physiology research — none of those three were opened in this slice, so they are recorded as owner-cited, not opened.
+
+**What is Gals Coacher synthesis:** The exact exercise selection, the order, the movement families chosen, every set / repetition / duration and the sectioning. Gym exercises are NOT claimed to be paddling.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### SURF-PADDLE-ENDURANCE-01 — Paddle Endurance — Intermediate / סבולת חתירה — בינוני
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-002 (new) |
+| **Sport** | SURFING |
+| **Difficulty** | INTERMEDIATE |
+| **Focus** | SURF_STRENGTH_FITNESS |
+| **Length** | about 55–70 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** סבולת משיכה, גב עליון, שליטה בשכמות וסבולת הגו, עם מקטעי מאמץ חוזרים — בהשראת אופי החתירה.
+
+**Summary — EN:** Pulling endurance, upper back, shoulder-blade control and trunk endurance, with repeated short efforts — inspired by the intermittent nature of paddling.
+
+**Section 1 — Warm-up and activation / חימום והפעלה**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 4 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — Pulling endurance / סבולת משיכה**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | ONE_ARM_DUMBBELL_ROW | One-Arm Dumbbell Row | חתירה ביד אחת עם משקולת | 3 × 15 reps, rest 45 s |
+| 2 | SEATED_CABLE_ROW | Seated Cable Row | חתירה בכבל בישיבה | 3 × 15 reps, rest 45 s |
+| 3 | FACE_PULL | Face Pull | משיכה לפנים | 3 × 20 reps, rest 30 s |
+| 4 | INVERTED_ROW | Inverted Row | חתירה הפוכה | 3 × 12 reps, rest 45 s |
+
+**Section 3 — Trunk endurance / סבולת הגו**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | PLANK | Plank | פלאנק | 3 × 45s, rest 30 s |
+| 2 | SIDE_PLANK | Side Plank | פלאנק צידי | 2 × 30s, rest 30 s |
+| 3 | HOLLOW_HOLD | Hollow Hold | החזקת סירה | 3 × 20s, rest 30 s |
+
+**Section 4 — Repeated-effort intervals / מאמץ חוזר במקטעים**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | SKI_ERG_INTERVALS | Ski Erg Intervals | אינטרוולים בסקי ארג | 6 × 30s, rest 60 s |
+| 2 | BATTLE_ROPE_WAVES | Battle Rope Waves | גלים בחבלי קרב | 6 × 20s, rest 40 s |
+| 3 | MOUNTAIN_CLIMBERS | Mountain Climbers | מטפסי הרים | 3 × 30s, rest 30 s |
+
+**Section 5 — Mobility and recovery / מוביליטי והתאוששות**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIP_FLEXOR_STRETCH | Kneeling Hip Flexor Stretch | מתיחת כופפי ירך בכריעה | 2 × 30s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 4 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: תרגילי הכושר כאן תומכים בדרישות הגלישה, אבל אינם זהים לחתירה או לגלישה, והם לא מחליפים אימון במים.
+- EN: The fitness exercises here support the demands of surfing, but they are not the same as paddling or surfing and do not replace time in the water.
+- HE: אם אין סקי-ארג, אפשר להחליף במכונת חתירה או בחבלי קרב עם אותו מבנה מקטעים.
+- EN: If there is no ski erg, a rowing machine or battle ropes can replace it with the same interval structure.
+- HE: האימון הזה מתבצע על היבשה. אימוני הים (טכניקת גלישה) נושאים את אזהרת תנאי הים.
+- EN: This workout is done on dry land. The ocean sessions (Surf Technique workouts) carry the ocean-conditions warning.
+
+**Safety — HE:** מתאימים את המשקל ואת העצימות ליכולת, שומרים על טכניקה נקייה, מתחממים לפני ועוצרים אם יש כאב. תוכן מתקדם עשוי לדרוש התאמה על ידי מאמן או מבוגר אחראי לפי גיל, ניסיון ויכולת גופנית.
+
+**Safety — EN:** Match the load and intensity to the person, keep the technique clean, warm up first and stop if there is pain. Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.
+
+**Sources:**
+- Surfing Australia — camp schedule — https://surfingaustralia.com/hpc/camp-schedule/ _(opened)_
+- ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(owner-cited, not opened)_
+- Published surfing performance / physiology research (cardiorespiratory fitness, muscular endurance, strength, anaerobic power, upper-torso demand, repeated paddling) — cited by the owner, no specific paper supplied _(owner-cited, not opened)_
+
+**Exactly what the sources support:** Same as the foundation workout: strength & mobility and recovery sessions are listed (SA-SCHED, opened). The need for muscular endurance, cardiorespiratory fitness, upper-torso demand and repeated, intermittent paddling comes from the owner-cited physiology research and ISA education (not opened here).
+
+**What is Gals Coacher synthesis:** The repeated-effort interval structure (6 × 30 s style), the pulling / trunk endurance selection and every dosage. It does not reproduce water mechanics, and there is no breath-hold training.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### SURF-POWER-ROTATION-01 — Surf Power & Rotation — Advanced / כוח וסיבוב לגלישה — מתקדמים
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-002 (new) |
+| **Sport** | SURFING |
+| **Difficulty** | ADVANCED |
+| **Focus** | SURF_STRENGTH_FITNESS |
+| **Length** | about 60–75 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** כוח רגליים, הארכה מתפרצת, כוח הגו בסיבוב ויציבות בסיבוב, וחיזוק עליון — תמיכה בתנועה עוצמתית.
+
+**Summary — EN:** Leg strength, explosive extension, rotational trunk strength and anti-rotation stability, and upper-body strength — supporting powerful movement.
+
+**Section 1 — Dynamic warm-up / חימום דינמי**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 4 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 5 | POGO_JUMPS | Pogo Jumps | קפיצות פוגו | 3 × 15 reps, rest 45 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — Leg strength and explosive extension / כוח רגליים והארכה מתפרצת**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | BULGARIAN_SPLIT_SQUAT | Bulgarian Split Squat | סקוואט בולגרי | 3 × 8 reps, rest 90 s |
+| 2 | SINGLE_LEG_RDL | Single-Leg Romanian Deadlift | דדליפט רומני על רגל אחת | 3 × 8 reps, rest 60 s |
+| 3 | HIP_THRUST | Hip Thrust | דחיקת אגן | 3 × 8 reps, rest 90 s |
+| 4 | SQUAT_JUMP | Squat Jump | קפיצות סקוואט | 3 × 5 reps, rest 60 s |
+| 5 | BOX_JUMP | Box Jump | קפיצה לקופסה | 4 × 4 reps, rest 90 s |
+| 6 | KETTLEBELL_SWING | Kettlebell Swing | נדנוד קטלבל | 4 × 12 reps, rest 60 s |
+
+**Section 3 — Push, pull and get-up pattern / דחיפה, משיכה וקימה**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | PUSH_UP | Push-Up | שכיבות סמיכה | 3 × 12 reps, rest 60 s |
+| 2 | INVERTED_ROW | Inverted Row | חתירה הפוכה | 3 × 10 reps, rest 60 s |
+| 3 | FACE_PULL | Face Pull | משיכה לפנים | 3 × 15 reps, rest 45 s |
+| 4 | BURPEE | Burpee | ברפי | 3 × 8 reps, rest 60 s |
+
+**Section 4 — Rotation and trunk stability / סיבוב ויציבות הגו**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | MED_BALL_ROTATIONAL_THROW | Medicine Ball Rotational Throw | זריקת כדור כוח בסיבוב | 3 × 6 reps, rest 60 s |
+| 2 | PALLOF_PRESS | Pallof Press | לחיצת פאלוף | 3 × 10 reps, rest 45 s |
+| 3 | SIDE_PLANK | Side Plank | פלאנק צידי | 3 × 30s, rest 30 s |
+| 4 | RUSSIAN_TWIST | Russian Twist | סיבובים רוסיים | 3 × 16 reps, rest 45 s |
+
+**Section 5 — Mobility / מוביליטי**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: תרגילי הכושר כאן תומכים בדרישות הגלישה, אבל אינם זהים לחתירה או לגלישה, והם לא מחליפים אימון במים.
+- EN: The fitness exercises here support the demands of surfing, but they are not the same as paddling or surfing and do not replace time in the water.
+- HE: הבורפי משמש כתבנית "שכיבה וקימה" כללית ואינו מחקה את הקימה על הלוח. כוח לבדו אינו הופך אדם לגולש מתקדם.
+- EN: The burpee is a general lie-down-and-get-up pattern and does not copy the pop-up. Strength alone does not make a surfer advanced.
+- HE: תוכן מתקדם עשוי לדרוש התאמה על ידי מאמן או מבוגר אחראי לפי גיל, ניסיון ויכולת גופנית.
+- EN: Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.
+- HE: האימון הזה מתבצע על היבשה. אימוני הים (טכניקת גלישה) נושאים את אזהרת תנאי הים.
+- EN: This workout is done on dry land. The ocean sessions (Surf Technique workouts) carry the ocean-conditions warning.
+
+**Safety — HE:** מתאימים את המשקל ואת העצימות ליכולת, שומרים על טכניקה נקייה, מתחממים לפני ועוצרים אם יש כאב. תוכן מתקדם עשוי לדרוש התאמה על ידי מאמן או מבוגר אחראי לפי גיל, ניסיון ויכולת גופנית.
+
+**Safety — EN:** Match the load and intensity to the person, keep the technique clean, warm up first and stop if there is pain. Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.
+
+**Sources:**
+- Surfing Australia — camp schedule — https://surfingaustralia.com/hpc/camp-schedule/ _(opened)_
+- ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(owner-cited, not opened)_
+- Published surfing performance / physiology research (cardiorespiratory fitness, muscular endurance, strength, anaerobic power, upper-torso demand, repeated paddling) — cited by the owner, no specific paper supplied _(owner-cited, not opened)_
+
+**Exactly what the sources support:** Strength & mobility, pre-surf activation and recovery are listed (SA-SCHED, opened); strength, anaerobic power and upper-torso demand are owner-cited from surfing physiology research (not opened).
+
+**What is Gals Coacher synthesis:** The lower-body strength / explosive extension / rotation / anti-rotation selection, the burpee as a general lie-down-and-get-up pattern (not a pop-up copy), and every dosage. Strength alone is not claimed to make an advanced surfer. Advanced content may need adjustment by a coach or responsible adult.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### FOOTBALL-FIRST-TOUCH-PASSING-01 — Football — First Touch & Passing / כדורגל — מגע ראשון ומסירות
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-002 (new) |
+| **Sport** | FOOTBALL |
+| **Difficulty** | INTERMEDIATE |
+| **Focus** | PASSING |
+| **Length** | about 55–65 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** קבלה, מגע ראשון, דיוק מסירה, תנועה אחרי המסירה ומשחק קומבינציות.
+
+**Summary — EN:** Receiving, first touch, passing accuracy, movement after the pass and combination play.
+
+**Section 1 — Technical activation / חימום טכני**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 4 | AGILITY_LADDER_FOOTWORK | Agility Ladder Footwork | עבודת רגליים בסולם קואורדינציה | 4 × 1 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — First touch and passing / מגע ראשון ומסירה**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | FB_BALL_MASTERY | Ball Mastery | שליטה בכדור | 1 × 240s, rest 30 s |
+| 2 | FB_PASS_AND_CONTROL | Passing and First Touch | מסירה ושליטה | 6 × 10 reps, rest 20 s |
+| 3 | FB_FIRST_TOUCH_AND_TURN | First Touch and Turn into Space | מגע ראשון והסתובבות | 6 × 8 reps, rest 30 s |
+
+**Section 3 — Combinations and keep-ball / קומבינציות ושמירת כדור**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | FB_COMBINATION_PLAY | Combination Play | משחק קומבינציות | 4 × 150s, rest 30 s |
+| 2 | FB_RONDO | Rondo (Keep-Ball) | רונדו (שמירת כדור) | 4 × 120s, rest 60 s |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: לפני שהכדור מגיע — מסתכלים סביב (סריקה) ופותחים את הגוף; אחרי המסירה — זזים מיד לחלל.
+- EN: Before the ball arrives, look around (scan) and open the body; after the pass, move into space at once.
+
+**Safety — HE:** — (none)
+
+**Safety — EN:** — (none)
+
+**Sources:**
+- FIFA Training Centre — ages 8–12, pass-receiving drill — https://www.fifatrainingcentre.com/en/practice/grassroots/8-to-12/pass-receiving-drill.php _(opened)_
+- FIFA Training Centre — ages 12–15, finishing an attack — https://www.fifatrainingcentre.com/en/practice/grassroots/12-to-15/finishing-an-attack.php _(opened)_
+- FIFA Training Centre — ages 12–15, optimising skill development — https://www.fifatrainingcentre.com/en/practice/grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/optimising-skill-development-u12-u15.php _(opened)_
+- FIFA Training Centre — ages 8–12, once-a-week sessions — https://www.fifatrainingcentre.com/en/practice/grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/sessions-for-once-a-week-training.php _(opened)_
+- FIFA Talent Coach Programme — 1v1 finishing — https://www.fifatrainingcentre.com/en/practice/talent-coach-programme/create-and-finish/1v1-finishing-beating-the-defender-and-score.php _(opened)_
+- FIFA Training Centre — elite, directing the first touch — https://www.fifatrainingcentre.com/en/practice/elite-sessions/in-possession/directing-the-ball-with-the-first-touch.php _(listing only)_
+
+**Exactly what the sources support:** Passing and receiving patterns, keep-ball circles and combination play appear in FIFA Training Centre grassroots material (F-PASSREC, F-FINATK, F-SKILL1215, F-ONCE — opened); first touch away from the defender (F-TCP-1V1, opened). Body orientation on the turn is only a listing (F-42).
+
+**What is Gals Coacher synthesis:** The selection from our existing Football exercises, the scanning coaching point (look around before the ball arrives) and every dosage.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### FOOTBALL-1V1-FINISHING-01 — Football — 1v1 & Finishing / כדורגל — 1 על 1 וגימור
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-002 (new) |
+| **Sport** | FOOTBALL |
+| **Difficulty** | INTERMEDIATE |
+| **Focus** | FINISHING |
+| **Length** | about 55–65 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** דריבל מול מגן, שינוי כיוון, קבלה בתנועה, יצירת מקום לבעיטה וגימור.
+
+**Summary — EN:** Dribbling at a defender, changing direction, receiving on the move, creating space to shoot and finishing.
+
+**Section 1 — Technical activation / חימום טכני**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BUTT_KICKS | Butt Kicks | בעיטות עקב לישבן | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
+| 4 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — Dribbling, receiving and finishing / דריבל, קבלה וגימור**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | FB_DRIBBLING_COURSE | Cone Dribbling and Change of Direction | דריבל בין קונוסים ושינוי כיוון | 4 × 60s, rest 30 s |
+| 2 | FB_FIRST_TOUCH_AND_TURN | First Touch and Turn into Space | מגע ראשון והסתובבות | 6 × 6 reps, rest 30 s |
+| 3 | FB_DRIBBLE_AND_SHOOT | Dribble and Shoot | דריבל ובעיטה | 1 × 10 attempts, rest 60 s |
+| 4 | FB_SHOOTING_ACCURACY | Target Shooting | בעיטות למטרה | 1 × 10 attempts, rest 60 s |
+
+**Section 3 — A 1v1 / 2v2 game / משחק 1 על 1 / 2 על 2**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחק קטן | 1 × 720s, rest 0 s |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: במשחק מתחילים ב-1 על 1 ועוברים ל-2 על 2 כשיש שחקנים; בלי מגע גופני חזק.
+- EN: In the game start with 1v1 and move to 2v2 when there are players; no hard body contact.
+
+**Safety — HE:** — (none)
+
+**Safety — EN:** — (none)
+
+**Sources:**
+- FIFA Talent Coach Programme — 1v1 finishing — https://www.fifatrainingcentre.com/en/practice/talent-coach-programme/create-and-finish/1v1-finishing-beating-the-defender-and-score.php _(opened)_
+- FIFA Training Centre — ages 12–15, finishing an attack — https://www.fifatrainingcentre.com/en/practice/grassroots/12-to-15/finishing-an-attack.php _(opened)_
+- FIFA Training Centre — ages 4–8, dribbling as a positive start — https://www.fifatrainingcentre.com/en/practice/grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/jene-3-dribbling-as-a-positive-start.php _(opened)_
+- FIFA Training Centre — ages 8–12, dribbling, shooting and teamwork — https://www.fifatrainingcentre.com/en/practice/grassroots/8-to-12/dribbling-shooting-and-teamwork.php _(listing only)_
+- FIFA Training Centre — ages 8–12, training technique — https://www.fifatrainingcentre.com/en/practice/grassroots/8-to-12/training-technique.php _(listing only)_
+
+**Exactly what the sources support:** Dribbling with direction changes and a one-minute dribbling game (F-DRIB48, opened), receiving on the move and beating a defender (F-TCP-1V1, opened), scoring games (F-FINATK, opened). Dribble-and-shoot and corridor dribbling are listings only (F-57, F-51).
+
+**What is Gals Coacher synthesis:** The selection and order, the 1v1 → 2v2 game progression and every dosage.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### FOOTBALL-TRANSITION-PRESSING-01 — Football — Transition & Pressing / כדורגל — מעבר ולחץ
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-002 (new) |
+| **Sport** | FOOTBALL |
+| **Difficulty** | ADVANCED |
+| **Focus** | TRANSITION |
+| **Length** | about 65–80 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** תגובה במעבר, יתרון מספרי, משחק קטן, כללי לחץ אחרי איבוד כדור וקבלת החלטות — דרך פעילות כדורגל.
+
+**Summary — EN:** Reacting in transition, numerical advantage, small-sided play, pressing rules after losing the ball and decision making — through football activity.
+
+**Section 1 — Dynamic technical warm-up / חימום טכני דינמי**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 4 | AGILITY_LADDER_FOOTWORK | Agility Ladder Footwork | עבודת רגליים בסולם קואורדינציה | 4 × 1 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 5 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — Rondo and transition / רונדו ומעבר**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | FB_RONDO | Rondo (Keep-Ball) | רונדו (שמירת כדור) | 4 × 120s, rest 60 s |
+| 2 | FB_ATTACKING_TRANSITION_OVERLOAD | Attacking Transition with a Numerical Advantage | מעבר להתקפה ביתרון מספרי | 1 × 8 reps, rest 90 s |
+| 3 | FB_FINISHING_UNDER_PRESSURE | Finishing under Pressure | גימור תחת לחץ | 1 × 8 attempts, rest 90 s |
+
+**Section 3 — Small game with a pressing rule / משחק קטן עם כלל לחץ**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחק קטן | 2 × 600s, rest 120 s |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: כלל המשחק: מי שאיבד כדור לוחץ מיד; אם לא החזירו תוך 3–4 מסירות — חוזרים להגנה מסודרת. כלל זה מבוסס על מפגש נוער מקצועי ואינו מוכח כמתאים לכל גיל.
+- EN: Game rule: whoever loses the ball presses at once; if it is not won back within 3–4 passes, drop back into a compact shape. The rule comes from an elite youth session and is not shown to suit every age.
+- HE: תוכן מתקדם עשוי לדרוש התאמה על ידי מאמן או מבוגר אחראי לפי גיל, ניסיון ויכולת גופנית.
+- EN: Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.
+
+**Safety — HE:** — (none)
+
+**Safety — EN:** — (none)
+
+**Sources:**
+- FIFA Training Centre — ages 12–15, transition — https://www.fifatrainingcentre.com/en/practice/grassroots/12-to-15/transition.php _(opened)_
+- FIFA Training Centre — Mexico U15 boys, counter-pressing (elite youth) — https://www.fifatrainingcentre.com/en/practice/elite-sessions/youth-national-teams/mexico-u15-boys-/defensive-phase-and-pressing-flores.php _(opened)_
+- FIFA Talent Coach Programme — 3v2 exploiting the overload — https://www.fifatrainingcentre.com/en/practice/talent-coach-programme/create-and-finish/3v2-attack-vs-defence-exploiting-the-overload.php _(opened)_
+- FIFA Training Centre — ages 8–12, recognise and use the advantage — https://www.fifatrainingcentre.com/en/practice/grassroots/8-to-12/recognise-and-make-use-of-the-advantage.php _(opened)_
+- FIFA Talent Coach Programme — 1v1 finishing — https://www.fifatrainingcentre.com/en/practice/talent-coach-programme/create-and-finish/1v1-finishing-beating-the-defender-and-score.php _(opened)_
+
+**Exactly what the sources support:** Target-player transition games (F-TRANS1215) and a 3v2 overload (F-TCP-3V2, no age stated) are opened; the 3–4-pass regain rule comes from an elite youth session (F-MEXU15, opened) and is not shown to suit every age.
+
+**What is Gals Coacher synthesis:** Turning these ideas into one game-based session for our players, the pressing-rule wording and every dosage. Advanced content may need adjustment by a coach or responsible adult.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### BASKETBALL-BALL-HANDLING-01 — Basketball — Ball Handling / כדורסל — כדרור ושינוי כיוון
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-002 (new) |
+| **Sport** | BASKETBALL |
+| **Difficulty** | INTERMEDIATE |
+| **Focus** | BALL_HANDLING |
+| **Length** | about 40–50 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** שליטה בשתי הידיים, שינוי כיוון וקצב, שליטה בגוף וכדרור בתנאים שהולכים ומקשים.
+
+**Summary — EN:** Control with both hands, change of direction and pace, body control and dribbling under increasing difficulty.
+
+**Section 1 — Warm-up / חימום**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — Ball control / שליטה בכדור**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | STATIONARY_DRIBBLING | Stationary Dribbling | כדרור במקום | 4 × 30s, rest 15 s |
+| 2 | FIGURE_8_DRIBBLE | Figure-8 Dribble | כדרור שמונה בין הרגליים | 3 × 20 reps, rest 30 s |
+| 3 | CROSSOVER_DRIBBLE | Crossover Dribble | כדרור קרוסאובר | 4 × 20 reps, rest 30 s |
+| 4 | BETWEEN_THE_LEGS_DRIBBLE | Between-the-Legs Dribble | כדרור בין הרגליים | 4 × 20 reps, rest 30 s |
+| 5 | BEHIND_THE_BACK_DRIBBLE | Behind-the-Back Dribble | כדרור מאחורי הגב | 4 × 20 reps, rest 30 s |
+
+**Section 3 — Direction and pace / שינוי כיוון וקצב**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | CONE_DRIBBLE_SLALOM | Cone Dribble Slalom | סלאלום כדרור בין קונוסים | 4 × (no target), rest 60 s |
+| 2 | CHANGE_OF_PACE_DRIBBLE | Change-of-Pace Dribble | כדרור בשינוי קצב | 4 × 4 reps, rest 45 s |
+| 3 | HESITATION_DRIVE | Hesitation Drive | השהיה ופריצה | 4 × 6 reps, rest 45 s |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: מתחילים לאט עם מבט קדימה, ומוסיפים מהירות רק כשהכדרור נקי; עובדים בשתי הידיים באותה מידה.
+- EN: Start slowly with the eyes up and add speed only when the dribble is clean; work both hands equally.
+
+**Safety — HE:** — (none)
+
+**Safety — EN:** — (none)
+
+**Sources:**
+- No external source was consulted (built from the app's own curated catalog).
+
+**Exactly what the sources support:** No external source was consulted for the Basketball workouts in this slice.
+
+**What is Gals Coacher synthesis:** The whole workout is assembled from the app's own existing, already-curated Basketball drills (no new Exercise); the order and every dosage are ours.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### BASKETBALL-SHOOTING-FINISHING-01 — Basketball — Shooting & Finishing / כדורסל — קליעה וסיומים
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-002 (new) |
+| **Sport** | BASKETBALL |
+| **Difficulty** | INTERMEDIATE |
+| **Focus** | SHOOTING |
+| **Length** | about 45–60 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** טכניקת זריקה, קליעה אחרי קבלה ואחרי תנועה, וסיומים לסל מזוויות וביד שונות.
+
+**Summary — EN:** Shooting form, shooting after a catch and after movement, and finishing at the rim from different angles and with either hand.
+
+**Section 1 — Warm-up / חימום**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — Form and shooting / טכניקה וקליעה**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | FORM_SHOOTING | Form Shooting | זריקות טכניקה קרוב לסל | 3 × 10 attempts, rest 30 s |
+| 2 | MID_RANGE_SPOT_SHOOTING | Mid-Range Spot Shooting (5 spots) | זריקות מחצי מרחק מ־5 נקודות | 5 × 10 attempts, rest 60 s |
+| 3 | RELOCATION_SHOOTING | Relocation Shooting | זריקות בתנועה (רילוקיישן) | 4 × 10 attempts, rest 60 s |
+| 4 | PULL_UP_JUMPER | Pull-Up Jumper off the Dribble | זריקה מעצירה אחרי כדרור | 4 × 10 attempts, rest 60 s |
+
+**Section 3 — Finishing at the rim / סיומים לסל**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | LAYUPS | Layups (both hands) | לייאפים בשתי הידיים | 4 × 10 attempts, rest 45 s |
+| 2 | REVERSE_LAYUPS | Reverse Layups | לייאפ הפוך | 4 × 10 attempts, rest 45 s |
+| 3 | CONTACT_FINISHES | Contact Finishes | סיומים במגע | 4 × 8 attempts, rest 60 s |
+| 4 | FREE_THROWS | Free Throws | זריקות עונשין | 5 × 10 attempts, rest 60 s |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: סופרים קליעות מתוך ניסיונות; מתחילים מקרוב ומרחיקים רק כשהטכניקה יציבה.
+- EN: Count makes out of attempts; start close and move back only when the form is stable.
+
+**Safety — HE:** — (none)
+
+**Safety — EN:** — (none)
+
+**Sources:**
+- No external source was consulted (built from the app's own curated catalog).
+
+**Exactly what the sources support:** No external source was consulted for the Basketball workouts in this slice.
+
+**What is Gals Coacher synthesis:** Assembled from the app's existing Basketball shooting and finishing drills (no new Exercise); the order and every dosage are ours.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### BASKETBALL-DEFENSE-REBOUNDING-01 — Basketball — Defense & Rebounding / כדורסל — הגנה וריבאונד
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-002 (new) |
+| **Sport** | BASKETBALL |
+| **Difficulty** | INTERMEDIATE |
+| **Focus** | DEFENSE |
+| **Length** | about 45–55 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** עמידה ועבודת רגליים בהגנה, תנועה צדדית, יציאה לשחקן (closeout), חסימה (box-out) וריבאונד, וכושר ספציפי למשחק.
+
+**Summary — EN:** Defensive stance and footwork, lateral movement, closeouts, box-out and rebounding, and basketball-specific conditioning.
+
+**Section 1 — Warm-up / חימום**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — Defense and footwork / הגנה ורגליים**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | DEFENSIVE_SLIDES | Defensive Slides | צעדי הגנה בצד | 4 × (no target), rest 60 s |
+| 2 | ZIGZAG_DEFENSIVE_SLIDES | Zig-Zag Defensive Slides | צעדי הגנה בזיגזג | 4 × 2 reps, rest 45 s |
+| 3 | CLOSEOUT_DRILL | Closeout Drill | תרגיל סגירה על קלע | 3 × 6 reps, rest 45 s |
+| 4 | DEFENSIVE_RECOVERY_DRILL | Defensive Recovery Drill | חזרה להגנה אחרי עקיפה | 4 × 4 reps, rest 45 s |
+
+**Section 3 — Box-out and rebounding / חסימה וריבאונד**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | BOX_OUT_DRILL | Box-Out Drill | חסימה לריבאונד (Box-Out) | 3 × 8 reps, rest 45 s |
+| 2 | TIP_DRILL | Rebound Tip Drill | תרגיל טיפ (ריבאונד) | 3 × 10 reps, rest 60 s |
+
+**Section 4 — Game conditioning / כושר למשחק**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | LANE_AGILITY | Lane Agility Drill | תרגיל זריזות בצבע | 3 × (no target), rest 120 s |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: בחסימה שומרים על מגע גופני מבוקר ובלי דחיפה; מתאימים את העצימות לגיל וליכולת.
+- EN: In the box-out keep body contact controlled and without pushing; match the intensity to age and ability.
+
+**Safety — HE:** — (none)
+
+**Safety — EN:** — (none)
+
+**Sources:**
+- No external source was consulted (built from the app's own curated catalog).
+
+**Exactly what the sources support:** No external source was consulted for the Basketball workouts in this slice.
+
+**What is Gals Coacher synthesis:** Assembled from the app's existing defensive drills plus ONE new drill, BOX_OUT_DRILL (the catalog had no box-out); the order and every dosage are ours.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.

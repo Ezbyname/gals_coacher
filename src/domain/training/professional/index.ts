@@ -1,7 +1,10 @@
 import { SURF_SAFETY } from '../../exercise/catalog/surfing';
 import type { Difficulty } from '../../exercise/taxonomy';
-import type { SportKey } from '../../sport';
-import type { SourceKey } from '../../exercise/catalog/provenance';
+
+import { EXPANDED_WORKOUTS } from './expanded';
+import { reuse, x, type Pair, type ProfessionalSport, type ProfessionalWorkout, type TrainingFocus } from './types';
+
+export * from './types';
 
 /**
  * SPORT-CONTENT-001 — the professional starter workouts (Surfing and Football × Beginner / Intermediate / Advanced).
@@ -15,44 +18,6 @@ import type { SourceKey } from '../../exercise/catalog/provenance';
  * schema changes. Coach notes (the surf briefing, video review) have no home in a plan item and are shown on the
  * workout's own screen instead; they are not copied.
  */
-export type Pair = readonly [he: string, en: string];
-
-/** One exercise of a section. Without a dosage the exercise's own defaults apply (reused warm-up / mobility items). */
-export interface ProfessionalItem {
-  readonly exerciseId: string;
-  readonly dosage?: { readonly sets: number; readonly target: number | null; readonly restSec: number };
-}
-
-export interface ProfessionalSection {
-  readonly name: Pair;
-  readonly items: readonly ProfessionalItem[];
-}
-
-export type ReviewStatus = 'PENDING_HUMAN_REVIEW' | 'HUMAN_REVIEWED';
-
-export interface ProfessionalWorkout {
-  readonly id: string;
-  readonly sport: Extract<SportKey, 'FOOTBALL' | 'SURFING'>;
-  readonly difficulty: Difficulty;
-  readonly name: Pair;
-  readonly summary: Pair;
-  /** Approximate session length in minutes [min, max]. */
-  readonly minutes: readonly [number, number];
-  readonly sections: readonly ProfessionalSection[];
-  /** For the coach; shown on the workout screen, never copied into a plan. */
-  readonly coachNotes: readonly Pair[];
-  /** The locked surf wording; null for football. */
-  readonly safety: Pair | null;
-  readonly sources: readonly SourceKey[];
-  readonly reviewStatus: ReviewStatus;
-}
-
-const x = (exerciseId: string, sets: number, target: number | null, restSec: number): ProfessionalItem => ({
-  exerciseId,
-  dosage: { sets, target, restSec },
-});
-const reuse = (...ids: string[]): ProfessionalItem[] => ids.map((exerciseId) => ({ exerciseId }));
-
 const SURF_BRIEFING: Pair = [
   'תדריך לפני הים (5 דקות): עוצרים, מסתכלים, מתכננים. מזהים סימני זרם יוצא ("ריפ"), מתאמים כללי עדיפות ואתיקה בין גולשים, וקובעים איפה נכנסים ויוצאים. אם נקלעים לזרם: צפים על הלוח, מסמנים לעזרה ושוחים במקביל לחוף.',
   'Briefing before the water (5 minutes): stop, look, plan. Spot rip-current signs, agree priority and etiquette between surfers, and decide where to enter and exit. If caught in a rip: float on the board, signal for help and swim parallel to the shore.',
@@ -66,11 +31,13 @@ const SURF_WARMUP: Pair = ['חימום לפני גלישה', 'Pre-surf activatio
 const SURF_COOLDOWN: Pair = ['מוביליטי ושחרור', 'Mobility cooldown'];
 const FB_WARMUP: Pair = ['חימום טכני', 'Technical activation'];
 
-export const PROFESSIONAL_WORKOUTS: readonly ProfessionalWorkout[] = [
+/** The six SPORT-CONTENT-001 workouts (unchanged apart from their `focus` tag). */
+const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
   {
     id: 'SURF-FOUNDATION-01',
     sport: 'SURFING',
     difficulty: 'BEGINNER',
+    focus: 'SURF_TECHNIQUE',
     name: ['גלישה — מתחילים', 'Surfing — Beginner'],
     summary: [
       'קימה, חתירה, גלי קצף ובחירת גל — הבסיס לגלישה בטוחה ונהנית.',
@@ -100,6 +67,7 @@ export const PROFESSIONAL_WORKOUTS: readonly ProfessionalWorkout[] = [
     id: 'SURF-PROGRESSION-01',
     sport: 'SURFING',
     difficulty: 'INTERMEDIATE',
+    focus: 'SURF_TECHNIQUE',
     name: ['גלישה — בינוני', 'Surfing — Intermediate'],
     summary: [
       'חתירה יעילה, צלילת ברווז, מיקום ופניות בסיסיות — מרכיבים רכיבה לפנייה.',
@@ -130,6 +98,7 @@ export const PROFESSIONAL_WORKOUTS: readonly ProfessionalWorkout[] = [
     id: 'SURF-PERFORMANCE-01',
     sport: 'SURFING',
     difficulty: 'ADVANCED',
+    focus: 'SURF_TECHNIQUE',
     name: ['גלישה — מתקדמים', 'Surfing — Advanced'],
     summary: [
       'האצת חתירה, שילוב בוטום-טופ, קאטבק, סימולציית היט וסקירה — עבודה על ביצועים.',
@@ -164,6 +133,7 @@ export const PROFESSIONAL_WORKOUTS: readonly ProfessionalWorkout[] = [
     id: 'FOOTBALL-FOUNDATION-01',
     sport: 'FOOTBALL',
     difficulty: 'BEGINNER',
+    focus: 'ALL_ROUND',
     name: ['כדורגל — מתחילים', 'Football — Beginner'],
     summary: [
       'שליטה בכדור, דריבל, מסירה ובעיטה — הרבה מגעים בכדור ומשחק קטן.',
@@ -198,6 +168,7 @@ export const PROFESSIONAL_WORKOUTS: readonly ProfessionalWorkout[] = [
     id: 'FOOTBALL-PROGRESSION-01',
     sport: 'FOOTBALL',
     difficulty: 'INTERMEDIATE',
+    focus: 'ALL_ROUND',
     name: ['כדורגל — בינוני', 'Football — Intermediate'],
     summary: [
       'קומבינציות, מגע ראשון והסתובבות, גימור ורגל חלשה, ומשחק של 2 נגד 2 או 3 נגד 3.',
@@ -231,6 +202,7 @@ export const PROFESSIONAL_WORKOUTS: readonly ProfessionalWorkout[] = [
     id: 'FOOTBALL-PERFORMANCE-01',
     sport: 'FOOTBALL',
     difficulty: 'ADVANCED',
+    focus: 'ALL_ROUND',
     name: ['כדורגל — מתקדמים', 'Football — Advanced'],
     summary: [
       'רונדו, קבלה והסתובבות בלחץ, מעבר להתקפה, גימור בלחץ ומשחק מעבר.',
@@ -265,6 +237,11 @@ export const PROFESSIONAL_WORKOUTS: readonly ProfessionalWorkout[] = [
   },
 ];
 
+/** Every professional workout: the six of SPORT-CONTENT-001, then the nine of SPORT-CONTENT-002. */
+export const PROFESSIONAL_WORKOUTS: readonly ProfessionalWorkout[] = [...CORE_WORKOUTS, ...EXPANDED_WORKOUTS];
+/** The ids of the SPORT-CONTENT-001 workouts, which SPORT-CONTENT-002 must never change. */
+export const SPORT_CONTENT_001_WORKOUT_IDS: readonly string[] = CORE_WORKOUTS.map((w) => w.id);
+
 const BY_ID = new Map(PROFESSIONAL_WORKOUTS.map((w) => [w.id, w]));
 
 export function professionalWorkout(id: string): ProfessionalWorkout | null {
@@ -272,11 +249,12 @@ export function professionalWorkout(id: string): ProfessionalWorkout | null {
 }
 
 export function professionalWorkoutsFor(
-  sport: ProfessionalWorkout['sport'] | null,
+  sport: ProfessionalSport | null,
   difficulty: Difficulty | null,
+  focus: TrainingFocus | null = null,
 ): ProfessionalWorkout[] {
   return PROFESSIONAL_WORKOUTS.filter(
-    (w) => (sport === null || w.sport === sport) && (difficulty === null || w.difficulty === difficulty),
+    (w) => (sport === null || w.sport === sport) && (difficulty === null || w.difficulty === difficulty) && (focus === null || w.focus === focus),
   );
 }
 

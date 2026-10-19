@@ -71,7 +71,7 @@ describe('navigation — Hebrew (default)', () => {
     const app = renderRouter(routes, { initialUrl: '/' });
     fireEvent.press(await screen.findByTestId('home-diagnostics'));
     await waitFor(() => expect(app.getPathname()).toBe('/diagnostics'));
-    await waitFor(() => expect(textOf('diag-sqlite')).toBe('מוכן · סכמה v19 (הוחלו בהפעלה זו: 19)'));
+    await waitFor(() => expect(textOf('diag-sqlite')).toBe('מוכן · סכמה v20 (הוחלו בהפעלה זו: 20)'));
     expect(textOf('diag-direction')).toBe('בפועל: rtl · צפוי: rtl');
     const sample = textOf('diag-rtl-sample');
     for (const v of ['18/20', '80%', '4.38', '00:45', '20m']) expect(sample).toContain(v);
@@ -113,7 +113,7 @@ describe('navigation — English', () => {
 
   it('shows the English diagnostics lines', async () => {
     renderRouter(routes, { initialUrl: '/diagnostics' });
-    await waitFor(() => expect(textOf('diag-sqlite')).toBe('ready · schema v19 (applied this launch: 19)'));
+    await waitFor(() => expect(textOf('diag-sqlite')).toBe('ready · schema v20 (applied this launch: 20)'));
     expect(textOf('diag-direction')).toBe('actual: ltr · expected: ltr');
   });
 });

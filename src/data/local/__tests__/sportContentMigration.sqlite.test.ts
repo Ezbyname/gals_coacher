@@ -20,6 +20,7 @@ import { abandonSession, startSession } from '../training/trainingRepository';
  */
 type Db = ReturnType<typeof openNodeSqlite>;
 const V18 = migrations.slice(0, 18);
+const V19 = migrations.slice(0, 19);
 const clock = { wallNow: () => new Date(2026, 9, 18, 12).getTime(), monotonicNow: () => 0 };
 const ids = createSequentialIdService();
 const deps = { ids, clock };
@@ -78,7 +79,7 @@ async function seedV18(): Promise<Db> {
 
 describe('migration v19 (sport content) on real SQLite', () => {
   it('a fresh database reaches v19; 21 exercise rows and the Football / Surfing nodes are seeded once, active, builtin', async () => {
-    const d = await open();
+    const d = await open(V19);
     expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 19 });
     const exercises = await d.getAllAsync<{ id: string; builtin: number; active: number; name: unknown }>(`SELECT id, builtin, active, name FROM exercises WHERE id IN (${NEW_EXERCISES.map((i) => `'${i}'`).join(',')})`);
     expect(exercises).toHaveLength(21);
@@ -94,9 +95,9 @@ describe('migration v19 (sport content) on real SQLite', () => {
     const rowsBefore = await dumpAll(d);
     const objectsBefore = await schemaObjects(d);
     expect(rowsBefore.session_exercises!.length).toBeGreaterThan(0);
-    const result = await runMigrations(d, migrations);
+    const result = await runMigrations(d, V19);
     expect(result).toEqual({ from: 18, to: 19, applied: ['sport_content_001'] });
-    expectUnchangedExceptLaterSeeds(await dumpAll(d), rowsBefore, 18);
+    expectUnchangedExceptLaterSeeds(await dumpAll(d), rowsBefore, 18, 19);
     expect(await schemaObjects(d)).toEqual(objectsBefore); // no CREATE, ALTER, DROP — not one object differs
     expect((await d.getFirstAsync<{ integrity_check: string }>('PRAGMA integrity_check'))!.integrity_check).toBe('ok');
     expect(await d.getFirstAsync('PRAGMA foreign_key_check')).toBeNull();
@@ -106,9 +107,9 @@ describe('migration v19 (sport content) on real SQLite', () => {
 
   it('idempotent: a second run applies nothing and changes nothing', async () => {
     const d = await seedV18();
-    await runMigrations(d, migrations);
+    await runMigrations(d, V19);
     const rows = await dumpAll(d);
-    expect(await runMigrations(d, migrations)).toEqual({ from: 19, to: 19, applied: [] });
+    expect(await runMigrations(d, V19)).toEqual({ from: 19, to: 19, applied: [] });
     expect(await dumpAll(d)).toEqual(rows);
   });
 
@@ -119,6 +120,49 @@ describe('migration v19 (sport content) on real SQLite', () => {
     await expect(runMigrations(d, broken)).rejects.toThrow();
     expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 18 });
     expect(await dumpAll(d)).toEqual(rows);
-    expect((await runMigrations(d, migrations)).to).toBe(19);
+    expect((await runMigrations(d, V19)).to).toBe(19);
+  });
+});
+
+/** SPORT-CONTENT-002 — schema v20 `sport_content_002` (DATA ONLY): the one new built-in Exercise, the Basketball box-out drill. */
+describe('migration v20 (sport content 002) on real SQLite', () => {
+  async function seedV19(): Promise<Db> {
+    const db = await open(V19);
+    await withLaterBuiltinRows(db, 19, async () => {
+      const r = await createPlayer(db, { player: { name: 'Gal', dateOfBirth: { year: 2012, month: 7, day: 9 } }, basketball: { primaryPosition: 'PG' } }, deps);
+      if (!r.ok) throw new Error('seed');
+      const plan = await savePlannedWorkout(db, { planId: null, playerId: r.profile.player.id, name: 'Plan', entries: [{ kind: 'EXERCISE', exerciseId: 'PUSH_UP', prescription: { sets: 3, target: 8, loadKg: null, restSec: 30 } }] }, deps);
+      if (!plan.ok) throw new Error('seed');
+      await startSession(db, plan.plan.id, deps);
+      await setExerciseActive(db, 'PLANK', false, { clock }); // an inactive built-in: an UPDATE would flip it
+    });
+    return db;
+  }
+
+  it('v19 → v20: every existing row and every schema object is unchanged; the only addition is the BOX_OUT_DRILL row (builtin, active)', async () => {
+    const d = await seedV19();
+    const rowsBefore = await dumpAll(d);
+    const objectsBefore = await schemaObjects(d);
+    expect(await runMigrations(d, migrations)).toEqual({ from: 19, to: 20, applied: ['sport_content_002'] });
+    expectUnchangedExceptLaterSeeds(await dumpAll(d), rowsBefore, 19);
+    expect(await schemaObjects(d)).toEqual(objectsBefore);
+    expect(await d.getFirstAsync("SELECT builtin, active, name FROM exercises WHERE id = 'BOX_OUT_DRILL'")).toEqual({ builtin: 1, active: 1, name: null });
+    expect(await d.getFirstAsync('PRAGMA foreign_key_check')).toBeNull();
+  });
+
+  it('a v20 that fails part-way rolls back completely; the same database then migrates cleanly; a second run applies nothing', async () => {
+    const d = await seedV19();
+    const rows = await dumpAll(d);
+    const broken = [...V19, { ...migrations[19]!, sql: `${migrations[19]!.sql}\nNOT VALID SQL;` }];
+    await expect(runMigrations(d, broken)).rejects.toThrow();
+    expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 19 });
+    expect(await dumpAll(d)).toEqual(rows);
+    expect((await runMigrations(d, migrations)).to).toBe(20);
+    expect(await runMigrations(d, migrations)).toEqual({ from: 20, to: 20, applied: [] });
+  });
+
+  it('v18 → v20 in one go applies both content migrations in order', async () => {
+    const d = await seedV18();
+    expect(await runMigrations(d, migrations)).toEqual({ from: 18, to: 20, applied: ['sport_content_001', 'sport_content_002'] });
   });
 });

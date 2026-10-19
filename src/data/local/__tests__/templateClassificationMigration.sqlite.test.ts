@@ -140,7 +140,7 @@ describe('migration v12 (template classification) on real SQLite', () => {
 
   it('fresh install: the classification table, its indexes and trigger; empty', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(19);
+    expect(migration.to).toBe(20);
     expect(migration.applied).toContain('template_classification');
     expect(await v12Objects(db as unknown as Db)).toEqual(V12_OBJECTS);
     expect(await db.getFirstAsync('SELECT count(*) AS n FROM workout_template_taxonomy')).toEqual({ n: 0 });
@@ -150,7 +150,7 @@ describe('migration v12 (template classification) on real SQLite', () => {
   it('upgrades a realistic v11 database: every existing row unchanged; templates read back with no categories', async () => {
     const before = await createV11Database();
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 11, to: 19, applied: ['template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001'] });
+    expect(migration).toEqual({ from: 11, to: 20, applied: ['template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002'] });
     expectUnchangedExceptLaterSeeds(await dump(db as unknown as Db, PRE_V12_TABLES), before, 11);
     expect(await db.getFirstAsync('PRAGMA foreign_key_check')).toBeNull();
     expect((await getTemplate(db, TEMPLATE))!.classification).toEqual({ nodeKeys: [], primary: null });
@@ -201,7 +201,7 @@ describe('migration v12 (template classification) on real SQLite', () => {
     const state = await dump(first.db as unknown as Db, ['workout_template_taxonomy']);
     await first.db.closeAsync();
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 19, to: 19, applied: [] });
+    expect(again.migration).toEqual({ from: 20, to: 20, applied: [] });
     expect(await dump(again.db as unknown as Db, ['workout_template_taxonomy'])).toEqual(state);
     expect((await getTemplate(again.db, TEMPLATE))!.classification).toEqual({
       nodeKeys: ['BASKETBALL_SHOOTING'],
@@ -222,7 +222,7 @@ describe('migration v12 (template classification) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 11, to: 19, applied: ['template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001'] });
+    expect(relaunch.migration).toEqual({ from: 11, to: 20, applied: ['template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002'] });
     expectUnchangedExceptLaterSeeds(await dump(relaunch.db as unknown as Db, PRE_V12_TABLES), before, 11);
     await relaunch.db.closeAsync();
   });

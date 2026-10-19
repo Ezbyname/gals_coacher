@@ -6,9 +6,9 @@ import { migrations } from '@/data/local/migrations';
  * leaves every existing row unchanged and adds exactly these seed rows —
  * nothing else.
  */
-export function exerciseIdsSeededAfter(version: number): string[] {
+export function exerciseIdsSeededAfter(version: number, upTo = Infinity): string[] {
   return migrations
-    .filter((m) => m.version > version)
+    .filter((m) => m.version > version && m.version <= upTo)
     .flatMap((m) => [...m.sql.matchAll(/\('([A-Z0-9_]+)', 1, NULL, 1, 0, 0\)/g)].map((match) => match[1]!));
 }
 
@@ -20,8 +20,9 @@ export function exerciseIdsSeededAfter(version: number): string[] {
 export function splitLaterSeeds<T extends { id?: unknown }>(
   rows: readonly T[],
   version: number,
+  upTo = Infinity,
 ): { existing: T[]; seededIds: string[] } {
-  const later = new Set(exerciseIdsSeededAfter(version));
+  const later = new Set(exerciseIdsSeededAfter(version, upTo));
   return {
     existing: rows.filter((r) => !later.has(String(r.id))),
     seededIds: rows.filter((r) => later.has(String(r.id))).map((r) => String(r.id)),
@@ -29,9 +30,9 @@ export function splitLaterSeeds<T extends { id?: unknown }>(
 }
 
 /** Taxonomy node keys seeded by migrations NEWER than `version` (v10 seeds the tree; v19 adds Football / Surfing). */
-export function nodeIdsSeededAfter(version: number): string[] {
+export function nodeIdsSeededAfter(version: number, upTo = Infinity): string[] {
   return migrations
-    .filter((m) => m.version > version)
+    .filter((m) => m.version > version && m.version <= upTo)
     .flatMap((m) => [...m.sql.matchAll(/\('([A-Z0-9_]+)', 1, 1, 0, 0\)/g)].map((match) => match[1]!));
 }
 
@@ -44,17 +45,18 @@ export function expectUnchangedExceptLaterSeeds(
   after: Record<string, unknown[]>,
   before: Record<string, unknown[]>,
   version: number,
+  upTo = Infinity,
 ): void {
   let rest = after;
   if ('exercises' in rest) {
-    const { existing, seededIds } = splitLaterSeeds(rest.exercises as { id?: unknown }[], version);
-    expect(seededIds).toEqual(exerciseIdsSeededAfter(version));
+    const { existing, seededIds } = splitLaterSeeds(rest.exercises as { id?: unknown }[], version, upTo);
+    expect(seededIds).toEqual(exerciseIdsSeededAfter(version, upTo));
     rest = { ...rest, exercises: existing };
   }
   if ('taxonomy_nodes' in rest) {
-    const later = new Set(nodeIdsSeededAfter(version));
+    const later = new Set(nodeIdsSeededAfter(version, upTo));
     const rows = rest.taxonomy_nodes as { id?: unknown }[];
-    expect(rows.filter((r) => later.has(String(r.id))).map((r) => String(r.id))).toEqual(nodeIdsSeededAfter(version));
+    expect(rows.filter((r) => later.has(String(r.id))).map((r) => String(r.id))).toEqual(nodeIdsSeededAfter(version, upTo));
     rest = { ...rest, taxonomy_nodes: rows.filter((r) => !later.has(String(r.id))) };
   }
   expect(rest).toEqual(before);

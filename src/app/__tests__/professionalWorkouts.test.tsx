@@ -62,7 +62,7 @@ async function plan(player: string, name: string, ...exerciseIds: string[]) {
 }
 const planCount = async () => (await db!.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM planned_workouts'))!.n;
 const idsOf = (workoutId: string) => professionalWorkout(workoutId)!.sections.flatMap((s) => s.items.map((i) => i.exerciseId));
-const cards = () => screen.queryAllByTestId(/^professional-workout-[A-Z]+-[A-Z]+-\d+$/).map((n) => n.props.testID.replace('professional-workout-', ''));
+const cards = () => screen.queryAllByTestId(/^professional-workout-[A-Z0-9]+(-[A-Z0-9]+)*-\d+$/).map((n) => n.props.testID.replace('professional-workout-', ''));
 const enabled = () => expect(screen.getByTestId('assign-continue').props.accessibilityState?.disabled).not.toBe(true);
 
 describe('listing', () => {
@@ -71,16 +71,16 @@ describe('listing', () => {
     renderRouter(routes, { initialUrl: '/workouts' });
     press((await screen.findByTestId('workouts-professional')).props.testID);
     await screen.findByTestId('professional-scroll');
-    expect(cards()).toHaveLength(6);
+    expect(cards()).toHaveLength(15);
     expect(text('professional-workout-SURF-FOUNDATION-01-level')).toBe('Surfing · Beginner');
     expect(text('professional-workout-SURF-PERFORMANCE-01-level')).toBe('Surfing · Advanced');
     expect(text('professional-workout-FOOTBALL-PROGRESSION-01-level')).toBe('Football · Intermediate');
     press('professional-filter-sport-SURFING');
-    await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'SURF-PROGRESSION-01', 'SURF-PERFORMANCE-01']));
+    await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'SURF-PROGRESSION-01', 'SURF-PERFORMANCE-01', 'SURF-FITNESS-FOUNDATION-01', 'SURF-PADDLE-ENDURANCE-01', 'SURF-POWER-ROTATION-01']));
     press('professional-filter-level-BEGINNER');
-    await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01']));
+    await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'SURF-FITNESS-FOUNDATION-01']));
     press('professional-filter-sport-SURFING'); // off
-    await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'FOOTBALL-FOUNDATION-01']));
+    await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'SURF-FITNESS-FOUNDATION-01', 'FOOTBALL-FOUNDATION-01']));
     expect(text('professional-intro')).toMatch(/not official FIFA, ISA or Surfing Australia/);
   });
 
@@ -88,11 +88,75 @@ describe('listing', () => {
     await prepare('he');
     renderRouter(routes, { initialUrl: '/workouts/professional' });
     await screen.findByTestId('professional-scroll');
-    expect(cards()).toHaveLength(6);
+    expect(cards()).toHaveLength(15);
     expect(text('professional-workout-SURF-FOUNDATION-01-name')).toBe('גלישה — מתחילים');
     expect(text('professional-workout-SURF-FOUNDATION-01-level')).toBe('גלישה · מתחילים');
     expect(text('professional-workout-FOOTBALL-PERFORMANCE-01-name')).toBe('כדורגל — מתקדמים');
     expect(text('professional-workout-FOOTBALL-PERFORMANCE-01-level')).toBe('כדורגל · מתקדמים');
+  });
+});
+
+describe('SPORT-CONTENT-002: organization by focus', () => {
+  it('English: Surf Technique and Surf Strength & Fitness are separate groups, with Football and Basketball groups after them', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/professional' });
+    await screen.findByTestId('professional-scroll');
+    expect(text('professional-group-SURFING-SURF_TECHNIQUE-title')).toBe('Surfing — Surf Technique (in the water)');
+    expect(text('professional-group-SURFING-SURF_STRENGTH_FITNESS-title')).toBe('Surfing — Surf Strength & Fitness (dry land)');
+    expect(text('professional-group-BASKETBALL-BALL_HANDLING-title')).toBe('Basketball — Ball handling');
+    expect(text('professional-group-FOOTBALL-TRANSITION-title')).toBe('Football — Transition and pressing');
+    expect(text('professional-workout-BASKETBALL-DEFENSE-REBOUNDING-01-level')).toBe('Basketball · Intermediate');
+    press('professional-filter-sport-SURFING');
+    press('professional-filter-focus-SURF_STRENGTH_FITNESS');
+    await waitFor(() => expect(cards()).toEqual(['SURF-FITNESS-FOUNDATION-01', 'SURF-PADDLE-ENDURANCE-01', 'SURF-POWER-ROTATION-01']));
+    expect(has('professional-group-SURFING-SURF_TECHNIQUE')).toBe(false);
+    press('professional-filter-focus-SURF_STRENGTH_FITNESS'); // off
+    press('professional-filter-sport-BASKETBALL');
+    await waitFor(() => expect(cards()).toEqual(['BASKETBALL-BALL-HANDLING-01', 'BASKETBALL-SHOOTING-FINISHING-01', 'BASKETBALL-DEFENSE-REBOUNDING-01']));
+  });
+
+  it('Hebrew: the group headings and the dry-land workout read in Hebrew', async () => {
+    await prepare('he');
+    renderRouter(routes, { initialUrl: '/workouts/professional' });
+    await screen.findByTestId('professional-scroll');
+    expect(text('professional-group-SURFING-SURF_STRENGTH_FITNESS-title')).toBe('גלישה — כוח וכושר לגלישה (על היבשה)');
+    expect(text('professional-workout-SURF-FITNESS-FOUNDATION-01-name')).toBe('כוח וכושר לגלישה — מתחילים');
+    expect(text('professional-workout-BASKETBALL-BALL-HANDLING-01-level')).toBe('כדורסל · בינוני');
+  });
+
+  it('a dry-land surf workout shows ordinary strength safety wording (not the ocean warning); an ocean one keeps the ocean warning', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/professional/SURF-PADDLE-ENDURANCE-01' });
+    await screen.findByTestId('professional-safety');
+    expect(text('professional-safety-text')).toMatch(/^Match the load and intensity/);
+    expect(text('professional-safety-text')).not.toMatch(/Ocean conditions/);
+    expect(text('professional-details-focus')).toBe('Surf Strength & Fitness (dry land)');
+    renderRouter(routes, { initialUrl: '/workouts/professional/SURF-PROGRESSION-01' });
+    await screen.findByTestId('professional-safety');
+    expect(text('professional-safety-text')).toMatch(/^Ocean conditions, currents, weather/);
+  });
+
+  it('every ADVANCED workout shows the neutral "may require adjustment by a coach or responsible adult" note; others do not', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/professional/FOOTBALL-TRANSITION-PRESSING-01' });
+    await screen.findByTestId('professional-advanced-note');
+    expect(text('professional-advanced-note')).toBe('Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.');
+    renderRouter(routes, { initialUrl: '/workouts/professional/BASKETBALL-BALL-HANDLING-01' });
+    await screen.findByTestId('professional-details-name');
+    expect(has('professional-advanced-note')).toBe(false);
+  });
+
+  it('a new workout is copied like the others: independent, into a NEW or an EXISTING editable workout', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/professional/BASKETBALL-DEFENSE-REBOUNDING-01' });
+    press((await screen.findByTestId('professional-add-to-workout')).props.testID);
+    await screen.findByTestId('assign-continue');
+    await waitFor(enabled);
+    press('assign-continue');
+    await screen.findByTestId(`assign-result-${players.Daniel}`);
+    expect(text(`assign-result-${players.Daniel}-text`)).toBe('New workout for Daniel: Basketball — Defense & Rebounding');
+    const [planned] = (await listTraining(db!, players.Daniel!)).planned;
+    expect((await getPlannedWorkout(db!, planned!.id))!.items.map((i) => i.exercise.exerciseId)).toEqual(idsOf('BASKETBALL-DEFENSE-REBOUNDING-01'));
   });
 });
 

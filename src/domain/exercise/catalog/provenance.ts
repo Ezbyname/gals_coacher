@@ -17,7 +17,7 @@ export interface SourceRef {
   readonly name: string;
   readonly url: string;
   /** opened = the page was read; listing = only a search-result summary was seen (must be opened before it is relied on). */
-  readonly read: 'opened' | 'listing only';
+  readonly read: 'opened' | 'listing only' | 'owner-cited, not opened';
 }
 
 export const SOURCES = {
@@ -28,6 +28,8 @@ export const SOURCES = {
   'SA-TIPS': { name: 'Surfing Australia — surf-school tips for children', url: 'https://surfingaustralia.com/tips-to-keep-your-surf-school-safe-fun-and-inclusive-for-children-and-young-people/', read: 'opened' },
   'ISA-COURSES': { name: 'ISA — courses', url: 'https://isasurf.org/isa-courses/', read: 'listing only' },
   'SLS-RIP': { name: 'Surf Life Saving NSW — rip currents', url: 'https://www.surflifesaving.com.au/beach-safety/rip-currents/', read: 'opened' },
+  'ISA-STRENGTH': { name: 'ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility)', url: 'https://source.isasurf.org/?academy=112&course=6055&view=course_view', read: 'owner-cited, not opened' },
+  'SURF-PHYSIOLOGY': { name: 'Published surfing performance / physiology research (cardiorespiratory fitness, muscular endurance, strength, anaerobic power, upper-torso demand, repeated paddling) — cited by the owner, no specific paper supplied', url: '', read: 'owner-cited, not opened' },
   'F-ONCE': { name: 'FIFA Training Centre — ages 8–12, once-a-week sessions', url: 'https://www.fifatrainingcentre.com/en/practice/grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/sessions-for-once-a-week-training.php', read: 'opened' },
   'F-DRIB48': { name: 'FIFA Training Centre — ages 4–8, dribbling as a positive start', url: 'https://www.fifatrainingcentre.com/en/practice/grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/jene-3-dribbling-as-a-positive-start.php', read: 'opened' },
   'F-PASSREC': { name: 'FIFA Training Centre — ages 8–12, pass-receiving drill', url: 'https://www.fifatrainingcentre.com/en/practice/grassroots/8-to-12/pass-receiving-drill.php', read: 'opened' },
@@ -113,6 +115,12 @@ export const PROVENANCE: Readonly<Record<string, Provenance>> = {
     topic: 'SOURCE_SUPPORTED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['SA-COACH'],
     supports: 'Only that Club Coaching includes heat-drill simulations (SA-COACH). The drill itself is not described.',
     synthesis: `The heat format, the rest and review structure and the 2 × 15 minute dosage. ${own}`,
+  },
+  // ------------------------------------------------------------------ basketball (SPORT-CONTENT-002)
+  BOX_OUT_DRILL: {
+    topic: 'SYNTHESIZED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: [],
+    supports: 'No external source was consulted for this drill in this slice.',
+    synthesis: `A standard basketball fundamental added because the existing Basketball catalog had no box-out / rebounding-position drill. ${own}`,
   },
   // ------------------------------------------------------------------ football
   FB_BALL_MASTERY: {
