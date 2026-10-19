@@ -26,10 +26,17 @@ describe('CONTENT-REVIEW-SHEET', () => {
     for (const field of ['HE name', 'EN name', 'Sport', 'Difficulty', 'Dosage (ORIGINAL_RECOMMENDATION)', 'Equipment', 'Evidence class', 'Coaching cues — HE', 'Safety — EN', 'Source / provenance', 'Exactly what the source supports', 'What is Gals Coacher synthesis']) {
       expect(sheet.split(field).length - 1).toBeGreaterThanOrEqual(22);
     }
-    expect(sheet.match(/PENDING_HUMAN_REVIEW/g)!.length).toBeGreaterThanOrEqual(16);
+    expect(sheet.match(/PENDING_HUMAN_REVIEW/g)!.length).toBeGreaterThanOrEqual(18);
     expect(sheet).toMatch(/not official FIFA, ISA, Surfing Australia or USA Basketball programming/);
     // one combined sheet: both slices, all 15 workouts, the owner-cited sources flagged, nothing implied about Basketball sources
-    expect(sheet).toMatch(/SPORT-CONTENT-001 \+ SPORT-CONTENT-002/);
+    expect(sheet).toMatch(/SPORT-CONTENT-001 \+ 002 \+ 003/);
+    expect(sheet.match(/\| \*\*Slice\*\* \| SPORT-CONTENT-003 \(new\)/g)).toHaveLength(2);
+    expect(sheet).toMatch(/Video verification table/);
+    expect(sheet.match(/\| \*\*NO\*\* \|/g)).toHaveLength(6);
+    expect(sheet).toMatch(/NO — not watched; no transcript available/);
+    expect(sheet.match(/CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED/g)!.length).toBeGreaterThanOrEqual(6);
+    expect(sheet).toMatch(/NOT shown in the app/);
+    expect(sheet).toMatch(/https:\/\/www\.youtube\.com\/watch\?v=KmJburYaPlE/);
     expect(sheet.match(/\| \*\*Slice\*\* \| SPORT-CONTENT-002 \(new\)/g)).toHaveLength(9);
     expect(sheet.match(/\| \*\*Slice\*\* \| SPORT-CONTENT-001 \(unchanged\)/g)).toHaveLength(6);
     expect(sheet).toMatch(/owner-cited, not opened/);

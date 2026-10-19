@@ -35,6 +35,7 @@ export const TRAINING_FOCUSES = [
   'PASSING',
   'DEFENSE',
   'TRANSITION',
+  'FUNDAMENTALS',
 ] as const;
 export type TrainingFocus = (typeof TRAINING_FOCUSES)[number];
 
@@ -71,3 +72,19 @@ export const STRENGTH_SAFETY: Pair = [
   'מתאימים את המשקל ואת העצימות ליכולת, שומרים על טכניקה נקייה, מתחממים לפני ועוצרים אם יש כאב. תוכן מתקדם עשוי לדרוש התאמה על ידי מאמן או מבוגר אחראי לפי גיל, ניסיון ויכולת גופנית.',
   'Match the load and intensity to the person, keep the technique clean, warm up first and stop if there is pain. Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.',
 ];
+
+/**
+ * A CANDIDATE reference video (SPORT-CONTENT-003). It lives only in the content-review / provenance notes — it is never shown in
+ * the production Professional Workout UI and never creates an Exercise. `about` is only what the video's own title / YouTube
+ * description states. Promotion to a user-facing reference needs a human to watch and approve it.
+ */
+export const VIDEO_STATUS = 'CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED' as const;
+export interface CandidateVideo {
+  readonly title: string;
+  readonly author: string;
+  readonly url: string;
+  readonly about: Pair;
+  readonly status: typeof VIDEO_STATUS;
+  /** Which workouts it is a candidate reference for. */
+  readonly candidateFor: readonly string[];
+}

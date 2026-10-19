@@ -383,6 +383,7 @@ export const en = {
         PASSING: 'Passing and first touch',
         DEFENSE: 'Defense and rebounding',
         TRANSITION: 'Transition and pressing',
+        FUNDAMENTALS: 'Beginner fundamentals',
       },
       all: 'All',
       level: { BEGINNER: 'Beginner', INTERMEDIATE: 'Intermediate', ADVANCED: 'Advanced' },

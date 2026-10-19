@@ -384,6 +384,7 @@ export const he = {
         PASSING: 'מסירה ומגע ראשון',
         DEFENSE: 'הגנה וריבאונד',
         TRANSITION: 'מעבר ולחץ',
+        FUNDAMENTALS: 'יסודות למתחילים',
       },
       all: 'הכול',
       level: { BEGINNER: 'מתחילים', INTERMEDIATE: 'בינוני', ADVANCED: 'מתקדמים' },

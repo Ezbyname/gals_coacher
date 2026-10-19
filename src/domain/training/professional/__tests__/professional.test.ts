@@ -15,15 +15,19 @@ import { defaultPrescription, validatePrescription, WORKOUT_NAME_MAX_LENGTH } fr
 import {
   PROFESSIONAL_WORKOUTS,
   SPORT_CONTENT_001_WORKOUT_IDS,
+  SPORT_CONTENT_002_WORKOUT_IDS,
+  SPORT_CONTENT_003_WORKOUT_IDS,
   professionalExerciseCount,
   professionalWorkout,
   professionalWorkoutsFor,
 } from '..';
+import { IBBC_CANDIDATE_VIDEOS } from '../ibbc';
 
 /** SPORT-CONTENT-001 — the Surfing and Football starter catalog and the six professional workouts. */
 const NEW_EXERCISES = [...SURFING, ...FOOTBALL];
 const CORE = PROFESSIONAL_WORKOUTS.filter((w) => SPORT_CONTENT_001_WORKOUT_IDS.includes(w.id));
-const EXPANDED = PROFESSIONAL_WORKOUTS.filter((w) => !SPORT_CONTENT_001_WORKOUT_IDS.includes(w.id));
+const EXPANDED = PROFESSIONAL_WORKOUTS.filter((w) => SPORT_CONTENT_002_WORKOUT_IDS.includes(w.id));
+const IBBC = PROFESSIONAL_WORKOUTS.filter((w) => SPORT_CONTENT_003_WORKOUT_IDS.includes(w.id));
 const sha = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const HEBREW = /[֐-׿]/;
 
@@ -207,12 +211,12 @@ describe('SPORT-CONTENT-002: the expanded catalog', () => {
       'FOOTBALL-FIRST-TOUCH-PASSING-01', 'FOOTBALL-1V1-FINISHING-01', 'FOOTBALL-TRANSITION-PRESSING-01',
       'BASKETBALL-BALL-HANDLING-01', 'BASKETBALL-SHOOTING-FINISHING-01', 'BASKETBALL-DEFENSE-REBOUNDING-01',
     ]);
-    expect(PROFESSIONAL_WORKOUTS).toHaveLength(15);
+    expect(PROFESSIONAL_WORKOUTS).toHaveLength(17);
     expect(professionalWorkoutsFor('SURFING', null, 'SURF_STRENGTH_FITNESS').map((w) => w.difficulty)).toEqual(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']);
     expect(professionalWorkoutsFor('SURFING', null, 'SURF_TECHNIQUE')).toHaveLength(3);
     expect(professionalWorkoutsFor('SURFING', null)).toHaveLength(6);
     expect(professionalWorkoutsFor('FOOTBALL', null)).toHaveLength(6);
-    expect(professionalWorkoutsFor('BASKETBALL', null)).toHaveLength(3);
+    expect(professionalWorkoutsFor('BASKETBALL', null)).toHaveLength(5);
     expect(EXPANDED.filter((w) => w.sport === 'FOOTBALL').map((w) => w.focus)).toEqual(['PASSING', 'FINISHING', 'TRANSITION']);
     expect(EXPANDED.filter((w) => w.sport === 'BASKETBALL').map((w) => w.focus)).toEqual(['BALL_HANDLING', 'SHOOTING', 'DEFENSE']);
   });
@@ -266,5 +270,54 @@ describe('SPORT-CONTENT-002: the expanded catalog', () => {
     expect(sql.match(/INSERT INTO/g)).toHaveLength(1);
     expect(builtinExercise('BOX_OUT_DRILL')!.sports).toEqual(['BASKETBALL']);
     expect(BUILTIN_TAXONOMY_MEMBERS.BASKETBALL_REBOUNDING).toContain('BOX_OUT_DRILL');
+  });
+});
+
+/** SPORT-CONTENT-003 — two beginner Basketball workouts that LINK the IBBC beginner page's videos as reference material. */
+describe('SPORT-CONTENT-003: reference videos from the IBBC beginner page (no new Exercise, no migration)', () => {
+  it('two beginner workouts built ONLY from existing built-in Exercises: no Exercise was created from a video', () => {
+    expect(IBBC.map((w) => w.id)).toEqual(['BASKETBALL-BEGINNER-BALL-FEEL-01', 'BASKETBALL-BEGINNER-SHOOT-LAYUP-01']);
+    expect(BUILTIN_EXERCISES).toHaveLength(145 + 1); // unchanged by this slice: only the SPORT-CONTENT-002 box-out was added
+    for (const w of IBBC) {
+      expect([w.sport, w.difficulty, w.focus, w.sources]).toEqual(['BASKETBALL', 'BEGINNER', 'FUNDAMENTALS', ['IBBC-BEGINNER']]);
+      expect(w.name[0].length).toBeLessThanOrEqual(WORKOUT_NAME_MAX_LENGTH);
+      expect(w.name[1].length).toBeLessThanOrEqual(WORKOUT_NAME_MAX_LENGTH);
+      for (const item of w.sections.flatMap((s) => s.items)) {
+        const e = builtinExercise(item.exerciseId)!;
+        expect(e).not.toBeNull();
+        expect(e.tutorialUrl).toBeNull(); // no video is attached to any Exercise
+        if (e.sports.length > 0) expect(e.sports).toEqual(['BASKETBALL']);
+        const p = item.dosage ? { sets: item.dosage.sets, target: item.dosage.target, loadKg: null, restSec: item.dosage.restSec } : defaultPrescription(e.measurement, e.defaults);
+        expect(validatePrescription(e.measurement, p).ok).toBe(true);
+      }
+    }
+    expect(BUILTIN_EXERCISES.map((e) => e.id)).not.toEqual(expect.arrayContaining(['UP_OR_DOWN_GAME']));
+    expect(BUILTIN_EXERCISES.some((e) => /^(UP_OR_DOWN|TOSS_AND_CATCH|CATCH_WITH|LAYUP_SKIP)/.test(e.id))).toBe(false); // no Exercise was made from a video title
+  });
+
+  it('the six IBBC videos are CANDIDATES for human review only: never on a workout, never on an Exercise, each marked not human verified', () => {
+    expect(IBBC_CANDIDATE_VIDEOS).toHaveLength(6);
+    expect(new Set(IBBC_CANDIDATE_VIDEOS.map((v) => v.url))).toEqual(
+      new Set(['ePX7umliH_s', '-KSQDWxptE0', 'KmJburYaPlE', '_XXSmPJS8_M', 'vprXdk5f-pA', '9z6NtAuiB4U'].map((id) => `https://www.youtube.com/watch?v=${id}`)),
+    );
+    for (const v of IBBC_CANDIDATE_VIDEOS) {
+      expect(v.status).toBe('CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED');
+      expect(v.url).toMatch(/^https:\/\/www\.youtube\.com\/watch\?v=[\w-]{11}$/);
+      expect(v.about[1]).toMatch(/^Per its YouTube description:/);
+      expect(v.about[1]).not.toMatch(/\b(step|steps|rule|rules|first,|then,|set up|setup)\b/i); // no how-to is invented from a title
+      expect(v.candidateFor.every((id) => SPORT_CONTENT_003_WORKOUT_IDS.includes(id))).toBe(true);
+    }
+    // nothing user-facing: no workout carries a video, and no user-facing text mentions or links one
+    expect(PROFESSIONAL_WORKOUTS.every((w) => !('videos' in w))).toBe(true);
+    expect(JSON.stringify(PROFESSIONAL_WORKOUTS).toLowerCase()).not.toMatch(/youtube|youtu\.be|jr\. nba|hoopsking/);
+    expect(BUILTIN_EXERCISES.every((e) => e.tutorialUrl === null)).toBe(true);
+  });
+
+  it('the source is recorded honestly: the page has no written drills or dosage, the videos were not watched, and every dosage is ours', () => {
+    expect(SOURCES['IBBC-BEGINNER'].url).toBe('https://www.ibbcoaches.org.il/beginnerbasketballtraining');
+    expect(SOURCES['IBBC-BEGINNER'].name).toMatch(/no written drills or dosage/);
+    expect(SOURCES['IBBC-BEGINNER'].name).toMatch(/NOT watched/);
+    expect(JSON.stringify(IBBC.map((w) => [w.summary, w.coachNotes])).toLowerCase()).not.toMatch(/ibbc|jr\. nba|hoopsking|iba/);
+    expect(IBBC.map((w) => w.coachNotes[0]![1]).join(' ')).toMatch(/Gals Coacher's own/);
   });
 });

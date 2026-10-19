@@ -1,8 +1,8 @@
-# CONTENT-REVIEW-SHEET — SPORT-CONTENT-001 + SPORT-CONTENT-002 (one combined sheet)
+# CONTENT-REVIEW-SHEET — SPORT-CONTENT-001 + 002 + 003 (one combined sheet)
 
 Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published as approved until a human approves this sheet.
 
-Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) and **15 professional workouts** (6 from SPORT-CONTENT-001, 9 from SPORT-CONTENT-002). The nine SPORT-CONTENT-002 workouts reuse the existing catalog; the only new Exercise they add is the Basketball box-out.
+Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) and **17 professional workouts** (6 from SPORT-CONTENT-001, 9 from SPORT-CONTENT-002, 2 from SPORT-CONTENT-003). The SPORT-CONTENT-002 workouts reuse the existing catalog (their only new Exercise is the Basketball box-out); SPORT-CONTENT-003 adds NO Exercise and NO user-facing video: two beginner workouts from existing exercises, with the six IBBC videos kept as review notes only.
 
 - Everything here is **Gals Coacher's own programming, informed by public sources**. It is not official FIFA, ISA, Surfing Australia or USA Basketball programming.
 - **Every dosage (sets, targets, rest, durations, counts) is an `ORIGINAL_RECOMMENDATION`** — no source gives dosages for these drills.
@@ -29,6 +29,13 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 9. **`BOX_OUT_DRILL`** is a new Basketball Exercise (the catalog had no box-out / rebounding-position drill); it is `SYNTHESIZED`, with no external source.
 10. **Equipment**: the Paddle Endurance workout uses a ski erg and battle ropes (with a rowing-machine / battle-rope alternative in the coach note).
 11. **Surf Technique vs Surf Strength & Fitness** are shown as separate groups in the Professional workouts list; the Football 001 workouts are tagged "All-round progression".
+
+**New in SPORT-CONTENT-003 (the IBBC beginner page)**
+
+12. **The six videos were not watched and no transcript could be obtained** (five have no captions; the sixth's caption file is empty). So no video became an Exercise, no how-to was written from a title, and **no video is shown in the app**; they are `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` notes in this sheet only. If you want one promoted to a user-facing reference or turned into an Exercise, someone needs to watch it and give the exact setup, roles, steps, cues and progression.
+13. **The sources are third-party** (Jr. NBA / Jr. WNBA, HoopsKing — a commercial site whose coaching quality has not been reviewed — and Peak Performance Training).
+14. **The sets / repetitions / durations** of the two beginner workouts are ours (all `ORIGINAL_RECOMMENDATION`).
+
 
 ## A. New Exercises (22)
 
@@ -922,7 +929,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 **ORIGINAL_RECOMMENDATION:** every set, target and rest value above.
 
-## B. Professional workouts (15)
+## B. Professional workouts (17)
 
 ### B1. SPORT-CONTENT-001 (6, unchanged)
 
@@ -1943,3 +1950,145 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 **What is Gals Coacher synthesis:** Assembled from the app's existing defensive drills plus ONE new drill, BOX_OUT_DRILL (the catalog had no box-out); the order and every dosage are ours.
 
 **ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### B3. SPORT-CONTENT-003 (2, new — existing exercises only; the IBBC videos are review notes, not shown in the app)
+
+### BASKETBALL-BEGINNER-BALL-FEEL-01 — Basketball — Ball Feel / כדורסל — היכרות עם הכדור
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-003 (new) |
+| **Sport** | BASKETBALL |
+| **Difficulty** | BEGINNER |
+| **Focus** | FUNDAMENTALS |
+| **Length** | about 25–35 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** שליטה בכדור, כדרור ומסירות בסיסיות למתחילים — מתרגילים קיימים בספרייה.
+
+**Summary — EN:** Basic ball control, dribbling and passing for beginners — from existing library exercises.
+
+**Section 1 — Warm-up / חימום**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | JUMPING_JACKS | Jumping Jacks | ג׳אמפינג ג׳קס | 2 × 30s, rest 15 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — Ball control / שליטה בכדור**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | STATIONARY_DRIBBLING | Stationary Dribbling | כדרור במקום | 3 × 30s, rest 20 s |
+| 2 | CROSSOVER_DRIBBLE | Crossover Dribble | כדרור קרוסאובר | 3 × 10 reps, rest 30 s |
+| 3 | CHANGE_OF_PACE_DRIBBLE | Change-of-Pace Dribble | כדרור בשינוי קצב | 3 × 4 reps, rest 45 s |
+
+**Section 3 — Passing and catching / מסירה ותפיסה**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | WALL_PASSING | Wall Passing | מסירות לקיר | 3 × 12 reps, rest 30 s |
+| 2 | ONE_HAND_PUSH_PASS | One-Hand Push Pass | מסירת דחיפה ביד אחת | 3 × 10 reps, rest 30 s |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: בחירת התרגילים, הסדר והמינונים באימון הזה הם של Gals Coacher (תרגילים קיימים בספרייה), ואינם של גוף חיצוני.
+- EN: The exercise selection, the order and the dosages in this workout are Gals Coacher's own (existing library exercises), not an outside body's.
+
+**Safety — HE:** — (none)
+
+**Safety — EN:** — (none)
+
+**Candidate reference videos (review notes only — NOT shown in the app; status `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED`):**
+
+- Basketball Skills Clinic: Ages 6 to 9 — getppt (Peak Performance Training) — https://www.youtube.com/watch?v=ePX7umliH_s
+- Up Or Down Game — Jr. NBA Jr. WNBA — https://www.youtube.com/watch?v=KmJburYaPlE
+- Toss And Catch Drill (adds a clap, 2, 3, turn) — Jr. NBA Jr. WNBA — https://www.youtube.com/watch?v=_XXSmPJS8_M
+- Catch With Coach Drill — Jr. NBA Jr. WNBA — https://www.youtube.com/watch?v=vprXdk5f-pA
+
+**Sources:**
+- Israel Basketball Coaches Association — beginner / school basketball training page (six embedded YouTube videos; no written drills or dosage; the videos were NOT watched and no transcript was available) — https://www.ibbcoaches.org.il/beginnerbasketballtraining _(opened)_
+
+**Exactly what the sources support:** The IBBC beginner-training page (opened) embeds six YouTube videos and contains NO written drills and NO dosage. The videos were NOT watched and no transcript was available, so nothing about HOW a drill is done is taken from them: they are kept ONLY in this review sheet as CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED notes and are NOT shown in the app.
+
+**What is Gals Coacher synthesis:** The choice and order of EXISTING library exercises (no new Exercise), the sections and every set / repetition / duration (all ORIGINAL_RECOMMENDATION). The videos belong to Jr. NBA / Jr. WNBA, HoopsKing and Peak Performance Training.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+### BASKETBALL-BEGINNER-SHOOT-LAYUP-01 — Basketball — Form & Layups / כדורסל — קליעה וליי-אפ
+
+| | |
+|---|---|
+| **Slice** | SPORT-CONTENT-003 (new) |
+| **Sport** | BASKETBALL |
+| **Difficulty** | BEGINNER |
+| **Focus** | FUNDAMENTALS |
+| **Length** | about 30–40 minutes |
+| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
+
+**Summary — HE:** טכניקת קליעה בסיסית, עבודת רגליים וסיומים קרובים לסל למתחילים — מתרגילים קיימים בספרייה.
+
+**Summary — EN:** Basic shooting form, footwork and close finishes at the rim for beginners — from existing library exercises.
+
+**Section 1 — Warm-up / חימום**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | JUMPING_JACKS | Jumping Jacks | ג׳אמפינג ג׳קס | 2 × 30s, rest 15 s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+
+**Section 2 — Shooting form / טכניקת קליעה**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | FORM_SHOOTING | Form Shooting | זריקות טכניקה קרוב לסל | 3 × 8 attempts, rest 30 s |
+| 2 | JUMP_STOP_PIVOTS | Jump Stop & Pivots | עצירה בקפיצה וסיבובים | 3 × 8 reps, rest 30 s |
+
+**Section 3 — Finishing at the rim / סיומים לסל**
+
+| # | Exercise (ID) | EN | HE | Dosage |
+|---|---|---|---|---|
+| 1 | LAYUPS | Layups (both hands) | לייאפים בשתי הידיים | 3 × 8 attempts, rest 45 s |
+| 2 | POWER_LAYUPS | Power Layups | סיום בכוח משתי רגליים | 3 × 8 attempts, rest 45 s |
+| 3 | MIKAN_DRILL | Mikan Drill | תרגיל מייקן | 3 × 10 attempts, rest 45 s |
+
+**Coach notes (shown on the workout screen, NOT copied into a plan):**
+
+- HE: בחירת התרגילים, הסדר והמינונים באימון הזה הם של Gals Coacher (תרגילים קיימים בספרייה), ואינם של גוף חיצוני.
+- EN: The exercise selection, the order and the dosages in this workout are Gals Coacher's own (existing library exercises), not an outside body's.
+
+**Safety — HE:** — (none)
+
+**Safety — EN:** — (none)
+
+**Candidate reference videos (review notes only — NOT shown in the app; status `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED`):**
+
+- Basketball Skills Clinic: Ages 6 to 9 — getppt (Peak Performance Training) — https://www.youtube.com/watch?v=ePX7umliH_s
+- How to Teach Your Child to Shoot a Basketball — HoopsKing.com — https://www.youtube.com/watch?v=-KSQDWxptE0
+- Layup Skip Drill — Jr. NBA Jr. WNBA — https://www.youtube.com/watch?v=9z6NtAuiB4U
+
+**Sources:**
+- Israel Basketball Coaches Association — beginner / school basketball training page (six embedded YouTube videos; no written drills or dosage; the videos were NOT watched and no transcript was available) — https://www.ibbcoaches.org.il/beginnerbasketballtraining _(opened)_
+
+**Exactly what the sources support:** The IBBC beginner-training page (opened) embeds six YouTube videos and contains NO written drills and NO dosage. The videos were NOT watched and no transcript was available, so nothing about HOW a drill is done is taken from them: they are kept ONLY in this review sheet as CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED notes and are NOT shown in the app.
+
+**What is Gals Coacher synthesis:** The choice and order of EXISTING library exercises (no new Exercise), the sections and every set / repetition / duration (all ORIGINAL_RECOMMENDATION). The videos belong to Jr. NBA / Jr. WNBA, HoopsKing and Peak Performance Training.
+
+**ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
+
+## C. Video verification table (the IBBC beginner page)
+
+Page: https://www.ibbcoaches.org.il/beginnerbasketballtraining — six embedded YouTube videos, no written drills, no dosage. Status of every video: `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED`.
+
+| Video | Watched / transcript verified | What the source actually shows (its own title + YouTube description only) | What we implemented | What remains our own recommendation | New Exercise required? |
+|---|---|---|---|---|---|
+| [Basketball Skills Clinic: Ages 6 to 9](https://www.youtube.com/watch?v=ePX7umliH_s) — getppt (Peak Performance Training) | NO — not watched; no transcript available | Per its YouTube description: a basketball skills clinic for ages 6 to 9 focused on progressions and proper development. | Nothing shown to users: kept as a `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review note | All sets / reps / durations and the choice of existing exercises | **NO** |
+| [How to Teach Your Child to Shoot a Basketball](https://www.youtube.com/watch?v=-KSQDWxptE0) — HoopsKing.com | NO — not watched; no transcript available | Per its YouTube description: about teaching a child to shoot correctly. It is from a commercial site and its teaching quality has not been checked. | Nothing shown to users: kept as a `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review note | All sets / reps / durations and the choice of existing exercises | **NO** |
+| [Up Or Down Game](https://www.youtube.com/watch?v=KmJburYaPlE) — Jr. NBA Jr. WNBA | NO — not watched; no transcript available | Per its YouTube description: a game to practise ball handling with the head up. | Nothing shown to users: kept as a `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review note | All sets / reps / durations and the choice of existing exercises | **NO** |
+| [Toss And Catch Drill (adds a clap, 2, 3, turn)](https://www.youtube.com/watch?v=_XXSmPJS8_M) — Jr. NBA Jr. WNBA | NO — not watched; no transcript available | Per its YouTube description: builds coordination by tossing and catching the ball. | Nothing shown to users: kept as a `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review note | All sets / reps / durations and the choice of existing exercises | **NO** |
+| [Catch With Coach Drill](https://www.youtube.com/watch?v=vprXdk5f-pA) — Jr. NBA Jr. WNBA | NO — not watched; no transcript available | Per its YouTube description: playing catch to work on ball handling and passing technique. | Nothing shown to users: kept as a `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review note | All sets / reps / durations and the choice of existing exercises | **NO** |
+| [Layup Skip Drill](https://www.youtube.com/watch?v=9z6NtAuiB4U) — Jr. NBA Jr. WNBA | NO — not watched; no transcript available | Per its YouTube description: explains that skipping is a natural progression into layups. | Nothing shown to users: kept as a `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review note | All sets / reps / durations and the choice of existing exercises | **NO** |

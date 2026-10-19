@@ -2,6 +2,7 @@ import { SURF_SAFETY } from '../../exercise/catalog/surfing';
 import type { Difficulty } from '../../exercise/taxonomy';
 
 import { EXPANDED_WORKOUTS } from './expanded';
+import { IBBC_WORKOUTS } from './ibbc';
 import { reuse, x, type Pair, type ProfessionalSport, type ProfessionalWorkout, type TrainingFocus } from './types';
 
 export * from './types';
@@ -238,9 +239,12 @@ const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
 ];
 
 /** Every professional workout: the six of SPORT-CONTENT-001, then the nine of SPORT-CONTENT-002. */
-export const PROFESSIONAL_WORKOUTS: readonly ProfessionalWorkout[] = [...CORE_WORKOUTS, ...EXPANDED_WORKOUTS];
+export const PROFESSIONAL_WORKOUTS: readonly ProfessionalWorkout[] = [...CORE_WORKOUTS, ...EXPANDED_WORKOUTS, ...IBBC_WORKOUTS];
 /** The ids of the SPORT-CONTENT-001 workouts, which SPORT-CONTENT-002 must never change. */
 export const SPORT_CONTENT_001_WORKOUT_IDS: readonly string[] = CORE_WORKOUTS.map((w) => w.id);
+/** The nine SPORT-CONTENT-002 workouts, and the two SPORT-CONTENT-003 ones (reference videos from the IBBC beginner page). */
+export const SPORT_CONTENT_002_WORKOUT_IDS: readonly string[] = EXPANDED_WORKOUTS.map((w) => w.id);
+export const SPORT_CONTENT_003_WORKOUT_IDS: readonly string[] = IBBC_WORKOUTS.map((w) => w.id);
 
 const BY_ID = new Map(PROFESSIONAL_WORKOUTS.map((w) => [w.id, w]));
 

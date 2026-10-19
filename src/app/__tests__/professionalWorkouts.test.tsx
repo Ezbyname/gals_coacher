@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 
 import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { openDatabaseAsync } from 'expo-sqlite';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
@@ -71,7 +71,7 @@ describe('listing', () => {
     renderRouter(routes, { initialUrl: '/workouts' });
     press((await screen.findByTestId('workouts-professional')).props.testID);
     await screen.findByTestId('professional-scroll');
-    expect(cards()).toHaveLength(15);
+    expect(cards()).toHaveLength(17);
     expect(text('professional-workout-SURF-FOUNDATION-01-level')).toBe('Surfing · Beginner');
     expect(text('professional-workout-SURF-PERFORMANCE-01-level')).toBe('Surfing · Advanced');
     expect(text('professional-workout-FOOTBALL-PROGRESSION-01-level')).toBe('Football · Intermediate');
@@ -80,7 +80,7 @@ describe('listing', () => {
     press('professional-filter-level-BEGINNER');
     await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'SURF-FITNESS-FOUNDATION-01']));
     press('professional-filter-sport-SURFING'); // off
-    await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'SURF-FITNESS-FOUNDATION-01', 'FOOTBALL-FOUNDATION-01']));
+    await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'SURF-FITNESS-FOUNDATION-01', 'FOOTBALL-FOUNDATION-01', 'BASKETBALL-BEGINNER-BALL-FEEL-01', 'BASKETBALL-BEGINNER-SHOOT-LAYUP-01']));
     expect(text('professional-intro')).toMatch(/not official FIFA, ISA or Surfing Australia/);
   });
 
@@ -88,7 +88,7 @@ describe('listing', () => {
     await prepare('he');
     renderRouter(routes, { initialUrl: '/workouts/professional' });
     await screen.findByTestId('professional-scroll');
-    expect(cards()).toHaveLength(15);
+    expect(cards()).toHaveLength(17);
     expect(text('professional-workout-SURF-FOUNDATION-01-name')).toBe('גלישה — מתחילים');
     expect(text('professional-workout-SURF-FOUNDATION-01-level')).toBe('גלישה · מתחילים');
     expect(text('professional-workout-FOOTBALL-PERFORMANCE-01-name')).toBe('כדורגל — מתקדמים');
@@ -112,7 +112,7 @@ describe('SPORT-CONTENT-002: organization by focus', () => {
     expect(has('professional-group-SURFING-SURF_TECHNIQUE')).toBe(false);
     press('professional-filter-focus-SURF_STRENGTH_FITNESS'); // off
     press('professional-filter-sport-BASKETBALL');
-    await waitFor(() => expect(cards()).toEqual(['BASKETBALL-BALL-HANDLING-01', 'BASKETBALL-SHOOTING-FINISHING-01', 'BASKETBALL-DEFENSE-REBOUNDING-01']));
+    await waitFor(() => expect(cards()).toEqual(['BASKETBALL-BALL-HANDLING-01', 'BASKETBALL-SHOOTING-FINISHING-01', 'BASKETBALL-DEFENSE-REBOUNDING-01', 'BASKETBALL-BEGINNER-BALL-FEEL-01', 'BASKETBALL-BEGINNER-SHOOT-LAYUP-01']));
   });
 
   it('Hebrew: the group headings and the dry-land workout read in Hebrew', async () => {
@@ -157,6 +157,47 @@ describe('SPORT-CONTENT-002: organization by focus', () => {
     expect(text(`assign-result-${players.Daniel}-text`)).toBe('New workout for Daniel: Basketball — Defense & Rebounding');
     const [planned] = (await listTraining(db!, players.Daniel!)).planned;
     expect((await getPlannedWorkout(db!, planned!.id))!.items.map((i) => i.exercise.exerciseId)).toEqual(idsOf('BASKETBALL-DEFENSE-REBOUNDING-01'));
+  });
+});
+
+describe('SPORT-CONTENT-003: two beginner Basketball workouts (the IBBC videos are NOT exposed)', () => {
+  it('English: the beginner fundamentals group lists the two workouts; the details show NO video section and no outside link', async () => {
+    await prepare('en');
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    renderRouter(routes, { initialUrl: '/workouts/professional' });
+    await screen.findByTestId('professional-scroll');
+    expect(text('professional-group-BASKETBALL-FUNDAMENTALS-title')).toBe('Basketball — Beginner fundamentals');
+    expect(text('professional-workout-BASKETBALL-BEGINNER-BALL-FEEL-01-level')).toBe('Basketball · Beginner');
+    expect(text('professional-workout-BASKETBALL-BEGINNER-SHOOT-LAYUP-01-name')).toBe('Basketball — Form & Layups');
+    renderRouter(routes, { initialUrl: '/workouts/professional/BASKETBALL-BEGINNER-BALL-FEEL-01' });
+    await screen.findByTestId('professional-details-name');
+    expect(has('professional-videos')).toBe(false);
+    expect(screen.queryByText(/youtube/i)).toBeNull();
+    expect(screen.queryByText(/Reference videos/i)).toBeNull();
+    expect(text('professional-coach-note-0')).toMatch(/Gals Coacher's own/);
+    expect(open).not.toHaveBeenCalled();
+    expect(has('professional-safety')).toBe(false);
+  });
+
+  it('Hebrew: the workout opens with Hebrew names and no video section', async () => {
+    await prepare('he');
+    renderRouter(routes, { initialUrl: '/workouts/professional/BASKETBALL-BEGINNER-SHOOT-LAYUP-01' });
+    await screen.findByTestId('professional-details-name');
+    expect(text('professional-details-name')).toBe('כדורסל — קליעה וליי-אפ');
+    expect(text('professional-details-level')).toBe('כדורסל · מתחילים');
+    expect(has('professional-videos')).toBe(false);
+  });
+
+  it('a beginner workout is copied like the others: independent, new or existing', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/professional/BASKETBALL-BEGINNER-SHOOT-LAYUP-01' });
+    press((await screen.findByTestId('professional-add-to-workout')).props.testID);
+    await screen.findByTestId('assign-continue');
+    await waitFor(enabled);
+    press('assign-continue');
+    await screen.findByTestId(`assign-result-${players.Daniel}`);
+    const [planned] = (await listTraining(db!, players.Daniel!)).planned;
+    expect((await getPlannedWorkout(db!, planned!.id))!.items.map((i) => i.exercise.exerciseId)).toEqual(idsOf('BASKETBALL-BEGINNER-SHOOT-LAYUP-01'));
   });
 });
 
