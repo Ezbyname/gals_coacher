@@ -27,10 +27,17 @@ export function targetLabelKey(type: MeasurementType): TranslationKey | null {
   return keys[type] ?? null;
 }
 
+/** The hint under a TIME-measured item that has a configured value: record the real time; the value is only a cap. */
+export function timeCapHint(t: T, measurement: ExerciseMeasurement, target: number | null): string | null {
+  return measurement.type === 'TIME' && target !== null ? t('training.timeCapHint') : null;
+}
+
 /** A target value in the measurement's unit: 10 · 40 s · 20 m · 10 attempts. */
 function targetText(t: T, type: MeasurementType, value: number): string {
   const n = formatNumber(value);
-  if (type === 'DURATION' || type === 'TIME') return t('training.unit.seconds', { n });
+  if (type === 'DURATION') return t('training.unit.seconds', { n });
+  // a TIME target is only a recording CAP: the athlete records the real time (never a performance standard)
+  if (type === 'TIME') return t('training.unit.timeCap', { n });
   if (type === 'DISTANCE') return t('training.unit.metres', { n });
   if (type === 'MADE_ATTEMPTS') return t('training.unit.attempts', { n });
   return t('training.unit.reps', { n });

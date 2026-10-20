@@ -12,7 +12,7 @@ import { alt, reuse, x, type GeneralWorkout, type Pair } from './types';
  */
 
 export const GENERAL_SAFETY: Pair = [
-  'מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.',
+  'מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.',
   'Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.',
 ];
 const SURFACE: Pair = [
@@ -38,7 +38,7 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     focus: 'ATHLETIC_FOUNDATION',
     name: ['יסודות תנועה', 'Movement Foundation'],
     summary: [
-      'היכרות עם דפוסי התנועה הבסיסיים — סקווט, לאנג׳, ציר ירך, דחיפה, משיכה ויציבות הגו — בעומס נמוך ובדגש על איכות התנועה.',
+      'היכרות עם דפוסי התנועה הבסיסיים — סקווט, לאנג׳, גשר עכוז / יישור ירך, דחיפה, משיכה ויציבות הגו — בעומס נמוך ובדגש על איכות התנועה.',
       'An introduction to the basic movement patterns — squat, lunge, hip bridge, push, pull and trunk stability — at low load, with the focus on movement quality.',
     ],
     minutes: [30, 40],
@@ -71,12 +71,12 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     focus: 'STRENGTH_FOUNDATION',
     name: ['כוח כל הגוף א׳', 'Full-Body Strength A'],
     summary: [
-      'סקווט, דחיפה אופקית, משיכה אופקית, גשר ירך ויציבות הגו — יום כוח בסיסי שמשלים את כוח ב׳.',
+      'סקווט, דחיפה אופקית, משיכה אופקית, גשר עכוז ויציבות הגו — יום כוח בסיסי שמשלים את כוח ב׳.',
       'Squat, horizontal push, horizontal pull, hip bridge and trunk stability — a foundation strength day that pairs with Strength B.',
     ],
     minutes: [40, 50],
     sections: [
-      { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'WORLDS_GREATEST_STRETCH', 'BAND_PULL_APART', 'GLUTE_BRIDGE') },
+      { name: ['חימום', 'Warm-up'], items: [...reuse('LEG_SWINGS', 'WORLDS_GREATEST_STRETCH', 'BAND_PULL_APART'), x('GLUTE_BRIDGE', 1, 10, 30)] },
       {
         name: ['כוח', 'Strength'],
         items: [x('GOBLET_SQUAT', 3, 8, 90), x('PUSH_UP', 3, 8, 60), x('ONE_ARM_DUMBBELL_ROW', 3, 10, 60), x('GLUTE_BRIDGE', 3, 12, 45)],
@@ -108,7 +108,7 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     ],
     minutes: [40, 50],
     sections: [
-      { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'WORLDS_GREATEST_STRETCH', 'BAND_PULL_APART', 'BODYWEIGHT_SQUAT') },
+      { name: ['חימום', 'Warm-up'], items: [...reuse('LEG_SWINGS', 'WORLDS_GREATEST_STRETCH', 'BAND_PULL_APART'), x('BODYWEIGHT_SQUAT', 2, 8, 30)] },
       {
         name: ['כוח', 'Strength'],
         items: [x('STEP_UP', 3, 8, 60), x('ROMANIAN_DEADLIFT', 3, 8, 90), x('BAND_ROW', 3, 12, 45), x('DUMBBELL_SHOULDER_PRESS', 3, 8, 60)],
@@ -140,7 +140,7 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     ],
     minutes: [30, 40],
     sections: [
-      { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'ANKLE_KNEE_TO_WALL', 'BODYWEIGHT_SQUAT') },
+      { name: ['חימום', 'Warm-up'], items: [...reuse('LEG_SWINGS', 'ANKLE_KNEE_TO_WALL'), x('BODYWEIGHT_SQUAT', 2, 8, 30)] },
       { name: ['נחיתה מבוקרת', 'Controlled landing'], items: [x('DROP_LANDING_STICK', 3, 5, 45)] },
       { name: ['קפיצות בסיסיות', 'Low-complexity jumps'], items: [x('SQUAT_JUMP', 3, 5, 60), x('POGO_JUMPS', 2, 10, 45)] },
     ],
@@ -170,7 +170,7 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     ],
     minutes: [35, 45],
     sections: [
-      { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'WORLDS_GREATEST_STRETCH', 'BODYWEIGHT_SQUAT') },
+      { name: ['חימום', 'Warm-up'], items: [...reuse('LEG_SWINGS', 'WORLDS_GREATEST_STRETCH'), x('BODYWEIGHT_SQUAT', 2, 8, 30)] },
       { name: ['הכנת נחיתה', 'Landing primer'], items: [x('DROP_LANDING_STICK', 2, 5, 30), x('SINGLE_LEG_HOP_STICK', 2, 4, 45)] },
       { name: ['קפיצות עוצמה', 'Explosive jumps'], items: [x('BOX_JUMP', 4, 4, 90), x('LATERAL_BOUNDS', 3, 6, 60)] },
       { name: ['כוח ירך', 'Hip power'], items: [x('KETTLEBELL_SWING', 3, 10, 60), x('HIP_THRUST', 3, 6, 90)] },
@@ -300,7 +300,7 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     sections: [
       { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'LATERAL_LUNGE', 'A_SKIP') },
       { name: ['התחלה לפי אות', 'Cue-based starts'], items: [x('COACH_CUE_REACTION_SPRINT', 6, 1, 60)] },
-      { name: ['מראה עם בן זוג', 'Partner mirror'], items: [x('PARTNER_MIRROR_DRILL', 4, 15, 45)] },
+      { name: ['תרגיל מראה בזוגות', 'Partner mirror'], items: [x('PARTNER_MIRROR_DRILL', 4, 15, 45)] },
     ],
     coachNotes: [
       [
@@ -334,7 +334,7 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     ],
     coachNotes: [
       [
-        'בוחרים שיטה אחת: ריצה, אופניים או מכשיר חתירה, באותה משך ובקצב שיחה נוח. את ההחלפה עושים בעריכת האימון; הריצה היא ברירת המחדל.',
+        'בוחרים שיטה אחת: ריצה, אופניים או מכשיר חתירה, באותו משך ובקצב שיחה נוח. את ההחלפה עושים בעריכת האימון; הריצה היא ברירת המחדל.',
         'Pick ONE modality: running, a bike or a rower, for the same duration at a comfortable conversational pace. Swap it when editing the workout; running is the default.',
       ],
       SURFACE,
@@ -356,7 +356,7 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     sections: [
       { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'HIGH_KNEES', 'A_SKIP') },
       {
-        name: ['אינטרוולי ריצה (או אינטרוולים באופניים, בסקי ארג, בחתירה או בחבל קפיצה)', 'Run intervals (or intervals on a bike, ski erg, rower or jump rope)'],
+        name: ['אינטרוולים בריצה (או אינטרוולים באופניים, בסקי ארג, בחתירה או בחבל קפיצה)', 'Run intervals (or intervals on a bike, ski erg, rower or jump rope)'],
         items: [
           x('RUN_INTERVALS', 6, 45, 90, [
             alt('BIKE_INTERVALS', 8, 30, 60),

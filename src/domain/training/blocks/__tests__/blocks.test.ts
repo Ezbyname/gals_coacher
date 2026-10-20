@@ -13,6 +13,7 @@ import {
   generalWorkoutsFor,
   domainOf,
 } from '../../professional';
+import { GENERAL_SAFETY } from '../../professional/athletic';
 import { orderedSessions, planName, planSessionDates, previewBlock, sessionSections, TRAINING_BLOCKS, trainingBlock, totalSessions, weekdayOf } from '..';
 
 const HEBREW = /[֐-׿]/;
@@ -281,5 +282,67 @@ describe('planning the dates', () => {
     expect(rows.map((x) => x.index)).toEqual(Array.from({ length: 12 }, (_, i) => i));
     expect(rows[0]).toMatchObject({ week: 1, slot: 1, workoutId: 'ATH-MOVEMENT-FOUNDATION-01', date: r.dates[0] });
     expect(previewBlock(block, 'he', null).every((x) => x.date === null)).toBe(true);
+  });
+});
+
+describe('human review round 1 — content corrections', () => {
+  const dose = (id: string, ex: string, section = 0) => professionalWorkout(id)!.sections[section]!.items.find((i) => i.exerciseId === ex)?.dosage;
+  const every = JSON.stringify([ATHLETIC, GENERAL_ATHLETIC_WORKOUTS, TRAINING_BLOCKS]);
+
+  it('the warm-up bodyweight squat is 2 x 8 (not the 3 x 15 default) before strength, jumping and explosive work', () => {
+    for (const id of ['ATH-STRENGTH-FULLBODY-B-01', 'ATH-JUMP-LANDING-01', 'ATH-EXPLOSIVE-LOWER-01']) {
+      expect(dose(id, 'BODYWEIGHT_SQUAT')).toEqual({ sets: 2, target: 8, restSec: 30 });
+    }
+    // no warm-up section in any general workout carries an exercise at its full default volume of 45+ repetitions
+    for (const w of GENERAL_ATHLETIC_WORKOUTS) {
+      for (const item of w.sections[0]!.items) {
+        const e = builtinExercise(item.exerciseId)!;
+        const p = item.dosage ?? defaultPrescription(e.measurement, e.defaults);
+        expect([w.id, item.exerciseId, e.measurement.type === 'REPETITIONS' && p.sets * (p.target ?? 0) >= 45]).toEqual([w.id, item.exerciseId, false]);
+      }
+    }
+  });
+
+  it('Strength A has the glute bridge once as a 1 x 10 warm-up and once as the 3 x 12 main work (no duplicated 6 sets)', () => {
+    const a = professionalWorkout('ATH-STRENGTH-FULLBODY-A-01')!;
+    const bridges = a.sections.flatMap((s) => s.items).filter((i) => i.exerciseId === 'GLUTE_BRIDGE');
+    expect(bridges.map((b) => b.dosage)).toEqual([
+      { sets: 1, target: 10, restSec: 30 },
+      { sets: 3, target: 12, restSec: 45 },
+    ]);
+  });
+
+  it('Movement Foundation says glute bridge / hip extension in Hebrew — it does not claim a hip hinge', () => {
+    const w = professionalWorkout('ATH-MOVEMENT-FOUNDATION-01')!;
+    expect(w.summary[0]).toMatch(/גשר עכוז \/ יישור ירך/);
+    expect(w.summary[0]).not.toMatch(/ציר ירך/);
+    expect(w.summary[1]).toMatch(/hip bridge/);
+    expect(w.sections.flatMap((s) => s.items.map((i) => i.exerciseId))).not.toContain('HIP_HINGE_PATTERN');
+    expect(builtinExercise('HIP_HINGE_PATTERN')).toBeNull();
+  });
+
+  it('no improvised heavy-ball substitute remains; the fallback is to skip the throwing section or use another approved power workout', () => {
+    expect(every).not.toMatch(/heavy basketball|football against a wall|כדורסל או כדורגל כבד/);
+    const subs = trainingBlock('EXPLOSIVE-POWER-8W-01')!.substitutions.map((s) => s[1]).join(' ');
+    expect(subs).toMatch(/skip the throwing section or use another approved power exercise or workout/);
+  });
+
+  it('the Hebrew supervision sentence is the natural one everywhere; "באותו משך"; the three preferred names', () => {
+    expect(every).not.toMatch(/אימון לצעירים מתאים לתת|באותה משך|אינטרוולי ריצה|נחיתה מבוקרת מצעד|מראה עם בן זוג/);
+    expect(GENERAL_SAFETY[0]).toContain('למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית.');
+    for (const w of GENERAL_ATHLETIC_WORKOUTS) expect(w.safety).toEqual(GENERAL_SAFETY);
+    for (const b of TRAINING_BLOCKS) expect(b.safety).toEqual(GENERAL_SAFETY);
+    expect(builtinExercise('DROP_LANDING_STICK')!.name.he).toBe('ירידה ונחיתה מבוקרת');
+    expect(builtinExercise('PARTNER_MIRROR_DRILL')!.name.he).toBe('תרגיל מראה בזוגות');
+    expect(builtinExercise('RUN_INTERVALS')!.name.he).toBe('אינטרוולים בריצה');
+    expect(professionalWorkout('ATH-CONDITIONING-BASE-01')!.coachNotes[0]![0]).toMatch(/באותו משך/);
+  });
+
+  it('every TIME-measured value in the new workouts is a small recording cap, and the coach note says so', () => {
+    for (const id of ['ATH-ACCELERATION-01', 'ATH-SPEED-01', 'ATH-DECEL-COD-01']) {
+      expect(professionalWorkout(id)!.coachNotes.map((n) => n[1]).join(' ')).toMatch(/caps in seconds, not goals/);
+    }
+    expect(dose('ATH-ACCELERATION-01', 'SPRINT_10M', 2)).toMatchObject({ target: 5 });
+    expect(dose('ATH-ACCELERATION-01', 'SPRINT_20M', 2)).toMatchObject({ target: 7 });
   });
 });

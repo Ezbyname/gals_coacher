@@ -207,7 +207,7 @@ export const TRAINING_BLOCKS: readonly TrainingBlock[] = [
     ],
     substitutions: [
       ['אין קופסה: קפיצת סקווט במקום קפיצת קופסה.', 'No box: use the squat jump instead of the box jump.'],
-      ['אין כדור כבד: זריקות אל קיר עם כדור כדורסל או כדורגל כבד, אם בטוח.', 'No medicine ball: throw a heavy basketball or football against a wall, if it is safe.'],
+      ['אם אין כדור כבד מתאים — מדלגים על חלק הזריקות או משתמשים בתרגיל או באימון כוח מתפרץ מאושר אחר.', 'If no appropriate medicine ball is available, skip the throwing section or use another approved power exercise or workout.'],
     ],
     safety: GENERAL_SAFETY,
     decisions: [
@@ -389,7 +389,7 @@ export const TRAINING_BLOCKS: readonly TrainingBlock[] = [
     name: ['כושר וסבולת', 'Conditioning'],
     shortName: ['כושר וסבולת', 'Conditioning'],
     summary: [
-      'שישה שבועות: בסיס אירובי, אינטרוולי ריצה ומאמץ חוזר בספרינטים קצרים. כושר כללי; כושר ספציפי לענף נשאר באימוני הענף.',
+      'שישה שבועות: בסיס אירובי, אינטרוולים בריצה ומאמץ חוזר בספרינטים קצרים. כושר כללי; כושר ספציפי לענף נשאר באימוני הענף.',
       'Six weeks: an aerobic base, run intervals and repeated short sprints. General conditioning; sport-specific conditioning stays in the sport workouts.',
     ],
     goal: ['לשפר סבולת אירובית ויכולת לחזור על מאמץ.', 'Improve aerobic endurance and the ability to repeat an effort.'],

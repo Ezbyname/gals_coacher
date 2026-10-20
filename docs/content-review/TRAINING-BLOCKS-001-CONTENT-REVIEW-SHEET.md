@@ -28,17 +28,26 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 
 **Corrections to the Phase 1 report:** a landing-progression source and a deceleration-training source could not be found or opened; the landing evidence that was opened is adult-only; the adolescent plyometric review makes no landing recommendation and links 8 to under 10 weeks with more consistent (exploratory) gains; the youth running-HIIT review leaves bout length and rest open and reports no safety data.
 
-## Points that need a human decision
+## Resolved human-review decisions (review round 1: CHANGES REQUIRED — SMALL CONTENT PATCH, applied)
 
-1. **Explosive Power is 8 weeks (owner decision).** The adolescent plyometric review links 8 to under 10 weeks with more consistent gains (exploratory); the programme itself is ours.
-2. **Conditioning is 6 weeks**, while the youth running-HIIT review reports about 7 weeks or more as the minimum. Keep 6, or lengthen?
-3. **Time targets on sprints and agility drills are generous CAPS in seconds** (the athlete records the real time). Confirm the caps are acceptable, or choose a different convention for TIME-measured drills.
-4. **Every substitution has its own prescription** (bike, ski erg, rower, jump rope; sled, battle ropes, shuttle) — all ours, none validated. Aerobic Base has no dedicated bike / rower exercise, so that swap is made when editing the plan.
-5. **No age-specific programming.** Difficulty is not age. If younger players need different programming, that should be separate blocks — say if you want them.
-6. **Reactive agility needs a partner or coach**; without one, the session is swapped for pre-planned work.
-7. **Dates follow the chosen weekdays** (week numbering is by session, not by calendar week); at least one rest day separates sessions.
-8. **Hebrew names, instructions and cues** (6 Exercises, 13 workouts, 6 blocks) need a native-speaker coach review.
-9. **The new workouts appear in the Professional workouts list under "General athletic"**; the content stays `PENDING_HUMAN_REVIEW` until you approve this sheet.
+**Decisions recorded as RESOLVED / APPROVED:**
+
+- Explosive Power = 8 weeks / 16 sessions — APPROVED.
+- Conditioning = 6 weeks / 12 sessions — APPROVED (our own recommendation; no source claims it is the optimal length).
+- No age-specific blocks in V1 — APPROVED.
+- Reactive agility requires a partner or coach; without one the session falls back to pre-planned work — APPROVED.
+- Aerobic Base defaults to running; bike / rower remain edit-time options with no new dedicated exercise — APPROVED.
+- Sprint and agility time values are recording CAPS, not goals — APPROVED, subject to the user-facing wording below.
+
+**Corrections applied in this version:**
+
+- Warm-up fatigue: the warm-up bodyweight squat is now 2 × 8 (was the default 3 × 15) in Strength B, Jump & Landing and Explosive Lower Body; in Strength A the warm-up glute bridge is 1 × 10 (the main 3 × 12 is unchanged, so there is no 6-set duplication).
+- Movement Foundation: the Hebrew now says "גשר עכוז / יישור ירך", matching the glute bridge that is actually in the workout (no hip-hinge drill was added).
+- The improvised "heavy basketball or football against a wall" substitute was removed: with no appropriate medicine ball, skip the throwing section or use another approved power exercise or workout.
+- Time caps: wherever a TIME-measured value is shown (workout screen, a Player’s plan, the session, the builder, this sheet) it reads as a "time cap", the field is labelled "Time cap (seconds) — record your actual time", and a hint says "Record your actual time. The value shown is only a recording cap, not a performance goal." This needed a small UI change.
+- Hebrew: the awkward supervision sentence is replaced everywhere by "למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית."; "באותה משך" → "באותו משך"; names: ירידה ונחיתה מבוקרת, תרגיל מראה בזוגות, אינטרוולים בריצה.
+
+**Still for the final human review:** native-speaker Hebrew review of the remaining text; then publication approval.
 
 ## A. New Exercises (6, schema v21)
 
@@ -47,7 +56,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | | |
 |---|---|
 | **Slice** | TRAINING-BLOCKS-001 |
-| **HE name** | נחיתה מבוקרת מצעד |
+| **HE name** | ירידה ונחיתה מבוקרת |
 | **EN name** | Controlled Step-Off Landing |
 | **Sport** |  |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
@@ -166,7 +175,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | | |
 |---|---|
 | **Slice** | TRAINING-BLOCKS-001 |
-| **HE name** | מראה עם בן זוג |
+| **HE name** | תרגיל מראה בזוגות |
 | **EN name** | Partner Mirror Drill |
 | **Sport** |  |
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
@@ -244,7 +253,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | | |
 |---|---|
 | **Slice** | TRAINING-BLOCKS-001 |
-| **HE name** | אינטרוולי ריצה |
+| **HE name** | אינטרוולים בריצה |
 | **EN name** | Run Intervals |
 | **Sport** |  |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
@@ -292,7 +301,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
-**Summary — HE:** היכרות עם דפוסי התנועה הבסיסיים — סקווט, לאנג׳, ציר ירך, דחיפה, משיכה ויציבות הגו — בעומס נמוך ובדגש על איכות התנועה.
+**Summary — HE:** היכרות עם דפוסי התנועה הבסיסיים — סקווט, לאנג׳, גשר עכוז / יישור ירך, דחיפה, משיכה ויציבות הגו — בעומס נמוך ובדגש על איכות התנועה.
 
 **Summary — EN:** An introduction to the basic movement patterns — squat, lunge, hip bridge, push, pull and trunk stability — at low load, with the focus on movement quality.
 
@@ -337,7 +346,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: כל הציוד: משקל גוף ורצועת גומי. אפשר להחליף את הדחיפה בשיפוע בדחיפה רגילה כשהמתאמן מוכן.
 - EN: Equipment: bodyweight and a resistance band. Swap the incline push-up for a regular push-up when the athlete is ready.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -362,7 +371,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
-**Summary — HE:** סקווט, דחיפה אופקית, משיכה אופקית, גשר ירך ויציבות הגו — יום כוח בסיסי שמשלים את כוח ב׳.
+**Summary — HE:** סקווט, דחיפה אופקית, משיכה אופקית, גשר עכוז ויציבות הגו — יום כוח בסיסי שמשלים את כוח ב׳.
 
 **Summary — EN:** Squat, horizontal push, horizontal pull, hip bridge and trunk stability — a foundation strength day that pairs with Strength B.
 
@@ -373,7 +382,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 | 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 | 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
-| 4 | GLUTE_BRIDGE | Glute Bridge | גשר עכוז | 3 × 15 reps, rest 45s _(the Exercise's own default — existing catalog content)_ |
+| 4 | GLUTE_BRIDGE | Glute Bridge | גשר עכוז | 1 × 10 reps, rest 30s |
 
 **Section 2 — Strength / כוח**
 
@@ -398,7 +407,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: ציוד: משקולת יד או קטלבל, ספסל (לא חובה), רצועה או כבל. אפשר לבצע שורות עם רצועה במקום משקולת.
 - EN: Equipment: a dumbbell or kettlebell, a bench (optional), a band or cable. Band rows can replace the dumbbell row.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -435,7 +444,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 | 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 | 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
-| 4 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
+| 4 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 2 × 8 reps, rest 30s |
 
 **Section 2 — Strength / כוח**
 
@@ -460,7 +469,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: חזרות בעליית הצעד ובעבודת הצד נספרות לכל רגל בנפרד.
 - EN: Repetitions on the step-up and side work are counted for each side separately.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -496,13 +505,13 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 |---|---|---|---|---|
 | 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 | 2 | ANKLE_KNEE_TO_WALL | Ankle Mobility — Knee to Wall | ניידות קרסול — ברך לקיר | 1 × 10 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
-| 3 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 2 × 8 reps, rest 30s |
 
 **Section 2 — Controlled landing / נחיתה מבוקרת**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | DROP_LANDING_STICK | Controlled Step-Off Landing | נחיתה מבוקרת מצעד | 3 × 5 reps, rest 45s |
+| 1 | DROP_LANDING_STICK | Controlled Step-Off Landing | ירידה ונחיתה מבוקרת | 3 × 5 reps, rest 45s |
 
 **Section 3 — Low-complexity jumps / קפיצות בסיסיות**
 
@@ -520,7 +529,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: סך המגעים נמוך בכוונה. יותר קפיצות לא בהכרח נותנות יותר שיפור.
 - EN: The number of ground contacts is deliberately low. More jumps do not necessarily give more improvement.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -557,13 +566,13 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 |---|---|---|---|---|
 | 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 | 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
-| 3 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 2 × 8 reps, rest 30s |
 
 **Section 2 — Landing primer / הכנת נחיתה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | DROP_LANDING_STICK | Controlled Step-Off Landing | נחיתה מבוקרת מצעד | 2 × 5 reps, rest 30s |
+| 1 | DROP_LANDING_STICK | Controlled Step-Off Landing | ירידה ונחיתה מבוקרת | 2 × 5 reps, rest 30s |
 | 2 | SINGLE_LEG_HOP_STICK | Single-Leg Hop and Stick | קפיצה ונחיתה על רגל אחת | 2 × 4 reps, rest 45s |
 
 **Section 3 — Explosive jumps / קפיצות עוצמה**
@@ -589,7 +598,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: משטח יציב, יבש ולא חלק, ומרחב נקי סביב.
 - EN: Use a stable, dry, non-slip surface with clear space around.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -651,7 +660,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: ציוד: כדור כבד, קיר או שותף לזריקות, רצועה לפאלוף.
 - EN: Equipment: a medicine ball, a wall or partner, a band for the Pallof press.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -698,8 +707,8 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SPRINT_10M | 10 m Sprint | ספרינט 10 מטר | 5 × 5s, rest 90s |
-| 2 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 3 × 7s, rest 120s |
+| 1 | SPRINT_10M | 10 m Sprint | ספרינט 10 מטר | 5 × 5s _(recording cap — record your actual time; not a goal)_, rest 90s |
+| 2 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 3 × 7s _(recording cap — record your actual time; not a goal)_, rest 120s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -710,7 +719,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: משטח יציב, יבש ולא חלק, ומרחב נקי סביב.
 - EN: Use a stable, dry, non-slip surface with clear space around.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -752,13 +761,13 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
 | 1 | FALLING_START_ACCELERATION | Falling Start Acceleration | זינוק מנפילה | 3 × 1 reps, rest 60s |
-| 2 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 2 × 7s, rest 120s |
+| 2 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 2 × 7s _(recording cap — record your actual time; not a goal)_, rest 120s |
 
 **Section 3 — Flying runs / ריצה מעופפת**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SPRINT_30M_FLYING | 30 m Flying Sprint | ספרינט מעופף 30 מטר | 4 × 6s, rest 180s |
+| 1 | SPRINT_30M_FLYING | 30 m Flying Sprint | ספרינט מעופף 30 מטר | 4 × 6s _(recording cap — record your actual time; not a goal)_, rest 180s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -769,7 +778,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: משטח יציב, יבש ולא חלק, ומרחב נקי סביב.
 - EN: Use a stable, dry, non-slip surface with clear space around.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -816,8 +825,8 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | T_DRILL | T-Drill | תרגיל T | 3 × 16s, rest 120s |
-| 2 | PRO_AGILITY_5_10_5 | Pro Agility (5-10-5) | זריזות 5-10-5 | 3 × 8s, rest 120s |
+| 1 | T_DRILL | T-Drill | תרגיל T | 3 × 16s _(recording cap — record your actual time; not a goal)_, rest 120s |
+| 2 | PRO_AGILITY_5_10_5 | Pro Agility (5-10-5) | זריזות 5-10-5 | 3 × 8s _(recording cap — record your actual time; not a goal)_, rest 120s |
 
 **Section 4 — Lateral bounds / קפיצות צד**
 
@@ -834,7 +843,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: משטח יציב, יבש ולא חלק, ומרחב נקי סביב.
 - EN: Use a stable, dry, non-slip surface with clear space around.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -877,11 +886,11 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 |---|---|---|---|---|
 | 1 | COACH_CUE_REACTION_SPRINT | Cue-Reaction Sprint | ספרינט תגובה לאות | 6 × 1 reps, rest 60s |
 
-**Section 3 — Partner mirror / מראה עם בן זוג**
+**Section 3 — Partner mirror / תרגיל מראה בזוגות**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | PARTNER_MIRROR_DRILL | Partner Mirror Drill | מראה עם בן זוג | 4 × 15s, rest 45s |
+| 1 | PARTNER_MIRROR_DRILL | Partner Mirror Drill | תרגיל מראה בזוגות | 4 × 15s, rest 45s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -892,7 +901,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: משטח יציב, יבש ולא חלק, ומרחב נקי סביב.
 - EN: Use a stable, dry, non-slip surface with clear space around.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -943,12 +952,12 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
-- HE: בוחרים שיטה אחת: ריצה, אופניים או מכשיר חתירה, באותה משך ובקצב שיחה נוח. את ההחלפה עושים בעריכת האימון; הריצה היא ברירת המחדל.
+- HE: בוחרים שיטה אחת: ריצה, אופניים או מכשיר חתירה, באותו משך ובקצב שיחה נוח. את ההחלפה עושים בעריכת האימון; הריצה היא ברירת המחדל.
 - EN: Pick ONE modality: running, a bike or a rower, for the same duration at a comfortable conversational pace. Swap it when editing the workout; running is the default.
 - HE: משטח יציב, יבש ולא חלק, ומרחב נקי סביב.
 - EN: Use a stable, dry, non-slip surface with clear space around.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -985,14 +994,14 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
 | 3 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
 
-**Section 2 — Run intervals (or intervals on a bike, ski erg, rower or jump rope) / אינטרוולי ריצה (או אינטרוולים באופניים, בסקי ארג, בחתירה או בחבל קפיצה)**
+**Section 2 — Run intervals (or intervals on a bike, ski erg, rower or jump rope) / אינטרוולים בריצה (או אינטרוולים באופניים, בסקי ארג, בחתירה או בחבל קפיצה)**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | RUN_INTERVALS | Run Intervals | אינטרוולי ריצה | 6 × 45s, rest 90s |
+| 1 | RUN_INTERVALS | Run Intervals | אינטרוולים בריצה | 6 × 45s, rest 90s |
 | ↳ | alternative: BIKE_INTERVALS | Bike Intervals | אינטרוולים באופני כושר | 8 × 30s, rest 60s _(its own prescription)_ |
 | ↳ | alternative: SKI_ERG_INTERVALS | Ski Erg Intervals | אינטרוולים בסקי ארג | 6 × 30s, rest 60s _(its own prescription)_ |
-| ↳ | alternative: ROW_500M | 500 m Row | חתירה 500 מטר | 4 × 150s, rest 120s _(its own prescription)_ |
+| ↳ | alternative: ROW_500M | 500 m Row | חתירה 500 מטר | 4 × 150s _(recording cap — record your actual time; not a goal)_, rest 120s _(its own prescription)_ |
 | ↳ | alternative: JUMP_ROPE | Jump Rope | קפיצה בחבל | 6 × 40s, rest 60s _(its own prescription)_ |
 
 **Section 3 — Cool-down / סיום ושחרור**
@@ -1011,7 +1020,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: משטח יציב, יבש ולא חלק, ומרחב נקי סביב.
 - EN: Use a stable, dry, non-slip surface with clear space around.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -1052,22 +1061,22 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s, rest 25s |
-| ↳ | alternative: SHUTTLE_RUN | Shuttle Run | ריצה הלוך-חזור | 6 × 30s, rest 30s _(its own prescription)_ |
-| ↳ | alternative: SLED_PUSH | Sled Push | דחיפת מזחלת | 6 × 10s, rest 30s _(its own prescription)_ |
+| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s _(recording cap — record your actual time; not a goal)_, rest 25s |
+| ↳ | alternative: SHUTTLE_RUN | Shuttle Run | ריצה הלוך-חזור | 6 × 30s _(recording cap — record your actual time; not a goal)_, rest 30s _(its own prescription)_ |
+| ↳ | alternative: SLED_PUSH | Sled Push | דחיפת מזחלת | 6 × 10s _(recording cap — record your actual time; not a goal)_, rest 30s _(its own prescription)_ |
 | ↳ | alternative: BATTLE_ROPE_WAVES | Battle Rope Waves | גלים בחבלי קרב | 6 × 20s, rest 30s _(its own prescription)_ |
 
 **Section 3 — Round 2 — after about two minutes of rest / סבב 2 — אחרי כשתי דקות מנוחה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s, rest 25s |
+| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s _(recording cap — record your actual time; not a goal)_, rest 25s |
 
 **Section 4 — Round 3 — after about two minutes of rest / סבב 3 — אחרי כשתי דקות מנוחה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s, rest 25s |
+| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s _(recording cap — record your actual time; not a goal)_, rest 25s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1080,7 +1089,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: משטח יציב, יבש ולא חלק, ומרחב נקי סביב.
 - EN: Use a stable, dry, non-slip surface with clear space around.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -1158,7 +1167,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: אין משקולות: בקבוק מים מלא כעומס קל, בזהירות.
 - EN: No weights: a filled water bottle can be a light load, with care.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -1239,10 +1248,10 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 **Substitutions:**
 - HE: אין קופסה: קפיצת סקווט במקום קפיצת קופסה.
 - EN: No box: use the squat jump instead of the box jump.
-- HE: אין כדור כבד: זריקות אל קיר עם כדור כדורסל או כדורגל כבד, אם בטוח.
-- EN: No medicine ball: throw a heavy basketball or football against a wall, if it is safe.
+- HE: אם אין כדור כבד מתאים — מדלגים על חלק הזריקות או משתמשים בתרגיל או באימון כוח מתפרץ מאושר אחר.
+- EN: If no appropriate medicine ball is available, skip the throwing section or use another approved power exercise or workout.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -1319,7 +1328,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: אין מקום ל־30 מטרים: ספרינט 20 מטרים בלבד.
 - EN: No room for 30 metres: use 20-metre sprints only.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -1394,7 +1403,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: אין בן זוג: במקום זריזות תגובתית — עצירה מבוקרת ושינוי כיוון מתוכנן.
 - EN: No partner: replace reactive sessions with controlled stopping and pre-planned change of direction.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -1468,7 +1477,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: אין משקולות: רצועה או משקל גוף.
 - EN: No weights: use a band or bodyweight.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 
@@ -1491,7 +1500,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Duration** | 6 weeks · 2 sessions a week · 12 sessions |
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 
-**Summary — HE:** שישה שבועות: בסיס אירובי, אינטרוולי ריצה ומאמץ חוזר בספרינטים קצרים. כושר כללי; כושר ספציפי לענף נשאר באימוני הענף.
+**Summary — HE:** שישה שבועות: בסיס אירובי, אינטרוולים בריצה ומאמץ חוזר בספרינטים קצרים. כושר כללי; כושר ספציפי לענף נשאר באימוני הענף.
 
 **Summary — EN:** Six weeks: an aerobic base, run intervals and repeated short sprints. General conditioning; sport-specific conditioning stays in the sport workouts.
 
@@ -1541,7 +1550,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - HE: כל חלופה באינטרוולים והמאמץ החוזר מגיעה עם מינון משלה בתוך האימון.
 - EN: Every alternative for the intervals and repeated effort comes with its own prescription inside the workout.
 
-**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. אימון לצעירים מתאים לתת בליווי מאמן או מבוגר אחראי, שמתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
+**Safety — HE:** מתחממים לפני, שומרים על טכניקה נקייה לפני שמוסיפים עומס או מהירות, ומפסיקים אם יש כאב, סחרחורת או תסמין חריג. למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית. התוכן הוא תוכנית אימון ולא ייעוץ רפואי.
 
 **Safety — EN:** Warm up first, keep the technique clean before adding load or speed, and stop if there is pain, dizziness or any unusual symptom. For younger athletes a coach or responsible adult should supervise and match the intensity to age, experience and physical ability. This is a training programme, not medical advice.
 

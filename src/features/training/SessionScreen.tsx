@@ -38,6 +38,7 @@ import {
   performedText,
   plannedSetText,
   prescriptionText,
+  timeCapHint,
   sessionStatusLabel,
   trainingErrorMessage,
 } from './trainingLabels';
@@ -231,6 +232,11 @@ function ExerciseCard(props: {
       {rx ? (
         <Text style={styles.status} testID={`${id}-planned`}>
           {t('training.plannedRx', { rx })}
+        </Text>
+      ) : null}
+      {first !== undefined && timeCapHint(t, exercise.exercise.measurement, first.plannedTarget) ? (
+        <Text style={styles.muted} testID={`${id}-time-cap-hint`}>
+          {t('training.timeCapHint')}
         </Text>
       ) : null}
       {exercise.sets.map((set, i) => (

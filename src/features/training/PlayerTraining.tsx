@@ -41,6 +41,7 @@ import {
   performedText,
   planPath,
   prescriptionText,
+  timeCapHint,
   scheduleWorkoutPath,
   sessionPath,
   sessionStatusLabel,
@@ -474,6 +475,11 @@ function PlannedWorkoutView({ planId }: { planId: string }) {
               <Text style={styles.status} testID={`plan-item-${item.position}-rx`}>
                 {prescriptionText(t, item.exercise.measurement, item.prescription)}
               </Text>
+              {timeCapHint(t, item.exercise.measurement, item.prescription.target) ? (
+                <Text style={styles.muted} testID={`plan-item-${item.position}-time-cap-hint`}>
+                  {t('training.timeCapHint')}
+                </Text>
+              ) : null}
             </View>
           </View>
         );

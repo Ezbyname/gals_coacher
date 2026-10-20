@@ -209,3 +209,40 @@ describe('Add program to player', () => {
     await waitFor(() => expect(text(`block-assign-result-${players.Daniel}-text`)).toBe('Daniel: נוצרו 12 אימונים.'));
   });
 });
+
+describe('time caps are shown as recording caps, never as goals', () => {
+  it('English: a sprint shows "time cap 5 s" and the hint to record the actual time — and never a "goal" or "target" in seconds', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/professional/ATH-ACCELERATION-01' });
+    await screen.findByTestId('professional-details-name');
+    const dosage = text('professional-item-2-0-dosage');
+    expect(dosage).toMatch(/time cap 5 s/);
+    expect(dosage).not.toMatch(/goal|target/i);
+    expect(text('professional-item-2-0-time-cap-hint')).toBe('Record your actual time. The value shown is only a recording cap, not a performance goal.');
+    expect(has('professional-item-1-0-time-cap-hint')).toBe(false); // the falling-start item is repetitions, not time
+  });
+
+  it('Hebrew: the same wording in Hebrew', async () => {
+    await prepare('he');
+    renderRouter(routes, { initialUrl: '/workouts/professional/ATH-DECEL-COD-01' });
+    await screen.findByTestId('professional-details-name');
+    expect(text('professional-item-2-0-dosage')).toMatch(/תקרת זמן 16 שנ׳/);
+    expect(text('professional-item-2-0-time-cap-hint')).toBe('מתעדים את הזמן בפועל. הערך המוצג הוא רק תקרה לתיעוד, לא יעד ביצוע.');
+  });
+
+  it('the copied plan shows the cap wording too', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/training-blocks/assign?blockId=SPEED-ACCELERATION-6W-01' });
+    await screen.findByTestId('block-assign-scroll');
+    press('block-assign-review');
+    await screen.findByTestId('block-preview-title');
+    press('block-assign-confirm');
+    await screen.findByTestId('block-assign-done-title');
+    const plan = await db!.getFirstAsync<{ id: string }>("SELECT id FROM planned_workouts WHERE name LIKE '%1.2%' LIMIT 1");
+    renderRouter(routes, { initialUrl: `/children/${players.Daniel}/training/plan/${plan!.id}` });
+    await screen.findByTestId('plan-item-0-name');
+    const caps = screen.queryAllByTestId(/^plan-item-\d+-time-cap-hint$/);
+    expect(caps.length).toBeGreaterThan(0);
+    for (const c of caps) expect(stripBidi(String(c.props.children))).toBe('Record your actual time. The value shown is only a recording cap, not a performance goal.');
+  });
+});

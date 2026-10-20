@@ -39,8 +39,10 @@ describe('TRAINING-BLOCKS-001 CONTENT-REVIEW-SHEET', () => {
     expect(sheet).toMatch(/_\(abstract only\)_/);
     expect(sheet).toMatch(/Landing-before-plyometrics.*\*\*SYNTHESIZED\*\*/);
     expect(sheet).toMatch(/Corrections to the Phase 1 report/);
-    expect(sheet).toMatch(/Explosive Power is 8 weeks \(owner decision\)/);
-    expect(sheet).toMatch(/Conditioning is 6 weeks/);
+    expect(sheet).toMatch(/Resolved human-review decisions/);
+    expect(sheet).toMatch(/Explosive Power = 8 weeks \/ 16 sessions — APPROVED/);
+    expect(sheet).toMatch(/Conditioning = 6 weeks \/ 12 sessions — APPROVED/);
+    expect(sheet).not.toMatch(/## Points that need a human decision/);
   });
 
   it('shows each alternative with its OWN prescription and every dosage unit', () => {
@@ -48,6 +50,12 @@ describe('TRAINING-BLOCKS-001 CONTENT-REVIEW-SHEET', () => {
     expect(sheet).toMatch(/alternative: SKI_ERG_INTERVALS .*6 × 30s, rest 60s/);
     expect(sheet).toMatch(/RUN_INTERVALS .*6 × 45s, rest 90s/);
     expect(sheet).not.toMatch(/\(no target\)/);
+  });
+
+  it('shows every TIME-measured value as a recording cap, never as a goal', () => {
+    expect(sheet).toMatch(/SPRINT_10M .*5s.*recording cap — record your actual time; not a goal/);
+    expect(sheet).toMatch(/PRO_AGILITY_5_10_5 .*8s.*recording cap/);
+    expect(sheet).toMatch(/T_DRILL .*16s.*recording cap/);
   });
 
   it('claims no injury prevention and links no video', () => {

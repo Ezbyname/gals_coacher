@@ -532,7 +532,8 @@ export const he = {
     sets: 'סטים',
     targetReps: 'חזרות בסט',
     targetDuration: 'שניות בסט',
-    targetTime: 'זמן יעד (שניות)',
+    targetTime: 'תקרת זמן (שניות) — מתעדים את הזמן בפועל',
+    timeCapHint: 'מתעדים את הזמן בפועל. הערך המוצג הוא רק תקרה לתיעוד, לא יעד ביצוע.',
     targetDistance: 'מטרים בסט',
     targetAttempts: 'ניסיונות בסט',
     load: 'משקל (ק״ג)',
@@ -693,6 +694,7 @@ export const he = {
     unit: {
       reps: '{n}',
       seconds: '{n} שנ׳',
+      timeCap: 'תקרת זמן {n} שנ׳',
       metres: '{n} מ׳',
       kg: '{n} ק״ג',
       attempts: '{n} ניסיונות',

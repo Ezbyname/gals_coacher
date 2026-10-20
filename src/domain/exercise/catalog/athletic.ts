@@ -9,7 +9,7 @@ import { define, drillReps, work, type Entry } from './define';
 const ENTRIES: Entry[] = [
   {
     id: 'DROP_LANDING_STICK',
-    name: ['נחיתה מבוקרת מצעד', 'Controlled Step-Off Landing'],
+    name: ['ירידה ונחיתה מבוקרת', 'Controlled Step-Off Landing'],
     cat: ['PLYOMETRIC', 'STABILITY'],
     prim: ['QUADRICEPS', 'GLUTES'],
     sec: ['CALVES', 'HIP_STABILIZERS'],
@@ -83,7 +83,7 @@ const ENTRIES: Entry[] = [
   },
   {
     id: 'PARTNER_MIRROR_DRILL',
-    name: ['מראה עם בן זוג', 'Partner Mirror Drill'],
+    name: ['תרגיל מראה בזוגות', 'Partner Mirror Drill'],
     cat: ['AGILITY'],
     prim: ['QUADRICEPS', 'HIP_STABILIZERS'],
     sec: ['CALVES', 'GLUTES'],
@@ -133,7 +133,7 @@ const ENTRIES: Entry[] = [
   },
   {
     id: 'RUN_INTERVALS',
-    name: ['אינטרוולי ריצה', 'Run Intervals'],
+    name: ['אינטרוולים בריצה', 'Run Intervals'],
     cat: ['HIIT', 'CONDITIONING', 'CARDIO'],
     prim: ['QUADRICEPS', 'CALVES'],
     sec: ['HAMSTRINGS', 'GLUTES'],

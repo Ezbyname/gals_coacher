@@ -20,7 +20,9 @@ import { totalSessions, type TrainingBlock } from './types';
 const ex = (id: string): ExerciseDefinition => builtinExercise(id)!;
 const d = (id: string, dose: Dosage | undefined): string => {
   const e = ex(id);
-  return dosage(e, dose ? { sets: dose.sets, target: dose.target, restSec: dose.restSec } : defaultPrescription(e.measurement, e.defaults));
+  const text = dosage(e, dose ? { sets: dose.sets, target: dose.target, restSec: dose.restSec } : defaultPrescription(e.measurement, e.defaults));
+  // a TIME-measured value is only a recording CAP (the app says "record your actual time"), never a performance goal
+  return e.measurement.type === 'TIME' ? text.replace(/ × (\d+)s/, ' × $1s _(recording cap — record your actual time; not a goal)_') : text;
 };
 
 /** What the sources do and do not support for each general workout, and what is Gals Coacher's own. */
@@ -218,17 +220,26 @@ export function renderTrainingBlocksReviewSheet(): string {
     '',
     '**Corrections to the Phase 1 report:** a landing-progression source and a deceleration-training source could not be found or opened; the landing evidence that was opened is adult-only; the adolescent plyometric review makes no landing recommendation and links 8 to under 10 weeks with more consistent (exploratory) gains; the youth running-HIIT review leaves bout length and rest open and reports no safety data.',
     '',
-    '## Points that need a human decision',
+    '## Resolved human-review decisions (review round 1: CHANGES REQUIRED — SMALL CONTENT PATCH, applied)',
     '',
-    '1. **Explosive Power is 8 weeks (owner decision).** The adolescent plyometric review links 8 to under 10 weeks with more consistent gains (exploratory); the programme itself is ours.',
-    '2. **Conditioning is 6 weeks**, while the youth running-HIIT review reports about 7 weeks or more as the minimum. Keep 6, or lengthen?',
-    '3. **Time targets on sprints and agility drills are generous CAPS in seconds** (the athlete records the real time). Confirm the caps are acceptable, or choose a different convention for TIME-measured drills.',
-    '4. **Every substitution has its own prescription** (bike, ski erg, rower, jump rope; sled, battle ropes, shuttle) — all ours, none validated. Aerobic Base has no dedicated bike / rower exercise, so that swap is made when editing the plan.',
-    '5. **No age-specific programming.** Difficulty is not age. If younger players need different programming, that should be separate blocks — say if you want them.',
-    '6. **Reactive agility needs a partner or coach**; without one, the session is swapped for pre-planned work.',
-    '7. **Dates follow the chosen weekdays** (week numbering is by session, not by calendar week); at least one rest day separates sessions.',
-    '8. **Hebrew names, instructions and cues** (6 Exercises, 13 workouts, 6 blocks) need a native-speaker coach review.',
-    '9. **The new workouts appear in the Professional workouts list under "General athletic"**; the content stays `PENDING_HUMAN_REVIEW` until you approve this sheet.',
+    '**Decisions recorded as RESOLVED / APPROVED:**',
+    '',
+    '- Explosive Power = 8 weeks / 16 sessions — APPROVED.',
+    '- Conditioning = 6 weeks / 12 sessions — APPROVED (our own recommendation; no source claims it is the optimal length).',
+    '- No age-specific blocks in V1 — APPROVED.',
+    '- Reactive agility requires a partner or coach; without one the session falls back to pre-planned work — APPROVED.',
+    '- Aerobic Base defaults to running; bike / rower remain edit-time options with no new dedicated exercise — APPROVED.',
+    '- Sprint and agility time values are recording CAPS, not goals — APPROVED, subject to the user-facing wording below.',
+    '',
+    '**Corrections applied in this version:**',
+    '',
+    '- Warm-up fatigue: the warm-up bodyweight squat is now 2 × 8 (was the default 3 × 15) in Strength B, Jump & Landing and Explosive Lower Body; in Strength A the warm-up glute bridge is 1 × 10 (the main 3 × 12 is unchanged, so there is no 6-set duplication).',
+    '- Movement Foundation: the Hebrew now says "גשר עכוז / יישור ירך", matching the glute bridge that is actually in the workout (no hip-hinge drill was added).',
+    '- The improvised "heavy basketball or football against a wall" substitute was removed: with no appropriate medicine ball, skip the throwing section or use another approved power exercise or workout.',
+    '- Time caps: wherever a TIME-measured value is shown (workout screen, a Player’s plan, the session, the builder, this sheet) it reads as a "time cap", the field is labelled "Time cap (seconds) — record your actual time", and a hint says "Record your actual time. The value shown is only a recording cap, not a performance goal." This needed a small UI change.',
+    '- Hebrew: the awkward supervision sentence is replaced everywhere by "למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית."; "באותה משך" → "באותו משך"; names: ירידה ונחיתה מבוקרת, תרגיל מראה בזוגות, אינטרוולים בריצה.',
+    '',
+    '**Still for the final human review:** native-speaker Hebrew review of the remaining text; then publication approval.',
     '',
     `## A. New Exercises (${ATHLETIC.length}, schema v21)`,
     '',

@@ -531,7 +531,8 @@ export const en = {
     sets: 'Sets',
     targetReps: 'Reps per set',
     targetDuration: 'Seconds per set',
-    targetTime: 'Goal time (seconds)',
+    targetTime: 'Time cap (seconds) — record your actual time',
+    timeCapHint: 'Record your actual time. The value shown is only a recording cap, not a performance goal.',
     targetDistance: 'Metres per set',
     targetAttempts: 'Attempts per set',
     load: 'Load (kg)',
@@ -692,6 +693,7 @@ export const en = {
     unit: {
       reps: '{n}',
       seconds: '{n} s',
+      timeCap: 'time cap {n} s',
       metres: '{n} m',
       kg: '{n} kg',
       attempts: '{n} attempts',

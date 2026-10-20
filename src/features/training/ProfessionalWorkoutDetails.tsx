@@ -12,7 +12,7 @@ import { BigButton } from '@/ui/BigButton';
 import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { colors, spacing } from '@/ui/theme';
 
-import { addToWorkoutPath, prescriptionText } from './trainingLabels';
+import { addToWorkoutPath, prescriptionText, timeCapHint } from './trainingLabels';
 
 /**
  * SPORT-CONTENT-001 — one professional workout, read-only: its level, the locked safety wording (surf), each section
@@ -81,6 +81,14 @@ export function ProfessionalWorkoutDetails({ workoutId }: { workoutId: string })
                 <Text style={styles.muted} testID={`professional-item-${s}-${i}-dosage`}>
                   {prescriptionText(t, exercise.measurement, prescription)}
                 </Text>
+                {[item, ...(item.alternatives ?? []).map((a) => ({ exerciseId: a.exerciseId, dosage: a.dosage }))].some((it) => {
+                  const ie = builtinExercise(it.exerciseId)!;
+                  return timeCapHint(t, ie.measurement, it.dosage ? it.dosage.target : null) !== null;
+                }) ? (
+                  <Text style={styles.muted} testID={`professional-item-${s}-${i}-time-cap-hint`}>
+                    {t('training.timeCapHint')}
+                  </Text>
+                ) : null}
                 {item.alternatives && item.alternatives.length > 0 ? (
                   <View testID={`professional-item-${s}-${i}-alternatives`}>
                     <Text style={styles.muted}>{t('training.professional.alternativesTitle')}</Text>
