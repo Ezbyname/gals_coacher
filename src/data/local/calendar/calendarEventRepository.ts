@@ -455,6 +455,65 @@ export type ScheduleWorkoutResult =
   | { readonly ok: true; readonly event: CalendarEvent }
   | { readonly ok: false; readonly errors: ScheduleWorkoutErrors };
 
+/** The timing errors of a workout schedule (an invalid timestamp, a start before the current minute, an end not after the start). */
+export function scheduleTimingErrors(input: { startAt: number; endAt?: number | null }, now: number): ScheduleWorkoutErrors {
+  const endAt = input.endAt ?? null;
+  const timing = validateCalendarEvent({ type: SCHEDULED_WORKOUT_TYPE, startAt: input.startAt, endAt, title: null });
+  const errors: ScheduleWorkoutErrors = {};
+  if (!timing.ok) {
+    if (timing.errors.startAt === 'INVALID_TIMESTAMP') errors.startAt = 'INVALID_TIMESTAMP';
+    if (timing.errors.endAt) errors.endAt = timing.errors.endAt;
+  } else if (input.startAt < startOfMinute(now)) {
+    errors.startAt = 'BEFORE_NOW';
+  }
+  return errors;
+}
+
+/**
+ * The write of ONE scheduled workout WITHOUT opening a transaction: for a caller that already holds one (the Training Block
+ * assignment, which must create its plans AND events all-or-nothing). The caller has already validated the timing
+ * (`scheduleTimingErrors`); every rule that needs the database is checked here, and any failure throws so the caller's
+ * transaction rolls back. It does not emit the calendar-change signal: the caller does, once, after the commit.
+ */
+export async function scheduleWorkoutWithinTransaction(
+  db: PlayerDb,
+  input: { playerId: string; planId: string; startAt: number; endAt?: number | null },
+  deps: { ids: IdService },
+  now: number,
+): Promise<CalendarEvent> {
+  const endAt = input.endAt ?? null;
+  const id = deps.ids.newUuid();
+  let saved = null as CalendarEvent | null;
+  await assertActivePlayer(db, input.playerId);
+  const plan = await db.getFirstAsync<{ player_id: string; name: string }>(
+    'SELECT player_id, name FROM planned_workouts WHERE id = ?',
+    [input.planId],
+  );
+  if (plan === null) throw new WorkoutScheduleError('PLAN_NOT_FOUND', input.planId);
+  if (plan.player_id !== input.playerId) throw new WorkoutScheduleError('PLAYER_MISMATCH', input.planId);
+  if ((await db.getFirstAsync('SELECT 1 FROM calendar_events WHERE planned_workout_id = ?', [input.planId])) !== null) {
+    throw new WorkoutScheduleError('ALREADY_SCHEDULED', input.planId);
+  }
+  if ((await db.getFirstAsync('SELECT 1 FROM planned_workout_items WHERE planned_workout_id = ?', [input.planId])) === null) {
+    throw new WorkoutScheduleError('PLAN_EMPTY', input.planId); // nothing to do at that time: it could never start
+  }
+  const valid = validateCalendarEvent({ type: SCHEDULED_WORKOUT_TYPE, sport: null, startAt: input.startAt, endAt, title: plan.name });
+  if (!valid.ok) throw new Error(`scheduleWorkout: the workout name is not a valid event title (${JSON.stringify(valid.errors)})`);
+  await assertActivityType(db, valid.value.type, null);
+  try {
+    await insertEvent(db, id, input.playerId, valid.value, null, null, now, input.planId);
+  } catch (e) {
+    // the calendar never inspects execution data: the database guard (v18) refuses a started workout, we name it
+    if (/started workout cannot be newly scheduled/.test(String((e as { message?: unknown } | null)?.message ?? e))) {
+      throw new WorkoutScheduleError('PLAN_ALREADY_STARTED', input.planId);
+    }
+    throw e;
+  }
+  saved = await readEvent(db, input.playerId, id);
+  if (saved === null) throw new Error('scheduleWorkout: no saved row');
+  return saved;
+}
+
 /**
  * Schedules an unscheduled PlannedWorkout: creates ONE new CalendarEvent linked to it, in one transaction.
  * - now / future only (a start before the current minute is returned as BEFORE_NOW, nothing written);
@@ -471,46 +530,12 @@ export async function scheduleWorkout(
   deps: { ids: IdService; clock: Clock },
 ): Promise<ScheduleWorkoutResult> {
   const now = deps.clock.wallNow();
-  const endAt = input.endAt ?? null;
-  const timing = validateCalendarEvent({ type: SCHEDULED_WORKOUT_TYPE, startAt: input.startAt, endAt, title: null });
-  const errors: ScheduleWorkoutErrors = {};
-  if (!timing.ok) {
-    if (timing.errors.startAt === 'INVALID_TIMESTAMP') errors.startAt = 'INVALID_TIMESTAMP';
-    if (timing.errors.endAt) errors.endAt = timing.errors.endAt;
-  } else if (input.startAt < startOfMinute(now)) {
-    errors.startAt = 'BEFORE_NOW';
-  }
+  const errors = scheduleTimingErrors(input, now);
   if (Object.keys(errors).length > 0) return { ok: false, errors };
 
-  const id = deps.ids.newUuid();
   let saved = null as CalendarEvent | null;
   await writeTransaction(db, async () => {
-    await assertActivePlayer(db, input.playerId);
-    const plan = await db.getFirstAsync<{ player_id: string; name: string }>(
-      'SELECT player_id, name FROM planned_workouts WHERE id = ?',
-      [input.planId],
-    );
-    if (plan === null) throw new WorkoutScheduleError('PLAN_NOT_FOUND', input.planId);
-    if (plan.player_id !== input.playerId) throw new WorkoutScheduleError('PLAYER_MISMATCH', input.planId);
-    if ((await db.getFirstAsync('SELECT 1 FROM calendar_events WHERE planned_workout_id = ?', [input.planId])) !== null) {
-      throw new WorkoutScheduleError('ALREADY_SCHEDULED', input.planId);
-    }
-    if ((await db.getFirstAsync('SELECT 1 FROM planned_workout_items WHERE planned_workout_id = ?', [input.planId])) === null) {
-      throw new WorkoutScheduleError('PLAN_EMPTY', input.planId); // nothing to do at that time: it could never start
-    }
-    const valid = validateCalendarEvent({ type: SCHEDULED_WORKOUT_TYPE, sport: null, startAt: input.startAt, endAt, title: plan.name });
-    if (!valid.ok) throw new Error(`scheduleWorkout: the workout name is not a valid event title (${JSON.stringify(valid.errors)})`);
-    await assertActivityType(db, valid.value.type, null);
-    try {
-      await insertEvent(db, id, input.playerId, valid.value, null, null, now, input.planId);
-    } catch (e) {
-      // the calendar never inspects execution data: the database guard (v18) refuses a started workout, we name it
-      if (/started workout cannot be newly scheduled/.test(String((e as { message?: unknown } | null)?.message ?? e))) {
-        throw new WorkoutScheduleError('PLAN_ALREADY_STARTED', input.planId);
-      }
-      throw e;
-    }
-    saved = await readEvent(db, input.playerId, id);
+    saved = await scheduleWorkoutWithinTransaction(db, input, deps, now);
   });
   if (saved === null) throw new Error('scheduleWorkout: transaction finished without the saved row');
   return { ok: true, event: saved };

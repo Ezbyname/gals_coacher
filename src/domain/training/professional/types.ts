@@ -8,10 +8,22 @@ import type { SportKey } from '../../sport';
  */
 export type Pair = readonly [he: string, en: string];
 
+export interface Dosage {
+  readonly sets: number;
+  readonly target: number | null;
+  readonly restSec: number;
+}
+
 /** One exercise of a section. Without a dosage the exercise's own defaults apply (reused warm-up / mobility items). */
 export interface ProfessionalItem {
   readonly exerciseId: string;
-  readonly dosage?: { readonly sets: number; readonly target: number | null; readonly restSec: number };
+  readonly dosage?: Dosage;
+  /**
+   * TRAINING-BLOCKS-001: other Exercises that can replace this one when the equipment differs (e.g. a bike or a ski erg for
+   * run intervals). Each substitution has its OWN dosage: a prescription for one modality is never assumed to suit another.
+   * Shown for the coach; a plan is always copied with the item itself.
+   */
+  readonly alternatives?: readonly { readonly exerciseId: string; readonly dosage: Dosage }[];
 }
 
 export interface ProfessionalSection {
@@ -36,15 +48,28 @@ export const TRAINING_FOCUSES = [
   'DEFENSE',
   'TRANSITION',
   'FUNDAMENTALS',
+  // TRAINING-BLOCKS-001: general athletic development (no sport)
+  'ATHLETIC_FOUNDATION',
+  'STRENGTH_FOUNDATION',
+  'EXPLOSIVE_POWER',
+  'SPEED_ACCELERATION',
+  'AGILITY_COD',
+  'CONDITIONING',
 ] as const;
 export type TrainingFocus = (typeof TRAINING_FOCUSES)[number];
 
 export type ProfessionalSport = Extract<SportKey, 'FOOTBALL' | 'SURFING' | 'BASKETBALL'>;
 export const PROFESSIONAL_SPORTS: readonly ProfessionalSport[] = ['SURFING', 'FOOTBALL', 'BASKETBALL'];
 
-export interface ProfessionalWorkout {
+/**
+ * Whether a workout belongs to a sport or to general athletic development (TRAINING-BLOCKS-001). Athleticism is NOT a sport:
+ * a general workout has `sport: null` and never touches `SportKey`, `SPORTS`, `V1_ENABLED_SPORTS` or `CONTENT_SPORTS`.
+ * Workouts without `trainingDomain` (every sport workout published earlier) are SPORT_SPECIFIC.
+ */
+export type TrainingDomain = 'SPORT_SPECIFIC' | 'GENERAL_ATHLETIC';
+
+interface ProfessionalWorkoutBase {
   readonly id: string;
-  readonly sport: ProfessionalSport;
   readonly difficulty: Difficulty;
   readonly focus: TrainingFocus;
   readonly name: Pair;
@@ -61,10 +86,46 @@ export interface ProfessionalWorkout {
   readonly reviewStatus: ReviewStatus;
 }
 
-export const x = (exerciseId: string, sets: number, target: number | null, restSec: number): ProfessionalItem => ({
+export interface SportWorkout extends ProfessionalWorkoutBase {
+  readonly sport: ProfessionalSport;
+  readonly trainingDomain?: 'SPORT_SPECIFIC';
+}
+
+export interface GeneralWorkout extends ProfessionalWorkoutBase {
+  readonly sport: null;
+  readonly trainingDomain: 'GENERAL_ATHLETIC';
+}
+
+export type ProfessionalWorkout = SportWorkout | GeneralWorkout;
+
+export const domainOf = (w: ProfessionalWorkout): TrainingDomain => w.trainingDomain ?? 'SPORT_SPECIFIC';
+
+export const x = (
+  exerciseId: string,
+  sets: number,
+  target: number | null,
+  restSec: number,
+  alternatives?: ProfessionalItem['alternatives'],
+): ProfessionalItem => ({
   exerciseId,
   dosage: { sets, target, restSec },
+  ...(alternatives ? { alternatives } : {}),
 });
+/** A substitution with its own dosage. */
+export const alt = (exerciseId: string, sets: number, target: number | null, restSec: number) => ({ exerciseId, dosage: { sets, target, restSec } });
+/**
+ * A per-session adjustment of a workout when it is used inside a Training Block (TRAINING-BLOCKS-001): progression is set in
+ * the BLOCK, so one workout can serve several blocks and weeks without a duplicate template. Absolute values (never deltas);
+ * the source workout is never changed.
+ */
+export interface WorkoutAdjustment {
+  readonly sets?: Readonly<Record<string, number>>;
+  readonly target?: Readonly<Record<string, number>>;
+  readonly omitExercises?: readonly string[];
+  /** 0-based indexes into the workout's sections. */
+  readonly omitSections?: readonly number[];
+}
+
 export const reuse = (...ids: string[]): ProfessionalItem[] => ids.map((exerciseId) => ({ exerciseId }));
 
 /** Ordinary strength-training wording for the dry-land workouts (the ocean wording belongs to ocean sessions). */

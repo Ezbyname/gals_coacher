@@ -14,6 +14,8 @@ import {
   type PrescriptionErrors,
 } from '@/domain/training/training';
 import { professionalWorkout } from '@/domain/training/professional';
+import { adjustedSections } from '@/domain/training/professional/adjust';
+import type { WorkoutAdjustment } from '@/domain/training/professional/types';
 import type { Clock } from '@/services/clock/Clock';
 import { emitDataChanged } from '../../changes';
 import type { IdService } from '@/services/ids/IdService';
@@ -318,7 +320,8 @@ export type AssignContent =
   | { readonly kind: 'EXERCISE'; readonly exerciseId: string }
   | { readonly kind: 'BLOCK'; readonly blockId: string }
   // SPORT-CONTENT-001: a read-only professional workout, COPIED as named sections (legacy grouping, no Block behind them).
-  | { readonly kind: 'PROFESSIONAL'; readonly workoutId: string; readonly language: 'he' | 'en' };
+  // TRAINING-BLOCKS-001: `adjust` is a Training Block's per-session progression (sets / targets / omitted items).
+  | { readonly kind: 'PROFESSIONAL'; readonly workoutId: string; readonly language: 'he' | 'en'; readonly adjust?: WorkoutAdjustment };
 /** Where it goes for ONE Player: an editable plan of that Player, or a NEW workout (created together with the content). */
 export type AssignDestination =
   | { readonly type: 'EXISTING'; readonly planId: string }
@@ -375,7 +378,7 @@ async function assignOne(
     content.kind === 'BLOCK'
       ? [await blockSection(db, content.blockId, deps)]
       : content.kind === 'PROFESSIONAL'
-        ? professionalEntries(db, content.workoutId, content.language)
+        ? professionalEntries(db, content.workoutId, content.language, content.adjust)
         : [await exerciseEntry(db, content.exerciseId)];
   const destination = target.destination;
   if (destination.type === 'EXISTING') {
@@ -437,11 +440,12 @@ async function professionalEntries(
   db: PlayerDb,
   workoutId: string,
   language: 'he' | 'en',
+  adjust?: WorkoutAdjustment,
 ): Promise<CompositionEntry<NewPlanItem>[]> {
   const workout = professionalWorkout(workoutId);
   if (workout === null) throw new TrainingNotFoundError('professionalWorkout', workoutId);
   const exercises = await readExercisesUnserialized(db);
-  return workout.sections.map((section): CompositionEntry<NewPlanItem> => {
+  return adjustedSections(workout, adjust).map((section): CompositionEntry<NewPlanItem> => {
     const blockName = language === 'he' ? section.name[0] : section.name[1];
     return {
       kind: 'SECTION',
@@ -529,3 +533,9 @@ async function edit(
   });
   return result!;
 }
+
+/**
+ * The same assignment for ONE Player, WITHOUT opening a transaction: for a caller that already holds one (the Training Block
+ * assignment). The public functions queue their own transaction, so calling them from inside another one would never return.
+ */
+export { assignOne as assignContentWithinTransaction };

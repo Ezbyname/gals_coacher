@@ -2,6 +2,7 @@ import { SURF_SAFETY } from '../../exercise/catalog/surfing';
 import type { Difficulty } from '../../exercise/taxonomy';
 
 import { EXPANDED_WORKOUTS } from './expanded';
+import { GENERAL_WORKOUTS } from './athletic';
 import { IBBC_WORKOUTS } from './ibbc';
 import { reuse, x, type Pair, type ProfessionalSport, type ProfessionalWorkout, type TrainingFocus } from './types';
 
@@ -246,7 +247,11 @@ export const SPORT_CONTENT_001_WORKOUT_IDS: readonly string[] = CORE_WORKOUTS.ma
 export const SPORT_CONTENT_002_WORKOUT_IDS: readonly string[] = EXPANDED_WORKOUTS.map((w) => w.id);
 export const SPORT_CONTENT_003_WORKOUT_IDS: readonly string[] = IBBC_WORKOUTS.map((w) => w.id);
 
-const BY_ID = new Map(PROFESSIONAL_WORKOUTS.map((w) => [w.id, w]));
+/** TRAINING-BLOCKS-001: the 13 general-athletic workouts (no sport). Kept apart from the sport workouts, which stay exactly 17. */
+export const GENERAL_ATHLETIC_WORKOUTS: readonly ProfessionalWorkout[] = GENERAL_WORKOUTS;
+export const TRAINING_BLOCKS_001_WORKOUT_IDS: readonly string[] = GENERAL_WORKOUTS.map((w) => w.id);
+
+const BY_ID = new Map<string, ProfessionalWorkout>([...PROFESSIONAL_WORKOUTS, ...GENERAL_WORKOUTS].map((w) => [w.id, w]));
 
 export function professionalWorkout(id: string): ProfessionalWorkout | null {
   return BY_ID.get(id) ?? null;
@@ -260,6 +265,11 @@ export function professionalWorkoutsFor(
   return PROFESSIONAL_WORKOUTS.filter(
     (w) => (sport === null || w.sport === sport) && (difficulty === null || w.difficulty === difficulty) && (focus === null || w.focus === focus),
   );
+}
+
+/** The general-athletic workouts, optionally by level and focus (a sport filter never applies: they have no sport). */
+export function generalWorkoutsFor(difficulty: Difficulty | null, focus: TrainingFocus | null = null): ProfessionalWorkout[] {
+  return GENERAL_WORKOUTS.filter((w) => (difficulty === null || w.difficulty === difficulty) && (focus === null || w.focus === focus));
 }
 
 export function professionalExerciseCount(workout: ProfessionalWorkout): number {

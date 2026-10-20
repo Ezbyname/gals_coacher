@@ -682,7 +682,7 @@ describe('calendar persistence boundaries', () => {
     },
   );
 
-  it('exports exactly create, get, list, the range read, update, delete, the explicit completion pair, the import batch trio and the workout scheduling set (QB-WORKOUT-BUILDER-001D) and the id list reminder pruning reads (CAL-REMINDER-RULES-002)', () => {
+  it('exports exactly create, get, list, the range read, update, delete, the explicit completion pair, the import batch trio and the workout scheduling set (QB-WORKOUT-BUILDER-001D) and the id list reminder pruning reads (CAL-REMINDER-RULES-002), plus the two non-transactional scheduling pieces the Training Block assignment composes inside ONE transaction (TRAINING-BLOCKS-001)', () => {
     const exported = Object.keys(jest.requireActual('../calendarEventRepository'));
     expect(exported.sort()).toEqual([
       'SCHEDULED_WORKOUT_TYPE',
@@ -699,7 +699,9 @@ describe('calendar persistence boundaries', () => {
       'listWorkoutSchedules',
       'markCalendarEventCompleted',
       'rescheduleWorkout',
+      'scheduleTimingErrors',
       'scheduleWorkout',
+      'scheduleWorkoutWithinTransaction',
       'undoCalendarEventCompletion',
       'undoCalendarImport',
       'unscheduleWorkout',
