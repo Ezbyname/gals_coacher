@@ -20,15 +20,15 @@ const measurementText = (e: ExerciseDefinition): string => {
 };
 const unit = (e: ExerciseDefinition): string =>
   e.measurement.type === 'DURATION' || e.measurement.type === 'TIME' ? 's' : e.measurement.type === 'MADE_ATTEMPTS' ? ' attempts' : e.measurement.type === 'REPETITIONS' ? ' reps' : '';
-const dosage = (e: ExerciseDefinition, d: { sets: number; target: number | null; restSec: number | null } | null): string =>
+export const dosage = (e: ExerciseDefinition, d: { sets: number; target: number | null; restSec: number | null } | null): string =>
   d === null ? '—' : `${d.sets} × ${d.target === null ? '(no target)' : `${d.target}${unit(e)}`}, rest ${d.restSec ?? 0}s`;
-const equipmentText = (e: ExerciseDefinition): string =>
+export const equipmentText = (e: ExerciseDefinition): string =>
   e.equipment.length === 0 ? 'none (bodyweight)' : e.equipment.map((o) => o.join(' + ')).join(' OR ');
-const sourceLine = (key: SourceKey): string =>
+export const sourceLine = (key: SourceKey): string =>
   `- ${SOURCES[key].name}${SOURCES[key].url ? ` — ${SOURCES[key].url}` : ''} _(${SOURCES[key].read})_`;
-const bullets = (items: readonly (readonly [string, string])[], lang: 0 | 1): string => items.map((p) => `  - ${p[lang]}`).join('\n') || '  - —';
+export const bullets = (items: readonly (readonly [string, string])[], lang: 0 | 1): string => items.map((p) => `  - ${p[lang]}`).join('\n') || '  - —';
 
-function exerciseBlock(e: ExerciseDefinition, slice: string): string {
+export function exerciseBlock(e: ExerciseDefinition, slice: string): string {
   const p = PROVENANCE[e.id]!;
   return [
     `### ${e.id}`,
