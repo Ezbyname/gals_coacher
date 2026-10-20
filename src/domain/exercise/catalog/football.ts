@@ -167,7 +167,7 @@ const ENTRIES: Entry[] = [
   },
   {
     id: 'FB_SMALL_SIDED_GAME',
-    name: ['משחק קטן', 'Small-Sided Game'],
+    name: ['משחקון בשטח קטן', 'Small-Sided Game'],
     cat: ['FOOTBALL_GAME_PLAY', 'CONDITIONING'],
     prim: ['QUADRICEPS', 'CALVES'],
     sec: ['HAMSTRINGS', 'GLUTES'],
@@ -222,7 +222,7 @@ const ENTRIES: Entry[] = [
     m: madeAttempts(),
     d: [1, 10, 90],
     how: [
-      'מקבלים כדור וגומרים במהירות מול מגן, או במשחק קטן של שניים נגד שניים לשער. סופרים שערים מתוך ניסיונות.',
+      'מקבלים כדור וגומרים במהירות מול מגן, או במשחקון בשטח קטן של שניים נגד שניים לשער. סופרים שערים מתוך ניסיונות.',
       'Receive the ball and finish quickly against a defender, or in a small 2v2 game on goal. Count goals out of attempts.',
     ],
     cues: [

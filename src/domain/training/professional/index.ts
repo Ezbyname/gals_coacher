@@ -20,8 +20,8 @@ export * from './types';
  * workout's own screen instead; they are not copied.
  */
 const SURF_BRIEFING: Pair = [
-  'תדריך לפני הים (5 דקות): עוצרים, מסתכלים, מתכננים. מזהים סימני זרם יוצא ("ריפ"), מתאמים כללי עדיפות ואתיקה בין גולשים, וקובעים איפה נכנסים ויוצאים. אם נקלעים לזרם: צפים על הלוח, מסמנים לעזרה ושוחים במקביל לחוף.',
-  'Briefing before the water (5 minutes): stop, look, plan. Spot rip-current signs, agree priority and etiquette between surfers, and decide where to enter and exit. If caught in a rip: float on the board, signal for help and swim parallel to the shore.',
+  'תדריך לפני הים (5 דקות): עוצרים, מסתכלים, מתכננים. מזהים סימני זרם יוצא ("ריפ"), מתאמים כללי עדיפות ואתיקה בין גולשים, וקובעים איפה נכנסים ויוצאים. אם נקלעים לזרם יוצא: נשארים רגועים וצפים כדי לחסוך אנרגיה, מסמנים לעזרה, ואם אפשר יוצאים הצידה — במקביל לחוף ולכיוון הגלים השוברים — ובודקים מחדש את המצב. אין פעולה אחת שנכונה תמיד.',
+  'Briefing before the water (5 minutes): stop, look, plan. Spot rip-current signs, agree priority and etiquette between surfers, and decide where to enter and exit. If caught in a rip current: stay calm and float to conserve energy, signal for help, and if able escape sideways — parallel to the beach, toward the breaking waves — then reassess. No single action is always right.',
 ];
 const SURF_VIDEO_REVIEW: Pair = [
   'סקירת וידאו או מאמן (10 דקות): צופים בגלים שנתפסו ובתמרונים, ומסכמים שתי נקודות לשיפור לפעם הבאה.',
@@ -137,7 +137,7 @@ const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
     focus: 'ALL_ROUND',
     name: ['כדורגל — מתחילים', 'Football — Beginner'],
     summary: [
-      'שליטה בכדור, דריבל, מסירה ובעיטה — הרבה מגעים בכדור ומשחק קטן.',
+      'שליטה בכדור, דריבל, מסירה ובעיטה — הרבה מגעים בכדור ומשחקון בשטח קטן.',
       'Ball mastery, dribbling, passing and shooting — many touches on the ball and a small game.',
     ],
     minutes: [45, 55],
@@ -153,7 +153,7 @@ const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
           x('FB_SHOOTING_ACCURACY', 1, 10, 60),
         ],
       },
-      { name: ['משחק קטן', 'Small game'], items: [x('FB_SMALL_SIDED_GAME', 1, 600, 0)] },
+      { name: ['משחקון בשטח קטן', 'Small game'], items: [x('FB_SMALL_SIDED_GAME', 1, 600, 0)] },
     ],
     coachNotes: [
       [
@@ -187,7 +187,7 @@ const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
           x('FB_PASS_AND_CONTROL', 3, 10, 20),
         ],
       },
-      { name: ['משחק קטן', 'Small game'], items: [x('FB_SMALL_SIDED_GAME', 1, 900, 0)] },
+      { name: ['משחקון בשטח קטן', 'Small game'], items: [x('FB_SMALL_SIDED_GAME', 1, 900, 0)] },
     ],
     coachNotes: [
       [

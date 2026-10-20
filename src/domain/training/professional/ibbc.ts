@@ -100,7 +100,7 @@ export const IBBC_WORKOUTS: readonly ProfessionalWorkout[] = [
     sport: 'BASKETBALL',
     difficulty: 'BEGINNER',
     focus: 'FUNDAMENTALS',
-    name: ['כדורסל — קליעה וליי-אפ', 'Basketball — Form & Layups'],
+    name: ['כדורסל — קליעה ולייאפים', 'Basketball — Form & Layups'],
     summary: [
       'טכניקת קליעה בסיסית, עבודת רגליים וסיומים קרובים לסל למתחילים — מתרגילים קיימים בספרייה.',
       'Basic shooting form, footwork and close finishes at the rim for beginners — from existing library exercises.',

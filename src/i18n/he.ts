@@ -383,7 +383,7 @@ export const he = {
         FINISHING: 'גימור',
         PASSING: 'מסירה ומגע ראשון',
         DEFENSE: 'הגנה וריבאונד',
-        TRANSITION: 'מעבר ולחץ',
+        TRANSITION: 'מעברים ולחץ לאחר איבוד',
         FUNDAMENTALS: 'יסודות למתחילים',
       },
       all: 'הכול',

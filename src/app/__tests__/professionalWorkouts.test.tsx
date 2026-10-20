@@ -183,7 +183,7 @@ describe('SPORT-CONTENT-003: two beginner Basketball workouts (the IBBC videos a
     await prepare('he');
     renderRouter(routes, { initialUrl: '/workouts/professional/BASKETBALL-BEGINNER-SHOOT-LAYUP-01' });
     await screen.findByTestId('professional-details-name');
-    expect(text('professional-details-name')).toBe('כדורסל — קליעה וליי-אפ');
+    expect(text('professional-details-name')).toBe('כדורסל — קליעה ולייאפים');
     expect(text('professional-details-level')).toBe('כדורסל · מתחילים');
     expect(has('professional-videos')).toBe(false);
   });
@@ -219,7 +219,7 @@ describe('opening a workout (read-only content)', () => {
     renderRouter(routes, { initialUrl: '/workouts/professional/SURF-FOUNDATION-01' });
     await screen.findByTestId('professional-safety');
     expect(text('professional-safety-text')).toBe(
-      'Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult.',
+      "Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe.",
     );
     expect(text('professional-coach-note-0')).toMatch(/rip/i);
     expect(text('professional-source-note')).toMatch(/Gals Coacher's own recommendation/);
@@ -232,7 +232,7 @@ describe('opening a workout (read-only content)', () => {
     await prepare('he');
     renderRouter(routes, { initialUrl: '/workouts/professional/SURF-PROGRESSION-01' });
     await screen.findByTestId('professional-safety');
-    expect(text('professional-safety-text')).toBe('תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי.');
+    expect(text('professional-safety-text')).toBe('יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים.');
     expect(text('professional-details-level')).toBe('גלישה · בינוני');
   });
 

@@ -7,34 +7,36 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 - Everything here is **Gals Coacher's own programming, informed by public sources**. It is not official FIFA, ISA, Surfing Australia or USA Basketball programming.
 - **Every dosage (sets, targets, rest, durations, counts) is an `ORIGINAL_RECOMMENDATION`** — no source gives dosages for these drills.
 - Evidence classes: `SOURCE_SUPPORTED` (an opened source states the topic), `SYNTHESIZED` (our coaching synthesis), `ORIGINAL_RECOMMENDATION` (our own recommendation), `UNVERIFIED` (not stated by any opened source; kept as our synthesis pending verification).
-- Sources marked _listing only_ were seen only as a search-result summary; _owner-cited, not opened_ were cited to us and not opened. Neither is relied on for anything beyond what is written here.
+- Sources marked _listing only_ were seen only as a search-result summary; _owner-cited, not opened_ were cited to us and not opened (none remain after review round 1 except those so marked). Neither is relied on for anything beyond what is written here.
 - Difficulty is content progression metadata, never a medical or readiness assessment. Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.
-- Surf safety: ocean sessions keep the locked wording (no claim that conditions are safe; conditions, currents, weather and level are judged by the surfer, coach or responsible adult). Dry-land surf workouts use ordinary strength-training wording. No breath-hold training anywhere.
+- Surf safety: ocean sessions carry the reviewed wording (conditions, currents, weather and level are assessed in person by the surfer, coach or responsible adult; the app does not determine whether conditions are safe). Dry-land surf workouts use ordinary strength-training wording. No breath-hold training anywhere.
 
 ## Points that need a human decision
 
-**From SPORT-CONTENT-001**
+**Review round 1 (human review: CHANGES REQUIRED — SMALL CONTENT PATCH) — applied in this version**
 
-1. **Surf ocean-safety wording** (HE and EN) — shown on every surf Exercise and every Surf Technique workout.
-2. **Youth suitability of the advanced Football workouts** (`FOOTBALL-PERFORMANCE-01`, and now `FOOTBALL-TRANSITION-PRESSING-01`): FIFA gives the 3v2 drill with no age, and the counter-press rule comes from an elite youth session. Every ADVANCED workout now also shows the neutral "may require adjustment by a coach or responsible adult" note.
-3. **`SURF_TAKE_OFF`** is `UNVERIFIED` (no opened source states a whitewater take-off).
-4. **Bottom turn / top turn / cutback** are `SYNTHESIZED`: Surfing Australia lists them only as abilities expected of Progression-coach candidates.
-5. **Hebrew names, instructions and cues** (all new Exercises and workouts) need a native-speaker coach review.
-6. **Dosage** for every item (all `ORIGINAL_RECOMMENDATION`).
+- Surf ocean-safety wording replaced (HE + EN) and the rip-current briefing aligned with Surf Life Saving NSW (stay calm / float, signal for help, if able escape sideways toward breaking waves, reassess).
+- `SURF_TAKE_OFF`: topic is now `SOURCE_SUPPORTED` (opened surf-school page that teaches a whitewater take-off); wording, cues and dosage stay `SYNTHESIZED` / `ORIGINAL_RECOMMENDATION`. No claim that ISA or Surfing Australia authored the drill.
+- Surf dry-land sources recorded as opened: Surfing Australia HPC, ISA Surf Strength and Mobility, surfing-performance research.
+- The three prescriptions that had no target now have one: `CONE_DRIBBLE_SLALOM` 4 × 30 s, `DEFENSIVE_SLIDES` 4 × 30 s, `LANE_AGILITY` 3 × 30 s.
+- `BASKETBALL-SHOOTING-FINISHING-01` reduced to about 160 attempts. `SURF-POWER-ROTATION-01` reduced to about 15 movements (one jump, one hip extension, no Russian twist). `SURF-PADDLE-ENDURANCE-01` now has ONE conditioning station (ski erg OR rowing machine OR battle ropes) and two rows.
+- `BOX_OUT_DRILL`: Hebrew name and instructions reworded; topic `SOURCE_SUPPORTED` (USA Basketball). USA Basketball is recorded for the Basketball workouts as contextual evidence for the skill families only.
+- Hebrew names: משחקון בשטח קטן, סגירה לריבאונד (Box-Out), קליעה ולייאפים, מעברים ולחץ לאחר איבוד.
+- Unchanged and approved: Advanced Football (with the age / coach-adjustment note), bottom turn / top turn / cutback as `SYNTHESIZED`, the six IBBC videos as `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review notes only.
 
-**New in SPORT-CONTENT-002**
+**Points that still need a human decision**
 
-7. **Surf dry-land evidence**: only the Surfing Australia camp schedule (strength & mobility, pre-surf activation, recovery) was opened. The upper-/lower-body split, surf-specific fitness, the ISA Surf Strength and Mobility education and the physiology research are **owner-cited, not opened** — please supply the specific citations if you want them recorded as sources.
-8. **Basketball workouts have no external source** (built from the app's own drills). Say whether that is acceptable or whether you want USA Basketball material consulted before publication.
-9. **`BOX_OUT_DRILL`** is a new Basketball Exercise (the catalog had no box-out / rebounding-position drill); it is `SYNTHESIZED`, with no external source.
-10. **Equipment**: the Paddle Endurance workout uses a ski erg and battle ropes (with a rowing-machine / battle-rope alternative in the coach note).
-11. **Surf Technique vs Surf Strength & Fitness** are shown as separate groups in the Professional workouts list; the Football 001 workouts are tagged "All-round progression".
+1. Final approval of the reviewed surf ocean-safety wording and rip-current briefing.
+2. Hebrew names, instructions and cues (native-speaker coach review of the remaining text).
+3. Dosage for every item (all `ORIGINAL_RECOMMENDATION`).
+4. **Equipment**: Paddle Endurance needs one of ski erg / rowing machine / battle ropes (the workout lists the ski erg; the section title names the alternatives).
+5. **Surf Technique vs Surf Strength & Fitness** are shown as separate groups in the Professional workouts list; the Football 001 workouts are tagged "All-round progression".
 
-**New in SPORT-CONTENT-003 (the IBBC beginner page)**
+**SPORT-CONTENT-003 (the IBBC beginner page)**
 
-12. **The six videos were not watched and no transcript could be obtained** (five have no captions; the sixth's caption file is empty). So no video became an Exercise, no how-to was written from a title, and **no video is shown in the app**; they are `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` notes in this sheet only. If you want one promoted to a user-facing reference or turned into an Exercise, someone needs to watch it and give the exact setup, roles, steps, cues and progression.
-13. **The sources are third-party** (Jr. NBA / Jr. WNBA, HoopsKing — a commercial site whose coaching quality has not been reviewed — and Peak Performance Training).
-14. **The sets / repetitions / durations** of the two beginner workouts are ours (all `ORIGINAL_RECOMMENDATION`).
+6. **The six videos were not watched and no transcript could be obtained** (five have no captions; the sixth's caption file is empty). So no video became an Exercise, no how-to was written from a title, and **no video is shown in the app**; they are `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` notes in this sheet only. If you want one promoted to a user-facing reference or turned into an Exercise, someone needs to watch it and give the exact setup, roles, steps, cues and progression.
+7. **The sources are third-party** (Jr. NBA / Jr. WNBA, HoopsKing — a commercial site whose coaching quality has not been reviewed — and Peak Performance Training).
+8. **The sets / repetitions / durations** of the two beginner workouts are ours (all `ORIGINAL_RECOMMENDATION`).
 
 
 ## A. New Exercises (22)
@@ -69,9 +71,9 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
   - Eyes forward, not on the feet
   - Notice your natural front foot
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי. מתרגלים על חול או משטח רך וללא אנשים סביב הלוח.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים. מתרגלים על חול או משטח רך וללא אנשים סביב הלוח.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult. Practise on sand or a soft surface with nobody around the board.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe. Practise on sand or a soft surface with nobody around the board.
 
 **Source / provenance:**
 - Surfing Australia — adult surf camps — https://surfingaustralia.com/hpc/adult-surf-camps/ _(opened)_
@@ -109,9 +111,9 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
   - Long, continuous strokes
   - Chest slightly up, eyes forward
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי. חותרים במים רדודים ושטוחים עם השגחה, ולא מרחיקים מהחוף.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים. חותרים במים רדודים ושטוחים עם השגחה, ולא מרחיקים מהחוף.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult. Paddle in shallow, flat water with supervision, and do not go far from shore.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe. Paddle in shallow, flat water with supervision, and do not go far from shore.
 
 **Source / provenance:**
 - Surfing Australia — adult surf camps — https://surfingaustralia.com/hpc/adult-surf-camps/ _(opened)_
@@ -135,7 +137,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Measurement** | repetitions |
 | **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 4 reps, rest 60 s |
 | **Equipment** | SURFBOARD |
-| **Evidence class** | topic: `UNVERIFIED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
+| **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Instructions — HE:** בגלי קצף (גל שכבר נשבר) חותרים, מרגישים את הגל תופס את הלוח וקמים אל היציבה. רק בגלי קצף, בעומק שמתאים לרמה ובבחירה של מבוגר או מאמן מנוסה.
 
@@ -149,16 +151,16 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
   - Paddle until the wave catches the board
   - Rise in one movement, eyes forward
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי. רק גלי קצף שנבחרו על ידי מבוגר או מאמן מנוסה; לא מתרגלים לבד.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים. רק גלי קצף שנבחרו על ידי מבוגר או מאמן מנוסה; לא מתרגלים לבד.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult. Whitewater only, chosen by an experienced adult or coach; never practise alone.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe. Whitewater only, chosen by an experienced adult or coach; never practise alone.
 
 **Source / provenance:**
-- ISA — courses — https://isasurf.org/isa-courses/ _(listing only)_
+- Otro Modo Surf School — beginner surf course (teaches a beginner take-off on whitewater; ISA / FES-certified instructors). A surf-school page: NOT ISA or Surfing Australia content — https://www.otro-modo-surfschool.com/surf-course-fuerteventura/beginner-surf-course/ _(opened)_
 
-**Exactly what the source supports:** Not stated on any opened page. An ISA Level 1 search-result summary mentions riding green waves and a controlled exit (listing only; the document was not opened).
+**Exactly what the source supports:** A surf-school page (SURF-SCHOOL-WW, opened; instructors described as ISA / FES-certified) teaches a beginner take-off on whitewater. It is not ISA or Surfing Australia content, and it does not give our drill wording or dosage.
 
-**What is Gals Coacher synthesis:** Whitewater take-off as a beginner step, its wording and the whitewater-only safety rule. Technique cues, wording and every dosage are Gals Coacher's own.
+**What is Gals Coacher synthesis:** The drill wording, cues, the whitewater-only safety rule and the counts. ISA / Surfing Australia are not claimed to have authored this drill. Technique cues, wording and every dosage are Gals Coacher's own.
 
 **ORIGINAL_RECOMMENDATION:** every set, target and rest value above.
 
@@ -188,9 +190,9 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
   - Start the dive before the wave reaches you
   - Keep the board close to your body
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי. מתחילים בבריכה או במים רדודים ושקטים; לא נשארים מתחת לגל או מול גולשים אחרים.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים. מתחילים בבריכה או במים רדודים ושקטים; לא נשארים מתחת לגל או מול גולשים אחרים.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult. Start in a pool or shallow, calm water; do not stay under a wave or in front of other surfers.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe. Start in a pool or shallow, calm water; do not stay under a wave or in front of other surfers.
 
 **Source / provenance:**
 - Surfing Australia — adult surf camps — https://surfingaustralia.com/hpc/adult-surf-camps/ _(opened)_
@@ -228,9 +230,9 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
   - Look first, then paddle
   - Respect the priority between surfers
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי. בחירת הגל ומקום ההמתנה היא החלטה של הגולש יחד עם המאמן, ולא של האפליקציה.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים. בחירת הגל ומקום ההמתנה היא החלטה של הגולש יחד עם המאמן, ולא של האפליקציה.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult. Choosing the wave and where to wait is a decision for the surfer together with the coach, never for the app.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe. Choosing the wave and where to wait is a decision for the surfer together with the coach, never for the app.
 
 **Source / provenance:**
 - Surfing Australia — adult surf camps — https://surfingaustralia.com/hpc/adult-surf-camps/ _(opened)_
@@ -267,9 +269,9 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
   - Look where you want to go
   - Shift your weight smoothly and under control
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי. מתרגלים רק בגלים ובתנאים שמתאימים לרמה; יוצאים מהגל כשהוא נגמר ולא מול גולשים אחרים.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים. מתרגלים רק בגלים ובתנאים שמתאימים לרמה; יוצאים מהגל כשהוא נגמר ולא מול גולשים אחרים.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult. Practise only in waves and conditions that suit the level; exit when the wave ends and not in front of other surfers.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe. Practise only in waves and conditions that suit the level; exit when the wave ends and not in front of other surfers.
 
 **Source / provenance:**
 - Surfing Australia — adult surf camps — https://surfingaustralia.com/hpc/adult-surf-camps/ _(opened)_
@@ -307,9 +309,9 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
   - Knees bent, low centre of gravity
   - Look where you are turning
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי. מתרגלים רק בגלים בגודל שמתאים לרמה ובנוכחות מאמן או מבוגר אחראי.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים. מתרגלים רק בגלים בגודל שמתאים לרמה ובנוכחות מאמן או מבוגר אחראי.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult. Practise only in waves of a size that suits the level, with a coach or responsible adult present.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe. Practise only in waves of a size that suits the level, with a coach or responsible adult present.
 
 **Source / provenance:**
 - Surfing Australia — coaching — https://surfingaustralia.com/coaching/ _(opened)_
@@ -347,9 +349,9 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
   - Look at the lip before the turn
   - Rotate the shoulders and the hips together
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי. רמה מתקדמת: רק בגלים ובתנאים שמתאימים לרמה, לא מול גולשים אחרים ובנוכחות מאמן או מבוגר אחראי.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים. רמה מתקדמת: רק בגלים ובתנאים שמתאימים לרמה, לא מול גולשים אחרים ובנוכחות מאמן או מבוגר אחראי.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult. Advanced level: only in waves and conditions that suit the level, not in front of other surfers, with a coach or responsible adult present.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe. Advanced level: only in waves and conditions that suit the level, not in front of other surfers, with a coach or responsible adult present.
 
 **Source / provenance:**
 - Surfing Australia — coaching — https://surfingaustralia.com/coaching/ _(opened)_
@@ -387,9 +389,9 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
   - A wide, continuous turn
   - Look at where you are returning to
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי. מתרגלים רק בגלים בגודל שמתאים לרמה; הריאנטרי רק בנוכחות מאמן.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים. מתרגלים רק בגלים בגודל שמתאים לרמה; הריאנטרי רק בנוכחות מאמן.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult. Practise only in waves of a size that suits the level; the re-entry only with a coach present.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe. Practise only in waves of a size that suits the level; the re-entry only with a coach present.
 
 **Source / provenance:**
 - Surfing Australia — adult surf camps — https://surfingaustralia.com/hpc/adult-surf-camps/ _(opened)_
@@ -427,9 +429,9 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
   - Choose fewer waves and ride them well
   - Real rest between the heats
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי. רמה מתקדמת ותחרותית: מבוצע רק בתנאים שמתאימים לרמה ובנוכחות מאמן או מבוגר אחראי, עם הפסקה כשמתעייפים.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים. רמה מתקדמת ותחרותית: מבוצע רק בתנאים שמתאימים לרמה ובנוכחות מאמן או מבוגר אחראי, עם הפסקה כשמתעייפים.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult. Advanced, competitive format: only in conditions that suit the level with a coach or responsible adult present, stopping when tired.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe. Advanced, competitive format: only in conditions that suit the level with a coach or responsible adult present, stopping when tired.
 
 **Source / provenance:**
 - Surfing Australia — coaching — https://surfingaustralia.com/coaching/ _(opened)_
@@ -771,7 +773,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | | |
 |---|---|
 | **Slice** | SPORT-CONTENT-001 |
-| **HE name** | משחק קטן |
+| **HE name** | משחקון בשטח קטן |
 | **EN name** | Small-Sided Game |
 | **Sport** | FOOTBALL |
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
@@ -862,7 +864,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Equipment** | SOCCER_BALL + SOCCER_GOAL |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
-**Instructions — HE:** מקבלים כדור וגומרים במהירות מול מגן, או במשחק קטן של שניים נגד שניים לשער. סופרים שערים מתוך ניסיונות.
+**Instructions — HE:** מקבלים כדור וגומרים במהירות מול מגן, או במשחקון בשטח קטן של שניים נגד שניים לשער. סופרים שערים מתוך ניסיונות.
 
 **Instructions — EN:** Receive the ball and finish quickly against a defender, or in a small 2v2 game on goal. Count goals out of attempts.
 
@@ -895,18 +897,18 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | | |
 |---|---|
 | **Slice** | SPORT-CONTENT-002 |
-| **HE name** | חסימה לריבאונד (Box-Out) |
+| **HE name** | סגירה לריבאונד (Box-Out) |
 | **EN name** | Box-Out Drill |
 | **Sport** | BASKETBALL |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
 | **Dosage (ORIGINAL_RECOMMENDATION)** | 3 × 8 reps, rest 45 s |
 | **Equipment** | BASKETBALL |
-| **Evidence class** | topic: `SYNTHESIZED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
+| **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
-**Instructions — HE:** עם בן זוג: מוצאים את השחקן, מסתובבים אליו, תופסים עמדה רחבה ונמוכה עם הגב אליו ומחזיקים אותו מאחור, ואז עוקבים אחרי הכדור. מגע גופני מבוקר, בלי דחיפה.
+**Instructions — HE:** עם בן זוג: מאתרים את היריב, יוצרים מגע מבוקר, מסתובבים כך שהגוף נמצא בינו לבין הסל, שומרים עמדה רחבה ונמוכה ואז יוצאים לכדור.
 
-**Instructions — EN:** With a partner: find the opponent, pivot to face the basket with your back to them, take a wide low stance to hold the position behind you, then go to the ball. Keep the body contact controlled, without pushing.
+**Instructions — EN:** With a partner: locate the opponent, make controlled contact, pivot so your body is between them and the basket, hold a wide, low stance, then go to the ball.
 
 **Coaching cues — HE:**
   - קודם מוצאים את השחקן ואז הולכים לכדור
@@ -921,11 +923,12 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 **Safety — EN:** — (none written)
 
 **Source / provenance:**
-- No external source was consulted.
+- USA Basketball — advanced rebounding / box-out material — https://www.usab.com/news/2014/01/advanced-rebounding-secrets-from-the-pros _(opened)_
+- USA Basketball — coaching guidebook / player-development curriculum (skill families: ball handling & dribbling, passing & receiving, shooting, rebounding, footwork & body control, team defense). Contextual only; USA Basketball did not author our workouts or dosage — https://www.usab.com/news/2025/10/usa-basketball-coaching-guidebook-player-development-curriculum _(opened)_
 
-**Exactly what the source supports:** No external source was consulted for this drill in this slice.
+**Exactly what the source supports:** USA Basketball material treats rebounding and the box-out as a basketball skill (USAB-REBOUND; USAB-CURRICULUM lists Rebounding as a skill family). It does not give our wording or dosage.
 
-**What is Gals Coacher synthesis:** A standard basketball fundamental added because the existing Basketball catalog had no box-out / rebounding-position drill. Technique cues, wording and every dosage are Gals Coacher's own.
+**What is Gals Coacher synthesis:** The step-by-step wording (locate, controlled contact, pivot, wide low stance, go to the ball), the cues and the 3 × 8 dosage. Technique cues, wording and every dosage are Gals Coacher's own.
 
 **ORIGINAL_RECOMMENDATION:** every set, target and rest value above.
 
@@ -937,7 +940,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | | |
 |---|---|
-| **Slice** | SPORT-CONTENT-001 (unchanged) |
+| **Slice** | SPORT-CONTENT-001 (unchanged apart from the review patch) |
 | **Sport** | SURFING |
 | **Difficulty** | BEGINNER |
 | **Focus** | SURF_TECHNIQUE |
@@ -978,12 +981,12 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
-- HE: תדריך לפני הים (5 דקות): עוצרים, מסתכלים, מתכננים. מזהים סימני זרם יוצא ("ריפ"), מתאמים כללי עדיפות ואתיקה בין גולשים, וקובעים איפה נכנסים ויוצאים. אם נקלעים לזרם: צפים על הלוח, מסמנים לעזרה ושוחים במקביל לחוף.
-- EN: Briefing before the water (5 minutes): stop, look, plan. Spot rip-current signs, agree priority and etiquette between surfers, and decide where to enter and exit. If caught in a rip: float on the board, signal for help and swim parallel to the shore.
+- HE: תדריך לפני הים (5 דקות): עוצרים, מסתכלים, מתכננים. מזהים סימני זרם יוצא ("ריפ"), מתאמים כללי עדיפות ואתיקה בין גולשים, וקובעים איפה נכנסים ויוצאים. אם נקלעים לזרם יוצא: נשארים רגועים וצפים כדי לחסוך אנרגיה, מסמנים לעזרה, ואם אפשר יוצאים הצידה — במקביל לחוף ולכיוון הגלים השוברים — ובודקים מחדש את המצב. אין פעולה אחת שנכונה תמיד.
+- EN: Briefing before the water (5 minutes): stop, look, plan. Spot rip-current signs, agree priority and etiquette between surfers, and decide where to enter and exit. If caught in a rip current: stay calm and float to conserve energy, signal for help, and if able escape sideways — parallel to the beach, toward the breaking waves — then reassess. No single action is always right.
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe.
 
 **Sources:**
 - Surfing Australia — adult surf camps — https://surfingaustralia.com/hpc/adult-surf-camps/ _(opened)_
@@ -1002,7 +1005,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | | |
 |---|---|
-| **Slice** | SPORT-CONTENT-001 (unchanged) |
+| **Slice** | SPORT-CONTENT-001 (unchanged apart from the review patch) |
 | **Sport** | SURFING |
 | **Difficulty** | INTERMEDIATE |
 | **Focus** | SURF_TECHNIQUE |
@@ -1046,12 +1049,12 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
-- HE: תדריך לפני הים (5 דקות): עוצרים, מסתכלים, מתכננים. מזהים סימני זרם יוצא ("ריפ"), מתאמים כללי עדיפות ואתיקה בין גולשים, וקובעים איפה נכנסים ויוצאים. אם נקלעים לזרם: צפים על הלוח, מסמנים לעזרה ושוחים במקביל לחוף.
-- EN: Briefing before the water (5 minutes): stop, look, plan. Spot rip-current signs, agree priority and etiquette between surfers, and decide where to enter and exit. If caught in a rip: float on the board, signal for help and swim parallel to the shore.
+- HE: תדריך לפני הים (5 דקות): עוצרים, מסתכלים, מתכננים. מזהים סימני זרם יוצא ("ריפ"), מתאמים כללי עדיפות ואתיקה בין גולשים, וקובעים איפה נכנסים ויוצאים. אם נקלעים לזרם יוצא: נשארים רגועים וצפים כדי לחסוך אנרגיה, מסמנים לעזרה, ואם אפשר יוצאים הצידה — במקביל לחוף ולכיוון הגלים השוברים — ובודקים מחדש את המצב. אין פעולה אחת שנכונה תמיד.
+- EN: Briefing before the water (5 minutes): stop, look, plan. Spot rip-current signs, agree priority and etiquette between surfers, and decide where to enter and exit. If caught in a rip current: stay calm and float to conserve energy, signal for help, and if able escape sideways — parallel to the beach, toward the breaking waves — then reassess. No single action is always right.
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe.
 
 **Sources:**
 - Surfing Australia — adult surf camps — https://surfingaustralia.com/hpc/adult-surf-camps/ _(opened)_
@@ -1070,7 +1073,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | | |
 |---|---|
-| **Slice** | SPORT-CONTENT-001 (unchanged) |
+| **Slice** | SPORT-CONTENT-001 (unchanged apart from the review patch) |
 | **Sport** | SURFING |
 | **Difficulty** | ADVANCED |
 | **Focus** | SURF_TECHNIQUE |
@@ -1115,14 +1118,14 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
-- HE: תדריך לפני הים (5 דקות): עוצרים, מסתכלים, מתכננים. מזהים סימני זרם יוצא ("ריפ"), מתאמים כללי עדיפות ואתיקה בין גולשים, וקובעים איפה נכנסים ויוצאים. אם נקלעים לזרם: צפים על הלוח, מסמנים לעזרה ושוחים במקביל לחוף.
-- EN: Briefing before the water (5 minutes): stop, look, plan. Spot rip-current signs, agree priority and etiquette between surfers, and decide where to enter and exit. If caught in a rip: float on the board, signal for help and swim parallel to the shore.
+- HE: תדריך לפני הים (5 דקות): עוצרים, מסתכלים, מתכננים. מזהים סימני זרם יוצא ("ריפ"), מתאמים כללי עדיפות ואתיקה בין גולשים, וקובעים איפה נכנסים ויוצאים. אם נקלעים לזרם יוצא: נשארים רגועים וצפים כדי לחסוך אנרגיה, מסמנים לעזרה, ואם אפשר יוצאים הצידה — במקביל לחוף ולכיוון הגלים השוברים — ובודקים מחדש את המצב. אין פעולה אחת שנכונה תמיד.
+- EN: Briefing before the water (5 minutes): stop, look, plan. Spot rip-current signs, agree priority and etiquette between surfers, and decide where to enter and exit. If caught in a rip current: stay calm and float to conserve energy, signal for help, and if able escape sideways — parallel to the beach, toward the breaking waves — then reassess. No single action is always right.
 - HE: סקירת וידאו או מאמן (10 דקות): צופים בגלים שנתפסו ובתמרונים, ומסכמים שתי נקודות לשיפור לפעם הבאה.
 - EN: Video or coach review (10 minutes): watch the waves caught and the manoeuvres, and agree two points to improve next time.
 
-**Safety — HE:** תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי.
+**Safety — HE:** יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים.
 
-**Safety — EN:** Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult.
+**Safety — EN:** Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe.
 
 **Sources:**
 - Surfing Australia — adult surf camps — https://surfingaustralia.com/hpc/adult-surf-camps/ _(opened)_
@@ -1141,7 +1144,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | | |
 |---|---|
-| **Slice** | SPORT-CONTENT-001 (unchanged) |
+| **Slice** | SPORT-CONTENT-001 (unchanged apart from the review patch) |
 | **Sport** | FOOTBALL |
 | **Difficulty** | BEGINNER |
 | **Focus** | ALL_ROUND |
@@ -1149,7 +1152,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
-**Summary — HE:** שליטה בכדור, דריבל, מסירה ובעיטה — הרבה מגעים בכדור ומשחק קטן.
+**Summary — HE:** שליטה בכדור, דריבל, מסירה ובעיטה — הרבה מגעים בכדור ומשחקון בשטח קטן.
 
 **Summary — EN:** Ball mastery, dribbling, passing and shooting — many touches on the ball and a small game.
 
@@ -1173,11 +1176,11 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | 4 | FB_DRIBBLE_AND_SHOOT | Dribble and Shoot | דריבל ובעיטה | 1 × 10 attempts, rest 60 s |
 | 5 | FB_SHOOTING_ACCURACY | Target Shooting | בעיטות למטרה | 1 × 10 attempts, rest 60 s |
 
-**Section 3 — Small game / משחק קטן**
+**Section 3 — Small game / משחקון בשטח קטן**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחק קטן | 1 × 600s, rest 0 s |
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 600s, rest 0 s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1206,7 +1209,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | | |
 |---|---|
-| **Slice** | SPORT-CONTENT-001 (unchanged) |
+| **Slice** | SPORT-CONTENT-001 (unchanged apart from the review patch) |
 | **Sport** | FOOTBALL |
 | **Difficulty** | INTERMEDIATE |
 | **Focus** | ALL_ROUND |
@@ -1236,11 +1239,11 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | 3 | FB_DRIBBLE_AND_SHOOT | Dribble and Shoot | דריבל ובעיטה | 1 × 10 attempts, rest 60 s |
 | 4 | FB_PASS_AND_CONTROL | Passing and First Touch | מסירה ושליטה | 3 × 10 reps, rest 20 s |
 
-**Section 3 — Small game / משחק קטן**
+**Section 3 — Small game / משחקון בשטח קטן**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחק קטן | 1 × 900s, rest 0 s |
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 900s, rest 0 s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1269,7 +1272,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | | |
 |---|---|
-| **Slice** | SPORT-CONTENT-001 (unchanged) |
+| **Slice** | SPORT-CONTENT-001 (unchanged apart from the review patch) |
 | **Sport** | FOOTBALL |
 | **Difficulty** | ADVANCED |
 | **Focus** | ALL_ROUND |
@@ -1304,7 +1307,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחק קטן | 1 × 1080s, rest 0 s |
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 1080s, rest 0 s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1397,10 +1400,10 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 **Sources:**
 - Surfing Australia — camp schedule — https://surfingaustralia.com/hpc/camp-schedule/ _(opened)_
-- ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(owner-cited, not opened)_
-- Published surfing performance / physiology research (cardiorespiratory fitness, muscular endurance, strength, anaerobic power, upper-torso demand, repeated paddling) — cited by the owner, no specific paper supplied _(owner-cited, not opened)_
+- ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(opened)_
+- Published surfing performance / physiology research — cardiorespiratory fitness, muscular endurance, strength, anaerobic power, significant upper-torso demand (opened by the content reviewer; individual papers are not listed here) _(opened)_
 
-**Exactly what the sources support:** Surfing Australia camp schedule lists strength & mobility, pre-surf activation and recovery sessions (SA-SCHED, opened). The owner additionally cites upper-body and lower-body strength & mobility and surf-specific fitness on the Surfing Australia HPC pages, ISA Surf Strength and Mobility education (resistance training, cardio, mobility) and published surfing-physiology research — none of those three were opened in this slice, so they are recorded as owner-cited, not opened.
+**Exactly what the sources support:** Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYSIOLOGY, opened): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage.
 
 **What is Gals Coacher synthesis:** The exact exercise selection, the order, the movement families chosen, every set / repetition / duration and the sectioning. Gym exercises are NOT claimed to be paddling.
 
@@ -1438,7 +1441,6 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | 1 | ONE_ARM_DUMBBELL_ROW | One-Arm Dumbbell Row | חתירה ביד אחת עם משקולת | 3 × 15 reps, rest 45 s |
 | 2 | SEATED_CABLE_ROW | Seated Cable Row | חתירה בכבל בישיבה | 3 × 15 reps, rest 45 s |
 | 3 | FACE_PULL | Face Pull | משיכה לפנים | 3 × 20 reps, rest 30 s |
-| 4 | INVERTED_ROW | Inverted Row | חתירה הפוכה | 3 × 12 reps, rest 45 s |
 
 **Section 3 — Trunk endurance / סבולת הגו**
 
@@ -1448,13 +1450,12 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | 2 | SIDE_PLANK | Side Plank | פלאנק צידי | 2 × 30s, rest 30 s |
 | 3 | HOLLOW_HOLD | Hollow Hold | החזקת סירה | 3 × 20s, rest 30 s |
 
-**Section 4 — Repeated-effort intervals / מאמץ חוזר במקטעים**
+**Section 4 — Repeated-effort intervals — one conditioning station: ski erg, rowing machine or battle ropes / מאמץ חוזר במקטעים — תחנה אחת לבחירה: סקי-ארג, מכונת חתירה או חבלי קרב**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
 | 1 | SKI_ERG_INTERVALS | Ski Erg Intervals | אינטרוולים בסקי ארג | 6 × 30s, rest 60 s |
-| 2 | BATTLE_ROPE_WAVES | Battle Rope Waves | גלים בחבלי קרב | 6 × 20s, rest 40 s |
-| 3 | MOUNTAIN_CLIMBERS | Mountain Climbers | מטפסי הרים | 3 × 30s, rest 30 s |
+| 2 | MOUNTAIN_CLIMBERS | Mountain Climbers | מטפסי הרים | 3 × 30s, rest 30 s |
 
 **Section 5 — Mobility and recovery / מוביליטי והתאוששות**
 
@@ -1469,8 +1470,8 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 - HE: תרגילי הכושר כאן תומכים בדרישות הגלישה, אבל אינם זהים לחתירה או לגלישה, והם לא מחליפים אימון במים.
 - EN: The fitness exercises here support the demands of surfing, but they are not the same as paddling or surfing and do not replace time in the water.
-- HE: אם אין סקי-ארג, אפשר להחליף במכונת חתירה או בחבלי קרב עם אותו מבנה מקטעים.
-- EN: If there is no ski erg, a rowing machine or battle ropes can replace it with the same interval structure.
+- HE: תחנת המאמץ החוזר היא אחת משלוש אפשרויות — סקי-ארג, מכונת חתירה או חבלי קרב — עם אותו מבנה מקטעים (6 × 30 שניות עבודה, 60 שניות מנוחה). בוחרים לפי הציוד הזמין; אין צורך בכולן.
+- EN: The repeated-effort station is ONE of three options — ski erg, rowing machine or battle ropes — with the same interval structure (6 × 30 s work, 60 s rest). Pick by the equipment available; you do not need all of them.
 - HE: האימון הזה מתבצע על היבשה. אימוני הים (טכניקת גלישה) נושאים את אזהרת תנאי הים.
 - EN: This workout is done on dry land. The ocean sessions (Surf Technique workouts) carry the ocean-conditions warning.
 
@@ -1480,12 +1481,12 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 **Sources:**
 - Surfing Australia — camp schedule — https://surfingaustralia.com/hpc/camp-schedule/ _(opened)_
-- ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(owner-cited, not opened)_
-- Published surfing performance / physiology research (cardiorespiratory fitness, muscular endurance, strength, anaerobic power, upper-torso demand, repeated paddling) — cited by the owner, no specific paper supplied _(owner-cited, not opened)_
+- ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(opened)_
+- Published surfing performance / physiology research — cardiorespiratory fitness, muscular endurance, strength, anaerobic power, significant upper-torso demand (opened by the content reviewer; individual papers are not listed here) _(opened)_
 
-**Exactly what the sources support:** Same as the foundation workout: strength & mobility and recovery sessions are listed (SA-SCHED, opened). The need for muscular endurance, cardiorespiratory fitness, upper-torso demand and repeated, intermittent paddling comes from the owner-cited physiology research and ISA education (not opened here).
+**Exactly what the sources support:** Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYSIOLOGY, opened): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage. The repeated, intermittent paddling demand is supported by the same research.
 
-**What is Gals Coacher synthesis:** The repeated-effort interval structure (6 × 30 s style), the pulling / trunk endurance selection and every dosage. It does not reproduce water mechanics, and there is no breath-hold training.
+**What is Gals Coacher synthesis:** The repeated-effort interval structure (6 × 30 s style), the ONE conditioning station (ski erg OR rowing machine OR battle ropes — not all of them), the two pulling-endurance rows plus face pull, the trunk endurance selection and every dosage. It does not reproduce water mechanics, and there is no breath-hold training.
 
 **ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
 
@@ -1512,8 +1513,6 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
 | 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
 | 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
-| 5 | POGO_JUMPS | Pogo Jumps | קפיצות פוגו | 3 × 15 reps, rest 45 s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Leg strength and explosive extension / כוח רגליים והארכה מתפרצת**
 
@@ -1523,8 +1522,6 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | 2 | SINGLE_LEG_RDL | Single-Leg Romanian Deadlift | דדליפט רומני על רגל אחת | 3 × 8 reps, rest 60 s |
 | 3 | HIP_THRUST | Hip Thrust | דחיקת אגן | 3 × 8 reps, rest 90 s |
 | 4 | SQUAT_JUMP | Squat Jump | קפיצות סקוואט | 3 × 5 reps, rest 60 s |
-| 5 | BOX_JUMP | Box Jump | קפיצה לקופסה | 4 × 4 reps, rest 90 s |
-| 6 | KETTLEBELL_SWING | Kettlebell Swing | נדנוד קטלבל | 4 × 12 reps, rest 60 s |
 
 **Section 3 — Push, pull and get-up pattern / דחיפה, משיכה וקימה**
 
@@ -1532,8 +1529,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 |---|---|---|---|---|
 | 1 | PUSH_UP | Push-Up | שכיבות סמיכה | 3 × 12 reps, rest 60 s |
 | 2 | INVERTED_ROW | Inverted Row | חתירה הפוכה | 3 × 10 reps, rest 60 s |
-| 3 | FACE_PULL | Face Pull | משיכה לפנים | 3 × 15 reps, rest 45 s |
-| 4 | BURPEE | Burpee | ברפי | 3 × 8 reps, rest 60 s |
+| 3 | BURPEE | Burpee | ברפי | 3 × 8 reps, rest 60 s |
 
 **Section 4 — Rotation and trunk stability / סיבוב ויציבות הגו**
 
@@ -1542,7 +1538,6 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | 1 | MED_BALL_ROTATIONAL_THROW | Medicine Ball Rotational Throw | זריקת כדור כוח בסיבוב | 3 × 6 reps, rest 60 s |
 | 2 | PALLOF_PRESS | Pallof Press | לחיצת פאלוף | 3 × 10 reps, rest 45 s |
 | 3 | SIDE_PLANK | Side Plank | פלאנק צידי | 3 × 30s, rest 30 s |
-| 4 | RUSSIAN_TWIST | Russian Twist | סיבובים רוסיים | 3 × 16 reps, rest 45 s |
 
 **Section 5 — Mobility / מוביליטי**
 
@@ -1550,7 +1545,6 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 |---|---|---|---|---|
 | 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
 | 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1569,12 +1563,12 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 **Sources:**
 - Surfing Australia — camp schedule — https://surfingaustralia.com/hpc/camp-schedule/ _(opened)_
-- ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(owner-cited, not opened)_
-- Published surfing performance / physiology research (cardiorespiratory fitness, muscular endurance, strength, anaerobic power, upper-torso demand, repeated paddling) — cited by the owner, no specific paper supplied _(owner-cited, not opened)_
+- ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(opened)_
+- Published surfing performance / physiology research — cardiorespiratory fitness, muscular endurance, strength, anaerobic power, significant upper-torso demand (opened by the content reviewer; individual papers are not listed here) _(opened)_
 
-**Exactly what the sources support:** Strength & mobility, pre-surf activation and recovery are listed (SA-SCHED, opened); strength, anaerobic power and upper-torso demand are owner-cited from surfing physiology research (not opened).
+**Exactly what the sources support:** Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYSIOLOGY, opened): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage.
 
-**What is Gals Coacher synthesis:** The lower-body strength / explosive extension / rotation / anti-rotation selection, the burpee as a general lie-down-and-get-up pattern (not a pop-up copy), and every dosage. Strength alone is not claimed to make an advanced surfer. Advanced content may need adjustment by a coach or responsible adult.
+**What is Gals Coacher synthesis:** The lower-body strength selection with ONE jump (squat jump) and ONE hip-extension (hip thrust), the rotation / anti-rotation trio (rotational throw, Pallof press, side plank — no Russian twist), the burpee as a general lie-down-and-get-up pattern (not a pop-up copy), about 15 movements and every dosage. Strength alone is not claimed to make an advanced surfer. Advanced content may need adjustment by a coach or responsible adult.
 
 **ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
 
@@ -1679,7 +1673,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחק קטן | 1 × 720s, rest 0 s |
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 720s, rest 0 s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1703,7 +1697,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 **ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
 
-### FOOTBALL-TRANSITION-PRESSING-01 — Football — Transition & Pressing / כדורגל — מעבר ולחץ
+### FOOTBALL-TRANSITION-PRESSING-01 — Football — Transition & Pressing / כדורגל — מעברים ולחץ לאחר איבוד
 
 | | |
 |---|---|
@@ -1715,7 +1709,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
-**Summary — HE:** תגובה במעבר, יתרון מספרי, משחק קטן, כללי לחץ אחרי איבוד כדור וקבלת החלטות — דרך פעילות כדורגל.
+**Summary — HE:** תגובה במעבר, יתרון מספרי, משחקון בשטח קטן, כללי לחץ אחרי איבוד כדור וקבלת החלטות — דרך פעילות כדורגל.
 
 **Summary — EN:** Reacting in transition, numerical advantage, small-sided play, pressing rules after losing the ball and decision making — through football activity.
 
@@ -1737,11 +1731,11 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | 2 | FB_ATTACKING_TRANSITION_OVERLOAD | Attacking Transition with a Numerical Advantage | מעבר להתקפה ביתרון מספרי | 1 × 8 reps, rest 90 s |
 | 3 | FB_FINISHING_UNDER_PRESSURE | Finishing under Pressure | גימור תחת לחץ | 1 × 8 attempts, rest 90 s |
 
-**Section 3 — Small game with a pressing rule / משחק קטן עם כלל לחץ**
+**Section 3 — Small game with a pressing rule / משחקון בשטח קטן עם כלל לחץ**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחק קטן | 2 × 600s, rest 120 s |
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 2 × 600s, rest 120 s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1805,7 +1799,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | CONE_DRIBBLE_SLALOM | Cone Dribble Slalom | סלאלום כדרור בין קונוסים | 4 × (no target), rest 60 s |
+| 1 | CONE_DRIBBLE_SLALOM | Cone Dribble Slalom | סלאלום כדרור בין קונוסים | 4 × 30, rest 60 s |
 | 2 | CHANGE_OF_PACE_DRIBBLE | Change-of-Pace Dribble | כדרור בשינוי קצב | 4 × 4 reps, rest 45 s |
 | 3 | HESITATION_DRIVE | Hesitation Drive | השהיה ופריצה | 4 × 6 reps, rest 45 s |
 
@@ -1819,9 +1813,9 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 **Safety — EN:** — (none)
 
 **Sources:**
-- No external source was consulted (built from the app's own curated catalog).
+- USA Basketball — coaching guidebook / player-development curriculum (skill families: ball handling & dribbling, passing & receiving, shooting, rebounding, footwork & body control, team defense). Contextual only; USA Basketball did not author our workouts or dosage — https://www.usab.com/news/2025/10/usa-basketball-coaching-guidebook-player-development-curriculum _(opened)_
 
-**Exactly what the sources support:** No external source was consulted for the Basketball workouts in this slice.
+**Exactly what the sources support:** USA Basketball (USAB-CURRICULUM, opened) is CONTEXTUAL evidence only: it separates player development into skill families such as ball handling & dribbling, passing & receiving, shooting, rebounding, footwork & body control and team defense. USA Basketball did not author this workout or any dosage. Skill family: Ball Handling & Dribbling.
 
 **What is Gals Coacher synthesis:** The whole workout is assembled from the app's own existing, already-curated Basketball drills (no new Exercise); the order and every dosage are ours.
 
@@ -1855,19 +1849,19 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FORM_SHOOTING | Form Shooting | זריקות טכניקה קרוב לסל | 3 × 10 attempts, rest 30 s |
-| 2 | MID_RANGE_SPOT_SHOOTING | Mid-Range Spot Shooting (5 spots) | זריקות מחצי מרחק מ־5 נקודות | 5 × 10 attempts, rest 60 s |
-| 3 | RELOCATION_SHOOTING | Relocation Shooting | זריקות בתנועה (רילוקיישן) | 4 × 10 attempts, rest 60 s |
-| 4 | PULL_UP_JUMPER | Pull-Up Jumper off the Dribble | זריקה מעצירה אחרי כדרור | 4 × 10 attempts, rest 60 s |
+| 1 | FORM_SHOOTING | Form Shooting | זריקות טכניקה קרוב לסל | 2 × 8 attempts, rest 30 s |
+| 2 | MID_RANGE_SPOT_SHOOTING | Mid-Range Spot Shooting (5 spots) | זריקות מחצי מרחק מ־5 נקודות | 5 × 6 attempts, rest 60 s |
+| 3 | RELOCATION_SHOOTING | Relocation Shooting | זריקות בתנועה (רילוקיישן) | 3 × 6 attempts, rest 60 s |
+| 4 | PULL_UP_JUMPER | Pull-Up Jumper off the Dribble | זריקה מעצירה אחרי כדרור | 3 × 6 attempts, rest 60 s |
 
 **Section 3 — Finishing at the rim / סיומים לסל**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LAYUPS | Layups (both hands) | לייאפים בשתי הידיים | 4 × 10 attempts, rest 45 s |
-| 2 | REVERSE_LAYUPS | Reverse Layups | לייאפ הפוך | 4 × 10 attempts, rest 45 s |
-| 3 | CONTACT_FINISHES | Contact Finishes | סיומים במגע | 4 × 8 attempts, rest 60 s |
-| 4 | FREE_THROWS | Free Throws | זריקות עונשין | 5 × 10 attempts, rest 60 s |
+| 1 | LAYUPS | Layups (both hands) | לייאפים בשתי הידיים | 3 × 8 attempts, rest 45 s |
+| 2 | REVERSE_LAYUPS | Reverse Layups | לייאפ הפוך | 2 × 6 attempts, rest 45 s |
+| 3 | CONTACT_FINISHES | Contact Finishes | סיומים במגע | 2 × 6 attempts, rest 60 s |
+| 4 | FREE_THROWS | Free Throws | זריקות עונשין | 3 × 10 attempts, rest 60 s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1879,11 +1873,11 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 **Safety — EN:** — (none)
 
 **Sources:**
-- No external source was consulted (built from the app's own curated catalog).
+- USA Basketball — coaching guidebook / player-development curriculum (skill families: ball handling & dribbling, passing & receiving, shooting, rebounding, footwork & body control, team defense). Contextual only; USA Basketball did not author our workouts or dosage — https://www.usab.com/news/2025/10/usa-basketball-coaching-guidebook-player-development-curriculum _(opened)_
 
-**Exactly what the sources support:** No external source was consulted for the Basketball workouts in this slice.
+**Exactly what the sources support:** USA Basketball (USAB-CURRICULUM, opened) is CONTEXTUAL evidence only: it separates player development into skill families such as ball handling & dribbling, passing & receiving, shooting, rebounding, footwork & body control and team defense. USA Basketball did not author this workout or any dosage. Skill family: Shooting (finishing at the rim is part of shooting practice).
 
-**What is Gals Coacher synthesis:** Assembled from the app's existing Basketball shooting and finishing drills (no new Exercise); the order and every dosage are ours.
+**What is Gals Coacher synthesis:** Assembled from the app's existing Basketball shooting and finishing drills (no new Exercise); the order and every dosage are ours — about 160 shot / finish attempts for the stated 45–60 minutes.
 
 **ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
 
@@ -1899,7 +1893,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Review status** | `PENDING_HUMAN_REVIEW` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
-**Summary — HE:** עמידה ועבודת רגליים בהגנה, תנועה צדדית, יציאה לשחקן (closeout), חסימה (box-out) וריבאונד, וכושר ספציפי למשחק.
+**Summary — HE:** עמידה ועבודת רגליים בהגנה, תנועה צדדית, יציאה לשחקן (closeout), סגירה (box-out) וריבאונד, וכושר ספציפי למשחק.
 
 **Summary — EN:** Defensive stance and footwork, lateral movement, closeouts, box-out and rebounding, and basketball-specific conditioning.
 
@@ -1915,27 +1909,27 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | DEFENSIVE_SLIDES | Defensive Slides | צעדי הגנה בצד | 4 × (no target), rest 60 s |
+| 1 | DEFENSIVE_SLIDES | Defensive Slides | צעדי הגנה בצד | 4 × 30, rest 60 s |
 | 2 | ZIGZAG_DEFENSIVE_SLIDES | Zig-Zag Defensive Slides | צעדי הגנה בזיגזג | 4 × 2 reps, rest 45 s |
 | 3 | CLOSEOUT_DRILL | Closeout Drill | תרגיל סגירה על קלע | 3 × 6 reps, rest 45 s |
 | 4 | DEFENSIVE_RECOVERY_DRILL | Defensive Recovery Drill | חזרה להגנה אחרי עקיפה | 4 × 4 reps, rest 45 s |
 
-**Section 3 — Box-out and rebounding / חסימה וריבאונד**
+**Section 3 — Box-out and rebounding / סגירה וריבאונד**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | BOX_OUT_DRILL | Box-Out Drill | חסימה לריבאונד (Box-Out) | 3 × 8 reps, rest 45 s |
+| 1 | BOX_OUT_DRILL | Box-Out Drill | סגירה לריבאונד (Box-Out) | 3 × 8 reps, rest 45 s |
 | 2 | TIP_DRILL | Rebound Tip Drill | תרגיל טיפ (ריבאונד) | 3 × 10 reps, rest 60 s |
 
 **Section 4 — Game conditioning / כושר למשחק**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LANE_AGILITY | Lane Agility Drill | תרגיל זריזות בצבע | 3 × (no target), rest 120 s |
+| 1 | LANE_AGILITY | Lane Agility Drill | תרגיל זריזות בצבע | 3 × 30, rest 120 s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
-- HE: בחסימה שומרים על מגע גופני מבוקר ובלי דחיפה; מתאימים את העצימות לגיל וליכולת.
+- HE: בסגירה שומרים על מגע גופני מבוקר ובלי דחיפה; מתאימים את העצימות לגיל וליכולת.
 - EN: In the box-out keep body contact controlled and without pushing; match the intensity to age and ability.
 
 **Safety — HE:** — (none)
@@ -1943,11 +1937,12 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 **Safety — EN:** — (none)
 
 **Sources:**
-- No external source was consulted (built from the app's own curated catalog).
+- USA Basketball — coaching guidebook / player-development curriculum (skill families: ball handling & dribbling, passing & receiving, shooting, rebounding, footwork & body control, team defense). Contextual only; USA Basketball did not author our workouts or dosage — https://www.usab.com/news/2025/10/usa-basketball-coaching-guidebook-player-development-curriculum _(opened)_
+- USA Basketball — advanced rebounding / box-out material — https://www.usab.com/news/2014/01/advanced-rebounding-secrets-from-the-pros _(opened)_
 
-**Exactly what the sources support:** No external source was consulted for the Basketball workouts in this slice.
+**Exactly what the sources support:** USA Basketball (USAB-CURRICULUM, opened) is CONTEXTUAL evidence only: it separates player development into skill families such as ball handling & dribbling, passing & receiving, shooting, rebounding, footwork & body control and team defense. USA Basketball did not author this workout or any dosage. Skill families: Rebounding, Footwork & Body Control, Team Defense. USA Basketball box-out / rebounding material (USAB-REBOUND, opened) supports the box-out topic.
 
-**What is Gals Coacher synthesis:** Assembled from the app's existing defensive drills plus ONE new drill, BOX_OUT_DRILL (the catalog had no box-out); the order and every dosage are ours.
+**What is Gals Coacher synthesis:** Assembled from the app's existing defensive drills plus ONE new drill, BOX_OUT_DRILL; the order and every dosage are ours.
 
 **ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
 
@@ -2017,7 +2012,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 **ORIGINAL_RECOMMENDATION:** every set, target, rest and duration in the tables above.
 
-### BASKETBALL-BEGINNER-SHOOT-LAYUP-01 — Basketball — Form & Layups / כדורסל — קליעה וליי-אפ
+### BASKETBALL-BEGINNER-SHOOT-LAYUP-01 — Basketball — Form & Layups / כדורסל — קליעה ולייאפים
 
 | | |
 |---|---|

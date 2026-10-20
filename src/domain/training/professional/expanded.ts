@@ -73,20 +73,20 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
       { name: WARM('חימום והפעלה', 'Warm-up and activation'), items: reuse('CAT_COW', 'THORACIC_OPEN_BOOK', 'BAND_PULL_APART', 'WORLDS_GREATEST_STRETCH') },
       {
         name: ['סבולת משיכה', 'Pulling endurance'],
-        items: [x('ONE_ARM_DUMBBELL_ROW', 3, 15, 45), x('SEATED_CABLE_ROW', 3, 15, 45), x('FACE_PULL', 3, 20, 30), x('INVERTED_ROW', 3, 12, 45)],
+        items: [x('ONE_ARM_DUMBBELL_ROW', 3, 15, 45), x('SEATED_CABLE_ROW', 3, 15, 45), x('FACE_PULL', 3, 20, 30)],
       },
       { name: ['סבולת הגו', 'Trunk endurance'], items: [x('PLANK', 3, 45, 30), x('SIDE_PLANK', 2, 30, 30), x('HOLLOW_HOLD', 3, 20, 30)] },
       {
-        name: ['מאמץ חוזר במקטעים', 'Repeated-effort intervals'],
-        items: [x('SKI_ERG_INTERVALS', 6, 30, 60), x('BATTLE_ROPE_WAVES', 6, 20, 40), x('MOUNTAIN_CLIMBERS', 3, 30, 30)],
+        name: ['מאמץ חוזר במקטעים — תחנה אחת לבחירה: סקי-ארג, מכונת חתירה או חבלי קרב', 'Repeated-effort intervals — one conditioning station: ski erg, rowing machine or battle ropes'],
+        items: [x('SKI_ERG_INTERVALS', 6, 30, 60), x('MOUNTAIN_CLIMBERS', 3, 30, 30)],
       },
       { name: ['מוביליטי והתאוששות', 'Mobility and recovery'], items: reuse('THORACIC_OPEN_BOOK', 'HIP_FLEXOR_STRETCH', 'CHILDS_POSE', 'CAT_COW') },
     ],
     coachNotes: [
       NOT_PADDLING,
       [
-        'אם אין סקי-ארג, אפשר להחליף במכונת חתירה או בחבלי קרב עם אותו מבנה מקטעים.',
-        'If there is no ski erg, a rowing machine or battle ropes can replace it with the same interval structure.',
+        'תחנת המאמץ החוזר היא אחת משלוש אפשרויות — סקי-ארג, מכונת חתירה או חבלי קרב — עם אותו מבנה מקטעים (6 × 30 שניות עבודה, 60 שניות מנוחה). בוחרים לפי הציוד הזמין; אין צורך בכולן.',
+        'The repeated-effort station is ONE of three options — ski erg, rowing machine or battle ropes — with the same interval structure (6 × 30 s work, 60 s rest). Pick by the equipment available; you do not need all of them.',
       ],
       OCEAN_NOTE,
     ],
@@ -106,7 +106,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     minutes: [60, 75],
     sections: [
-      { name: WARM('חימום דינמי', 'Dynamic warm-up'), items: reuse('LEG_SWINGS', 'WORLDS_GREATEST_STRETCH', 'BAND_PULL_APART', 'BODYWEIGHT_SQUAT', 'POGO_JUMPS') },
+      { name: WARM('חימום דינמי', 'Dynamic warm-up'), items: reuse('LEG_SWINGS', 'WORLDS_GREATEST_STRETCH', 'BAND_PULL_APART') },
       {
         name: ['כוח רגליים והארכה מתפרצת', 'Leg strength and explosive extension'],
         items: [
@@ -114,16 +114,14 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
           x('SINGLE_LEG_RDL', 3, 8, 60),
           x('HIP_THRUST', 3, 8, 90),
           x('SQUAT_JUMP', 3, 5, 60),
-          x('BOX_JUMP', 4, 4, 90),
-          x('KETTLEBELL_SWING', 4, 12, 60),
         ],
       },
-      { name: ['דחיפה, משיכה וקימה', 'Push, pull and get-up pattern'], items: [x('PUSH_UP', 3, 12, 60), x('INVERTED_ROW', 3, 10, 60), x('FACE_PULL', 3, 15, 45), x('BURPEE', 3, 8, 60)] },
+      { name: ['דחיפה, משיכה וקימה', 'Push, pull and get-up pattern'], items: [x('PUSH_UP', 3, 12, 60), x('INVERTED_ROW', 3, 10, 60), x('BURPEE', 3, 8, 60)] },
       {
         name: ['סיבוב ויציבות הגו', 'Rotation and trunk stability'],
-        items: [x('MED_BALL_ROTATIONAL_THROW', 3, 6, 60), x('PALLOF_PRESS', 3, 10, 45), x('SIDE_PLANK', 3, 30, 30), x('RUSSIAN_TWIST', 3, 16, 45)],
+        items: [x('MED_BALL_ROTATIONAL_THROW', 3, 6, 60), x('PALLOF_PRESS', 3, 10, 45), x('SIDE_PLANK', 3, 30, 30)],
       },
-      { name: ['מוביליטי', 'Mobility'], items: reuse('HIP_90_90', 'THORACIC_OPEN_BOOK', 'CHILDS_POSE') },
+      { name: ['מוביליטי', 'Mobility'], items: reuse('HIP_90_90', 'THORACIC_OPEN_BOOK') },
     ],
     coachNotes: [
       NOT_PADDLING,
@@ -203,9 +201,9 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     sport: 'FOOTBALL',
     difficulty: 'ADVANCED',
     focus: 'TRANSITION',
-    name: ['כדורגל — מעבר ולחץ', 'Football — Transition & Pressing'],
+    name: ['כדורגל — מעברים ולחץ לאחר איבוד', 'Football — Transition & Pressing'],
     summary: [
-      'תגובה במעבר, יתרון מספרי, משחק קטן, כללי לחץ אחרי איבוד כדור וקבלת החלטות — דרך פעילות כדורגל.',
+      'תגובה במעבר, יתרון מספרי, משחקון בשטח קטן, כללי לחץ אחרי איבוד כדור וקבלת החלטות — דרך פעילות כדורגל.',
       'Reacting in transition, numerical advantage, small-sided play, pressing rules after losing the ball and decision making — through football activity.',
     ],
     minutes: [65, 80],
@@ -215,7 +213,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
         name: ['רונדו ומעבר', 'Rondo and transition'],
         items: [x('FB_RONDO', 4, 120, 60), x('FB_ATTACKING_TRANSITION_OVERLOAD', 1, 8, 90), x('FB_FINISHING_UNDER_PRESSURE', 1, 8, 90)],
       },
-      { name: ['משחק קטן עם כלל לחץ', 'Small game with a pressing rule'], items: [x('FB_SMALL_SIDED_GAME', 2, 600, 120)] },
+      { name: ['משחקון בשטח קטן עם כלל לחץ', 'Small game with a pressing rule'], items: [x('FB_SMALL_SIDED_GAME', 2, 600, 120)] },
     ],
     coachNotes: [
       [
@@ -249,7 +247,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
       },
       {
         name: ['שינוי כיוון וקצב', 'Direction and pace'],
-        items: [x('CONE_DRIBBLE_SLALOM', 4, null, 60), x('CHANGE_OF_PACE_DRIBBLE', 4, 4, 45), x('HESITATION_DRIVE', 4, 6, 45)],
+        items: [x('CONE_DRIBBLE_SLALOM', 4, 30, 60), x('CHANGE_OF_PACE_DRIBBLE', 4, 4, 45), x('HESITATION_DRIVE', 4, 6, 45)],
       },
     ],
     coachNotes: [
@@ -259,7 +257,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
       ],
     ],
     safety: null,
-    sources: [],
+    sources: ['USAB-CURRICULUM'],
     reviewStatus: 'PENDING_HUMAN_REVIEW',
   },
   {
@@ -277,11 +275,11 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
       { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'HIGH_KNEES', 'LATERAL_LUNGE') },
       {
         name: ['טכניקה וקליעה', 'Form and shooting'],
-        items: [x('FORM_SHOOTING', 3, 10, 30), x('MID_RANGE_SPOT_SHOOTING', 5, 10, 60), x('RELOCATION_SHOOTING', 4, 10, 60), x('PULL_UP_JUMPER', 4, 10, 60)],
+        items: [x('FORM_SHOOTING', 2, 8, 30), x('MID_RANGE_SPOT_SHOOTING', 5, 6, 60), x('RELOCATION_SHOOTING', 3, 6, 60), x('PULL_UP_JUMPER', 3, 6, 60)],
       },
       {
         name: ['סיומים לסל', 'Finishing at the rim'],
-        items: [x('LAYUPS', 4, 10, 45), x('REVERSE_LAYUPS', 4, 10, 45), x('CONTACT_FINISHES', 4, 8, 60), x('FREE_THROWS', 5, 10, 60)],
+        items: [x('LAYUPS', 3, 8, 45), x('REVERSE_LAYUPS', 2, 6, 45), x('CONTACT_FINISHES', 2, 6, 60), x('FREE_THROWS', 3, 10, 60)],
       },
     ],
     coachNotes: [
@@ -291,7 +289,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
       ],
     ],
     safety: null,
-    sources: [],
+    sources: ['USAB-CURRICULUM'],
     reviewStatus: 'PENDING_HUMAN_REVIEW',
   },
   {
@@ -301,7 +299,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     focus: 'DEFENSE',
     name: ['כדורסל — הגנה וריבאונד', 'Basketball — Defense & Rebounding'],
     summary: [
-      'עמידה ועבודת רגליים בהגנה, תנועה צדדית, יציאה לשחקן (closeout), חסימה (box-out) וריבאונד, וכושר ספציפי למשחק.',
+      'עמידה ועבודת רגליים בהגנה, תנועה צדדית, יציאה לשחקן (closeout), סגירה (box-out) וריבאונד, וכושר ספציפי למשחק.',
       'Defensive stance and footwork, lateral movement, closeouts, box-out and rebounding, and basketball-specific conditioning.',
     ],
     minutes: [45, 55],
@@ -309,19 +307,19 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
       { name: ['חימום', 'Warm-up'], items: reuse('LATERAL_LUNGE', 'HIGH_KNEES', 'LEG_SWINGS') },
       {
         name: ['הגנה ורגליים', 'Defense and footwork'],
-        items: [x('DEFENSIVE_SLIDES', 4, null, 60), x('ZIGZAG_DEFENSIVE_SLIDES', 4, 2, 45), x('CLOSEOUT_DRILL', 3, 6, 45), x('DEFENSIVE_RECOVERY_DRILL', 4, 4, 45)],
+        items: [x('DEFENSIVE_SLIDES', 4, 30, 60), x('ZIGZAG_DEFENSIVE_SLIDES', 4, 2, 45), x('CLOSEOUT_DRILL', 3, 6, 45), x('DEFENSIVE_RECOVERY_DRILL', 4, 4, 45)],
       },
-      { name: ['חסימה וריבאונד', 'Box-out and rebounding'], items: [x('BOX_OUT_DRILL', 3, 8, 45), x('TIP_DRILL', 3, 10, 60)] },
-      { name: ['כושר למשחק', 'Game conditioning'], items: [x('LANE_AGILITY', 3, null, 120)] },
+      { name: ['סגירה וריבאונד', 'Box-out and rebounding'], items: [x('BOX_OUT_DRILL', 3, 8, 45), x('TIP_DRILL', 3, 10, 60)] },
+      { name: ['כושר למשחק', 'Game conditioning'], items: [x('LANE_AGILITY', 3, 30, 120)] },
     ],
     coachNotes: [
       [
-        'בחסימה שומרים על מגע גופני מבוקר ובלי דחיפה; מתאימים את העצימות לגיל וליכולת.',
+        'בסגירה שומרים על מגע גופני מבוקר ובלי דחיפה; מתאימים את העצימות לגיל וליכולת.',
         'In the box-out keep body contact controlled and without pushing; match the intensity to age and ability.',
       ],
     ],
     safety: null,
-    sources: [],
+    sources: ['USAB-CURRICULUM', 'USAB-REBOUND'],
     reviewStatus: 'PENDING_HUMAN_REVIEW',
   },
 ];

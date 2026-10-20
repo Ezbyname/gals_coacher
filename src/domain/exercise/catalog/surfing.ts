@@ -8,8 +8,8 @@ import { define, drillReps, work, type Entry, type Pair } from './define';
  * and the suitable level are judged by the surfer, the coach or the responsible adult.
  */
 export const SURF_SAFETY: Pair = [
-  'תנאי ים, זרמים, מזג אוויר ורמת הגלישה המתאימה דורשים שיקול דעת אמיתי של הגולש, המאמן או המבוגר האחראי.',
-  'Ocean conditions, currents, weather and suitable surf level require real-world judgement by the surfer, coach or responsible adult.',
+  'יש להעריך בשטח את תנאי הים, הזרמים, מזג האוויר והתאמת התנאים לרמת הגולש. ההחלטה מתקבלת על ידי הגולש, המאמן או מבוגר אחראי — האפליקציה אינה קובעת אם תנאי הים בטוחים.',
+  "Ocean conditions, currents, weather, and whether the conditions match the surfer's ability must be assessed in person by the surfer, coach, or responsible adult. The app does not determine whether conditions are safe.",
 ];
 const withSafety = (he: string, en: string): Pair => [`${SURF_SAFETY[0]} ${he}`, `${SURF_SAFETY[1]} ${en}`];
 

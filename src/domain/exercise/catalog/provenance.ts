@@ -28,8 +28,11 @@ export const SOURCES = {
   'SA-TIPS': { name: 'Surfing Australia — surf-school tips for children', url: 'https://surfingaustralia.com/tips-to-keep-your-surf-school-safe-fun-and-inclusive-for-children-and-young-people/', read: 'opened' },
   'ISA-COURSES': { name: 'ISA — courses', url: 'https://isasurf.org/isa-courses/', read: 'listing only' },
   'SLS-RIP': { name: 'Surf Life Saving NSW — rip currents', url: 'https://www.surflifesaving.com.au/beach-safety/rip-currents/', read: 'opened' },
-  'ISA-STRENGTH': { name: 'ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility)', url: 'https://source.isasurf.org/?academy=112&course=6055&view=course_view', read: 'owner-cited, not opened' },
-  'SURF-PHYSIOLOGY': { name: 'Published surfing performance / physiology research (cardiorespiratory fitness, muscular endurance, strength, anaerobic power, upper-torso demand, repeated paddling) — cited by the owner, no specific paper supplied', url: '', read: 'owner-cited, not opened' },
+  'ISA-STRENGTH': { name: 'ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility)', url: 'https://source.isasurf.org/?academy=112&course=6055&view=course_view', read: 'opened' },
+  'SURF-PHYSIOLOGY': { name: 'Published surfing performance / physiology research — cardiorespiratory fitness, muscular endurance, strength, anaerobic power, significant upper-torso demand (opened by the content reviewer; individual papers are not listed here)', url: '', read: 'opened' },
+  'SURF-SCHOOL-WW': { name: 'Otro Modo Surf School — beginner surf course (teaches a beginner take-off on whitewater; ISA / FES-certified instructors). A surf-school page: NOT ISA or Surfing Australia content', url: 'https://www.otro-modo-surfschool.com/surf-course-fuerteventura/beginner-surf-course/', read: 'opened' },
+  'USAB-CURRICULUM': { name: 'USA Basketball — coaching guidebook / player-development curriculum (skill families: ball handling & dribbling, passing & receiving, shooting, rebounding, footwork & body control, team defense). Contextual only; USA Basketball did not author our workouts or dosage', url: 'https://www.usab.com/news/2025/10/usa-basketball-coaching-guidebook-player-development-curriculum', read: 'opened' },
+  'USAB-REBOUND': { name: 'USA Basketball — advanced rebounding / box-out material', url: 'https://www.usab.com/news/2014/01/advanced-rebounding-secrets-from-the-pros', read: 'opened' },
   'IBBC-BEGINNER': { name: 'Israel Basketball Coaches Association — beginner / school basketball training page (six embedded YouTube videos; no written drills or dosage; the videos were NOT watched and no transcript was available)', url: 'https://www.ibbcoaches.org.il/beginnerbasketballtraining', read: 'opened' },
   'F-ONCE': { name: 'FIFA Training Centre — ages 8–12, once-a-week sessions', url: 'https://www.fifatrainingcentre.com/en/practice/grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/sessions-for-once-a-week-training.php', read: 'opened' },
   'F-DRIB48': { name: 'FIFA Training Centre — ages 4–8, dribbling as a positive start', url: 'https://www.fifatrainingcentre.com/en/practice/grassroots/grassroots-and-youth-football-essentials/grassroots-coaching-essentials/jene-3-dribbling-as-a-positive-start.php', read: 'opened' },
@@ -78,9 +81,9 @@ export const PROVENANCE: Readonly<Record<string, Provenance>> = {
     synthesis: `Stroke cues, the acceleration-interval version and all durations. ${own}`,
   },
   SURF_TAKE_OFF: {
-    topic: 'UNVERIFIED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['ISA-COURSES'],
-    supports: 'Not stated on any opened page. An ISA Level 1 search-result summary mentions riding green waves and a controlled exit (listing only; the document was not opened).',
-    synthesis: `Whitewater take-off as a beginner step, its wording and the whitewater-only safety rule. ${own}`,
+    topic: 'SOURCE_SUPPORTED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['SURF-SCHOOL-WW'],
+    supports: 'A surf-school page (SURF-SCHOOL-WW, opened; instructors described as ISA / FES-certified) teaches a beginner take-off on whitewater. It is not ISA or Surfing Australia content, and it does not give our drill wording or dosage.',
+    synthesis: `The drill wording, cues, the whitewater-only safety rule and the counts. ISA / Surfing Australia are not claimed to have authored this drill. ${own}`,
   },
   SURF_DUCK_DIVE: {
     topic: 'SOURCE_SUPPORTED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['SA-CAMPS', 'SA-SCHED'],
@@ -119,9 +122,9 @@ export const PROVENANCE: Readonly<Record<string, Provenance>> = {
   },
   // ------------------------------------------------------------------ basketball (SPORT-CONTENT-002)
   BOX_OUT_DRILL: {
-    topic: 'SYNTHESIZED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: [],
-    supports: 'No external source was consulted for this drill in this slice.',
-    synthesis: `A standard basketball fundamental added because the existing Basketball catalog had no box-out / rebounding-position drill. ${own}`,
+    topic: 'SOURCE_SUPPORTED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['USAB-REBOUND', 'USAB-CURRICULUM'],
+    supports: 'USA Basketball material treats rebounding and the box-out as a basketball skill (USAB-REBOUND; USAB-CURRICULUM lists Rebounding as a skill family). It does not give our wording or dosage.',
+    synthesis: `The step-by-step wording (locate, controlled contact, pivot, wide low stance, go to the ball), the cues and the 3 × 8 dosage. ${own}`,
   },
   // ------------------------------------------------------------------ football
   FB_BALL_MASTERY: {

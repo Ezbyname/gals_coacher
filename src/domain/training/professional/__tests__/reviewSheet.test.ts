@@ -38,9 +38,9 @@ describe('CONTENT-REVIEW-SHEET', () => {
     expect(sheet).toMatch(/NOT shown in the app/);
     expect(sheet).toMatch(/https:\/\/www\.youtube\.com\/watch\?v=KmJburYaPlE/);
     expect(sheet.match(/\| \*\*Slice\*\* \| SPORT-CONTENT-002 \(new\)/g)).toHaveLength(9);
-    expect(sheet.match(/\| \*\*Slice\*\* \| SPORT-CONTENT-001 \(unchanged\)/g)).toHaveLength(6);
+    expect(sheet.match(/\| \*\*Slice\*\* \| SPORT-CONTENT-001 \(unchanged apart from the review patch\)/g)).toHaveLength(6);
     expect(sheet).toMatch(/owner-cited, not opened/);
-    expect(sheet).toMatch(/No external source was consulted for the Basketball workouts/);
+    expect(sheet).toMatch(/CONTEXTUAL evidence only/);
   });
 
   it('writes the sheet to a file when asked (WRITE_REVIEW_SHEET=<path>)', () => {

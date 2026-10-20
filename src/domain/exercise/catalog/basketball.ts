@@ -609,7 +609,7 @@ const EXPANSION: Entry[] = [
   // --- SPORT-CONTENT-002: rebounding position (the catalog had only the tip drill)
   {
     id: 'BOX_OUT_DRILL',
-    name: ['חסימה לריבאונד (Box-Out)', 'Box-Out Drill'],
+    name: ['סגירה לריבאונד (Box-Out)', 'Box-Out Drill'],
     cat: ['BASKETBALL_SKILL'],
     prim: [],
     diff: 'BEGINNER',
@@ -618,8 +618,8 @@ const EXPANSION: Entry[] = [
     m: drillReps(),
     d: [3, 8, 45],
     how: [
-      'עם בן זוג: מוצאים את השחקן, מסתובבים אליו, תופסים עמדה רחבה ונמוכה עם הגב אליו ומחזיקים אותו מאחור, ואז עוקבים אחרי הכדור. מגע גופני מבוקר, בלי דחיפה.',
-      'With a partner: find the opponent, pivot to face the basket with your back to them, take a wide low stance to hold the position behind you, then go to the ball. Keep the body contact controlled, without pushing.',
+      'עם בן זוג: מאתרים את היריב, יוצרים מגע מבוקר, מסתובבים כך שהגוף נמצא בינו לבין הסל, שומרים עמדה רחבה ונמוכה ואז יוצאים לכדור.',
+      'With a partner: locate the opponent, make controlled contact, pivot so your body is between them and the basket, hold a wide, low stance, then go to the ball.',
     ],
     cues: [
       ['קודם מוצאים את השחקן ואז הולכים לכדור', 'Find your player first, then go to the ball'],

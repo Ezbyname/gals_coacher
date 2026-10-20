@@ -64,10 +64,16 @@ describe('the new built-in Exercises', () => {
       expect(e.safety!.he.startsWith(SURF_SAFETY[0])).toBe(true);
       expect(e.safety!.en.startsWith(SURF_SAFETY[1])).toBe(true);
     }
-    const all = JSON.stringify([...NEW_EXERCISES, ...PROFESSIONAL_WORKOUTS]).toLowerCase();
+    // the reviewed wording itself says "the app does not determine whether conditions are safe" — remove it before checking for any other claim
+    const all = JSON.stringify([...NEW_EXERCISES, ...PROFESSIONAL_WORKOUTS])
+      .replaceAll(SURF_SAFETY[0], '')
+      .replaceAll(SURF_SAFETY[1], '')
+      .toLowerCase();
     expect(all).not.toMatch(/breath-hold|breath hold|holding your breath|החזקת נשימה/);
     expect(all).not.toMatch(/conditions are safe|safe conditions|the sea is safe|הים בטוח|התנאים בטוחים/);
-    expect(SURF_SAFETY[1]).toMatch(/real-world judgement by the surfer, coach or responsible adult/);
+    expect(SURF_SAFETY[1]).toMatch(/assessed in person by the surfer, coach, or responsible adult/);
+    expect(SURF_SAFETY[1]).toMatch(/The app does not determine whether conditions are safe\./);
+    expect(SURF_SAFETY[0]).toMatch(/האפליקציה אינה קובעת אם תנאי הים בטוחים/);
   });
 
   it('is classified in the taxonomy under Football / Surfing only (never under Fitness or Basketball)', () => {
@@ -196,10 +202,10 @@ describe('SPORT-CONTENT-002: the expanded catalog', () => {
   it('SPORT-CONTENT-001 is unchanged: the six workouts, every earlier Exercise and every Basketball drill are byte-identical', () => {
     // the six 001 workouts, ignoring only the new `focus` tag
     const six = CORE.map(({ focus: _focus, ...rest }) => rest);
-    expect(sha(six)).toBe('501ee02b13d25ac134cbb85b09925b67e586409e30d2e7bddb36aa11fcf91fe4');
+    expect(sha(six)).toBe('75e987ca685be52fca0b7679e77c23e967dd4e15d8f6b21b346ede76399594b5');
     const earlier = BUILTIN_EXERCISES.filter((e) => e.id !== 'BOX_OUT_DRILL');
     expect(earlier).toHaveLength(145);
-    expect(sha(earlier)).toBe('c7b7e17fc0402bb4228d6931d2040285ecbb35faaf60706619ed0369ba9605b3');
+    expect(sha(earlier)).toBe('c69054985860296add49c4e8ea34807b7ef97b7122c5d4ba6eb211c5528959e7');
     expect(sha(earlier.filter((e) => e.sports.includes('BASKETBALL')))).toBe('7234a03a746007eef75cd1025238e3e9fc298e88fb92cc5858f8a7aac006aee9');
     expect(SURFING).toHaveLength(10);
     expect(FOOTBALL).toHaveLength(11);
@@ -319,5 +325,114 @@ describe('SPORT-CONTENT-003: reference videos from the IBBC beginner page (no ne
     expect(SOURCES['IBBC-BEGINNER'].name).toMatch(/NOT watched/);
     expect(JSON.stringify(IBBC.map((w) => [w.summary, w.coachNotes])).toLowerCase()).not.toMatch(/ibbc|jr\. nba|hoopsking|iba/);
     expect(IBBC.map((w) => w.coachNotes[0]![1]).join(' ')).toMatch(/Gals Coacher's own/);
+  });
+});
+
+/** Human content review round 1 — the small content patch (registry / catalog text only; no migration). */
+describe('content review round 1', () => {
+  const items = (id: string) => professionalWorkout(id)!.sections.flatMap((s) => s.items);
+  const ids = (id: string) => items(id).map((i) => i.exerciseId);
+
+  it('no professional workout item has an empty target (nothing may show "(no target)")', () => {
+    for (const w of PROFESSIONAL_WORKOUTS) {
+      for (const i of w.sections.flatMap((s) => s.items)) {
+        const e = builtinExercise(i.exerciseId)!;
+        const d = i.dosage ?? defaultPrescription(e.measurement, e.defaults);
+        expect(d?.target).not.toBeNull();
+        expect(d?.target).toBeGreaterThan(0);
+      }
+    }
+    const dosageOf = (w: string, ex: string) => items(w).find((i) => i.exerciseId === ex)!.dosage;
+    expect(dosageOf('BASKETBALL-BALL-HANDLING-01', 'CONE_DRIBBLE_SLALOM')).toEqual({ sets: 4, target: 30, restSec: 60 });
+    expect(dosageOf('BASKETBALL-DEFENSE-REBOUNDING-01', 'DEFENSIVE_SLIDES')).toEqual({ sets: 4, target: 30, restSec: 60 });
+    expect(dosageOf('BASKETBALL-DEFENSE-REBOUNDING-01', 'LANE_AGILITY')).toEqual({ sets: 3, target: 30, restSec: 120 });
+  });
+
+  it('Shooting & Finishing is about 160-190 attempts; the targets are the reviewed values', () => {
+    const attempts = items('BASKETBALL-SHOOTING-FINISHING-01')
+      .filter((i) => i.dosage)
+      .reduce((n, i) => n + i.dosage!.sets * i.dosage!.target!, 0);
+    expect(attempts).toBeGreaterThanOrEqual(160);
+    expect(attempts).toBeLessThanOrEqual(190);
+    const fmt = items('BASKETBALL-SHOOTING-FINISHING-01')
+      .filter((i) => i.dosage)
+      .map((i) => `${i.exerciseId} ${i.dosage!.sets}x${i.dosage!.target}`);
+    expect(fmt).toEqual([
+      'FORM_SHOOTING 2x8',
+      'MID_RANGE_SPOT_SHOOTING 5x6',
+      'RELOCATION_SHOOTING 3x6',
+      'PULL_UP_JUMPER 3x6',
+      'LAYUPS 3x8',
+      'REVERSE_LAYUPS 2x6',
+      'CONTACT_FINISHES 2x6',
+      'FREE_THROWS 3x10',
+    ]);
+  });
+
+  it('Surf Power & Rotation: one jump, one hip extension, no Russian twist, 12-15 movements', () => {
+    const list = ids('SURF-POWER-ROTATION-01');
+    expect(list).not.toContain('RUSSIAN_TWIST');
+    expect(list.filter((id) => id === 'SQUAT_JUMP' || id === 'BOX_JUMP')).toHaveLength(1);
+    expect(list.filter((id) => id === 'HIP_THRUST' || id === 'KETTLEBELL_SWING')).toHaveLength(1);
+    expect(list.length).toBeGreaterThanOrEqual(12);
+    expect(list.length).toBeLessThanOrEqual(15);
+    expect(list).toEqual(expect.arrayContaining(['MED_BALL_ROTATIONAL_THROW', 'PALLOF_PRESS', 'SIDE_PLANK']));
+  });
+
+  it('Paddle Endurance: ONE conditioning station (ski erg, rowing machine or battle ropes) and two rows', () => {
+    const w = professionalWorkout('SURF-PADDLE-ENDURANCE-01')!;
+    const list = ids(w.id);
+    expect(list).not.toContain('BATTLE_ROPE_WAVES');
+    expect(list.filter((id) => id.endsWith('_ROW'))).toHaveLength(2);
+    const station = w.sections.find((s) => s.items.some((i) => i.exerciseId === 'SKI_ERG_INTERVALS'))!;
+    expect(station.name[1]).toMatch(/ski erg, rowing machine or battle ropes/);
+    expect(station.name[0]).toMatch(/סקי-ארג, מכונת חתירה או חבלי קרב/);
+    expect(w.coachNotes.flat().join(' ')).toMatch(/ONE of three options/);
+  });
+
+  it('SURF_TAKE_OFF is SOURCE_SUPPORTED by an opened surf-school page, with no claim that ISA / Surfing Australia authored it', () => {
+    const p = PROVENANCE.SURF_TAKE_OFF!;
+    expect(p.topic).toBe('SOURCE_SUPPORTED');
+    expect(p.cues).toBe('SYNTHESIZED');
+    expect(p.dosage).toBe('ORIGINAL_RECOMMENDATION');
+    expect(p.sources).toEqual(['SURF-SCHOOL-WW']);
+    expect(SOURCES['SURF-SCHOOL-WW'].read).toBe('opened');
+    expect(SOURCES['SURF-SCHOOL-WW'].name).toMatch(/NOT ISA or Surfing Australia content/);
+    expect(p.synthesis).toMatch(/not claimed to have authored/);
+  });
+
+  it('the surf dry-land sources are recorded as opened', () => {
+    for (const key of ['ISA-STRENGTH', 'SURF-PHYSIOLOGY', 'SA-SCHED'] as const) expect(SOURCES[key].read).toBe('opened');
+  });
+
+  it('BOX_OUT_DRILL: new Hebrew name and instructions, SOURCE_SUPPORTED by USA Basketball', () => {
+    const e = builtinExercise('BOX_OUT_DRILL')!;
+    expect(e.name.he).toBe('סגירה לריבאונד (Box-Out)');
+    expect(e.instructions!.he).toMatch(/מאתרים את היריב, יוצרים מגע מבוקר, מסתובבים כך שהגוף נמצא בינו לבין הסל, שומרים עמדה רחבה ונמוכה ואז יוצאים לכדור/);
+    expect(e.instructions!.he).not.toMatch(/עם הגב אליו/);
+    const p = PROVENANCE.BOX_OUT_DRILL!;
+    expect([p.topic, p.cues, p.dosage]).toEqual(['SOURCE_SUPPORTED', 'SYNTHESIZED', 'ORIGINAL_RECOMMENDATION']);
+    expect(p.sources).toContain('USAB-REBOUND');
+  });
+
+  it('USA Basketball is contextual evidence for the three 002 Basketball workouts only, never authorship', () => {
+    for (const w of EXPANDED.filter((x) => x.sport === 'BASKETBALL')) expect(w.sources).toContain('USAB-CURRICULUM');
+    expect(SOURCES['USAB-CURRICULUM'].name).toMatch(/did not author our workouts or dosage/);
+    for (const w of IBBC) expect(w.sources).not.toContain('USAB-CURRICULUM');
+  });
+
+  it('Hebrew names follow the review', () => {
+    const he = JSON.stringify([...PROFESSIONAL_WORKOUTS, ...NEW_EXERCISES, builtinExercise('BOX_OUT_DRILL')]);
+    expect(he).not.toMatch(/משחק קטן|חסימה לריבאונד|מעבר ולחץ/);
+    expect(builtinExercise('FB_SMALL_SIDED_GAME')!.name.he).toBe('משחקון בשטח קטן');
+    expect(professionalWorkout('BASKETBALL-BEGINNER-SHOOT-LAYUP-01')!.name[0]).toBe('כדורסל — קליעה ולייאפים');
+    expect(professionalWorkout('FOOTBALL-TRANSITION-PRESSING-01')!.name[0]).toBe('כדורגל — מעברים ולחץ לאחר איבוד');
+  });
+
+  it('the rip-current briefing offers several actions and does not present swim parallel as the only one', () => {
+    const brief = professionalWorkout('SURF-FOUNDATION-01')!.coachNotes.flat().join(' ');
+    expect(brief).toMatch(/stay calm and float to conserve energy, signal for help, and if able escape sideways/);
+    expect(brief).toMatch(/No single action is always right/);
+    expect(brief).not.toMatch(/swim parallel to the shore/);
   });
 });
