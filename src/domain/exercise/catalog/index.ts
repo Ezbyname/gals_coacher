@@ -1,5 +1,6 @@
 import type { ExerciseDefinition } from '../exercise';
 
+import { ATHLETIC } from './athletic';
 import { BASKETBALL, BASKETBALL_EXPANSION } from './basketball';
 import { CORE } from './core';
 import { FOOTBALL } from './football';
@@ -28,6 +29,7 @@ export const BUILTIN_EXERCISES: readonly ExerciseDefinition[] = [
   ...SURFING,
   ...FOOTBALL,
   ...BASKETBALL_EXPANSION,
+  ...ATHLETIC,
 ];
 
 const BY_ID = new Map(BUILTIN_EXERCISES.map((exercise) => [exercise.id, exercise]));

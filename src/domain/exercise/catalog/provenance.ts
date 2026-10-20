@@ -16,8 +16,8 @@ export type EvidenceClass = (typeof EVIDENCE_CLASSES)[number];
 export interface SourceRef {
   readonly name: string;
   readonly url: string;
-  /** opened = the page was read; listing = only a search-result summary was seen (must be opened before it is relied on). */
-  readonly read: 'opened' | 'listing only' | 'owner-cited, not opened';
+  /** opened = the full text was read; abstract only = just the abstract (supports only a claim written in it); listing = only a search-result summary was seen; not opened = access was blocked, so it is NOT relied on for any claim. */
+  readonly read: 'opened' | 'abstract only' | 'listing only' | 'owner-cited, not opened' | 'not opened';
 }
 
 export const SOURCES = {
@@ -51,6 +51,18 @@ export const SOURCES = {
   'F-51': { name: 'FIFA Training Centre — ages 8–12, training technique', url: 'https://www.fifatrainingcentre.com/en/practice/grassroots/8-to-12/training-technique.php', read: 'listing only' },
   'F-42': { name: 'FIFA Training Centre — elite, directing the first touch', url: 'https://www.fifatrainingcentre.com/en/practice/elite-sessions/in-possession/directing-the-ball-with-the-first-touch.php', read: 'listing only' },
   'F-111': { name: 'FIFA Training Centre — ages 12–15, passing and movement', url: 'https://www.fifatrainingcentre.com/en/practice/grassroots/12-to-15/passing-and-movement.php', read: 'listing only' },
+  // ------------------------------------------------------------------ TRAINING-BLOCKS-001 (general athletic development)
+  'LTAD-1': { name: 'Lloyd RS, Oliver JL, Faigenbaum AD, et al. Long-term athletic development, Part 1: a pathway for all youth. J Strength Cond Res 2015', url: 'https://eprints.glos.ac.uk/3535/1/Long-Term%20Athletic%20Development%20Part%201%20a%20pathway%20for%20all%20youth.pdf', read: 'opened' },
+  'RST-NSCA': { name: 'Thurlow F, McLaren SJ, Townshend A, Weakley J. The Application of Repeated-Sprint Training. NSCA Strength & Conditioning Journal', url: 'https://www.nsca.com/globalassets/certification/rscc/3--scj--application-of-repeat-sprint-training.pdf', read: 'opened' },
+  'PLYO-ADOLESCENT': { name: 'The effects of plyometric training on physical fitness in adolescent team sports: a systematic review and meta-analysis', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC12867812/', read: 'opened' },
+  'HIIT-YOUTH': { name: 'Eddolls WTB, McNarry MA, Stratton G, et al. High-Intensity Interval Training Interventions in Children and Adolescents: A Systematic Review. Sports Med 2017', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC5633633/', read: 'opened' },
+  'LANDING-ADULTS': { name: 'Bathe et al. Training interventions to reduce the risk of injury to the lower limb during landing — systematic review and meta-analysis (adult athletes only). BMJ Open Sport Exerc Med 2023', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC10254820/', read: 'opened' },
+  'ACSM-2009': { name: 'Ratamess NA, et al. ACSM position stand: Progression models in resistance training for healthy adults. Med Sci Sports Exerc 2009 (adults)', url: 'https://pubmed.ncbi.nlm.nih.gov/19204579/', read: 'abstract only' },
+  'AGILITY-2016': { name: 'Paul DJ, Gabbett TJ, Nassis GP. Agility in team sports: testing, training and factors affecting performance. Sports Med 2016', url: 'https://pubmed.ncbi.nlm.nih.gov/26670456/', read: 'abstract only' },
+  'RSA-2011': { name: 'Bishop D, Girard O, Mendez-Villanueva A. Repeated-sprint ability — Part II: recommendations for training. Sports Med 2011', url: 'https://pubmed.ncbi.nlm.nih.gov/21846163/', read: 'abstract only' },
+  'NSCA-YOUTH-2009': { name: 'Faigenbaum AD, et al. Youth resistance training: updated position statement paper from the NSCA. J Strength Cond Res 2009 — full text blocked; NOT relied on for any specific claim', url: 'https://pubmed.ncbi.nlm.nih.gov/19620931/', read: 'not opened' },
+  'YOUTH-RT-2014': { name: 'Lloyd RS, et al. Position statement on youth resistance training: the 2014 International Consensus. Br J Sports Med 2014 — full text not reachable; NOT relied on for any specific claim', url: 'https://doi.org/10.1136/bjsports-2013-092952', read: 'not opened' },
+  'DECEL-2022': { name: 'McBurnie AJ, Harper DJ, Jones PA, Dos\'Santos T. Deceleration training in team sports. Sports Med 2022 — full text blocked; NOT relied on for any specific claim', url: 'https://salford-repository.worktribe.com/output/1334048/deceleration-training-in-team-sports-another-potential-vaccine-for-sports-related-injury', read: 'not opened' },
 } as const satisfies Record<string, SourceRef>;
 export type SourceKey = keyof typeof SOURCES;
 
@@ -183,5 +195,36 @@ export const PROVENANCE: Readonly<Record<string, Provenance>> = {
     topic: 'SOURCE_SUPPORTED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['F-TCP-1V1', 'F-FINATK'],
     supports: 'Finishing against a defender (F-TCP-1V1, opened) and a 2v2 scoring game (F-FINATK, opened).',
     synthesis: `The drill, the safety wording about contact and the dosage. ${own}`,
+  },
+  // ------------------------------------------------------------------ general athletic (TRAINING-BLOCKS-001)
+  DROP_LANDING_STICK: {
+    topic: 'SYNTHESIZED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['LTAD-1', 'LANDING-ADULTS'],
+    supports: 'Competency (movement quality) should come before higher-intensity work (LTAD-1, opened). Instruction and feedback improved landing mechanics in ADULT athletes (LANDING-ADULTS, opened); no opened source covers youth or a landing progression.',
+    synthesis: `Landing as its own first step before any jump, the step-off wording and the dosage. Landing-before-plyometrics is our professional synthesis. ${own}`,
+  },
+  SINGLE_LEG_HOP_STICK: {
+    topic: 'SYNTHESIZED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['LTAD-1', 'LANDING-ADULTS'],
+    supports: 'Same limitation as the two-leg landing: competency before intensity (LTAD-1) and adult landing-technique evidence (LANDING-ADULTS). No opened source gives a single-leg progression.',
+    synthesis: `Single-leg hop-and-stick as a later step after the two-leg landing, its distance and the dosage. ${own}`,
+  },
+  DECEL_STOP: {
+    topic: 'SYNTHESIZED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['DECEL-2022'],
+    supports: 'Nothing is claimed from a source: the deceleration-training paper could not be opened, so it supports no claim here.',
+    synthesis: `The whole drill — a controlled acceleration into a marked stop — and putting deceleration before aggressive change of direction. ${own}`,
+  },
+  PARTNER_MIRROR_DRILL: {
+    topic: 'SOURCE_SUPPORTED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['AGILITY-2016'],
+    supports: 'Only what the abstract states (AGILITY-2016, abstract only): agility depends on reacting to a stimulus, a human or video stimulus separates playing levels better, and small-sided games may be an effective way to train it.',
+    synthesis: `The mirror drill itself, its box size, the work time and the dosage. Pre-planned work before reactive work is our synthesis. ${own}`,
+  },
+  COACH_CUE_REACTION_SPRINT: {
+    topic: 'SOURCE_SUPPORTED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['AGILITY-2016'],
+    supports: 'Only the abstract-level point that agility involves reacting to a stimulus, with a human stimulus a valid one (AGILITY-2016, abstract only).',
+    synthesis: `The cue types, the 5–10 m distance and the dosage. ${own}`,
+  },
+  RUN_INTERVALS: {
+    topic: 'SYNTHESIZED', cues: 'SYNTHESIZED', dosage: 'ORIGINAL_RECOMMENDATION', sources: ['HIIT-YOUTH'],
+    supports: 'A review of running-based high-intensity interval training in children and adolescents suggests 2–3 sessions a week for about 7 weeks or more; it says bout duration and rest are still ambiguous and reports no safety data (HIIT-YOUTH, opened). It does not validate any exact work / rest.',
+    synthesis: `The exercise and its default representation (6 efforts of 45 s with 90 s rest). Exact work, rest, rounds and intensity guidance are set by each workout. ${own}`,
   },
 };

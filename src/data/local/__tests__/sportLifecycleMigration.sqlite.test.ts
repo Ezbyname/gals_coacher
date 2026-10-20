@@ -93,8 +93,8 @@ describe('migration v5 (sport assignment lifecycle) on real SQLite', () => {
 
   it('fresh install: player_sports has active INTEGER NOT NULL DEFAULT 1 with its CHECK', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(20);
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 20 });
+    expect(migration.to).toBe(21);
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 21 });
     expect(await playerSportsColumns(db as unknown as Db)).toEqual([
       { cid: 0, name: 'player_id', type: 'TEXT', notnull: 1, dflt_value: null, pk: 1 },
       { cid: 1, name: 'sport', type: 'TEXT', notnull: 1, dflt_value: null, pk: 2 },
@@ -115,10 +115,10 @@ describe('migration v5 (sport assignment lifecycle) on real SQLite', () => {
     const { db, migration } = await openLocalDatabase();
     expect(migration).toEqual({
       from: 4,
-      to: 20,
-      applied: ['player_sports_active', 'calendar_event_completion', 'activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002'],
+      to: 21,
+      applied: ['player_sports_active', 'calendar_event_completion', 'activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002', 'training_blocks_001'],
     });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 20 });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 21 });
     expect(await dumpV4Data(db as unknown as Db)).toEqual(before);
     expect(await db.getAllAsync('SELECT player_id, sport, active FROM player_sports')).toEqual([
       { player_id: LEGACY.gal, sport: 'BASKETBALL', active: 1 },
@@ -140,7 +140,7 @@ describe('migration v5 (sport assignment lifecycle) on real SQLite', () => {
 
     // Idempotent: the next launch applies nothing; schema and data unchanged.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 20, to: 20, applied: [] });
+    expect(again.migration).toEqual({ from: 21, to: 21, applied: [] });
     expect(
       await again.db.getAllAsync(
         "SELECT type, name, tbl_name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name",
@@ -176,8 +176,8 @@ describe('migration v5 (sport assignment lifecycle) on real SQLite', () => {
     const relaunch = await openLocalDatabase();
     expect(relaunch.migration).toEqual({
       from: 4,
-      to: 20,
-      applied: ['player_sports_active', 'calendar_event_completion', 'activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002'],
+      to: 21,
+      applied: ['player_sports_active', 'calendar_event_completion', 'activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002', 'training_blocks_001'],
     });
     expect(await dumpV4Data(relaunch.db as unknown as Db)).toEqual(before);
     await relaunch.db.closeAsync();
@@ -185,9 +185,9 @@ describe('migration v5 (sport assignment lifecycle) on real SQLite', () => {
 
   it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 21');
+    await newer.execAsync('PRAGMA user_version = 22');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v21 .* only knows v20\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v22 .* only knows v21\. Refusing to downgrade/);
   });
 });
 

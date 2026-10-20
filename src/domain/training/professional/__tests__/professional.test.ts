@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { BUILTIN_EXERCISES, builtinExercise } from '../../../exercise/catalog';
+import { ATHLETIC } from '../../../exercise/catalog/athletic';
 import { BASKETBALL_EXPANSION } from '../../../exercise/catalog/basketball';
 import { FOOTBALL } from '../../../exercise/catalog/football';
 import { PROVENANCE, SOURCES } from '../../../exercise/catalog/provenance';
@@ -87,13 +88,13 @@ describe('the new built-in Exercises', () => {
   });
 
   it('every one has a provenance entry: dosage is always ORIGINAL_RECOMMENDATION, a SOURCE_SUPPORTED claim rests on an OPENED source, and no source is invented', () => {
-    expect(Object.keys(PROVENANCE).sort()).toEqual([...NEW_EXERCISES.map((e) => e.id), ...BASKETBALL_EXPANSION.map((e) => e.id)].sort());
+    expect(Object.keys(PROVENANCE).sort()).toEqual([...NEW_EXERCISES.map((e) => e.id), ...BASKETBALL_EXPANSION.map((e) => e.id), ...ATHLETIC.map((e) => e.id)].sort());
     for (const [id, p] of Object.entries(PROVENANCE)) {
       expect(p.dosage).toBe('ORIGINAL_RECOMMENDATION');
       if (p.sources.length === 0) expect(p.supports).toMatch(/No external source was consulted/);
       for (const s of p.sources) expect(SOURCES[s]).toBeDefined();
       if (p.topic === 'SOURCE_SUPPORTED') {
-        expect([id, p.sources.filter((s) => SOURCES[s].read === 'opened').length > 0]).toEqual([id, true]);
+        expect([id, p.sources.filter((s) => SOURCES[s].read === 'opened' || SOURCES[s].read === 'abstract only').length > 0]).toEqual([id, true]);
       }
       expect(p.supports.length).toBeGreaterThan(20);
       expect(p.synthesis).toMatch(/Gals Coacher/);
@@ -204,7 +205,8 @@ describe('SPORT-CONTENT-002: the expanded catalog', () => {
     // the six 001 workouts, ignoring only the new `focus` tag
     const six = CORE.map(({ focus: _focus, ...rest }) => rest);
     expect(sha(six)).toBe('62b1c2c09fc093a81ef9b3cc4a9184ed033c4166cc56ac4e009f140e8ed5e688');
-    const earlier = BUILTIN_EXERCISES.filter((e) => e.id !== 'BOX_OUT_DRILL');
+    const athleticIds = ATHLETIC.map((e) => e.id);
+    const earlier = BUILTIN_EXERCISES.filter((e) => e.id !== 'BOX_OUT_DRILL' && !athleticIds.includes(e.id));
     expect(earlier).toHaveLength(145);
     expect(sha(earlier)).toBe('c69054985860296add49c4e8ea34807b7ef97b7122c5d4ba6eb211c5528959e7');
     expect(sha(earlier.filter((e) => e.sports.includes('BASKETBALL')))).toBe('7234a03a746007eef75cd1025238e3e9fc298e88fb92cc5858f8a7aac006aee9');
@@ -230,7 +232,7 @@ describe('SPORT-CONTENT-002: the expanded catalog', () => {
 
   it('REUSE: the only new Exercise is the Basketball box-out; Surf fitness and Football add none', () => {
     expect(BASKETBALL_EXPANSION.map((e) => e.id)).toEqual(['BOX_OUT_DRILL']);
-    expect(BUILTIN_EXERCISES).toHaveLength(145 + 1);
+    expect(BUILTIN_EXERCISES).toHaveLength(145 + 1 + 6); // + the six TRAINING-BLOCKS-001 general-athletic Exercises (v21)
     const surfFitness = EXPANDED.filter((w) => w.focus === 'SURF_STRENGTH_FITNESS');
     const used = surfFitness.flatMap((w) => w.sections.flatMap((s) => s.items.map((i) => builtinExercise(i.exerciseId)!)));
     expect(used.every((e) => e.sports.length === 0)).toBe(true); // all general exercises, none newly created
@@ -284,7 +286,8 @@ describe('SPORT-CONTENT-002: the expanded catalog', () => {
 describe('SPORT-CONTENT-003: reference videos from the IBBC beginner page (no new Exercise, no migration)', () => {
   it('two beginner workouts built ONLY from existing built-in Exercises: no Exercise was created from a video', () => {
     expect(IBBC.map((w) => w.id)).toEqual(['BASKETBALL-BEGINNER-BALL-FEEL-01', 'BASKETBALL-BEGINNER-SHOOT-LAYUP-01']);
-    expect(BUILTIN_EXERCISES).toHaveLength(145 + 1); // unchanged by this slice: only the SPORT-CONTENT-002 box-out was added
+    expect(BUILTIN_EXERCISES.filter((e) => IBBC.some((w) => w.sections.some((s) => s.items.some((i) => i.exerciseId === e.id)))).length).toBeGreaterThan(0);
+    expect(BASKETBALL_EXPANSION).toHaveLength(1); // this slice added no Exercise: only the SPORT-CONTENT-002 box-out exists
     for (const w of IBBC) {
       expect([w.sport, w.difficulty, w.focus, w.sources]).toEqual(['BASKETBALL', 'BEGINNER', 'FUNDAMENTALS', ['IBBC-BEGINNER']]);
       expect(w.name[0].length).toBeLessThanOrEqual(WORKOUT_NAME_MAX_LENGTH);

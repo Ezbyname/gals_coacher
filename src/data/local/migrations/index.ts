@@ -1013,4 +1013,21 @@ export const migrations: readonly Migration[] = [
         ('BOX_OUT_DRILL', 1, NULL, 1, 0, 0);
     `,
   },
+  {
+    // TRAINING-BLOCKS-001: SIX new built-in general-athletic Exercises (two landing drills, deceleration, two reactive
+    // drills and a running-interval exercise). DATA ONLY, exactly like v19 / v20: one row per Exercise (stable id, active
+    // state; the content stays in code). No CREATE / ALTER, no table rebuilt, no user data, plan, session or history row
+    // touched. The Training Blocks and the 13 general workouts are read-only code and need no rows.
+    version: 21,
+    name: 'training_blocks_001',
+    sql: `
+      INSERT INTO exercises (id, builtin, name, active, created_at, updated_at) VALUES
+        ('DROP_LANDING_STICK', 1, NULL, 1, 0, 0),
+        ('SINGLE_LEG_HOP_STICK', 1, NULL, 1, 0, 0),
+        ('DECEL_STOP', 1, NULL, 1, 0, 0),
+        ('PARTNER_MIRROR_DRILL', 1, NULL, 1, 0, 0),
+        ('COACH_CUE_REACTION_SPRINT', 1, NULL, 1, 0, 0),
+        ('RUN_INTERVALS', 1, NULL, 1, 0, 0);
+    `,
+  },
 ];

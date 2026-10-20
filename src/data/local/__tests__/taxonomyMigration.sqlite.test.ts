@@ -153,7 +153,7 @@ describe('migration v10 (taxonomy) on real SQLite', () => {
 
   it('fresh install: the two taxonomy tables, their indexes and triggers; every curated node seeded once, active', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(20);
+    expect(migration.to).toBe(21);
     expect(migration.applied).toContain('taxonomy');
     expect(await v10Objects(db as unknown as Db)).toEqual(V10_OBJECTS);
     const rows = await db.getAllAsync<{ id: string; builtin: number; active: number }>(
@@ -168,7 +168,7 @@ describe('migration v10 (taxonomy) on real SQLite', () => {
   it('upgrades a realistic v9 database: every existing row unchanged, same schema as a fresh install', async () => {
     const before = await createV9Database();
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 9, to: 20, applied: ['taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002'] });
+    expect(migration).toEqual({ from: 9, to: 21, applied: ['taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002', 'training_blocks_001'] });
     expectUnchangedExceptLaterSeeds(await dump(db as unknown as Db, PRE_V10_TABLES), before, 9);
     expect(await db.getFirstAsync('PRAGMA foreign_key_check')).toBeNull();
     // Today's repositories still read everything; the taxonomy reads on top.
@@ -207,7 +207,7 @@ describe('migration v10 (taxonomy) on real SQLite', () => {
     const state = await dump(first.db as unknown as Db, ['taxonomy_nodes', 'exercise_taxonomy']);
     await first.db.closeAsync();
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 20, to: 20, applied: [] });
+    expect(again.migration).toEqual({ from: 21, to: 21, applied: [] });
     expect(await dump(again.db as unknown as Db, ['taxonomy_nodes', 'exercise_taxonomy'])).toEqual(state);
     expect((await readTaxonomy(again.db)).node('BASKETBALL_REBOUNDING')!.active).toBe(false);
     await again.db.closeAsync();
@@ -225,7 +225,7 @@ describe('migration v10 (taxonomy) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 9, to: 20, applied: ['taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002'] });
+    expect(relaunch.migration).toEqual({ from: 9, to: 21, applied: ['taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002', 'training_blocks_001'] });
     expectUnchangedExceptLaterSeeds(await dump(relaunch.db as unknown as Db, PRE_V10_TABLES), before, 9);
     await relaunch.db.closeAsync();
   });
