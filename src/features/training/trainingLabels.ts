@@ -161,6 +161,10 @@ export const blockPath = (id: string) => `/workouts/blocks/${id}` as const;
 export type AssignKind = 'EXERCISE' | 'BLOCK' | 'PROFESSIONAL';
 export const addToWorkoutPath = (kind: AssignKind, id: string) => ({ pathname: '/workouts/add-to-workout', params: { kind, id } }) as const;
 export const professionalListPath = '/workouts/professional';
+/** TRAINING-BLOCKS-001: the Training Blocks list, one block, and the Add-program-to-player flow. */
+export const trainingBlocksPath = '/workouts/training-blocks';
+export const trainingBlockPath = (id: string) => `/workouts/training-blocks/${id}` as const;
+export const assignTrainingBlockPath = (id: string) => ({ pathname: '/workouts/training-blocks/assign', params: { blockId: id } }) as const;
 export const professionalPath = (id: string) => `/workouts/professional/${id}` as const;
 export const newTemplatePath = '/workouts/templates/new';
 export const templatePath = (id: string) => `/workouts/templates/${id}` as const;

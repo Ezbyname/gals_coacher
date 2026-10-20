@@ -19,7 +19,7 @@ import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
 
-import { blockPath, newBlockPath, newTemplatePath, professionalListPath, templatePath } from './trainingLabels';
+import { blockPath, newBlockPath, newTemplatePath, professionalListPath, templatePath, trainingBlocksPath } from './trainingLabels';
 
 type Loaded =
   | { status: 'loading' }
@@ -92,6 +92,7 @@ export function WorkoutLibrary() {
     <KeyboardSafeScrollView testID="workouts-scroll" contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.muted}>{t('training.about')}</Text>
       <BigButton testID="workouts-professional" variant="secondary" label={t('training.professional.open')} onPress={() => router.push(professionalListPath)} />
+      <BigButton testID="workouts-training-blocks" variant="secondary" label={t('training.trainingBlocks.open')} onPress={() => router.push(trainingBlocksPath)} />
       <TextField testID="workouts-search" label={t('training.searchLabel')} value={query} onChangeText={setQuery} />
       {restoreFailed ? (
         <Text style={styles.error} testID="workouts-restore-failed">

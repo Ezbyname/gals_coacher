@@ -71,7 +71,8 @@ describe('listing', () => {
     renderRouter(routes, { initialUrl: '/workouts' });
     press((await screen.findByTestId('workouts-professional')).props.testID);
     await screen.findByTestId('professional-scroll');
-    expect(cards()).toHaveLength(17);
+    expect(cards().filter((id) => !id.startsWith('ATH-'))).toHaveLength(17); // the published sport workouts
+    expect(cards().filter((id) => id.startsWith('ATH-'))).toHaveLength(13); // + the general athletic ones (TRAINING-BLOCKS-001)
     expect(text('professional-workout-SURF-FOUNDATION-01-level')).toBe('Surfing · Beginner');
     expect(text('professional-workout-SURF-PERFORMANCE-01-level')).toBe('Surfing · Advanced');
     expect(text('professional-workout-FOOTBALL-PROGRESSION-01-level')).toBe('Football · Intermediate');
@@ -80,7 +81,7 @@ describe('listing', () => {
     press('professional-filter-level-BEGINNER');
     await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'SURF-FITNESS-FOUNDATION-01']));
     press('professional-filter-sport-SURFING'); // off
-    await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'SURF-FITNESS-FOUNDATION-01', 'FOOTBALL-FOUNDATION-01', 'BASKETBALL-BEGINNER-BALL-FEEL-01', 'BASKETBALL-BEGINNER-SHOOT-LAYUP-01']));
+    await waitFor(() => expect(cards()).toEqual(['SURF-FOUNDATION-01', 'SURF-FITNESS-FOUNDATION-01', 'FOOTBALL-FOUNDATION-01', 'BASKETBALL-BEGINNER-BALL-FEEL-01', 'BASKETBALL-BEGINNER-SHOOT-LAYUP-01', 'ATH-MOVEMENT-FOUNDATION-01', 'ATH-STRENGTH-FULLBODY-A-01', 'ATH-STRENGTH-FULLBODY-B-01', 'ATH-JUMP-LANDING-01', 'ATH-ACCELERATION-01', 'ATH-CONDITIONING-BASE-01', 'ATH-CONDITIONING-INTERVALS-01']));
     expect(text('professional-intro')).toMatch(/not official FIFA, ISA or Surfing Australia/);
   });
 
@@ -88,7 +89,7 @@ describe('listing', () => {
     await prepare('he');
     renderRouter(routes, { initialUrl: '/workouts/professional' });
     await screen.findByTestId('professional-scroll');
-    expect(cards()).toHaveLength(17);
+    expect(cards()).toHaveLength(17 + 13);
     expect(text('professional-workout-SURF-FOUNDATION-01-name')).toBe('גלישה — מתחילים');
     expect(text('professional-workout-SURF-FOUNDATION-01-level')).toBe('גלישה · מתחילים');
     expect(text('professional-workout-FOOTBALL-PERFORMANCE-01-name')).toBe('כדורגל — מתקדמים');
@@ -336,5 +337,45 @@ describe('the Exercise library and Basketball', () => {
     await screen.findByTestId('exercise-details-add-to-workout');
     expect(screen.getAllByText(/Ocean conditions, currents, weather/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Surfing/).length).toBeGreaterThan(0);
+  });
+});
+
+describe('TRAINING-BLOCKS-001: general athletic workouts (no sport)', () => {
+  it('English: a "General athletic" filter shows exactly the 13 general workouts, grouped by focus, never as a sport', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/professional' });
+    await screen.findByTestId('professional-scroll');
+    press('professional-filter-sport-GENERAL');
+    await waitFor(() => expect(cards().every((id) => id.startsWith('ATH-'))).toBe(true));
+    expect(cards()).toHaveLength(13);
+    expect(text('professional-group-GENERAL-STRENGTH_FOUNDATION-title')).toBe('General athletic — Strength foundation');
+    expect(text('professional-group-GENERAL-SPEED_ACCELERATION-title')).toBe('General athletic — Speed and acceleration');
+    expect(text('professional-workout-ATH-ACCELERATION-01-level')).toBe('General athletic · Beginner');
+    expect(text('professional-workout-ATH-ACCELERATION-01-name')).toBe('Acceleration');
+    press('professional-filter-sport-SURFING'); // a sport filter never shows a general workout
+    await waitFor(() => expect(cards().some((id) => id.startsWith('ATH-'))).toBe(false));
+    press('professional-filter-sport-SURFING'); // off
+  });
+
+  it('Hebrew: names, level and group headings read in Hebrew', async () => {
+    await prepare('he');
+    renderRouter(routes, { initialUrl: '/workouts/professional' });
+    await screen.findByTestId('professional-scroll');
+    expect(text('professional-workout-ATH-ACCELERATION-01-name')).toBe('האצה');
+    expect(text('professional-workout-ATH-ACCELERATION-01-level')).toBe('אתלטיות כללית · מתחילים');
+    expect(text('professional-group-GENERAL-SPEED_ACCELERATION-title')).toBe('אתלטיות כללית — מהירות והאצה');
+  });
+
+  it('a general workout opens with its safety wording, its sections and the alternatives (each with its own dosage)', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/professional/ATH-CONDITIONING-INTERVALS-01' });
+    expect(await screen.findByTestId('professional-details-name')).toBeTruthy();
+    expect(text('professional-details-level')).toBe('General athletic · Beginner');
+    expect(has('professional-safety')).toBe(true);
+    expect(text('professional-safety-text')).toMatch(/not medical advice/);
+    const alts = screen.queryAllByTestId(/^professional-item-\d+-\d+-alt-\d+$/).map((n) => text(n.props.testID));
+    expect(alts).toHaveLength(4);
+    expect(new Set(alts).size).toBe(4); // four different dosages for four different modalities
+    expect(has('professional-videos')).toBe(false);
   });
 });

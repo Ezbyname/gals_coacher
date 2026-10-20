@@ -33,7 +33,9 @@ export function ProfessionalWorkoutDetails({ workoutId }: { workoutId: string })
         {title}
       </Text>
       <Text style={styles.meta} testID="professional-details-level">
-        {t('training.professional.card', { sport: sportLabel(t, workout.sport), level: t(`training.professional.level.${workout.difficulty}`) })}
+        {workout.sport === null
+          ? t('training.professional.generalCard', { level: t(`training.professional.level.${workout.difficulty}`) })
+          : t('training.professional.card', { sport: sportLabel(t, workout.sport), level: t(`training.professional.level.${workout.difficulty}`) })}
       </Text>
       <Text style={styles.muted} testID="professional-details-focus">
         {t(`training.professional.focus.${workout.focus}`)}
@@ -79,6 +81,22 @@ export function ProfessionalWorkoutDetails({ workoutId }: { workoutId: string })
                 <Text style={styles.muted} testID={`professional-item-${s}-${i}-dosage`}>
                   {prescriptionText(t, exercise.measurement, prescription)}
                 </Text>
+                {item.alternatives && item.alternatives.length > 0 ? (
+                  <View testID={`professional-item-${s}-${i}-alternatives`}>
+                    <Text style={styles.muted}>{t('training.professional.alternativesTitle')}</Text>
+                    {item.alternatives.map((a, k) => {
+                      const ae = builtinExercise(a.exerciseId)!;
+                      return (
+                        <Text key={k} style={styles.muted} testID={`professional-item-${s}-${i}-alt-${k}`}>
+                          {t('training.professional.alternativeLine', {
+                            name: isolate(ae.name[language]),
+                            dosage: prescriptionText(t, ae.measurement, { sets: a.dosage.sets, target: a.dosage.target, loadKg: null, restSec: a.dosage.restSec }),
+                          })}
+                        </Text>
+                      );
+                    })}
+                  </View>
+                ) : null}
               </View>
             );
           })}

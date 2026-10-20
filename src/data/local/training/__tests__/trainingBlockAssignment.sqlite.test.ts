@@ -1,5 +1,4 @@
-import { TRAINING_BLOCKS, trainingBlock } from '@/domain/training/blocks';
-import { orderedSessions, planName, sessionSections } from '@/domain/training/blocks';
+import { orderedSessions, planName, sessionSections, TRAINING_BLOCKS, trainingBlock } from '@/domain/training/blocks';
 import { GENERAL_ATHLETIC_WORKOUTS, PROFESSIONAL_WORKOUTS } from '@/domain/training/professional';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
