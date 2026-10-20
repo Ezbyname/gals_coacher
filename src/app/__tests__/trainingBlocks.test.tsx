@@ -8,6 +8,7 @@ import { setExerciseActive } from '@/data/local/exercises/exerciseRepository';
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
 import { createPlayer } from '@/data/local/players/playerRepository';
+import { startSession } from '@/data/local/training/trainingRepository';
 import { stripBidi } from '@/i18n/bidi';
 import { systemClock } from '@/services/clock/Clock';
 import { createSequentialIdService } from '@/services/ids/IdService';
@@ -244,5 +245,73 @@ describe('time caps are shown as recording caps, never as goals', () => {
     const caps = screen.queryAllByTestId(/^plan-item-\d+-time-cap-hint$/);
     expect(caps.length).toBeGreaterThan(0);
     for (const c of caps) expect(stripBidi(String(c.props.children))).toBe('Record your actual time. The value shown is only a recording cap, not a performance goal.');
+  });
+});
+
+describe('time semantics through the real screens', () => {
+  it('workout screens: a plank, run intervals and the partner mirror drill show plain durations with NO cap hint; a sprint shows the cap', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/professional/ATH-MOVEMENT-FOUNDATION-01' });
+    await screen.findByTestId('professional-details-name');
+    expect(screen.queryAllByTestId(/time-cap-hint$/)).toHaveLength(0);
+    expect(text('professional-item-2-2-dosage')).toMatch(/2 × 20 s/); // the plank: 20 s of work, not a cap
+    expect(text('professional-item-2-2-dosage')).not.toMatch(/cap/);
+  });
+
+  it.each([
+    ['ATH-CONDITIONING-INTERVALS-01', 'professional-item-1-0-dosage', '6 × 45 s'],
+    ['ATH-REACTIVE-AGILITY-01', 'professional-item-2-0-dosage', '4 × 15 s'],
+  ])('%s shows a duration with no hint (including its alternatives)', async (workoutId, dosageTestId, expected) => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: `/workouts/professional/${workoutId}` });
+    await screen.findByTestId('professional-details-name');
+    expect(text(dosageTestId)).toContain(expected);
+    expect(text(dosageTestId)).not.toMatch(/cap/);
+    // the hint appears only for a genuine completion-time item: the intervals workout has ONE (its 500 m rowing alternative), reactive agility none
+    expect(screen.queryAllByTestId(/-time-cap-hint$/)).toHaveLength(workoutId === 'ATH-CONDITIONING-INTERVALS-01' ? 1 : 0);
+  });
+
+  it('a copied plan keeps the right semantics per exercise: the Movement plan has no hint, the Acceleration plan has one on each time drill only', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/training-blocks/assign?blockId=SPEED-ACCELERATION-6W-01' });
+    await screen.findByTestId('block-assign-scroll');
+    press('block-assign-review');
+    await screen.findByTestId('block-preview-title');
+    press('block-assign-confirm');
+    await screen.findByTestId('block-assign-done-title');
+    const accel = await db!.getFirstAsync<{ id: string }>("SELECT id FROM planned_workouts WHERE name LIKE '%1.2%' LIMIT 1");
+    renderRouter(routes, { initialUrl: `/children/${players.Daniel}/training/plan/${accel!.id}` });
+    await screen.findByTestId('plan-item-0-name');
+    const hinted = screen.queryAllByTestId(/^plan-item-\d+-time-cap-hint$/).map((n) => n.props.testID);
+    const names = screen.queryAllByTestId(/^plan-item-\d+-name$/).map((n) => stripBidi(String(n.props.children)));
+    expect(hinted).toHaveLength(2); // the 10 m and the 20 m sprint
+    for (const id of hinted) expect(names[Number(/plan-item-(\d+)-/.exec(id)![1])]).toMatch(/Sprint/);
+  });
+
+  it('a TrainingSession keeps the semantics: sprint sets show the cap hint, a duration exercise does not', async () => {
+    await prepare('en');
+    renderRouter(routes, { initialUrl: '/workouts/training-blocks/assign?blockId=SPEED-ACCELERATION-6W-01' });
+    await screen.findByTestId('block-assign-scroll');
+    press('block-assign-review');
+    await screen.findByTestId('block-preview-title');
+    press('block-assign-confirm');
+    await screen.findByTestId('block-assign-done-title');
+    const accel = await db!.getFirstAsync<{ id: string }>("SELECT id FROM planned_workouts WHERE name LIKE '%1.2%' LIMIT 1");
+    await startSession(db!, accel!.id, deps);
+    const session = await db!.getFirstAsync<{ id: string }>('SELECT id FROM training_sessions LIMIT 1');
+    renderRouter(routes, { initialUrl: `/children/${players.Daniel}/training/session/${session!.id}` });
+    await screen.findByTestId('session-ex-0-name');
+    const hints = screen.queryAllByTestId(/^session-ex-\d+-time-cap-hint$/);
+    expect(hints).toHaveLength(2);
+    for (const h of hints) expect(stripBidi(String(h.props.children))).toBe('Record your actual time. The value shown is only a recording cap, not a performance goal.');
+    expect(text('session-ex-4-planned')).toMatch(/time cap 5 s/);
+  });
+
+  it('Hebrew: a duration reads as a duration; a sprint reads as a cap', async () => {
+    await prepare('he');
+    renderRouter(routes, { initialUrl: '/workouts/professional/ATH-CONDITIONING-INTERVALS-01' });
+    await screen.findByTestId('professional-details-name');
+    expect(text('professional-item-1-0-dosage')).toMatch(/6 × 45 שנ׳/);
+    expect(text('professional-item-1-0-dosage')).not.toMatch(/תקרה|תקרת/);
   });
 });

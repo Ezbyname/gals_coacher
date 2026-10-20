@@ -2,6 +2,7 @@ import { builtinExercise } from '../../exercise/catalog';
 import { ATHLETIC } from '../../exercise/catalog/athletic';
 import type { SourceKey } from '../../exercise/catalog/provenance';
 import type { ExerciseDefinition } from '../../exercise/exercise';
+import { COMPLETION_TIME_CAP_EXERCISES, timeSemantics } from '../../exercise/timeSemantics';
 import { defaultPrescription } from '../training';
 import { GENERAL_ATHLETIC_WORKOUTS } from '../professional';
 import { dosage, exerciseBlock, sourceLine } from '../professional/reviewSheet';
@@ -22,7 +23,7 @@ const d = (id: string, dose: Dosage | undefined): string => {
   const e = ex(id);
   const text = dosage(e, dose ? { sets: dose.sets, target: dose.target, restSec: dose.restSec } : defaultPrescription(e.measurement, e.defaults));
   // a TIME-measured value is only a recording CAP (the app says "record your actual time"), never a performance goal
-  return e.measurement.type === 'TIME' ? text.replace(/ × (\d+)s/, ' × $1s _(recording cap — record your actual time; not a goal)_') : text;
+  return timeSemantics(id, e.measurement.type) === 'COMPLETION_TIME_CAP' ? text.replace(/ × (\d+)s/, ' × $1s _(recording cap — record your actual time; not a goal)_') : text;
 };
 
 /** What the sources do and do not support for each general workout, and what is Gals Coacher's own. */
@@ -236,7 +237,7 @@ export function renderTrainingBlocksReviewSheet(): string {
     '- Warm-up fatigue: the warm-up bodyweight squat is now 2 × 8 (was the default 3 × 15) in Strength B, Jump & Landing and Explosive Lower Body; in Strength A the warm-up glute bridge is 1 × 10 (the main 3 × 12 is unchanged, so there is no 6-set duplication).',
     '- Movement Foundation: the Hebrew now says "גשר עכוז / יישור ירך", matching the glute bridge that is actually in the workout (no hip-hinge drill was added).',
     '- The improvised "heavy basketball or football against a wall" substitute was removed: with no appropriate medicine ball, skip the throwing section or use another approved power exercise or workout.',
-    '- Time caps: wherever a TIME-measured value is shown (workout screen, a Player’s plan, the session, the builder, this sheet) it reads as a "time cap", the field is labelled "Time cap (seconds) — record your actual time", and a hint says "Record your actual time. The value shown is only a recording cap, not a performance goal." This needed a small UI change.',
+    '- Time semantics (final content review): a seconds value is a DURATION — how long to do the exercise (plank, run intervals, jump rope, partner mirror, easy run) — and is shown as a plain duration. ONLY the explicitly classified completion-time drills (' + COMPLETION_TIME_CAP_EXERCISES.join(', ') + ') show a recording cap: the label is "Time cap (seconds) — record your actual time", the value reads "time cap 5 s", and the hint says "Record your actual time. The value shown is only a recording cap, not a performance goal." Being TIME-measured does NOT make an exercise a cap: the published Basketball course drills (cone dribble slalom, defensive slides, lane agility, court sprints) are unchanged. The classification is registry metadata keyed by exercise id — no database change.',
     '- Hebrew: the awkward supervision sentence is replaced everywhere by "למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית."; "באותה משך" → "באותו משך"; names: ירידה ונחיתה מבוקרת, תרגיל מראה בזוגות, אינטרוולים בריצה.',
     '',
     '**Still for the final human review:** native-speaker Hebrew review of the remaining text; then publication approval.',

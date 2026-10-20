@@ -473,9 +473,9 @@ function PlannedWorkoutView({ planId }: { planId: string }) {
                 {item.exercise.name[language]}
               </Text>
               <Text style={styles.status} testID={`plan-item-${item.position}-rx`}>
-                {prescriptionText(t, item.exercise.measurement, item.prescription)}
+                {prescriptionText(t, item.exercise.measurement, item.prescription, item.exercise.exerciseId)}
               </Text>
-              {timeCapHint(t, item.exercise.measurement, item.prescription.target) ? (
+              {timeCapHint(t, item.exercise.measurement, item.prescription.target, item.exercise.exerciseId) ? (
                 <Text style={styles.muted} testID={`plan-item-${item.position}-time-cap-hint`}>
                   {t('training.timeCapHint')}
                 </Text>

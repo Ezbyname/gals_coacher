@@ -1,3 +1,4 @@
+import { timeSemantics } from '@/domain/exercise/timeSemantics';
 import type { ExerciseMeasurement } from '@/domain/exercise/exercise';
 import type { MeasurementType } from '@/domain/measurement';
 import { PlayerArchivedError } from '@/data/local/players/errors';
@@ -16,7 +17,8 @@ export function formatNumber(value: number): string {
 }
 
 /** The label of the target field for this measurement type (none for RATING / COMPLETION). */
-export function targetLabelKey(type: MeasurementType): TranslationKey | null {
+export function targetLabelKey(type: MeasurementType, exerciseId?: string | null): TranslationKey | null {
+  if (timeSemantics(exerciseId, type) === 'COMPLETION_TIME_CAP') return 'training.targetTimeCap';
   const keys: Partial<Record<MeasurementType, TranslationKey>> = {
     REPETITIONS: 'training.targetReps',
     DURATION: 'training.targetDuration',
@@ -28,16 +30,16 @@ export function targetLabelKey(type: MeasurementType): TranslationKey | null {
 }
 
 /** The hint under a TIME-measured item that has a configured value: record the real time; the value is only a cap. */
-export function timeCapHint(t: T, measurement: ExerciseMeasurement, target: number | null): string | null {
-  return measurement.type === 'TIME' && target !== null ? t('training.timeCapHint') : null;
+export function timeCapHint(t: T, measurement: ExerciseMeasurement, target: number | null, exerciseId?: string | null): string | null {
+  return timeSemantics(exerciseId, measurement.type) === 'COMPLETION_TIME_CAP' && target !== null ? t('training.timeCapHint') : null;
 }
 
 /** A target value in the measurement's unit: 10 · 40 s · 20 m · 10 attempts. */
-function targetText(t: T, type: MeasurementType, value: number): string {
+function targetText(t: T, type: MeasurementType, value: number, exerciseId?: string | null): string {
   const n = formatNumber(value);
-  if (type === 'DURATION') return t('training.unit.seconds', { n });
-  // a TIME target is only a recording CAP: the athlete records the real time (never a performance standard)
-  if (type === 'TIME') return t('training.unit.timeCap', { n });
+  // only an explicitly classified completion-time drill shows a recording CAP; every other seconds value is a plain duration
+  if (timeSemantics(exerciseId, type) === 'COMPLETION_TIME_CAP') return t('training.unit.timeCap', { n });
+  if (type === 'DURATION' || type === 'TIME') return t('training.unit.seconds', { n });
   if (type === 'DISTANCE') return t('training.unit.metres', { n });
   if (type === 'MADE_ATTEMPTS') return t('training.unit.attempts', { n });
   return t('training.unit.reps', { n });
@@ -51,16 +53,17 @@ export function plannedSetText(
   measurement: ExerciseMeasurement,
   target: number | null,
   loadKg: number | null,
+  exerciseId?: string | null,
 ): string | null {
-  const value = target === null ? null : targetText(t, measurement.type, target);
+  const value = target === null ? null : targetText(t, measurement.type, target, exerciseId);
   if (value !== null && loadKg !== null) return t('training.withLoad', { value, load: kg(t, loadKg) });
   if (value !== null) return value;
   return loadKg !== null ? kg(t, loadKg) : null;
 }
 
 /** A whole prescription: "3 × 10 @ 50 kg · rest 90 s". */
-export function prescriptionText(t: T, measurement: ExerciseMeasurement, p: Prescription): string {
-  const one = plannedSetText(t, measurement, p.target, p.loadKg);
+export function prescriptionText(t: T, measurement: ExerciseMeasurement, p: Prescription, exerciseId?: string | null): string {
+  const one = plannedSetText(t, measurement, p.target, p.loadKg, exerciseId);
   const main =
     one === null
       ? t('training.setsOnly', { sets: p.sets })

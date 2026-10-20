@@ -407,7 +407,7 @@ function ItemFields(props: { testID: string; item: DItem; errors: PrescriptionEr
   const { item, testID } = props;
   const measurement = item.snapshot.measurement;
   const name = item.snapshot.name[language];
-  const targetKey = targetApplies(measurement.type) ? targetLabelKey(measurement.type) : null;
+  const targetKey = targetApplies(measurement.type) ? targetLabelKey(measurement.type, item.snapshot.exerciseId) : null;
   const err = (field: keyof PrescriptionErrors) => {
     const code = props.errors?.[field];
     if (!code) return undefined;
@@ -421,7 +421,7 @@ function ItemFields(props: { testID: string; item: DItem; errors: PrescriptionEr
           {name}
         </Text>
         <Text style={styles.muted} testID={`${testID}-rx`}>
-          {prescriptionText(t, measurement, p)}
+          {prescriptionText(t, measurement, p, item.snapshot.exerciseId)}
         </Text>
       </View>
     );

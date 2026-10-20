@@ -79,11 +79,11 @@ export function ProfessionalWorkoutDetails({ workoutId }: { workoutId: string })
                   {isolate(exercise.name[language])}
                 </Text>
                 <Text style={styles.muted} testID={`professional-item-${s}-${i}-dosage`}>
-                  {prescriptionText(t, exercise.measurement, prescription)}
+                  {prescriptionText(t, exercise.measurement, prescription, exercise.id)}
                 </Text>
                 {[item, ...(item.alternatives ?? []).map((a) => ({ exerciseId: a.exerciseId, dosage: a.dosage }))].some((it) => {
                   const ie = builtinExercise(it.exerciseId)!;
-                  return timeCapHint(t, ie.measurement, it.dosage ? it.dosage.target : null) !== null;
+                  return timeCapHint(t, ie.measurement, it.dosage ? it.dosage.target : null, ie.id) !== null;
                 }) ? (
                   <Text style={styles.muted} testID={`professional-item-${s}-${i}-time-cap-hint`}>
                     {t('training.timeCapHint')}
@@ -98,7 +98,7 @@ export function ProfessionalWorkoutDetails({ workoutId }: { workoutId: string })
                         <Text key={k} style={styles.muted} testID={`professional-item-${s}-${i}-alt-${k}`}>
                           {t('training.professional.alternativeLine', {
                             name: isolate(ae.name[language]),
-                            dosage: prescriptionText(t, ae.measurement, { sets: a.dosage.sets, target: a.dosage.target, loadKg: null, restSec: a.dosage.restSec }),
+                            dosage: prescriptionText(t, ae.measurement, { sets: a.dosage.sets, target: a.dosage.target, loadKg: null, restSec: a.dosage.restSec }, ae.id),
                           })}
                         </Text>
                       );
