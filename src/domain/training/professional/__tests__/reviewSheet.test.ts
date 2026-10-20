@@ -26,8 +26,11 @@ describe('CONTENT-REVIEW-SHEET', () => {
     for (const field of ['HE name', 'EN name', 'Sport', 'Difficulty', 'Dosage (ORIGINAL_RECOMMENDATION)', 'Equipment', 'Evidence class', 'Coaching cues — HE', 'Safety — EN', 'Source / provenance', 'Exactly what the source supports', 'What is Gals Coacher synthesis']) {
       expect(sheet.split(field).length - 1).toBeGreaterThanOrEqual(22);
     }
-    expect(sheet.match(/PENDING_HUMAN_REVIEW/g)!.length).toBeGreaterThanOrEqual(18);
-    expect(sheet).toContain('Sheet status: **HUMAN_REVIEWED / READY_FOR_PUBLICATION_APPROVAL**');
+    expect(sheet.match(/\| \*\*Review status\*\* \| `PUBLISHED` \|/g)).toHaveLength(17);
+    expect(sheet).not.toMatch(/PENDING_HUMAN_REVIEW/);
+    expect(sheet).not.toMatch(/still need a human decision|need a human decision/);
+    expect(sheet).toMatch(/Resolved human-review decisions/);
+    expect(sheet).toContain('Sheet status: **PUBLISHED / OWNER APPROVED**');
     expect(sheet).toMatch(/not official FIFA, ISA, Surfing Australia or USA Basketball programming/);
     // one combined sheet: both slices, all 15 workouts, the owner-cited sources flagged, nothing implied about Basketball sources
     expect(sheet).toMatch(/SPORT-CONTENT-001 \+ 002 \+ 003/);

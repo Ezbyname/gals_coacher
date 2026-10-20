@@ -93,7 +93,7 @@ export const IBBC_WORKOUTS: readonly ProfessionalWorkout[] = [
     coachNotes: [OWN_NOTE],
     safety: null,
     sources: ['IBBC-BEGINNER'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'BASKETBALL-BEGINNER-SHOOT-LAYUP-01',
@@ -114,6 +114,6 @@ export const IBBC_WORKOUTS: readonly ProfessionalWorkout[] = [
     coachNotes: [OWN_NOTE],
     safety: null,
     sources: ['IBBC-BEGINNER'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
 ];

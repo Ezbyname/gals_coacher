@@ -19,7 +19,7 @@ export interface ProfessionalSection {
   readonly items: readonly ProfessionalItem[];
 }
 
-export type ReviewStatus = 'PENDING_HUMAN_REVIEW' | 'HUMAN_REVIEWED';
+export type ReviewStatus = 'PENDING_HUMAN_REVIEW' | 'HUMAN_REVIEWED' | 'PUBLISHED';
 
 /**
  * What a workout is FOR (SPORT-CONTENT-002): lightweight registry metadata used to group and filter the library — never a

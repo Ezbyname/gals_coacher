@@ -56,7 +56,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     coachNotes: [NOT_PADDLING, OCEAN_NOTE],
     safety: STRENGTH_SAFETY,
     sources: ['SA-SCHED', 'ISA-STRENGTH', 'SURF-PHYS-1', 'SURF-PHYS-2', 'SURF-PHYS-3'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'SURF-PADDLE-ENDURANCE-01',
@@ -92,7 +92,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: STRENGTH_SAFETY,
     sources: ['SA-SCHED', 'ISA-STRENGTH', 'SURF-PHYS-1', 'SURF-PHYS-2', 'SURF-PHYS-3'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'SURF-POWER-ROTATION-01',
@@ -134,7 +134,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: STRENGTH_SAFETY,
     sources: ['SA-SCHED', 'ISA-STRENGTH', 'SURF-PHYS-1', 'SURF-PHYS-2', 'SURF-PHYS-3'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
 
   // ------------------------------------------------------------------ FOOTBALL — targeted workouts
@@ -165,7 +165,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: null,
     sources: ['F-PASSREC', 'F-FINATK', 'F-SKILL1215', 'F-ONCE', 'F-TCP-1V1', 'F-42'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'FOOTBALL-1V1-FINISHING-01',
@@ -194,7 +194,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: null,
     sources: ['F-TCP-1V1', 'F-FINATK', 'F-DRIB48', 'F-57', 'F-51'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'FOOTBALL-TRANSITION-PRESSING-01',
@@ -224,7 +224,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: null,
     sources: ['F-TRANS1215', 'F-MEXU15', 'F-TCP-3V2', 'F-ADV812', 'F-TCP-1V1'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
 
   // ------------------------------------------------------------------ BASKETBALL — targeted workouts
@@ -258,7 +258,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: null,
     sources: ['USAB-CURRICULUM'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'BASKETBALL-SHOOTING-FINISHING-01',
@@ -290,7 +290,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: null,
     sources: ['USAB-CURRICULUM'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'BASKETBALL-DEFENSE-REBOUNDING-01',
@@ -320,6 +320,6 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: null,
     sources: ['USAB-CURRICULUM', 'USAB-REBOUND'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
 ];

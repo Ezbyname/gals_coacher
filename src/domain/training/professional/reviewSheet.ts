@@ -11,8 +11,8 @@ import { IBBC_CANDIDATE_VIDEOS } from './ibbc';
 /**
  * The bilingual CONTENT-REVIEW-SHEET for human approval, rendered from the very same code the app ships (so the sheet can
  * never drift from the content). ONE combined sheet for SPORT-CONTENT-001 and SPORT-CONTENT-002. Nothing here is shown to
- * users as a status; publishing / building a release waits for a human to approve this sheet (every item is
- * `PENDING_HUMAN_REVIEW`).
+ * users as a status. The content was human-reviewed and approved by the owner for publication; every workout's registry
+ * status is `PUBLISHED`.
  */
 const measurementText = (e: ExerciseDefinition): string => {
   const t = e.measurement.type;
@@ -174,7 +174,7 @@ export function renderContentReviewSheet(): string {
   const out: string[] = [
     '# CONTENT-REVIEW-SHEET — SPORT-CONTENT-001 + 002 + 003 (one combined sheet)',
     '',
-    'Sheet status: **HUMAN_REVIEWED / READY_FOR_PUBLICATION_APPROVAL** (final human content review: PASS with 2 documentation fixes, applied). Publication itself still needs explicit approval; the per-item review status in the app code stays PENDING_HUMAN_REVIEW until then.',
+    'Sheet status: **PUBLISHED / OWNER APPROVED**. Final human content review: PASS. Owner publication approval: APPROVED. Every professional workout below carries the registry status `PUBLISHED`. The six IBBC videos remain `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review / provenance notes and are NOT shown in the app.',
     '',
     `Contents: **${newExercises} new built-in Exercises** (Surfing ${SURFING.length}, Football ${FOOTBALL.length}, Basketball ${BASKETBALL_EXPANSION.length}) and **${PROFESSIONAL_WORKOUTS.length} professional workouts** (${core.length} from SPORT-CONTENT-001, ${expanded.length} from SPORT-CONTENT-002, ${fromIbbc.length} from SPORT-CONTENT-003). The SPORT-CONTENT-002 workouts reuse the existing catalog (their only new Exercise is the Basketball box-out); SPORT-CONTENT-003 adds NO Exercise and NO user-facing video: two beginner workouts from existing exercises, with the six IBBC videos kept as review notes only.`,
     '',
@@ -185,7 +185,7 @@ export function renderContentReviewSheet(): string {
     '- Difficulty is content progression metadata, never a medical or readiness assessment. Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.',
     '- Surf safety: ocean sessions carry the reviewed wording (conditions, currents, weather and level are assessed in person by the surfer, coach or responsible adult; the app does not determine whether conditions are safe). Dry-land surf workouts use ordinary strength-training wording. No breath-hold training anywhere.',
     '',
-    '## Points that need a human decision',
+    '## Resolved human-review decisions',
     '',
     '**Review round 1 (human review: CHANGES REQUIRED — SMALL CONTENT PATCH) — applied in this version**',
     '',
@@ -198,7 +198,7 @@ export function renderContentReviewSheet(): string {
     '- Hebrew names: משחקון בשטח קטן, סגירה לריבאונד (Box-Out), קליעה ולייאפים, מעברים ולחץ לאחר איבוד.',
     '- Unchanged and approved: Advanced Football (with the age / coach-adjustment note), bottom turn / top turn / cutback as `SYNTHESIZED`, the six IBBC videos as `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review notes only.',
     '',
-    '**Points that still need a human decision**',
+    '**Decisions listed for review — all resolved / accepted in the final human review**',
     '',
     '1. Final approval of the reviewed surf ocean-safety wording and rip-current briefing.',
     '2. Hebrew names, instructions and cues (native-speaker coach review of the remaining text).',

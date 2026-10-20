@@ -172,9 +172,10 @@ describe('the six SPORT-CONTENT-001 workouts', () => {
     for (const w of professionalWorkoutsFor('FOOTBALL', null)) expect(w.safety).toBeNull();
   });
 
-  it('is content metadata only: published as pending human review, with real sources', () => {
+  it('is content metadata only (no DB column): every workout is PUBLISHED, with real sources', () => {
+    expect(PROFESSIONAL_WORKOUTS).toHaveLength(17);
     for (const w of PROFESSIONAL_WORKOUTS) {
-      expect(w.reviewStatus).toBe('PENDING_HUMAN_REVIEW');
+      expect(w.reviewStatus).toBe('PUBLISHED');
       if (w.sport !== 'BASKETBALL') expect(w.sources.length).toBeGreaterThan(0);
       for (const s of w.sources) expect(SOURCES[s]).toBeDefined();
     }
@@ -202,7 +203,7 @@ describe('SPORT-CONTENT-002: the expanded catalog', () => {
   it('SPORT-CONTENT-001 is unchanged: the six workouts, every earlier Exercise and every Basketball drill are byte-identical', () => {
     // the six 001 workouts, ignoring only the new `focus` tag
     const six = CORE.map(({ focus: _focus, ...rest }) => rest);
-    expect(sha(six)).toBe('75e987ca685be52fca0b7679e77c23e967dd4e15d8f6b21b346ede76399594b5');
+    expect(sha(six)).toBe('62b1c2c09fc093a81ef9b3cc4a9184ed033c4166cc56ac4e009f140e8ed5e688');
     const earlier = BUILTIN_EXERCISES.filter((e) => e.id !== 'BOX_OUT_DRILL');
     expect(earlier).toHaveLength(145);
     expect(sha(earlier)).toBe('c69054985860296add49c4e8ea34807b7ef97b7122c5d4ba6eb211c5528959e7');
@@ -442,5 +443,16 @@ describe('content review round 1', () => {
     expect(SOURCES['SURF-PHYS-3'].name).toMatch(/PMID 27050247/);
     for (const k of ['SURF-PHYS-1', 'SURF-PHYS-2', 'SURF-PHYS-3'] as const) expect(SOURCES[k].name).toMatch(/rationale only/);
     for (const id of ['CONE_DRIBBLE_SLALOM', 'DEFENSIVE_SLIDES', 'LANE_AGILITY']) expect(builtinExercise(id)!.measurement.type).toBe('TIME');
+  });
+
+  it('publication: the 17 stable workout IDs and 22 new Exercise IDs are exactly the reviewed ones', () => {
+    expect(PROFESSIONAL_WORKOUTS.map((w) => w.id)).toEqual([
+      'SURF-FOUNDATION-01', 'SURF-PROGRESSION-01', 'SURF-PERFORMANCE-01', 'FOOTBALL-FOUNDATION-01', 'FOOTBALL-PROGRESSION-01', 'FOOTBALL-PERFORMANCE-01',
+      'SURF-FITNESS-FOUNDATION-01', 'SURF-PADDLE-ENDURANCE-01', 'SURF-POWER-ROTATION-01', 'FOOTBALL-FIRST-TOUCH-PASSING-01', 'FOOTBALL-1V1-FINISHING-01',
+      'FOOTBALL-TRANSITION-PRESSING-01', 'BASKETBALL-BALL-HANDLING-01', 'BASKETBALL-SHOOTING-FINISHING-01', 'BASKETBALL-DEFENSE-REBOUNDING-01',
+      'BASKETBALL-BEGINNER-BALL-FEEL-01', 'BASKETBALL-BEGINNER-SHOOT-LAYUP-01',
+    ]);
+    expect([...SURFING, ...FOOTBALL, ...BASKETBALL_EXPANSION]).toHaveLength(22);
+    for (const w of PROFESSIONAL_WORKOUTS) for (const s of w.sections) for (const i of s.items) expect(builtinExercise(i.exerciseId)).toBeDefined();
   });
 });

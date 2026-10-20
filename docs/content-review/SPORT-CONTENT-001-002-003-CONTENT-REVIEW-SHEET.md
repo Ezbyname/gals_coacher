@@ -1,6 +1,6 @@
 # CONTENT-REVIEW-SHEET — SPORT-CONTENT-001 + 002 + 003 (one combined sheet)
 
-Sheet status: **HUMAN_REVIEWED / READY_FOR_PUBLICATION_APPROVAL** (final human content review: PASS with 2 documentation fixes, applied). Publication itself still needs explicit approval; the per-item review status in the app code stays PENDING_HUMAN_REVIEW until then.
+Sheet status: **PUBLISHED / OWNER APPROVED**. Final human content review: PASS. Owner publication approval: APPROVED. Every professional workout below carries the registry status `PUBLISHED`. The six IBBC videos remain `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review / provenance notes and are NOT shown in the app.
 
 Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) and **17 professional workouts** (6 from SPORT-CONTENT-001, 9 from SPORT-CONTENT-002, 2 from SPORT-CONTENT-003). The SPORT-CONTENT-002 workouts reuse the existing catalog (their only new Exercise is the Basketball box-out); SPORT-CONTENT-003 adds NO Exercise and NO user-facing video: two beginner workouts from existing exercises, with the six IBBC videos kept as review notes only.
 
@@ -11,7 +11,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 - Difficulty is content progression metadata, never a medical or readiness assessment. Advanced content may require adjustment by a coach or responsible adult based on age, experience and physical ability.
 - Surf safety: ocean sessions carry the reviewed wording (conditions, currents, weather and level are assessed in person by the surfer, coach or responsible adult; the app does not determine whether conditions are safe). Dry-land surf workouts use ordinary strength-training wording. No breath-hold training anywhere.
 
-## Points that need a human decision
+## Resolved human-review decisions
 
 **Review round 1 (human review: CHANGES REQUIRED — SMALL CONTENT PATCH) — applied in this version**
 
@@ -24,7 +24,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 - Hebrew names: משחקון בשטח קטן, סגירה לריבאונד (Box-Out), קליעה ולייאפים, מעברים ולחץ לאחר איבוד.
 - Unchanged and approved: Advanced Football (with the age / coach-adjustment note), bottom turn / top turn / cutback as `SYNTHESIZED`, the six IBBC videos as `CANDIDATE_REFERENCE_NOT_HUMAN_VERIFIED` review notes only.
 
-**Points that still need a human decision**
+**Decisions listed for review — all resolved / accepted in the final human review**
 
 1. Final approval of the reviewed surf ocean-safety wording and rip-current briefing.
 2. Hebrew names, instructions and cues (native-speaker coach review of the remaining text).
@@ -945,7 +945,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | BEGINNER |
 | **Focus** | SURF_TECHNIQUE |
 | **Length** | about 45–60 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** קימה, חתירה, גלי קצף ובחירת גל — הבסיס לגלישה בטוחה ונהנית.
@@ -1010,7 +1010,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | INTERMEDIATE |
 | **Focus** | SURF_TECHNIQUE |
 | **Length** | about 60–75 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** חתירה יעילה, צלילת ברווז, מיקום ופניות בסיסיות — מרכיבים רכיבה לפנייה.
@@ -1078,7 +1078,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | ADVANCED |
 | **Focus** | SURF_TECHNIQUE |
 | **Length** | about 75–90 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** האצת חתירה, שילוב בוטום-טופ, קאטבק, סימולציית היט וסקירה — עבודה על ביצועים.
@@ -1149,7 +1149,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | BEGINNER |
 | **Focus** | ALL_ROUND |
 | **Length** | about 45–55 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** שליטה בכדור, דריבל, מסירה ובעיטה — הרבה מגעים בכדור ומשחקון בשטח קטן.
@@ -1214,7 +1214,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | INTERMEDIATE |
 | **Focus** | ALL_ROUND |
 | **Length** | about 60–70 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** קומבינציות, מגע ראשון והסתובבות, גימור ורגל חלשה, ומשחק של 2 נגד 2 או 3 נגד 3.
@@ -1277,7 +1277,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | ADVANCED |
 | **Focus** | ALL_ROUND |
 | **Length** | about 70–85 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** רונדו, קבלה והסתובבות בלחץ, מעבר להתקפה, גימור בלחץ ומשחק מעבר.
@@ -1344,7 +1344,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | BEGINNER |
 | **Focus** | SURF_STRENGTH_FITNESS |
 | **Length** | about 45–60 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** בסיס גופני לגלישה על היבשה: כתפיים ושכמות, גב עליון, דחיפה, יציבות הגו, ירכיים ורגליים ומוביליטי.
@@ -1420,7 +1420,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | INTERMEDIATE |
 | **Focus** | SURF_STRENGTH_FITNESS |
 | **Length** | about 55–70 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** סבולת משיכה, גב עליון, שליטה בשכמות וסבולת הגו, עם מקטעי מאמץ חוזרים — בהשראת אופי החתירה.
@@ -1503,7 +1503,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | ADVANCED |
 | **Focus** | SURF_STRENGTH_FITNESS |
 | **Length** | about 60–75 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** כוח רגליים, הארכה מתפרצת, כוח הגו בסיבוב ויציבות בסיבוב, וחיזוק עליון — תמיכה בתנועה עוצמתית.
@@ -1587,7 +1587,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | INTERMEDIATE |
 | **Focus** | PASSING |
 | **Length** | about 55–65 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** קבלה, מגע ראשון, דיוק מסירה, תנועה אחרי המסירה ומשחק קומבינציות.
@@ -1650,7 +1650,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | INTERMEDIATE |
 | **Focus** | FINISHING |
 | **Length** | about 55–65 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** דריבל מול מגן, שינוי כיוון, קבלה בתנועה, יצירת מקום לבעיטה וגימור.
@@ -1712,7 +1712,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | ADVANCED |
 | **Focus** | TRANSITION |
 | **Length** | about 65–80 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** תגובה במעבר, יתרון מספרי, משחקון בשטח קטן, כללי לחץ אחרי איבוד כדור וקבלת החלטות — דרך פעילות כדורגל.
@@ -1776,7 +1776,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | INTERMEDIATE |
 | **Focus** | BALL_HANDLING |
 | **Length** | about 40–50 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** שליטה בשתי הידיים, שינוי כיוון וקצב, שליטה בגוף וכדרור בתנאים שהולכים ומקשים.
@@ -1836,7 +1836,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | INTERMEDIATE |
 | **Focus** | SHOOTING |
 | **Length** | about 45–60 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** טכניקת זריקה, קליעה אחרי קבלה ואחרי תנועה, וסיומים לסל מזוויות וביד שונות.
@@ -1896,7 +1896,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | INTERMEDIATE |
 | **Focus** | DEFENSE |
 | **Length** | about 45–55 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** עמידה ועבודת רגליים בהגנה, תנועה צדדית, יציאה לשחקן (closeout), סגירה (box-out) וריבאונד, וכושר ספציפי למשחק.
@@ -1963,7 +1963,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | BEGINNER |
 | **Focus** | FUNDAMENTALS |
 | **Length** | about 25–35 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** שליטה בכדור, כדרור ומסירות בסיסיות למתחילים — מתרגילים קיימים בספרייה.
@@ -2027,7 +2027,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Difficulty** | BEGINNER |
 | **Focus** | FUNDAMENTALS |
 | **Length** | about 30–40 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** טכניקת קליעה בסיסית, עבודת רגליים וסיומים קרובים לסל למתחילים — מתרגילים קיימים בספרייה.

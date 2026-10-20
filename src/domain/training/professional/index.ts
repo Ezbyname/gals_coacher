@@ -62,7 +62,7 @@ const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
     coachNotes: [SURF_BRIEFING],
     safety: SURF_SAFETY,
     sources: ['SA-CAMPS', 'SA-SCHED', 'SA-TIPS', 'SLS-RIP', 'ISA-COURSES'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'SURF-PROGRESSION-01',
@@ -93,7 +93,7 @@ const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
     coachNotes: [SURF_BRIEFING],
     safety: SURF_SAFETY,
     sources: ['SA-CAMPS', 'SA-SCHED', 'SA-COACH', 'SA-PROG', 'SLS-RIP'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'SURF-PERFORMANCE-01',
@@ -128,7 +128,7 @@ const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
     coachNotes: [SURF_BRIEFING, SURF_VIDEO_REVIEW],
     safety: SURF_SAFETY,
     sources: ['SA-CAMPS', 'SA-SCHED', 'SA-COACH', 'SA-PROG', 'SLS-RIP'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'FOOTBALL-FOUNDATION-01',
@@ -163,7 +163,7 @@ const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: null,
     sources: ['F-ONCE', 'F-DRIB48', 'F-PASSREC', 'F-64', 'F-57', 'F-51'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'FOOTBALL-PROGRESSION-01',
@@ -197,7 +197,7 @@ const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: null,
     sources: ['F-PASSREC', 'F-FINATK', 'F-TCP-1V1', 'F-ADV812', 'F-111', 'F-42'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'FOOTBALL-PERFORMANCE-01',
@@ -234,7 +234,7 @@ const CORE_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     safety: null,
     sources: ['F-FINATK', 'F-ADV812', 'F-SKILL1215', 'F-TCP-3V2', 'F-TCP-1V1', 'F-MEXU15', 'F-TRANS1215'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
 ];
 
