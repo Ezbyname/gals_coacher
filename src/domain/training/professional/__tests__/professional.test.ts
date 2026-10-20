@@ -402,7 +402,7 @@ describe('content review round 1', () => {
   });
 
   it('the surf dry-land sources are recorded as opened', () => {
-    for (const key of ['ISA-STRENGTH', 'SURF-PHYSIOLOGY', 'SA-SCHED'] as const) expect(SOURCES[key].read).toBe('opened');
+    for (const key of ['ISA-STRENGTH', 'SURF-PHYS-1', 'SURF-PHYS-2', 'SURF-PHYS-3', 'SA-SCHED'] as const) expect(SOURCES[key].read).toBe('opened');
   });
 
   it('BOX_OUT_DRILL: new Hebrew name and instructions, SOURCE_SUPPORTED by USA Basketball', () => {
@@ -434,5 +434,13 @@ describe('content review round 1', () => {
     expect(brief).toMatch(/stay calm and float to conserve energy, signal for help, and if able escape sideways/);
     expect(brief).toMatch(/No single action is always right/);
     expect(brief).not.toMatch(/swim parallel to the shore/);
+  });
+
+  it('the physiology references are explicit (PMID / DOI) and the timed drills show seconds in the sheet', () => {
+    expect(SOURCES['SURF-PHYS-1'].name).toMatch(/PMID 21986691.*10\.1519\/JSC\.0b013e3182392c4b/);
+    expect(SOURCES['SURF-PHYS-2'].name).toMatch(/PMID 21997448.*10\.1519\/JSC\.0b013e31823a3c81/);
+    expect(SOURCES['SURF-PHYS-3'].name).toMatch(/PMID 27050247/);
+    for (const k of ['SURF-PHYS-1', 'SURF-PHYS-2', 'SURF-PHYS-3'] as const) expect(SOURCES[k].name).toMatch(/rationale only/);
+    for (const id of ['CONE_DRIBBLE_SLALOM', 'DEFENSIVE_SLIDES', 'LANE_AGILITY']) expect(builtinExercise(id)!.measurement.type).toBe('TIME');
   });
 });

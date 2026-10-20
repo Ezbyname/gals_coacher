@@ -1,6 +1,6 @@
 # CONTENT-REVIEW-SHEET — SPORT-CONTENT-001 + 002 + 003 (one combined sheet)
 
-Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published as approved until a human approves this sheet.
+Sheet status: **HUMAN_REVIEWED / READY_FOR_PUBLICATION_APPROVAL** (final human content review: PASS with 2 documentation fixes, applied). Publication itself still needs explicit approval; the per-item review status in the app code stays PENDING_HUMAN_REVIEW until then.
 
 Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) and **17 professional workouts** (6 from SPORT-CONTENT-001, 9 from SPORT-CONTENT-002, 2 from SPORT-CONTENT-003). The SPORT-CONTENT-002 workouts reuse the existing catalog (their only new Exercise is the Basketball box-out); SPORT-CONTENT-003 adds NO Exercise and NO user-facing video: two beginner workouts from existing exercises, with the six IBBC videos kept as review notes only.
 
@@ -18,7 +18,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 - Surf ocean-safety wording replaced (HE + EN) and the rip-current briefing aligned with Surf Life Saving NSW (stay calm / float, signal for help, if able escape sideways toward breaking waves, reassess).
 - `SURF_TAKE_OFF`: topic is now `SOURCE_SUPPORTED` (opened surf-school page that teaches a whitewater take-off); wording, cues and dosage stay `SYNTHESIZED` / `ORIGINAL_RECOMMENDATION`. No claim that ISA or Surfing Australia authored the drill.
 - Surf dry-land sources recorded as opened: Surfing Australia HPC, ISA Surf Strength and Mobility, surfing-performance research.
-- The three prescriptions that had no target now have one: `CONE_DRIBBLE_SLALOM` 4 × 30 s, `DEFENSIVE_SLIDES` 4 × 30 s, `LANE_AGILITY` 3 × 30 s.
+- The three prescriptions that had no target now have one: `CONE_DRIBBLE_SLALOM` 4 × 30s, rest 60s; `DEFENSIVE_SLIDES` 4 × 30s, rest 60s; `LANE_AGILITY` 3 × 30s, rest 120s (these exercises are timed drills; the target is in seconds).
 - `BASKETBALL-SHOOTING-FINISHING-01` reduced to about 160 attempts. `SURF-POWER-ROTATION-01` reduced to about 15 movements (one jump, one hip extension, no Russian twist). `SURF-PADDLE-ENDURANCE-01` now has ONE conditioning station (ski erg OR rowing machine OR battle ropes) and two rows.
 - `BOX_OUT_DRILL`: Hebrew name and instructions reworded; topic `SOURCE_SUPPORTED` (USA Basketball). USA Basketball is recorded for the Basketball workouts as contextual evidence for the skill families only.
 - Hebrew names: משחקון בשטח קטן, סגירה לריבאונד (Box-Out), קליעה ולייאפים, מעברים ולחץ לאחר איבוד.
@@ -53,7 +53,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | SURFING |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 3 × 6 reps, rest 30 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 3 × 6 reps, rest 30s |
 | **Equipment** | SURFBOARD OR MAT |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -95,7 +95,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | SURFING |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | duration (seconds) |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 3 × 120s, rest 60 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 3 × 120s, rest 60s |
 | **Equipment** | SURFBOARD |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -135,7 +135,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | SURFING |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 4 reps, rest 60 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 4 reps, rest 60s |
 | **Equipment** | SURFBOARD |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -174,7 +174,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | SURFING |
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 4 reps, rest 60 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 4 reps, rest 60s |
 | **Equipment** | SURFBOARD |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -214,7 +214,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | SURFING |
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 6 reps, rest 0 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 6 reps, rest 0s |
 | **Equipment** | none (bodyweight) |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -253,7 +253,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | SURFING |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 6 reps, rest 0 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 6 reps, rest 0s |
 | **Equipment** | SURFBOARD |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -293,7 +293,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | SURFING |
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 5 reps, rest 45 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 5 reps, rest 45s |
 | **Equipment** | SURFBOARD |
 | **Evidence class** | topic: `SYNTHESIZED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -333,7 +333,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | SURFING |
 | **Difficulty** | ADVANCED (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 5 reps, rest 45 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 5 reps, rest 45s |
 | **Equipment** | SURFBOARD |
 | **Evidence class** | topic: `SYNTHESIZED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -373,7 +373,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | SURFING |
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 5 reps, rest 45 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 5 reps, rest 45s |
 | **Equipment** | SURFBOARD |
 | **Evidence class** | topic: `SYNTHESIZED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -413,7 +413,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | SURFING |
 | **Difficulty** | ADVANCED (content progression, not a readiness assessment) |
 | **Measurement** | duration (seconds) |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 900s, rest 300 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 2 × 900s, rest 300s |
 | **Equipment** | SURFBOARD |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -454,7 +454,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | duration (seconds) |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 300s, rest 30 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 300s, rest 30s |
 | **Equipment** | SOCCER_BALL |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -494,7 +494,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | duration (seconds) |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 4 × 60s, rest 30 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 4 × 60s, rest 30s |
 | **Equipment** | SOCCER_BALL + CONES |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -534,7 +534,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 6 × 10 reps, rest 20 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 6 × 10 reps, rest 20s |
 | **Equipment** | SOCCER_BALL + CONES |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -575,7 +575,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 6 × 8 reps, rest 30 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 6 × 8 reps, rest 30s |
 | **Equipment** | SOCCER_BALL + CONES |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -615,7 +615,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | makes / attempts |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 10 attempts, rest 60 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 10 attempts, rest 60s |
 | **Equipment** | SOCCER_BALL + SOCCER_GOAL |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -655,7 +655,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | makes / attempts |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 10 attempts, rest 60 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 10 attempts, rest 60s |
 | **Equipment** | SOCCER_BALL + SOCCER_GOAL |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -695,7 +695,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Measurement** | duration (seconds) |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 4 × 120s, rest 30 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 4 × 120s, rest 30s |
 | **Equipment** | SOCCER_BALL + CONES |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -736,7 +736,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Measurement** | duration (seconds) |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 4 × 120s, rest 60 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 4 × 120s, rest 60s |
 | **Equipment** | SOCCER_BALL + CONES |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -778,7 +778,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Measurement** | duration (seconds) |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 900s, rest 0 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 900s, rest 0s |
 | **Equipment** | SOCCER_BALL + SOCCER_GOAL + CONES |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -820,7 +820,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | ADVANCED (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 7 reps, rest 90 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 7 reps, rest 90s |
 | **Equipment** | SOCCER_BALL + SOCCER_GOAL + CONES |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -860,7 +860,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | FOOTBALL |
 | **Difficulty** | ADVANCED (content progression, not a readiness assessment) |
 | **Measurement** | makes / attempts |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 10 attempts, rest 90 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 1 × 10 attempts, rest 90s |
 | **Equipment** | SOCCER_BALL + SOCCER_GOAL |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -902,7 +902,7 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 | **Sport** | BASKETBALL |
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Measurement** | repetitions |
-| **Dosage (ORIGINAL_RECOMMENDATION)** | 3 × 8 reps, rest 45 s |
+| **Dosage (ORIGINAL_RECOMMENDATION)** | 3 × 8 reps, rest 45s |
 | **Equipment** | BASKETBALL |
 | **Evidence class** | topic: `SOURCE_SUPPORTED` · cues: `SYNTHESIZED` · dosage: `ORIGINAL_RECOMMENDATION` |
 
@@ -956,28 +956,28 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 4 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Pop-up, paddling and waves / קימה, חתירה וגלים**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SURF_POP_UP | Pop-up and Stance (on Land) | קימה על הלוח ויציבה (על היבשה) | 3 × 6 reps, rest 30 s |
-| 2 | SURF_PADDLING | Paddling Technique | טכניקת חתירה | 3 × 120s, rest 60 s |
-| 3 | SURF_TAKE_OFF | Whitewater Take-off | קימה בגלי קצף | 2 × 4 reps, rest 60 s |
-| 4 | SURF_TRIM_AND_SPEED | Trim, Speed Generation and Controlled Exit | רכיבה, יצירת מהירות ויציאה מבוקרת | 1 × 6 reps, rest 0 s |
-| 5 | SURF_WAVE_SELECTION_POSITIONING | Wave Selection and Positioning | בחירת גל ומיקום | 1 × 5 reps, rest 0 s |
+| 1 | SURF_POP_UP | Pop-up and Stance (on Land) | קימה על הלוח ויציבה (על היבשה) | 3 × 6 reps, rest 30s |
+| 2 | SURF_PADDLING | Paddling Technique | טכניקת חתירה | 3 × 120s, rest 60s |
+| 3 | SURF_TAKE_OFF | Whitewater Take-off | קימה בגלי קצף | 2 × 4 reps, rest 60s |
+| 4 | SURF_TRIM_AND_SPEED | Trim, Speed Generation and Controlled Exit | רכיבה, יצירת מהירות ויציאה מבוקרת | 1 × 6 reps, rest 0s |
+| 5 | SURF_WAVE_SELECTION_POSITIONING | Wave Selection and Positioning | בחירת גל ומיקום | 1 × 5 reps, rest 0s |
 
 **Section 3 — Mobility cooldown / מוביליטי ושחרור**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1021,31 +1021,31 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 5 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 4 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 5 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Paddling, positioning and turns / חתירה, מיקום ופניות**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SURF_PADDLING | Paddling Technique | טכניקת חתירה | 3 × 180s, rest 60 s |
-| 2 | SURF_DUCK_DIVE | Duck-Dive Technique | צלילת ברווז | 2 × 4 reps, rest 60 s |
-| 3 | SURF_WAVE_SELECTION_POSITIONING | Wave Selection and Positioning | בחירת גל ומיקום | 1 × 6 reps, rest 0 s |
-| 4 | SURF_TRIM_AND_SPEED | Trim, Speed Generation and Controlled Exit | רכיבה, יצירת מהירות ויציאה מבוקרת | 1 × 7 reps, rest 0 s |
-| 5 | SURF_BOTTOM_TURN | Bottom Turn | בוטום טרן | 2 × 5 reps, rest 45 s |
-| 6 | SURF_CUTBACK | Cutback (Re-entry as an Advanced Variant) | קאטבק (ריאנטרי כגרסה מתקדמת) | 2 × 5 reps, rest 45 s |
+| 1 | SURF_PADDLING | Paddling Technique | טכניקת חתירה | 3 × 180s, rest 60s |
+| 2 | SURF_DUCK_DIVE | Duck-Dive Technique | צלילת ברווז | 2 × 4 reps, rest 60s |
+| 3 | SURF_WAVE_SELECTION_POSITIONING | Wave Selection and Positioning | בחירת גל ומיקום | 1 × 6 reps, rest 0s |
+| 4 | SURF_TRIM_AND_SPEED | Trim, Speed Generation and Controlled Exit | רכיבה, יצירת מהירות ויציאה מבוקרת | 1 × 7 reps, rest 0s |
+| 5 | SURF_BOTTOM_TURN | Bottom Turn | בוטום טרן | 2 × 5 reps, rest 45s |
+| 6 | SURF_CUTBACK | Cutback (Re-entry as an Advanced Variant) | קאטבק (ריאנטרי כגרסה מתקדמת) | 2 × 5 reps, rest 45s |
 
 **Section 3 — Mobility cooldown / מוביליטי ושחרור**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | HIP_FLEXOR_STRETCH | Kneeling Hip Flexor Stretch | מתיחת כופפי ירך בכריעה | 2 × 30s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | HIP_FLEXOR_STRETCH | Kneeling Hip Flexor Stretch | מתיחת כופפי ירך בכריעה | 2 × 30s, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 4 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1089,32 +1089,32 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
-| 5 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 4 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
+| 5 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Performance in the waves / ביצועים בגלים**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SURF_PADDLING | Paddling Technique | טכניקת חתירה | 5 × 30s, rest 45 s |
-| 2 | SURF_WAVE_SELECTION_POSITIONING | Wave Selection and Positioning | בחירת גל ומיקום | 1 × 8 reps, rest 0 s |
-| 3 | SURF_BOTTOM_TURN | Bottom Turn | בוטום טרן | 2 × 5 reps, rest 45 s |
-| 4 | SURF_TOP_TURN | Top Turn (incl. Bottom-to-Top Combination) | טופ טרן (כולל שילוב בוטום-טופ) | 2 × 5 reps, rest 45 s |
-| 5 | SURF_CUTBACK | Cutback (Re-entry as an Advanced Variant) | קאטבק (ריאנטרי כגרסה מתקדמת) | 1 × 5 reps, rest 60 s |
-| 6 | SURF_TRIM_AND_SPEED | Trim, Speed Generation and Controlled Exit | רכיבה, יצירת מהירות ויציאה מבוקרת | 1 × 6 reps, rest 0 s |
-| 7 | SURF_HEAT_SIMULATION | Heat Simulation | סימולציית היט | 2 × 900s, rest 300 s |
+| 1 | SURF_PADDLING | Paddling Technique | טכניקת חתירה | 5 × 30s, rest 45s |
+| 2 | SURF_WAVE_SELECTION_POSITIONING | Wave Selection and Positioning | בחירת גל ומיקום | 1 × 8 reps, rest 0s |
+| 3 | SURF_BOTTOM_TURN | Bottom Turn | בוטום טרן | 2 × 5 reps, rest 45s |
+| 4 | SURF_TOP_TURN | Top Turn (incl. Bottom-to-Top Combination) | טופ טרן (כולל שילוב בוטום-טופ) | 2 × 5 reps, rest 45s |
+| 5 | SURF_CUTBACK | Cutback (Re-entry as an Advanced Variant) | קאטבק (ריאנטרי כגרסה מתקדמת) | 1 × 5 reps, rest 60s |
+| 6 | SURF_TRIM_AND_SPEED | Trim, Speed Generation and Controlled Exit | רכיבה, יצירת מהירות ויציאה מבוקרת | 1 × 6 reps, rest 0s |
+| 7 | SURF_HEAT_SIMULATION | Heat Simulation | סימולציית היט | 2 × 900s, rest 300s |
 
 **Section 3 — Recovery mobility / התאוששות**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | CALF_STRETCH | Wall Calf Stretch | מתיחת שוק מול קיר | 2 × 30s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 4 | CALF_STRETCH | Wall Calf Stretch | מתיחת שוק מול קיר | 2 × 30s, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1160,27 +1160,27 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | BUTT_KICKS | Butt Kicks | בעיטות עקב לישבן | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
-| 5 | AGILITY_LADDER_FOOTWORK | Agility Ladder Footwork | עבודת רגליים בסולם קואורדינציה | 4 × 1 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BUTT_KICKS | Butt Kicks | בעיטות עקב לישבן | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 4 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
+| 5 | AGILITY_LADDER_FOOTWORK | Agility Ladder Footwork | עבודת רגליים בסולם קואורדינציה | 4 × 1 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Technique and shooting / טכניקה ובעיטה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_BALL_MASTERY | Ball Mastery | שליטה בכדור | 1 × 300s, rest 30 s |
-| 2 | FB_DRIBBLING_COURSE | Cone Dribbling and Change of Direction | דריבל בין קונוסים ושינוי כיוון | 4 × 60s, rest 30 s |
-| 3 | FB_PASS_AND_CONTROL | Passing and First Touch | מסירה ושליטה | 6 × 10 reps, rest 20 s |
-| 4 | FB_DRIBBLE_AND_SHOOT | Dribble and Shoot | דריבל ובעיטה | 1 × 10 attempts, rest 60 s |
-| 5 | FB_SHOOTING_ACCURACY | Target Shooting | בעיטות למטרה | 1 × 10 attempts, rest 60 s |
+| 1 | FB_BALL_MASTERY | Ball Mastery | שליטה בכדור | 1 × 300s, rest 30s |
+| 2 | FB_DRIBBLING_COURSE | Cone Dribbling and Change of Direction | דריבל בין קונוסים ושינוי כיוון | 4 × 60s, rest 30s |
+| 3 | FB_PASS_AND_CONTROL | Passing and First Touch | מסירה ושליטה | 6 × 10 reps, rest 20s |
+| 4 | FB_DRIBBLE_AND_SHOOT | Dribble and Shoot | דריבל ובעיטה | 1 × 10 attempts, rest 60s |
+| 5 | FB_SHOOTING_ACCURACY | Target Shooting | בעיטות למטרה | 1 × 10 attempts, rest 60s |
 
 **Section 3 — Small game / משחקון בשטח קטן**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 600s, rest 0 s |
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 600s, rest 0s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1225,25 +1225,25 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 3 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 4 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Technique and combination play / טכניקה ומשחק משולב**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_COMBINATION_PLAY | Combination Play | משחק קומבינציות | 4 × 120s, rest 30 s |
-| 2 | FB_FIRST_TOUCH_AND_TURN | First Touch and Turn into Space | מגע ראשון והסתובבות | 6 × 8 reps, rest 30 s |
-| 3 | FB_DRIBBLE_AND_SHOOT | Dribble and Shoot | דריבל ובעיטה | 1 × 10 attempts, rest 60 s |
-| 4 | FB_PASS_AND_CONTROL | Passing and First Touch | מסירה ושליטה | 3 × 10 reps, rest 20 s |
+| 1 | FB_COMBINATION_PLAY | Combination Play | משחק קומבינציות | 4 × 120s, rest 30s |
+| 2 | FB_FIRST_TOUCH_AND_TURN | First Touch and Turn into Space | מגע ראשון והסתובבות | 6 × 8 reps, rest 30s |
+| 3 | FB_DRIBBLE_AND_SHOOT | Dribble and Shoot | דריבל ובעיטה | 1 × 10 attempts, rest 60s |
+| 4 | FB_PASS_AND_CONTROL | Passing and First Touch | מסירה ושליטה | 3 × 10 reps, rest 20s |
 
 **Section 3 — Small game / משחקון בשטח קטן**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 900s, rest 0 s |
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 900s, rest 0s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1288,26 +1288,26 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | AGILITY_LADDER_FOOTWORK | Agility Ladder Footwork | עבודת רגליים בסולם קואורדינציה | 4 × 1 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 5 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
+| 4 | AGILITY_LADDER_FOOTWORK | Agility Ladder Footwork | עבודת רגליים בסולם קואורדינציה | 4 × 1 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 5 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Pressure and transition / לחץ ומעבר**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_RONDO | Rondo (Keep-Ball) | רונדו (שמירת כדור) | 4 × 120s, rest 60 s |
-| 2 | FB_FIRST_TOUCH_AND_TURN | First Touch and Turn into Space | מגע ראשון והסתובבות | 3 × 6 reps, rest 30 s |
-| 3 | FB_ATTACKING_TRANSITION_OVERLOAD | Attacking Transition with a Numerical Advantage | מעבר להתקפה ביתרון מספרי | 1 × 7 reps, rest 90 s |
-| 4 | FB_FINISHING_UNDER_PRESSURE | Finishing under Pressure | גימור תחת לחץ | 1 × 10 attempts, rest 90 s |
+| 1 | FB_RONDO | Rondo (Keep-Ball) | רונדו (שמירת כדור) | 4 × 120s, rest 60s |
+| 2 | FB_FIRST_TOUCH_AND_TURN | First Touch and Turn into Space | מגע ראשון והסתובבות | 3 × 6 reps, rest 30s |
+| 3 | FB_ATTACKING_TRANSITION_OVERLOAD | Attacking Transition with a Numerical Advantage | מעבר להתקפה ביתרון מספרי | 1 × 7 reps, rest 90s |
+| 4 | FB_FINISHING_UNDER_PRESSURE | Finishing under Pressure | גימור תחת לחץ | 1 × 10 attempts, rest 90s |
 
 **Section 3 — Transition game / משחק מעבר**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 1080s, rest 0 s |
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 1080s, rest 0s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1355,37 +1355,37 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 4 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Foundation strength / כוח בסיס**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | BAND_ROW | Band Row | חתירה בגומייה | 3 × 12 reps, rest 45 s |
-| 2 | PUSH_UP | Push-Up | שכיבות סמיכה | 3 × 8 reps, rest 60 s |
-| 3 | FACE_PULL | Face Pull | משיכה לפנים | 3 × 12 reps, rest 45 s |
-| 4 | GOBLET_SQUAT | Goblet Squat | סקוואט גביע | 3 × 10 reps, rest 60 s |
-| 5 | REVERSE_LUNGE | Reverse Lunge | מכרע לאחור | 2 × 8 reps, rest 45 s |
-| 6 | GLUTE_BRIDGE | Glute Bridge | גשר עכוז | 3 × 12 reps, rest 45 s |
+| 1 | BAND_ROW | Band Row | חתירה בגומייה | 3 × 12 reps, rest 45s |
+| 2 | PUSH_UP | Push-Up | שכיבות סמיכה | 3 × 8 reps, rest 60s |
+| 3 | FACE_PULL | Face Pull | משיכה לפנים | 3 × 12 reps, rest 45s |
+| 4 | GOBLET_SQUAT | Goblet Squat | סקוואט גביע | 3 × 10 reps, rest 60s |
+| 5 | REVERSE_LUNGE | Reverse Lunge | מכרע לאחור | 2 × 8 reps, rest 45s |
+| 6 | GLUTE_BRIDGE | Glute Bridge | גשר עכוז | 3 × 12 reps, rest 45s |
 
 **Section 3 — Trunk stability / יציבות הגו**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | PLANK | Plank | פלאנק | 3 × 30s, rest 30 s |
-| 2 | DEAD_BUG | Dead Bug | חיפושית מתה | 3 × 8 reps, rest 30 s |
-| 3 | BIRD_DOG | Bird Dog | ציפור-כלב | 3 × 8 reps, rest 30 s |
+| 1 | PLANK | Plank | פלאנק | 3 × 30s, rest 30s |
+| 2 | DEAD_BUG | Dead Bug | חיפושית מתה | 3 × 8 reps, rest 30s |
+| 3 | BIRD_DOG | Bird Dog | ציפור-כלב | 3 × 8 reps, rest 30s |
 
 **Section 4 — Mobility cooldown / מוביליטי ושחרור**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1401,9 +1401,11 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 **Sources:**
 - Surfing Australia — camp schedule — https://surfingaustralia.com/hpc/camp-schedule/ _(opened)_
 - ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(opened)_
-- Published surfing performance / physiology research — cardiorespiratory fitness, muscular endurance, strength, anaerobic power, significant upper-torso demand (opened by the content reviewer; individual papers are not listed here) _(opened)_
+- Farley O, Harris NK, Kilding AE. Physiological demands of competitive surfing. Journal of Strength and Conditioning Research. PMID 21986691. DOI 10.1519/JSC.0b013e3182392c4b — supports the physiological-demand rationale only, not our programming — https://pubmed.ncbi.nlm.nih.gov/21986691/ _(opened)_
+- Farley O, Harris NK, Kilding AE. Anaerobic and aerobic fitness profiling of competitive surfers. Journal of Strength and Conditioning Research. PMID 21997448. DOI 10.1519/JSC.0b013e31823a3c81 — supports the physiological-demand rationale only, not our programming — https://pubmed.ncbi.nlm.nih.gov/21997448/ _(opened)_
+- Performance Analysis of Surfing: A Review. PMID 27050247 — supports the physiological-demand rationale only, not our programming — https://pubmed.ncbi.nlm.nih.gov/27050247/ _(opened)_
 
-**Exactly what the sources support:** Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYSIOLOGY, opened): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage.
+**Exactly what the sources support:** Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYS-1, SURF-PHYS-2, SURF-PHYS-3 — opened; physiological-demand rationale only, not the programming): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage.
 
 **What is Gals Coacher synthesis:** The exact exercise selection, the order, the movement families chosen, every set / repetition / duration and the sectioning. Gym exercises are NOT claimed to be paddling.
 
@@ -1429,42 +1431,42 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 4 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Pulling endurance / סבולת משיכה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | ONE_ARM_DUMBBELL_ROW | One-Arm Dumbbell Row | חתירה ביד אחת עם משקולת | 3 × 15 reps, rest 45 s |
-| 2 | SEATED_CABLE_ROW | Seated Cable Row | חתירה בכבל בישיבה | 3 × 15 reps, rest 45 s |
-| 3 | FACE_PULL | Face Pull | משיכה לפנים | 3 × 20 reps, rest 30 s |
+| 1 | ONE_ARM_DUMBBELL_ROW | One-Arm Dumbbell Row | חתירה ביד אחת עם משקולת | 3 × 15 reps, rest 45s |
+| 2 | SEATED_CABLE_ROW | Seated Cable Row | חתירה בכבל בישיבה | 3 × 15 reps, rest 45s |
+| 3 | FACE_PULL | Face Pull | משיכה לפנים | 3 × 20 reps, rest 30s |
 
 **Section 3 — Trunk endurance / סבולת הגו**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | PLANK | Plank | פלאנק | 3 × 45s, rest 30 s |
-| 2 | SIDE_PLANK | Side Plank | פלאנק צידי | 2 × 30s, rest 30 s |
-| 3 | HOLLOW_HOLD | Hollow Hold | החזקת סירה | 3 × 20s, rest 30 s |
+| 1 | PLANK | Plank | פלאנק | 3 × 45s, rest 30s |
+| 2 | SIDE_PLANK | Side Plank | פלאנק צידי | 2 × 30s, rest 30s |
+| 3 | HOLLOW_HOLD | Hollow Hold | החזקת סירה | 3 × 20s, rest 30s |
 
 **Section 4 — Repeated-effort intervals — one conditioning station: ski erg, rowing machine or battle ropes / מאמץ חוזר במקטעים — תחנה אחת לבחירה: סקי-ארג, מכונת חתירה או חבלי קרב**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SKI_ERG_INTERVALS | Ski Erg Intervals | אינטרוולים בסקי ארג | 6 × 30s, rest 60 s |
-| 2 | MOUNTAIN_CLIMBERS | Mountain Climbers | מטפסי הרים | 3 × 30s, rest 30 s |
+| 1 | SKI_ERG_INTERVALS | Ski Erg Intervals | אינטרוולים בסקי ארג | 6 × 30s, rest 60s |
+| 2 | MOUNTAIN_CLIMBERS | Mountain Climbers | מטפסי הרים | 3 × 30s, rest 30s |
 
 **Section 5 — Mobility and recovery / מוביליטי והתאוששות**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | HIP_FLEXOR_STRETCH | Kneeling Hip Flexor Stretch | מתיחת כופפי ירך בכריעה | 2 × 30s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIP_FLEXOR_STRETCH | Kneeling Hip Flexor Stretch | מתיחת כופפי ירך בכריעה | 2 × 30s, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | CHILDS_POSE | Child’s Pose | תנוחת הילד | 1 × 45s, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 4 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1482,9 +1484,11 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 **Sources:**
 - Surfing Australia — camp schedule — https://surfingaustralia.com/hpc/camp-schedule/ _(opened)_
 - ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(opened)_
-- Published surfing performance / physiology research — cardiorespiratory fitness, muscular endurance, strength, anaerobic power, significant upper-torso demand (opened by the content reviewer; individual papers are not listed here) _(opened)_
+- Farley O, Harris NK, Kilding AE. Physiological demands of competitive surfing. Journal of Strength and Conditioning Research. PMID 21986691. DOI 10.1519/JSC.0b013e3182392c4b — supports the physiological-demand rationale only, not our programming — https://pubmed.ncbi.nlm.nih.gov/21986691/ _(opened)_
+- Farley O, Harris NK, Kilding AE. Anaerobic and aerobic fitness profiling of competitive surfers. Journal of Strength and Conditioning Research. PMID 21997448. DOI 10.1519/JSC.0b013e31823a3c81 — supports the physiological-demand rationale only, not our programming — https://pubmed.ncbi.nlm.nih.gov/21997448/ _(opened)_
+- Performance Analysis of Surfing: A Review. PMID 27050247 — supports the physiological-demand rationale only, not our programming — https://pubmed.ncbi.nlm.nih.gov/27050247/ _(opened)_
 
-**Exactly what the sources support:** Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYSIOLOGY, opened): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage. The repeated, intermittent paddling demand is supported by the same research.
+**Exactly what the sources support:** Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYS-1, SURF-PHYS-2, SURF-PHYS-3 — opened; physiological-demand rationale only, not the programming): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage. The repeated, intermittent paddling demand is supported by the same research.
 
 **What is Gals Coacher synthesis:** The repeated-effort interval structure (6 × 30 s style), the ONE conditioning station (ski erg OR rowing machine OR battle ropes — not all of them), the two pulling-endurance rows plus face pull, the trunk endurance selection and every dosage. It does not reproduce water mechanics, and there is no breath-hold training.
 
@@ -1510,41 +1514,41 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Leg strength and explosive extension / כוח רגליים והארכה מתפרצת**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | BULGARIAN_SPLIT_SQUAT | Bulgarian Split Squat | סקוואט בולגרי | 3 × 8 reps, rest 90 s |
-| 2 | SINGLE_LEG_RDL | Single-Leg Romanian Deadlift | דדליפט רומני על רגל אחת | 3 × 8 reps, rest 60 s |
-| 3 | HIP_THRUST | Hip Thrust | דחיקת אגן | 3 × 8 reps, rest 90 s |
-| 4 | SQUAT_JUMP | Squat Jump | קפיצות סקוואט | 3 × 5 reps, rest 60 s |
+| 1 | BULGARIAN_SPLIT_SQUAT | Bulgarian Split Squat | סקוואט בולגרי | 3 × 8 reps, rest 90s |
+| 2 | SINGLE_LEG_RDL | Single-Leg Romanian Deadlift | דדליפט רומני על רגל אחת | 3 × 8 reps, rest 60s |
+| 3 | HIP_THRUST | Hip Thrust | דחיקת אגן | 3 × 8 reps, rest 90s |
+| 4 | SQUAT_JUMP | Squat Jump | קפיצות סקוואט | 3 × 5 reps, rest 60s |
 
 **Section 3 — Push, pull and get-up pattern / דחיפה, משיכה וקימה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | PUSH_UP | Push-Up | שכיבות סמיכה | 3 × 12 reps, rest 60 s |
-| 2 | INVERTED_ROW | Inverted Row | חתירה הפוכה | 3 × 10 reps, rest 60 s |
-| 3 | BURPEE | Burpee | ברפי | 3 × 8 reps, rest 60 s |
+| 1 | PUSH_UP | Push-Up | שכיבות סמיכה | 3 × 12 reps, rest 60s |
+| 2 | INVERTED_ROW | Inverted Row | חתירה הפוכה | 3 × 10 reps, rest 60s |
+| 3 | BURPEE | Burpee | ברפי | 3 × 8 reps, rest 60s |
 
 **Section 4 — Rotation and trunk stability / סיבוב ויציבות הגו**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | MED_BALL_ROTATIONAL_THROW | Medicine Ball Rotational Throw | זריקת כדור כוח בסיבוב | 3 × 6 reps, rest 60 s |
-| 2 | PALLOF_PRESS | Pallof Press | לחיצת פאלוף | 3 × 10 reps, rest 45 s |
-| 3 | SIDE_PLANK | Side Plank | פלאנק צידי | 3 × 30s, rest 30 s |
+| 1 | MED_BALL_ROTATIONAL_THROW | Medicine Ball Rotational Throw | זריקת כדור כוח בסיבוב | 3 × 6 reps, rest 60s |
+| 2 | PALLOF_PRESS | Pallof Press | לחיצת פאלוף | 3 × 10 reps, rest 45s |
+| 3 | SIDE_PLANK | Side Plank | פלאנק צידי | 3 × 30s, rest 30s |
 
 **Section 5 — Mobility / מוביליטי**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | HIP_90_90 | 90/90 Hip Switch | מעבר 90/90 לירכיים | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1564,9 +1568,11 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 **Sources:**
 - Surfing Australia — camp schedule — https://surfingaustralia.com/hpc/camp-schedule/ _(opened)_
 - ISA — Surf Strength and Mobility Training (resistance training, cardio, mobility) — https://source.isasurf.org/?academy=112&course=6055&view=course_view _(opened)_
-- Published surfing performance / physiology research — cardiorespiratory fitness, muscular endurance, strength, anaerobic power, significant upper-torso demand (opened by the content reviewer; individual papers are not listed here) _(opened)_
+- Farley O, Harris NK, Kilding AE. Physiological demands of competitive surfing. Journal of Strength and Conditioning Research. PMID 21986691. DOI 10.1519/JSC.0b013e3182392c4b — supports the physiological-demand rationale only, not our programming — https://pubmed.ncbi.nlm.nih.gov/21986691/ _(opened)_
+- Farley O, Harris NK, Kilding AE. Anaerobic and aerobic fitness profiling of competitive surfers. Journal of Strength and Conditioning Research. PMID 21997448. DOI 10.1519/JSC.0b013e31823a3c81 — supports the physiological-demand rationale only, not our programming — https://pubmed.ncbi.nlm.nih.gov/21997448/ _(opened)_
+- Performance Analysis of Surfing: A Review. PMID 27050247 — supports the physiological-demand rationale only, not our programming — https://pubmed.ncbi.nlm.nih.gov/27050247/ _(opened)_
 
-**Exactly what the sources support:** Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYSIOLOGY, opened): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage.
+**Exactly what the sources support:** Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYS-1, SURF-PHYS-2, SURF-PHYS-3 — opened; physiological-demand rationale only, not the programming): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage.
 
 **What is Gals Coacher synthesis:** The lower-body strength selection with ONE jump (squat jump) and ONE hip-extension (hip thrust), the rotation / anti-rotation trio (rotational throw, Pallof press, side plank — no Russian twist), the burpee as a general lie-down-and-get-up pattern (not a pop-up copy), about 15 movements and every dosage. Strength alone is not claimed to make an advanced surfer. Advanced content may need adjustment by a coach or responsible adult.
 
@@ -1592,25 +1598,25 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | AGILITY_LADDER_FOOTWORK | Agility Ladder Footwork | עבודת רגליים בסולם קואורדינציה | 4 × 1 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
+| 4 | AGILITY_LADDER_FOOTWORK | Agility Ladder Footwork | עבודת רגליים בסולם קואורדינציה | 4 × 1 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — First touch and passing / מגע ראשון ומסירה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_BALL_MASTERY | Ball Mastery | שליטה בכדור | 1 × 240s, rest 30 s |
-| 2 | FB_PASS_AND_CONTROL | Passing and First Touch | מסירה ושליטה | 6 × 10 reps, rest 20 s |
-| 3 | FB_FIRST_TOUCH_AND_TURN | First Touch and Turn into Space | מגע ראשון והסתובבות | 6 × 8 reps, rest 30 s |
+| 1 | FB_BALL_MASTERY | Ball Mastery | שליטה בכדור | 1 × 240s, rest 30s |
+| 2 | FB_PASS_AND_CONTROL | Passing and First Touch | מסירה ושליטה | 6 × 10 reps, rest 20s |
+| 3 | FB_FIRST_TOUCH_AND_TURN | First Touch and Turn into Space | מגע ראשון והסתובבות | 6 × 8 reps, rest 30s |
 
 **Section 3 — Combinations and keep-ball / קומבינציות ושמירת כדור**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_COMBINATION_PLAY | Combination Play | משחק קומבינציות | 4 × 150s, rest 30 s |
-| 2 | FB_RONDO | Rondo (Keep-Ball) | רונדו (שמירת כדור) | 4 × 120s, rest 60 s |
+| 1 | FB_COMBINATION_PLAY | Combination Play | משחק קומבינציות | 4 × 150s, rest 30s |
+| 2 | FB_RONDO | Rondo (Keep-Ball) | רונדו (שמירת כדור) | 4 × 120s, rest 60s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1655,25 +1661,25 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | BUTT_KICKS | Butt Kicks | בעיטות עקב לישבן | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 3 | BUTT_KICKS | Butt Kicks | בעיטות עקב לישבן | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 4 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Dribbling, receiving and finishing / דריבל, קבלה וגימור**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_DRIBBLING_COURSE | Cone Dribbling and Change of Direction | דריבל בין קונוסים ושינוי כיוון | 4 × 60s, rest 30 s |
-| 2 | FB_FIRST_TOUCH_AND_TURN | First Touch and Turn into Space | מגע ראשון והסתובבות | 6 × 6 reps, rest 30 s |
-| 3 | FB_DRIBBLE_AND_SHOOT | Dribble and Shoot | דריבל ובעיטה | 1 × 10 attempts, rest 60 s |
-| 4 | FB_SHOOTING_ACCURACY | Target Shooting | בעיטות למטרה | 1 × 10 attempts, rest 60 s |
+| 1 | FB_DRIBBLING_COURSE | Cone Dribbling and Change of Direction | דריבל בין קונוסים ושינוי כיוון | 4 × 60s, rest 30s |
+| 2 | FB_FIRST_TOUCH_AND_TURN | First Touch and Turn into Space | מגע ראשון והסתובבות | 6 × 6 reps, rest 30s |
+| 3 | FB_DRIBBLE_AND_SHOOT | Dribble and Shoot | דריבל ובעיטה | 1 × 10 attempts, rest 60s |
+| 4 | FB_SHOOTING_ACCURACY | Target Shooting | בעיטות למטרה | 1 × 10 attempts, rest 60s |
 
 **Section 3 — A 1v1 / 2v2 game / משחק 1 על 1 / 2 על 2**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 720s, rest 0 s |
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 1 × 720s, rest 0s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1717,25 +1723,25 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
-| 4 | AGILITY_LADDER_FOOTWORK | Agility Ladder Footwork | עבודת רגליים בסולם קואורדינציה | 4 × 1 reps, rest 30 s _(the Exercise's own default — existing catalog content)_ |
-| 5 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 2 | A_SKIP | A-Skip | דילוג A | 2 × 20 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
+| 4 | AGILITY_LADDER_FOOTWORK | Agility Ladder Footwork | עבודת רגליים בסולם קואורדינציה | 4 × 1 reps, rest 30s _(the Exercise's own default — existing catalog content)_ |
+| 5 | BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Rondo and transition / רונדו ומעבר**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_RONDO | Rondo (Keep-Ball) | רונדו (שמירת כדור) | 4 × 120s, rest 60 s |
-| 2 | FB_ATTACKING_TRANSITION_OVERLOAD | Attacking Transition with a Numerical Advantage | מעבר להתקפה ביתרון מספרי | 1 × 8 reps, rest 90 s |
-| 3 | FB_FINISHING_UNDER_PRESSURE | Finishing under Pressure | גימור תחת לחץ | 1 × 8 attempts, rest 90 s |
+| 1 | FB_RONDO | Rondo (Keep-Ball) | רונדו (שמירת כדור) | 4 × 120s, rest 60s |
+| 2 | FB_ATTACKING_TRANSITION_OVERLOAD | Attacking Transition with a Numerical Advantage | מעבר להתקפה ביתרון מספרי | 1 × 8 reps, rest 90s |
+| 3 | FB_FINISHING_UNDER_PRESSURE | Finishing under Pressure | גימור תחת לחץ | 1 × 8 attempts, rest 90s |
 
 **Section 3 — Small game with a pressing rule / משחקון בשטח קטן עם כלל לחץ**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 2 × 600s, rest 120 s |
+| 1 | FB_SMALL_SIDED_GAME | Small-Sided Game | משחקון בשטח קטן | 2 × 600s, rest 120s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1781,27 +1787,27 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Ball control / שליטה בכדור**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | STATIONARY_DRIBBLING | Stationary Dribbling | כדרור במקום | 4 × 30s, rest 15 s |
-| 2 | FIGURE_8_DRIBBLE | Figure-8 Dribble | כדרור שמונה בין הרגליים | 3 × 20 reps, rest 30 s |
-| 3 | CROSSOVER_DRIBBLE | Crossover Dribble | כדרור קרוסאובר | 4 × 20 reps, rest 30 s |
-| 4 | BETWEEN_THE_LEGS_DRIBBLE | Between-the-Legs Dribble | כדרור בין הרגליים | 4 × 20 reps, rest 30 s |
-| 5 | BEHIND_THE_BACK_DRIBBLE | Behind-the-Back Dribble | כדרור מאחורי הגב | 4 × 20 reps, rest 30 s |
+| 1 | STATIONARY_DRIBBLING | Stationary Dribbling | כדרור במקום | 4 × 30s, rest 15s |
+| 2 | FIGURE_8_DRIBBLE | Figure-8 Dribble | כדרור שמונה בין הרגליים | 3 × 20 reps, rest 30s |
+| 3 | CROSSOVER_DRIBBLE | Crossover Dribble | כדרור קרוסאובר | 4 × 20 reps, rest 30s |
+| 4 | BETWEEN_THE_LEGS_DRIBBLE | Between-the-Legs Dribble | כדרור בין הרגליים | 4 × 20 reps, rest 30s |
+| 5 | BEHIND_THE_BACK_DRIBBLE | Behind-the-Back Dribble | כדרור מאחורי הגב | 4 × 20 reps, rest 30s |
 
 **Section 3 — Direction and pace / שינוי כיוון וקצב**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | CONE_DRIBBLE_SLALOM | Cone Dribble Slalom | סלאלום כדרור בין קונוסים | 4 × 30, rest 60 s |
-| 2 | CHANGE_OF_PACE_DRIBBLE | Change-of-Pace Dribble | כדרור בשינוי קצב | 4 × 4 reps, rest 45 s |
-| 3 | HESITATION_DRIVE | Hesitation Drive | השהיה ופריצה | 4 × 6 reps, rest 45 s |
+| 1 | CONE_DRIBBLE_SLALOM | Cone Dribble Slalom | סלאלום כדרור בין קונוסים | 4 × 30s, rest 60s |
+| 2 | CHANGE_OF_PACE_DRIBBLE | Change-of-Pace Dribble | כדרור בשינוי קצב | 4 × 4 reps, rest 45s |
+| 3 | HESITATION_DRIVE | Hesitation Drive | השהיה ופריצה | 4 × 6 reps, rest 45s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1841,27 +1847,27 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Form and shooting / טכניקה וקליעה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FORM_SHOOTING | Form Shooting | זריקות טכניקה קרוב לסל | 2 × 8 attempts, rest 30 s |
-| 2 | MID_RANGE_SPOT_SHOOTING | Mid-Range Spot Shooting (5 spots) | זריקות מחצי מרחק מ־5 נקודות | 5 × 6 attempts, rest 60 s |
-| 3 | RELOCATION_SHOOTING | Relocation Shooting | זריקות בתנועה (רילוקיישן) | 3 × 6 attempts, rest 60 s |
-| 4 | PULL_UP_JUMPER | Pull-Up Jumper off the Dribble | זריקה מעצירה אחרי כדרור | 3 × 6 attempts, rest 60 s |
+| 1 | FORM_SHOOTING | Form Shooting | זריקות טכניקה קרוב לסל | 2 × 8 attempts, rest 30s |
+| 2 | MID_RANGE_SPOT_SHOOTING | Mid-Range Spot Shooting (5 spots) | זריקות מחצי מרחק מ־5 נקודות | 5 × 6 attempts, rest 60s |
+| 3 | RELOCATION_SHOOTING | Relocation Shooting | זריקות בתנועה (רילוקיישן) | 3 × 6 attempts, rest 60s |
+| 4 | PULL_UP_JUMPER | Pull-Up Jumper off the Dribble | זריקה מעצירה אחרי כדרור | 3 × 6 attempts, rest 60s |
 
 **Section 3 — Finishing at the rim / סיומים לסל**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LAYUPS | Layups (both hands) | לייאפים בשתי הידיים | 3 × 8 attempts, rest 45 s |
-| 2 | REVERSE_LAYUPS | Reverse Layups | לייאפ הפוך | 2 × 6 attempts, rest 45 s |
-| 3 | CONTACT_FINISHES | Contact Finishes | סיומים במגע | 2 × 6 attempts, rest 60 s |
-| 4 | FREE_THROWS | Free Throws | זריקות עונשין | 3 × 10 attempts, rest 60 s |
+| 1 | LAYUPS | Layups (both hands) | לייאפים בשתי הידיים | 3 × 8 attempts, rest 45s |
+| 2 | REVERSE_LAYUPS | Reverse Layups | לייאפ הפוך | 2 × 6 attempts, rest 45s |
+| 3 | CONTACT_FINISHES | Contact Finishes | סיומים במגע | 2 × 6 attempts, rest 60s |
+| 4 | FREE_THROWS | Free Throws | זריקות עונשין | 3 × 10 attempts, rest 60s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1901,31 +1907,31 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | LATERAL_LUNGE | Lateral Lunge | מכרע לצד | 3 × 8 reps, rest 60s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Defense and footwork / הגנה ורגליים**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | DEFENSIVE_SLIDES | Defensive Slides | צעדי הגנה בצד | 4 × 30, rest 60 s |
-| 2 | ZIGZAG_DEFENSIVE_SLIDES | Zig-Zag Defensive Slides | צעדי הגנה בזיגזג | 4 × 2 reps, rest 45 s |
-| 3 | CLOSEOUT_DRILL | Closeout Drill | תרגיל סגירה על קלע | 3 × 6 reps, rest 45 s |
-| 4 | DEFENSIVE_RECOVERY_DRILL | Defensive Recovery Drill | חזרה להגנה אחרי עקיפה | 4 × 4 reps, rest 45 s |
+| 1 | DEFENSIVE_SLIDES | Defensive Slides | צעדי הגנה בצד | 4 × 30s, rest 60s |
+| 2 | ZIGZAG_DEFENSIVE_SLIDES | Zig-Zag Defensive Slides | צעדי הגנה בזיגזג | 4 × 2 reps, rest 45s |
+| 3 | CLOSEOUT_DRILL | Closeout Drill | תרגיל סגירה על קלע | 3 × 6 reps, rest 45s |
+| 4 | DEFENSIVE_RECOVERY_DRILL | Defensive Recovery Drill | חזרה להגנה אחרי עקיפה | 4 × 4 reps, rest 45s |
 
 **Section 3 — Box-out and rebounding / סגירה וריבאונד**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | BOX_OUT_DRILL | Box-Out Drill | סגירה לריבאונד (Box-Out) | 3 × 8 reps, rest 45 s |
-| 2 | TIP_DRILL | Rebound Tip Drill | תרגיל טיפ (ריבאונד) | 3 × 10 reps, rest 60 s |
+| 1 | BOX_OUT_DRILL | Box-Out Drill | סגירה לריבאונד (Box-Out) | 3 × 8 reps, rest 45s |
+| 2 | TIP_DRILL | Rebound Tip Drill | תרגיל טיפ (ריבאונד) | 3 × 10 reps, rest 60s |
 
 **Section 4 — Game conditioning / כושר למשחק**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LANE_AGILITY | Lane Agility Drill | תרגיל זריזות בצבע | 3 × 30, rest 120 s |
+| 1 | LANE_AGILITY | Lane Agility Drill | תרגיל זריזות בצבע | 3 × 30s, rest 120s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -1968,24 +1974,24 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | JUMPING_JACKS | Jumping Jacks | ג׳אמפינג ג׳קס | 2 × 30s, rest 15 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | JUMPING_JACKS | Jumping Jacks | ג׳אמפינג ג׳קס | 2 × 30s, rest 15s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Ball control / שליטה בכדור**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | STATIONARY_DRIBBLING | Stationary Dribbling | כדרור במקום | 3 × 30s, rest 20 s |
-| 2 | CROSSOVER_DRIBBLE | Crossover Dribble | כדרור קרוסאובר | 3 × 10 reps, rest 30 s |
-| 3 | CHANGE_OF_PACE_DRIBBLE | Change-of-Pace Dribble | כדרור בשינוי קצב | 3 × 4 reps, rest 45 s |
+| 1 | STATIONARY_DRIBBLING | Stationary Dribbling | כדרור במקום | 3 × 30s, rest 20s |
+| 2 | CROSSOVER_DRIBBLE | Crossover Dribble | כדרור קרוסאובר | 3 × 10 reps, rest 30s |
+| 3 | CHANGE_OF_PACE_DRIBBLE | Change-of-Pace Dribble | כדרור בשינוי קצב | 3 × 4 reps, rest 45s |
 
 **Section 3 — Passing and catching / מסירה ותפיסה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | WALL_PASSING | Wall Passing | מסירות לקיר | 3 × 12 reps, rest 30 s |
-| 2 | ONE_HAND_PUSH_PASS | One-Hand Push Pass | מסירת דחיפה ביד אחת | 3 × 10 reps, rest 30 s |
+| 1 | WALL_PASSING | Wall Passing | מסירות לקיר | 3 × 12 reps, rest 30s |
+| 2 | ONE_HAND_PUSH_PASS | One-Hand Push Pass | מסירת דחיפה ביד אחת | 3 × 10 reps, rest 30s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -2032,24 +2038,24 @@ Contents: **22 new built-in Exercises** (Surfing 10, Football 11, Basketball 1) 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | JUMPING_JACKS | Jumping Jacks | ג׳אמפינג ג׳קס | 2 × 30s, rest 15 s _(the Exercise's own default — existing catalog content)_ |
-| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20 s _(the Exercise's own default — existing catalog content)_ |
-| 3 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0 s _(the Exercise's own default — existing catalog content)_ |
+| 1 | JUMPING_JACKS | Jumping Jacks | ג׳אמפינג ג׳קס | 2 × 30s, rest 15s _(the Exercise's own default — existing catalog content)_ |
+| 2 | HIGH_KNEES | High Knees | הרמת ברכיים במקום | 2 × 20s, rest 20s _(the Exercise's own default — existing catalog content)_ |
+| 3 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s _(the Exercise's own default — existing catalog content)_ |
 
 **Section 2 — Shooting form / טכניקת קליעה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | FORM_SHOOTING | Form Shooting | זריקות טכניקה קרוב לסל | 3 × 8 attempts, rest 30 s |
-| 2 | JUMP_STOP_PIVOTS | Jump Stop & Pivots | עצירה בקפיצה וסיבובים | 3 × 8 reps, rest 30 s |
+| 1 | FORM_SHOOTING | Form Shooting | זריקות טכניקה קרוב לסל | 3 × 8 attempts, rest 30s |
+| 2 | JUMP_STOP_PIVOTS | Jump Stop & Pivots | עצירה בקפיצה וסיבובים | 3 × 8 reps, rest 30s |
 
 **Section 3 — Finishing at the rim / סיומים לסל**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | LAYUPS | Layups (both hands) | לייאפים בשתי הידיים | 3 × 8 attempts, rest 45 s |
-| 2 | POWER_LAYUPS | Power Layups | סיום בכוח משתי רגליים | 3 × 8 attempts, rest 45 s |
-| 3 | MIKAN_DRILL | Mikan Drill | תרגיל מייקן | 3 × 10 attempts, rest 45 s |
+| 1 | LAYUPS | Layups (both hands) | לייאפים בשתי הידיים | 3 × 8 attempts, rest 45s |
+| 2 | POWER_LAYUPS | Power Layups | סיום בכוח משתי רגליים | 3 × 8 attempts, rest 45s |
+| 3 | MIKAN_DRILL | Mikan Drill | תרגיל מייקן | 3 × 10 attempts, rest 45s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 

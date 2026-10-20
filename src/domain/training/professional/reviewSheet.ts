@@ -19,9 +19,9 @@ const measurementText = (e: ExerciseDefinition): string => {
   return t === 'REPETITIONS' ? 'repetitions' : t === 'DURATION' ? 'duration (seconds)' : t === 'MADE_ATTEMPTS' ? 'makes / attempts' : t === 'TIME' ? 'time to complete' : t.toLowerCase();
 };
 const unit = (e: ExerciseDefinition): string =>
-  e.measurement.type === 'DURATION' ? 's' : e.measurement.type === 'MADE_ATTEMPTS' ? ' attempts' : e.measurement.type === 'REPETITIONS' ? ' reps' : '';
+  e.measurement.type === 'DURATION' || e.measurement.type === 'TIME' ? 's' : e.measurement.type === 'MADE_ATTEMPTS' ? ' attempts' : e.measurement.type === 'REPETITIONS' ? ' reps' : '';
 const dosage = (e: ExerciseDefinition, d: { sets: number; target: number | null; restSec: number | null } | null): string =>
-  d === null ? '—' : `${d.sets} × ${d.target === null ? '(no target)' : `${d.target}${unit(e)}`}, rest ${d.restSec ?? 0} s`;
+  d === null ? '—' : `${d.sets} × ${d.target === null ? '(no target)' : `${d.target}${unit(e)}`}, rest ${d.restSec ?? 0}s`;
 const equipmentText = (e: ExerciseDefinition): string =>
   e.equipment.length === 0 ? 'none (bodyweight)' : e.equipment.map((o) => o.join(' + ')).join(' OR ');
 const sourceLine = (key: SourceKey): string =>
@@ -74,15 +74,15 @@ function exerciseBlock(e: ExerciseDefinition, slice: string): string {
 /** What the sources do and do not support for each SPORT-CONTENT-002 workout, and what is our own. */
 const EXPANDED_EVIDENCE: Readonly<Record<string, { supports: string; synthesis: string }>> = {
   'SURF-FITNESS-FOUNDATION-01': {
-    supports: 'Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYSIOLOGY, opened): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage.',
+    supports: 'Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYS-1, SURF-PHYS-2, SURF-PHYS-3 — opened; physiological-demand rationale only, not the programming): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage.',
     synthesis: 'The exact exercise selection, the order, the movement families chosen, every set / repetition / duration and the sectioning. Gym exercises are NOT claimed to be paddling.',
   },
   'SURF-PADDLE-ENDURANCE-01': {
-    supports: 'Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYSIOLOGY, opened): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage. The repeated, intermittent paddling demand is supported by the same research.',
+    supports: 'Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYS-1, SURF-PHYS-2, SURF-PHYS-3 — opened; physiological-demand rationale only, not the programming): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage. The repeated, intermittent paddling demand is supported by the same research.',
     synthesis: 'The repeated-effort interval structure (6 × 30 s style), the ONE conditioning station (ski erg OR rowing machine OR battle ropes — not all of them), the two pulling-endurance rows plus face pull, the trunk endurance selection and every dosage. It does not reproduce water mechanics, and there is no breath-hold training.',
   },
   'SURF-POWER-ROTATION-01': {
-    supports: 'Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYSIOLOGY, opened): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage.',
+    supports: 'Surfing Australia HPC camp schedule (SA-SCHED, opened): upper-body and lower-body strength & mobility, pre-surf activation and recovery. ISA Surf Strength and Mobility education (ISA-STRENGTH, opened): resistance training, cardio and mobility. Published surfing-performance research (SURF-PHYS-1, SURF-PHYS-2, SURF-PHYS-3 — opened; physiological-demand rationale only, not the programming): cardiorespiratory fitness, muscular endurance, strength, anaerobic power and a significant upper-torso demand. None of them gives these exact exercises or any dosage.',
     synthesis: 'The lower-body strength selection with ONE jump (squat jump) and ONE hip-extension (hip thrust), the rotation / anti-rotation trio (rotational throw, Pallof press, side plank — no Russian twist), the burpee as a general lie-down-and-get-up pattern (not a pop-up copy), about 15 movements and every dosage. Strength alone is not claimed to make an advanced surfer. Advanced content may need adjustment by a coach or responsible adult.',
   },
   'FOOTBALL-FIRST-TOUCH-PASSING-01': {
@@ -174,7 +174,7 @@ export function renderContentReviewSheet(): string {
   const out: string[] = [
     '# CONTENT-REVIEW-SHEET — SPORT-CONTENT-001 + 002 + 003 (one combined sheet)',
     '',
-    'Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published as approved until a human approves this sheet.',
+    'Sheet status: **HUMAN_REVIEWED / READY_FOR_PUBLICATION_APPROVAL** (final human content review: PASS with 2 documentation fixes, applied). Publication itself still needs explicit approval; the per-item review status in the app code stays PENDING_HUMAN_REVIEW until then.',
     '',
     `Contents: **${newExercises} new built-in Exercises** (Surfing ${SURFING.length}, Football ${FOOTBALL.length}, Basketball ${BASKETBALL_EXPANSION.length}) and **${PROFESSIONAL_WORKOUTS.length} professional workouts** (${core.length} from SPORT-CONTENT-001, ${expanded.length} from SPORT-CONTENT-002, ${fromIbbc.length} from SPORT-CONTENT-003). The SPORT-CONTENT-002 workouts reuse the existing catalog (their only new Exercise is the Basketball box-out); SPORT-CONTENT-003 adds NO Exercise and NO user-facing video: two beginner workouts from existing exercises, with the six IBBC videos kept as review notes only.`,
     '',
@@ -192,7 +192,7 @@ export function renderContentReviewSheet(): string {
     '- Surf ocean-safety wording replaced (HE + EN) and the rip-current briefing aligned with Surf Life Saving NSW (stay calm / float, signal for help, if able escape sideways toward breaking waves, reassess).',
     '- `SURF_TAKE_OFF`: topic is now `SOURCE_SUPPORTED` (opened surf-school page that teaches a whitewater take-off); wording, cues and dosage stay `SYNTHESIZED` / `ORIGINAL_RECOMMENDATION`. No claim that ISA or Surfing Australia authored the drill.',
     '- Surf dry-land sources recorded as opened: Surfing Australia HPC, ISA Surf Strength and Mobility, surfing-performance research.',
-    '- The three prescriptions that had no target now have one: `CONE_DRIBBLE_SLALOM` 4 × 30 s, `DEFENSIVE_SLIDES` 4 × 30 s, `LANE_AGILITY` 3 × 30 s.',
+    '- The three prescriptions that had no target now have one: `CONE_DRIBBLE_SLALOM` 4 × 30s, rest 60s; `DEFENSIVE_SLIDES` 4 × 30s, rest 60s; `LANE_AGILITY` 3 × 30s, rest 120s (these exercises are timed drills; the target is in seconds).',
     '- `BASKETBALL-SHOOTING-FINISHING-01` reduced to about 160 attempts. `SURF-POWER-ROTATION-01` reduced to about 15 movements (one jump, one hip extension, no Russian twist). `SURF-PADDLE-ENDURANCE-01` now has ONE conditioning station (ski erg OR rowing machine OR battle ropes) and two rows.',
     '- `BOX_OUT_DRILL`: Hebrew name and instructions reworded; topic `SOURCE_SUPPORTED` (USA Basketball). USA Basketball is recorded for the Basketball workouts as contextual evidence for the skill families only.',
     '- Hebrew names: משחקון בשטח קטן, סגירה לריבאונד (Box-Out), קליעה ולייאפים, מעברים ולחץ לאחר איבוד.',

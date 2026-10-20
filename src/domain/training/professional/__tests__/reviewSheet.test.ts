@@ -27,6 +27,7 @@ describe('CONTENT-REVIEW-SHEET', () => {
       expect(sheet.split(field).length - 1).toBeGreaterThanOrEqual(22);
     }
     expect(sheet.match(/PENDING_HUMAN_REVIEW/g)!.length).toBeGreaterThanOrEqual(18);
+    expect(sheet).toContain('Sheet status: **HUMAN_REVIEWED / READY_FOR_PUBLICATION_APPROVAL**');
     expect(sheet).toMatch(/not official FIFA, ISA, Surfing Australia or USA Basketball programming/);
     // one combined sheet: both slices, all 15 workouts, the owner-cited sources flagged, nothing implied about Basketball sources
     expect(sheet).toMatch(/SPORT-CONTENT-001 \+ 002 \+ 003/);
@@ -49,5 +50,9 @@ describe('CONTENT-REVIEW-SHEET', () => {
     mkdirSync(dirname(target), { recursive: true });
     writeFileSync(target, sheet, 'utf8');
     expect(sheet.length).toBeGreaterThan(40_000);
+    expect(sheet).toMatch(/CONE_DRIBBLE_SLALOM \| .*\| 4 × 30s, rest 60s/);
+    expect(sheet).toMatch(/LANE_AGILITY \| .*\| 3 × 30s, rest 120s/);
+    expect(sheet).not.toMatch(/individual papers are not listed/);
+    expect(sheet).toMatch(/PMID 27050247/);
   });
 });

@@ -55,7 +55,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
     ],
     coachNotes: [NOT_PADDLING, OCEAN_NOTE],
     safety: STRENGTH_SAFETY,
-    sources: ['SA-SCHED', 'ISA-STRENGTH', 'SURF-PHYSIOLOGY'],
+    sources: ['SA-SCHED', 'ISA-STRENGTH', 'SURF-PHYS-1', 'SURF-PHYS-2', 'SURF-PHYS-3'],
     reviewStatus: 'PENDING_HUMAN_REVIEW',
   },
   {
@@ -91,7 +91,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
       OCEAN_NOTE,
     ],
     safety: STRENGTH_SAFETY,
-    sources: ['SA-SCHED', 'ISA-STRENGTH', 'SURF-PHYSIOLOGY'],
+    sources: ['SA-SCHED', 'ISA-STRENGTH', 'SURF-PHYS-1', 'SURF-PHYS-2', 'SURF-PHYS-3'],
     reviewStatus: 'PENDING_HUMAN_REVIEW',
   },
   {
@@ -133,7 +133,7 @@ export const EXPANDED_WORKOUTS: readonly ProfessionalWorkout[] = [
       OCEAN_NOTE,
     ],
     safety: STRENGTH_SAFETY,
-    sources: ['SA-SCHED', 'ISA-STRENGTH', 'SURF-PHYSIOLOGY'],
+    sources: ['SA-SCHED', 'ISA-STRENGTH', 'SURF-PHYS-1', 'SURF-PHYS-2', 'SURF-PHYS-3'],
     reviewStatus: 'PENDING_HUMAN_REVIEW',
   },
 
