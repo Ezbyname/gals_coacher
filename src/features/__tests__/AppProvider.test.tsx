@@ -25,6 +25,7 @@ function servicesWithAudio(audio: Services['audio']): Services {
     clock: systemClock,
     ids: createSequentialIdService(),
     direction: createFakeDirectionService(false),
+    keepAwake: { activate: jest.fn(), release: jest.fn() },
   };
 }
 

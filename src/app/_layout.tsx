@@ -8,6 +8,7 @@ import { MainNavBar } from '@/features/navigation/MainNavBar';
 import { ReminderSync } from '@/features/reminders/ReminderSync';
 import { CalendarSync } from '@/features/calendarSync/CalendarSync';
 import { UnsavedChangesProvider } from '@/features/navigation/unsavedChanges';
+import { WorkoutTimerProvider } from '@/features/training/timer/WorkoutTimerProvider';
 import { keepNativeSplash } from '@/features/startup/nativeSplash';
 import { StartupReadySignal } from '@/features/startup/StartupReadySignal';
 import { StartupSplash } from '@/features/startup/StartupSplash';
@@ -31,7 +32,9 @@ export default function RootLayout() {
           <StartupReadySignal />
           <ReminderSync />
           <CalendarSync />
-          <AppStack />
+          <WorkoutTimerProvider>
+            <AppStack />
+          </WorkoutTimerProvider>
         </AppProvider>
       </I18nProvider>
     </StartupSplash>

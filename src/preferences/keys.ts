@@ -12,4 +12,6 @@ export const PREFERENCE_KEYS = {
   remindersV1: '@gals-coacher/reminders.v1',
   /** CAL-SYNC-NOTIFY-001D: this device's calendar-sync preference (JSON, versioned) — separate from reminders. */
   calendarSync: '@gals-coacher/calendarSync.v1',
+  /** TRAINING-TIMER-001: this device's workout-timer preference (sound, vibration; JSON, versioned). */
+  timer: '@gals-coacher/timer.v1',
 } as const;
