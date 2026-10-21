@@ -590,6 +590,12 @@ export const en = {
       failed: 'The schedule was not saved. Please try again.',
       unscheduleFailed: 'Could not unschedule. Please try again.',
       errorStarted: 'This workout was already started, so it cannot be scheduled.',
+      startEarly: {
+        title: 'Start earlier than planned?',
+        body: 'This workout is scheduled for {when}. Start it now?',
+        confirm: 'Start now',
+        cancel: 'Not yet',
+      },
       errorAlready: 'This workout is already scheduled.',
       eventWorkout: 'Workout',
       eventSummary: '{count} sections',
@@ -1283,6 +1289,7 @@ export const en = {
       title: 'Delete this event?',
       body: 'It will be removed from the schedule. This cannot be undone.',
       workoutBody: 'The event is removed from the calendar. The workout itself stays and can be scheduled again.',
+      sessionBody: 'Only this calendar entry will be removed. The workout and its training history stay under the Player.',
       confirm: 'Delete',
       cancel: 'Keep event',
     },
@@ -1311,6 +1318,7 @@ export const en = {
     },
     errors: {
       typeRequired: 'Choose an event type.',
+      scheduleLocked: 'This workout already has a training session, so its scheduled time can no longer be changed.',
       titleTooLong: 'The title can have up to 100 characters.',
       locationTooLong: 'The location can have up to 80 characters.',
       titleRequiredForOther: 'An event of type Other needs a title.',

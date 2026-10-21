@@ -86,6 +86,7 @@ function ScheduleLoader({ playerId, planId }: { playerId: string; planId: string
 function failureKey(e: unknown): TranslationKey {
   if (e instanceof WorkoutScheduleError) {
     if (e.reason === 'PLAN_ALREADY_STARTED') return 'training.schedule.errorStarted';
+    if (e.reason === 'SCHEDULE_LOCKED') return 'calendar.errors.scheduleLocked';
     if (e.reason === 'ALREADY_SCHEDULED') return 'training.schedule.errorAlready';
     if (e.reason === 'PLAN_EMPTY') return 'training.errors.planEmpty';
     return 'training.schedule.failed';

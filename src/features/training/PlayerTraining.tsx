@@ -113,7 +113,19 @@ export function TrainingSection({ playerId }: { playerId: string }) {
   const running =
     state.status === 'ready' ? state.value.sessions.find((s) => s.status === 'IN_PROGRESS') : undefined;
   const planned = state.status === 'ready' ? state.value.planned : [];
-  const startPlan = async (plan: PlannedWorkout) => {
+  /** A scheduled workout may be started early, after a confirmation; its calendar event is never moved. */
+  const startPlan = (plan: PlannedWorkout) => {
+    const scheduledAt = scheduleOf(plan.id)?.startAt;
+    if (scheduledAt === undefined || scheduledAt <= services.clock.wallNow()) {
+      void doStartPlan(plan);
+      return;
+    }
+    Alert.alert(t('training.schedule.startEarly.title'), t('training.schedule.startEarly.body', { when: formatDateTime(scheduledAt, language) }), [
+      { text: t('training.schedule.startEarly.cancel'), style: 'cancel' },
+      { text: t('training.schedule.startEarly.confirm'), onPress: () => void doStartPlan(plan) },
+    ]);
+  };
+  const doStartPlan = async (plan: PlannedWorkout) => {
     if (busy.current || boot.status !== 'ready') return;
     busy.current = true;
     setFailure(null);

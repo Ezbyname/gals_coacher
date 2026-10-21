@@ -2,6 +2,7 @@ import {
   CalendarEventDataError,
   CalendarEventNotFoundError,
   CalendarSportNotAssignedError,
+  WorkoutScheduleError,
 } from '@/data/local/calendar/errors';
 import { ActivityTypeInactiveError, ActivityTypeNotFoundError } from '@/data/local/activityTypes/errors';
 import { PlayerNotFoundError, SportInactiveError } from '@/data/local/players/errors';
@@ -60,6 +61,7 @@ export function calendarErrorMessage(e: unknown, fallback: TranslationKey): Tran
   if (e instanceof ActivityTypeInactiveError) return 'calendar.errors.typeInactive';
   if (e instanceof ActivityTypeNotFoundError) return 'calendar.errors.typeNotFound';
   if (e instanceof CalendarEventDataError) return 'calendar.errors.dataInvalid';
+  if (e instanceof WorkoutScheduleError && e.reason === 'SCHEDULE_LOCKED') return 'calendar.errors.scheduleLocked';
   return fallback;
 }
 

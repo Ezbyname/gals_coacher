@@ -1,4 +1,5 @@
 import { listCalendarEventIds, listCalendarEventsInRange } from '@/data/local/calendar/calendarEventRepository';
+import { listStartedWorkoutEventIds } from '@/data/local/training/workoutEventLinks';
 import type { PlayerDb } from '@/data/local/players/playerDb';
 import { listPlayers } from '@/data/local/players/playerRepository';
 import type { CalendarEvent } from '@/domain/calendarEvent';
@@ -108,8 +109,9 @@ export async function reconcileReminders(deps: ReconcileDeps): Promise<Reconcile
     const until = now + REMINDER_WINDOW_DAYS * DAY + MAX_BEFORE_START_MINUTES * MINUTE;
     const wanted = new Set(subscribed);
     for (const e of await listCalendarEventsInRange(deps.db, now, until)) if (wanted.has(e.playerId)) events.set(e.id, e);
+    const started = await listStartedWorkoutEventIds(deps.db); // read only: a workout already trained never reminds
     desired = desiredReminders(
-      [...events.values()].map((e) => ({ id: e.id, playerId: e.playerId, startAt: e.startAt, type: e.type, completion: e.completion })),
+      [...events.values()].map((e) => ({ id: e.id, playerId: e.playerId, startAt: e.startAt, type: e.type, completion: e.completion, hasSession: started.has(e.id) })),
       { ...prefs, players: subscribed },
       now,
       deps.clock ?? deviceLocalClock,

@@ -276,6 +276,12 @@ export async function updateCalendarEvent(
     // Likewise the type it already has, even if that type is now inactive (never reactivated).
     await assertActivityType(db, valid.value.type, existing.type);
     const v = valid.value;
+    // CAL-TRAIN-001: once the workout has a TrainingSession (in progress, completed, partly done or stopped) its scheduled
+    // time is part of the history and cannot move. Other fields (notes, location) stay editable. Enforced here, not by the UI.
+    if (link !== null && (v.startAt !== existing.startAt || v.endAt !== existing.endAt)) {
+      const started = await db.getFirstAsync(SCHEDULE_LOCK_SQL, [link.planId]);
+      if (started !== null) throw new WorkoutScheduleError('SCHEDULE_LOCKED', link.planId); // nothing written: the transaction rolls back
+    }
     // A scheduled workout is never moved into the past (history stays readable; other fields stay editable).
     if (link !== null && v.startAt !== existing.startAt && v.startAt < startOfMinute(now)) {
       rejected = { ok: false, errors: { startAt: 'BEFORE_NOW' } };
@@ -437,6 +443,12 @@ export const SCHEDULED_WORKOUT_TYPE = 'PERSONAL_TRAINING';
 const MINUTE = 60_000;
 /** "Now" for scheduling is the current MINUTE: a time picked for this minute is allowed, an earlier one never. */
 const startOfMinute = (t: number) => t - (t % MINUTE);
+
+/**
+ * The ONLY place the calendar looks at execution data: whether the workout already has a session (any status). A read-only
+ * existence check that locks the scheduled time; no session content, status or result is ever read here.
+ */
+const SCHEDULE_LOCK_SQL = 'SELECT 1 FROM training_sessions WHERE planned_workout_id = ?';
 
 /** The workout behind an event, read inside a transaction (null: a plain event). */
 async function readWorkoutLink(db: PlayerDb, eventId: string): Promise<{ planId: string; name: string } | null> {

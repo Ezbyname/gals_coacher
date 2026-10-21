@@ -672,9 +672,14 @@ describe('calendar persistence boundaries', () => {
   it.each(['../calendarEventRepository.ts', '../errors.ts'])(
     '%s has no agenda sectioning, wall-clock reads, upsert or session/result coupling',
     (file) => {
-      const code = readFileSync(resolve(__dirname, file), 'utf8')
+      const raw = readFileSync(resolve(__dirname, file), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/\/\/.*$/gm, '');
+      // CAL-TRAIN-001: the single, named, read-only existence check that locks a started workout's schedule is the one exception.
+      const lock = /const SCHEDULE_LOCK_SQL = 'SELECT 1 FROM training_sessions WHERE planned_workout_id = \?';/;
+      expect((raw.match(/training_session/gi) ?? []).length).toBe(file.endsWith('calendarEventRepository.ts') ? 1 : 0);
+      if (file.endsWith('calendarEventRepository.ts')) expect(raw).toMatch(lock);
+      const code = raw.replace(lock, '');
       expect(code).not.toMatch(/agendaSection|splitAgenda|CURRENT_OR_UPCOMING|PAST/);
       expect(code).not.toMatch(/Date\.now|new Date/);
       expect(code).not.toMatch(/REPLACE|UPSERT|ON CONFLICT|INSERT OR/i);

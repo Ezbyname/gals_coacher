@@ -30,6 +30,8 @@ export interface ReminderEvent {
   readonly type: string;
   /** Non-null when the event was marked completed. */
   readonly completion: unknown;
+  /** CAL-TRAIN-001: the workout this event schedules already has a TrainingSession (any status): nothing left to remind. */
+  readonly hasSession?: boolean;
 }
 
 export interface DesiredReminder {
@@ -68,7 +70,7 @@ export function desiredReminders(
   const until = now + windowDays * DAY;
   const out: DesiredReminder[] = [];
   for (const event of events) {
-    if (!players.has(event.playerId) || event.completion != null) continue; // not subscribed / archived / completed
+    if (!players.has(event.playerId) || event.completion != null || event.hasSession === true) continue; // not subscribed / archived / completed / already trained
     const seen = new Set<string>();
     for (const rule of effectiveRules(prefs, event).rules) {
       const at = reminderInstant(rule, event.startAt, clock);

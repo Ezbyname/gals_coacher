@@ -198,7 +198,19 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
     setCompleting(false);
   };
 
-  const startWorkout = async (planId: string) => {
+  /** Starting before the scheduled time is allowed, after a confirmation; the event is never moved. */
+  const startWorkout = (planId: string) => {
+    if (state.event.startAt <= services.clock.wallNow()) {
+      void doStart(planId);
+      return;
+    }
+    Alert.alert(t('training.schedule.startEarly.title'), t('training.schedule.startEarly.body', { when: formatDateTime(state.event.startAt, language) }), [
+      { text: t('training.schedule.startEarly.cancel'), style: 'cancel' },
+      { text: t('training.schedule.startEarly.confirm'), onPress: () => void doStart(planId) },
+    ]);
+  };
+
+  const doStart = async (planId: string) => {
     if (startInProgress.current || boot.status !== 'ready') return;
     startInProgress.current = true;
     setStartFailure(null);
@@ -214,7 +226,7 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
   };
 
   const confirmDelete = () =>
-    Alert.alert(t('calendar.deleteConfirm.title'), t(state.workout ? 'calendar.deleteConfirm.workoutBody' : 'calendar.deleteConfirm.body'), [
+    Alert.alert(t('calendar.deleteConfirm.title'), t(state.workout ? (state.workout.sessionId !== null ? 'calendar.deleteConfirm.sessionBody' : 'calendar.deleteConfirm.workoutBody') : 'calendar.deleteConfirm.body'), [
       { text: t('calendar.deleteConfirm.cancel'), style: 'cancel' },
       { text: t('calendar.deleteConfirm.confirm'), style: 'destructive', onPress: () => void remove() },
     ]);
@@ -310,7 +322,7 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
           ) : null}
           {state.workout.sessionId === null ? (
             state.workout.startable ? (
-              <BigButton testID="event-workout-start" label={t('training.schedule.startWorkout')} onPress={() => void startWorkout(state.workout!.planId)} disabled={deleting || completing} />
+              <BigButton testID="event-workout-start" label={t('training.schedule.startWorkout')} onPress={() => startWorkout(state.workout!.planId)} disabled={deleting || completing} />
             ) : null
           ) : (
             <BigButton

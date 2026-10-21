@@ -26,6 +26,7 @@ import {
 import type { Clock } from '@/services/clock/Clock';
 import type { IdService } from '@/services/ids/IdService';
 
+import { emitDataChanged } from '../../changes';
 import { runSerialized } from '../connectionQueue';
 import { readExercisesUnserialized } from '../exercises/exerciseRepository';
 import { PlayerArchivedError } from '../players/errors';
@@ -159,9 +160,13 @@ export async function startSession(
   deps: { ids: IdService; clock: Clock },
 ): Promise<TrainingSession> {
   let result = null as TrainingSession | null;
+  let scheduled = false;
   await writeTransaction(db, async () => {
     result = await readSession(db, await insertSession(db, plannedWorkoutId, deps));
+    scheduled = (await db.getFirstAsync('SELECT 1 FROM calendar_events WHERE planned_workout_id = ?', [plannedWorkoutId])) !== null;
   });
+  // After the commit only: a workout that is on the calendar changed what reminds (a started workout no longer does).
+  if (scheduled) emitDataChanged('calendar');
   return result!;
 }
 

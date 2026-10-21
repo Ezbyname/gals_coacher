@@ -173,7 +173,9 @@ describe('the event: Start / Continue / View and the title (WB-SCHED-07 / 10)', 
     const e = await openEvent();
     expect(text('event-workout-name')).toBe('Shooting');
     expect(text('event-workout-summary')).toBe('1 sections');
-    press('event-workout-start');
+    const alert = jest.spyOn(Alert, 'alert');
+    press('event-workout-start'); // the event is in the future: Start asks first (CAL-TRAIN-001)
+    act(() => (alert.mock.calls.at(-1)![2] as { text: string; onPress?: () => void }[]).find((b) => b.text === 'Start now')!.onPress!());
     await screen.findByTestId('session-scroll');
     expect((await getPlannedWorkout(db!, planId))!.sessionId).not.toBeNull();
     expect(await db!.getFirstAsync('SELECT completed_at FROM calendar_events WHERE id = ?', [e.id])).toEqual({ completed_at: null });

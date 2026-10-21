@@ -1,8 +1,8 @@
 import { resolve } from 'node:path';
 
-import { renderRouter, fireEvent, screen } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { openDatabaseAsync } from 'expo-sqlite';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 import { createCalendarEvent, markCalendarEventCompleted, scheduleWorkout } from '@/data/local/calendar/calendarEventRepository';
 import { migrations } from '@/data/local/migrations';
@@ -107,7 +107,7 @@ describe('event details of a scheduled workout (English)', () => {
 
   it('a stale Start (the session was created meanwhile) opens the existing session, with no error and no second session', async () => {
     await prepare('en');
-    const w = await seed(18);
+    const w = await seed(11); // already past: no early-start question
     await open(w.eventId);
     const started = await startSession(db!, w.planId, deps); // another screen started it
     fireEvent.press(screen.getByTestId('event-workout-start'));
@@ -182,5 +182,88 @@ describe('event details (Hebrew)', () => {
     expect(text('event-workout-player')).toBe('Daniel');
     expect(screen.getByTestId('event-workout-name').props.style).toEqual(expect.objectContaining({ textAlign: 'auto' }));
     expect(text('event-workout-item-1-prescription')).toContain('7'); // the cap value is still shown
+  });
+});
+
+const buttonsOf = (spy: jest.SpyInstance) => spy.mock.calls.at(-1)![2] as { text: string; style?: string; onPress?: () => void }[];
+
+describe('starting a future workout early (14, 15)', () => {
+  it('asks first with the scheduled time; Cancel starts nothing; Start now starts it and leaves the event exactly as scheduled', async () => {
+    await prepare('en');
+    const w = await seed(18);
+    await open(w.eventId);
+    const alert = jest.spyOn(Alert, 'alert');
+    const eventBefore = JSON.stringify(await db!.getFirstAsync('SELECT * FROM calendar_events WHERE id = ?', [w.eventId]));
+    fireEvent.press(screen.getByTestId('event-workout-start'));
+    expect(String(alert.mock.calls.at(-1)![1])).toMatch(/This workout is scheduled for .*18:00.*\. Start it now\?/);
+    act(() => buttonsOf(alert).find((b) => b.style === 'cancel')!.onPress?.());
+    expect(await sessions()).toEqual([]); // nothing started
+    fireEvent.press(screen.getByTestId('event-workout-start'));
+    act(() => buttonsOf(alert).find((b) => b.text === 'Start now')!.onPress!());
+    await screen.findByTestId('session-scroll');
+    expect(await sessions()).toEqual(['IN_PROGRESS']);
+    expect(JSON.stringify(await db!.getFirstAsync('SELECT * FROM calendar_events WHERE id = ?', [w.eventId]))).toBe(eventBefore); // WHEN untouched
+  });
+
+  it('asks in Hebrew too', async () => {
+    await prepare('he');
+    const w = await seed(18);
+    await open(w.eventId);
+    const alert = jest.spyOn(Alert, 'alert');
+    fireEvent.press(screen.getByTestId('event-workout-start'));
+    expect(String(alert.mock.calls.at(-1)![1])).toMatch(/האימון מתוכנן ל.*18:00.*להתחיל אותו עכשיו\?/);
+  });
+
+  it('a past (overdue) workout starts without a question', async () => {
+    await prepare('en');
+    const w = await seed(8);
+    await open(w.eventId);
+    const alert = jest.spyOn(Alert, 'alert');
+    fireEvent.press(screen.getByTestId('event-workout-start'));
+    await screen.findByTestId('session-scroll');
+    expect(alert).not.toHaveBeenCalled();
+  });
+});
+
+describe('delete after a session exists (20)', () => {
+  it('the confirmation says only the calendar entry goes and the history stays; the history survives', async () => {
+    await prepare('en');
+    const w = await seed(9);
+    const closed = await finishOne(w.planId);
+    await open(w.eventId);
+    const alert = jest.spyOn(Alert, 'alert');
+    fireEvent.press(screen.getByTestId('event-delete'));
+    expect(String(alert.mock.calls.at(-1)![1])).toBe('Only this calendar entry will be removed. The workout and its training history stay under the Player.');
+    act(() => buttonsOf(alert).find((b) => b.style === 'destructive')!.onPress!());
+    await waitFor(async () => expect(await db!.getFirstAsync('SELECT count(*) AS n FROM calendar_events')).toEqual({ n: 0 }));
+    expect(await sessionRows()).toEqual([{ id: closed.id }]);
+    expect(await db!.getFirstAsync('SELECT count(*) AS n FROM planned_workouts')).toEqual({ n: 1 });
+  });
+});
+
+describe('slice E: a closed workout reopens its read-only history (14)', () => {
+  it.each(['COMPLETED', 'PARTIAL', 'ABANDONED'] as const)('%s: the calendar item opens the same session, read-only, planned and actual untouched', async (status) => {
+    await prepare('en');
+    const w = await seed(9);
+    const s = await startSession(db!, w.planId, deps);
+    if (status === 'ABANDONED') {
+      await abandonSession(db!, s.id, deps);
+    } else {
+      await recordSet(db!, s.exercises[0]!.sets[0]!.id, { DURATION_S: 28 }, deps);
+      if (status === 'COMPLETED') {
+        for (const e of s.exercises) for (const set of e.sets) if (set.id !== s.exercises[0]!.sets[0]!.id) await recordSet(db!, set.id, e.exercise.measurement.type === 'DURATION' ? { DURATION_S: 30 } : { TIME_S: 6 }, deps);
+      }
+      expect((await finishSession(db!, s.id, deps)).status).toBe(status);
+    }
+    const history = JSON.stringify([await db!.getAllAsync('SELECT * FROM session_sets ORDER BY rowid'), await db!.getAllAsync('SELECT * FROM set_measurements ORDER BY rowid'), await db!.getAllAsync('SELECT * FROM planned_workout_items ORDER BY rowid')]);
+    await open(w.eventId);
+    expect(has('event-workout-start')).toBe(false);
+    fireEvent.press(screen.getByTestId('event-workout-view'));
+    await screen.findByTestId('session-scroll');
+    expect(has('session-finish')).toBe(false); // no way to change it
+    expect(has('session-abandon')).toBe(false);
+    expect(has('session-read-only')).toBe(true);
+    expect(await sessionRows()).toEqual([{ id: s.id }]);
+    expect(JSON.stringify([await db!.getAllAsync('SELECT * FROM session_sets ORDER BY rowid'), await db!.getAllAsync('SELECT * FROM set_measurements ORDER BY rowid'), await db!.getAllAsync('SELECT * FROM planned_workout_items ORDER BY rowid')])).toBe(history);
   });
 });

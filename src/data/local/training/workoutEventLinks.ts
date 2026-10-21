@@ -49,3 +49,15 @@ export function listWorkoutEventLinksInRange(db: PlayerDb, from: number, to: num
     ),
   );
 }
+
+/** Every workout event whose workout already has a TrainingSession of any status (the reminder engine skips these). */
+export function listStartedWorkoutEventIds(db: PlayerDb): Promise<Set<string>> {
+  return runSerialized(db, async () => {
+    const rows = await db.getAllAsync<{ id: string }>(
+      `SELECT e.id AS id FROM calendar_events e JOIN training_sessions s ON s.planned_workout_id = e.planned_workout_id
+        WHERE e.planned_workout_id IS NOT NULL`,
+      [],
+    );
+    return new Set(rows.map((r) => r.id));
+  });
+}

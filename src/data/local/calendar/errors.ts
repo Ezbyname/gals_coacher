@@ -72,6 +72,7 @@ export class CalendarEventNotFoundError extends Error {
  * - PLAN_ALREADY_STARTED: a workout that already has a TrainingSession cannot be newly scheduled.
  * - PLAN_EMPTY: a workout with nothing in it can never start, so it is not scheduled.
  * - ALREADY_SCHEDULED: a workout has at most one calendar event.
+ * - SCHEDULE_LOCKED: the workout already has a TrainingSession (any status); its scheduled WHEN is part of the history.
  */
 export type WorkoutScheduleReason =
   | 'PLAN_NOT_FOUND'
@@ -79,7 +80,8 @@ export type WorkoutScheduleReason =
   | 'PLAN_ALREADY_STARTED'
   | 'PLAN_EMPTY'
   | 'ALREADY_SCHEDULED'
-  | 'NOT_SCHEDULED';
+  | 'NOT_SCHEDULED'
+  | 'SCHEDULE_LOCKED';
 
 export class WorkoutScheduleError extends Error {
   readonly reason: WorkoutScheduleReason;
