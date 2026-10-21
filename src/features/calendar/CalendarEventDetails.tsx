@@ -9,13 +9,16 @@ import {
   markCalendarEventCompleted,
   undoCalendarEventCompletion,
 } from '@/data/local/calendar/calendarEventRepository';
-import { getPlannedWorkout, getSession, startSession } from '@/data/local/training/trainingRepository';
+import { getPlayer } from '@/data/local/players/playerRepository';
+import { getPlannedWorkout, getSession, startOrOpenSession, type PlannedItem } from '@/data/local/training/trainingRepository';
 import type { CalendarEvent } from '@/domain/calendarEvent';
 import { effectiveRules, type ReminderRule } from '@/domain/reminders';
 import { groupEntries } from '@/domain/training/composition';
+import type { SessionStatus } from '@/domain/training/training';
+import { workoutEventState, type WorkoutEventState } from '@/domain/workoutEventState';
 import { rulesSummary } from '@/features/reminders/ruleLabel';
 import { readReminderPreferences } from '@/preferences/reminderPreference';
-import { sessionPath, trainingErrorMessage } from '@/features/training/trainingLabels';
+import { prescriptionText, sessionPath, trainingErrorMessage } from '@/features/training/trainingLabels';
 import { useApp } from '@/features/AppProvider';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
@@ -33,6 +36,7 @@ import {
 } from './calendarNavigation';
 import { formatDateTime } from './formatEventTime';
 import { ErrorScreen, LoadingScreen } from './StatusScreen';
+import { WorkoutStateBadge } from './WorkoutStateBadge';
 
 /** QB-WORKOUT-BUILDER-001D: the workout a scheduled event stands for (WHAT); the event itself stays the WHEN. */
 type LinkedWorkout = {
@@ -42,6 +46,11 @@ type LinkedWorkout = {
   startable: boolean;
   sessionId: string | null;
   inProgress: boolean;
+  /** CAL-TRAIN-001: the Player the workout is for, what is planned, and the state derived from its session. */
+  playerName: string;
+  items: readonly PlannedItem[];
+  sessionStatus: SessionStatus | null;
+  state: WorkoutEventState;
 };
 
 /** CAL-REMINDER-RULES-002: the reminders that apply to this event (read-only here), or null when they cannot be read. */
@@ -99,6 +108,7 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
         if (link === null) return { event, workout: null, reminders };
         const plan = await getPlannedWorkout(boot.db, link.planId);
         const session = plan?.sessionId ? await getSession(boot.db, plan.sessionId) : null;
+        const profile = await getPlayer(boot.db, playerId);
         const workout: LinkedWorkout | null =
           plan === null
             ? null
@@ -109,6 +119,10 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
                 startable: plan.items.length > 0,
                 sessionId: plan.sessionId,
                 inProgress: session?.status === 'IN_PROGRESS',
+                playerName: profile?.player.name ?? '',
+                items: plan.items,
+                sessionStatus: session?.status ?? null,
+                state: workoutEventState({ ...event, sessionStatus: session?.status ?? null }, services.clock.wallNow()),
               };
         return { event, workout, reminders };
       })()
@@ -128,7 +142,7 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
       return () => {
         active = false;
       };
-    }, [boot, playerId, eventId]),
+    }, [boot, playerId, eventId, services]),
   );
 
   if (state.status === 'loading') return <LoadingScreen />;
@@ -189,7 +203,8 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
     startInProgress.current = true;
     setStartFailure(null);
     try {
-      const session = await startSession(boot.db, planId, { ids: services.ids, clock: services.clock });
+      // Safe to repeat: a plan that already has a session opens it (never a second one, never an error).
+      const { session } = await startOrOpenSession(boot.db, planId, { ids: services.ids, clock: services.clock });
       router.push(sessionPath(playerId, session.id));
     } catch (e) {
       console.warn('[calendar] start workout failed', e);
@@ -262,9 +277,32 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
           <Text style={styles.line} testID="event-workout-name">
             {state.workout.name}
           </Text>
+          <Text style={styles.muted} testID="event-workout-player">
+            {state.workout.playerName}
+          </Text>
+          <View style={styles.stateRow}>
+            <WorkoutStateBadge state={state.workout.state} testID="event-workout-state" />
+          </View>
           <Text style={styles.muted} testID="event-workout-summary">
             {t('training.schedule.eventSummary', { count: state.workout.sections })}
           </Text>
+          <View style={styles.planned} testID="event-workout-items">
+            {state.workout.items.map((item, i) => (
+              <View key={item.position} style={styles.plannedItem}>
+                {item.blockName !== null && item.blockName !== state.workout!.items[i - 1]?.blockName ? (
+                  <Text style={styles.label} testID={`event-workout-block-${item.position}`}>
+                    {item.blockName}
+                  </Text>
+                ) : null}
+                <Text style={styles.line} testID={`event-workout-item-${item.position}`}>
+                  {item.exercise.name[language]}
+                </Text>
+                <Text style={styles.muted} testID={`event-workout-item-${item.position}-prescription`}>
+                  {prescriptionText(t, item.exercise.measurement, item.prescription)}
+                </Text>
+              </View>
+            ))}
+          </View>
           {startFailure ? (
             <Text style={styles.error} testID="event-workout-failed">
               {t(startFailure)}
@@ -306,6 +344,7 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
         </View>
       ) : null}
 
+      {state.workout && event.completion === null ? null : (
       <View style={styles.card} testID="event-completion-section">
         {event.completion !== null ? (
           <>
@@ -324,7 +363,7 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
             {t(completionError)}
           </Text>
         ) : null}
-        {event.completion === null ? (
+        {state.workout ? null : event.completion === null ? (
           <BigButton
             testID="event-complete"
             label={completing ? t('calendar.completion.saving') : t('calendar.completion.mark')}
@@ -341,6 +380,7 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
           />
         )}
       </View>
+      )}
 
       {deleteError ? (
         <Text style={styles.error} testID="event-delete-error">
@@ -367,6 +407,9 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
 
 const styles = StyleSheet.create({
   container: { padding: spacing.lg, gap: spacing.lg },
+  stateRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  planned: { gap: spacing.sm, marginTop: spacing.xs },
+  plannedItem: { gap: 2 },
   card: {
     gap: spacing.xs,
     padding: spacing.md,

@@ -9,7 +9,7 @@ import {
   listTraining,
   planAndStart,
   planWorkout,
-  startSession,
+  startOrOpenSession,
   type PlannedWorkout,
   type TrainingOverview,
 } from '@/data/local/training/trainingRepository';
@@ -118,7 +118,7 @@ export function TrainingSection({ playerId }: { playerId: string }) {
     busy.current = true;
     setFailure(null);
     try {
-      const session = await startSession(boot.db, plan.id, { ids: services.ids, clock: services.clock });
+      const { session } = await startOrOpenSession(boot.db, plan.id, { ids: services.ids, clock: services.clock });
       router.push(sessionPath(playerId, session.id));
     } catch (e) {
       console.warn('[training] start failed', e);
@@ -446,7 +446,7 @@ function PlannedWorkoutView({ planId }: { planId: string }) {
     busy.current = true;
     setFailure(null);
     try {
-      const session = await startSession(boot.db, plan.id, { ids: services.ids, clock: services.clock });
+      const { session } = await startOrOpenSession(boot.db, plan.id, { ids: services.ids, clock: services.clock });
       router.replace(sessionPath(playerId, session.id));
     } catch (e) {
       console.warn('[training] start failed', e);

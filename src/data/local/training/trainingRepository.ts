@@ -165,6 +165,29 @@ export async function startSession(
   return result!;
 }
 
+/**
+ * CAL-TRAIN-001: Start that is safe to repeat. A plan already has at most one session (the database guarantees it);
+ * when Start is pressed from a stale screen, the existing session is returned instead of an error. The session is
+ * found through the plan's own link, never by name. Every other refusal (empty plan, another session in progress,
+ * archived Player) is still thrown. `created` tells whether this call started a new session.
+ */
+export async function startOrOpenSession(
+  db: PlayerDb,
+  plannedWorkoutId: string,
+  deps: { ids: IdService; clock: Clock },
+): Promise<{ readonly session: TrainingSession; readonly created: boolean }> {
+  try {
+    return { session: await startSession(db, plannedWorkoutId, deps), created: true };
+  } catch (e) {
+    if (e instanceof TrainingRuleError && e.rule === 'PLAN_ALREADY_STARTED') {
+      const plan = await getPlannedWorkout(db, plannedWorkoutId);
+      const existing = plan?.sessionId ? await getSession(db, plan.sessionId) : null;
+      if (existing !== null) return { session: existing, created: false };
+    }
+    throw e;
+  }
+}
+
 export function getSession(db: PlayerDb, id: string): Promise<TrainingSession | null> {
   return runSerialized(db, async () => {
     const exists = await db.getFirstAsync('SELECT id FROM training_sessions WHERE id = ?', [id]);
