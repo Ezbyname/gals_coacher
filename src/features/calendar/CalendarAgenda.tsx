@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { listCalendarEvents } from '@/data/local/calendar/calendarEventRepository';
 import { getPlayer } from '@/data/local/players/playerRepository';
+import { listWorkoutEventLinks, type WorkoutEventLink } from '@/data/local/training/workoutEventLinks';
 import { splitAgenda, type CalendarEvent } from '@/domain/calendarEvent';
 import { useApp } from '@/features/AppProvider';
 import { stripBidi } from '@/i18n/bidi';
@@ -17,6 +18,7 @@ import { calendarErrorMessage, eventHeading, eventName, eventSubtitle, sportLabe
 import { eventPath, importSchedulePath, newEventPath } from './calendarNavigation';
 import { eventTimeLines, formatEventWhen, isInProgress } from './formatEventTime';
 import { ErrorScreen, LoadingScreen } from './StatusScreen';
+import { eventWorkoutState, useWorkoutA11y, workoutCardStyle, WorkoutStateBadge } from './WorkoutStateBadge';
 
 type AgendaState =
   | { status: 'loading' }
@@ -24,6 +26,8 @@ type AgendaState =
       status: 'ready';
       playerName: string;
       now: number;
+      /** The workout behind each workout event (one bulk read; a plain event has none). */
+      links: Map<string, WorkoutEventLink>;
       currentOrUpcoming: CalendarEvent[];
       past: CalendarEvent[];
     }
@@ -50,8 +54,9 @@ export function CalendarAgenda({ playerId }: { playerId: string }) {
         const profile = await getPlayer(boot.db, playerId);
         if (profile === null) return { status: 'error', message: 'calendar.errors.playerNotFound' };
         const events = await listCalendarEvents(boot.db, playerId);
+        const links = await listWorkoutEventLinks(boot.db, playerId);
         const now = services.clock.wallNow();
-        return { status: 'ready', playerName: profile.player.name, now, ...splitAgenda(events, now) };
+        return { status: 'ready', playerName: profile.player.name, now, links, ...splitAgenda(events, now) };
       })()
         .then((next) => {
           if (active) setState(next);
@@ -72,10 +77,10 @@ export function CalendarAgenda({ playerId }: { playerId: string }) {
     return <ErrorScreen testID="schedule-error" message={state.message} fallback={`/children/${playerId}`} />;
   }
 
-  const { currentOrUpcoming, past, now } = state;
+  const { currentOrUpcoming, past, now, links } = state;
   const isEmpty = currentOrUpcoming.length === 0 && past.length === 0;
   const card = (event: CalendarEvent) => (
-    <EventCard key={event.id} event={event} now={now} playerId={playerId} />
+    <EventCard key={event.id} event={event} now={now} playerId={playerId} link={links.get(event.id)} />
   );
 
   return (
@@ -130,8 +135,21 @@ export function CalendarAgenda({ playerId }: { playerId: string }) {
  * set are shown; the type is shown under a title unless it is OTHER; every
  * time sits next to its own date.
  */
-function EventCard({ event, now, playerId }: { event: CalendarEvent; now: number; playerId: string }) {
+function EventCard({
+  event,
+  now,
+  playerId,
+  link,
+}: {
+  event: CalendarEvent;
+  now: number;
+  playerId: string;
+  link: WorkoutEventLink | undefined;
+}) {
   const { t, language } = useI18n();
+  const workoutA11y = useWorkoutA11y();
+  // CAL-TRAIN-001: a scheduled workout shows its derived state; a plain event keeps the manual completion mark.
+  const workoutState = eventWorkoutState(event, link, now);
   const id = `schedule-event-${event.id}`;
   const inProgress = isInProgress(event, now);
   const subtitle = eventSubtitle(t, event);
@@ -143,18 +161,19 @@ function EventCard({ event, now, playerId }: { event: CalendarEvent; now: number
   const label =
     event.location === null ? base : t('calendar.eventA11yWithLocation', { label: base, place: event.location });
   // Completion is shown, never used to move the card: sections stay schedule-based.
-  const completed = event.completion !== null;
+  const completed = workoutState === null && event.completion !== null;
   return (
     <Pressable
       testID={id}
       accessibilityRole="button"
-      accessibilityLabel={completed ? t('calendar.completion.eventA11y', { label }) : label}
+      accessibilityLabel={workoutState !== null ? workoutA11y(label, workoutState) : completed ? t('calendar.completion.eventA11y', { label }) : label}
       onPress={() => router.push(eventPath(playerId, event.id))}
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.8 }]}>
+      style={({ pressed }) => [styles.card, workoutCardStyle(workoutState), pressed && { opacity: 0.8 }]}>
       <View style={styles.cardTop}>
         <Text style={styles.cardHeading} testID={`${id}-heading`}>
           {eventHeading(t, event)}
         </Text>
+        <WorkoutStateBadge state={workoutState} testID={`${id}-workout-state`} />
         {inProgress ? (
           <Text style={styles.now} testID={`${id}-now`}>
             {t('calendar.inProgress')}

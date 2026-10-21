@@ -57,7 +57,7 @@ describe('workout event links: one bulk read, event -> plan -> session', () => {
     const sB = await startSession(db, b.planId, deps);
     await abandonSession(db, sB.id, deps);
     const sC = await startSession(db, c.planId, deps);
-    expect((await recordSet(db, sC.exercises[0].sets[0].id, { DURATION_S: 30 }, deps)).ok).toBe(true);
+    expect((await recordSet(db, sC.exercises[0]!.sets[0]!.id, { DURATION_S: 30 }, deps)).ok).toBe(true);
     await finishSession(db, sC.id, deps);
     const sD = await startSession(db, d.planId, deps);
 

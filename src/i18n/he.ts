@@ -1297,6 +1297,21 @@ export const he = {
       undo: 'ביטול הסימון',
       eventA11y: '{label}, הושלם',
     },
+    // CAL-TRAIN-001: מצב אימון מתוזמן, נגזר מהאימון שבוצע בפועל (לא נשמר). סמל ומילה.
+    workoutState: {
+      IN_PROGRESS: '▶ אימון בתהליך',
+      COMPLETED: '✓ הושלם',
+      OVERDUE: '⚠ לא בוצע',
+      PARTIAL: '◐ בוצע חלקית',
+      ABANDONED: '■ הופסק',
+      a11y: {
+        IN_PROGRESS: '{label}, אימון בתהליך',
+        COMPLETED: '{label}, הושלם',
+        OVERDUE: '{label}, עבר המועד ולא בוצע',
+        PARTIAL: '{label}, בוצע חלקית',
+        ABANDONED: '{label}, הופסק',
+      },
+    },
     errors: {
       typeRequired: 'יש לבחור סוג אירוע.',
       titleTooLong: 'הכותרת יכולה להכיל עד 100 תווים.',

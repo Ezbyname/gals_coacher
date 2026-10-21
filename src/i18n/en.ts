@@ -1294,6 +1294,21 @@ export const en = {
       undo: 'Undo completion',
       eventA11y: '{label}, completed',
     },
+    // CAL-TRAIN-001: the state of a scheduled workout, derived from its training session (never stored). A symbol and a word.
+    workoutState: {
+      IN_PROGRESS: '▶ Workout in progress',
+      COMPLETED: '✓ Completed',
+      OVERDUE: '⚠ Missed',
+      PARTIAL: '◐ Partly done',
+      ABANDONED: '■ Stopped',
+      a11y: {
+        IN_PROGRESS: '{label}, workout in progress',
+        COMPLETED: '{label}, completed',
+        OVERDUE: '{label}, the scheduled time has passed and the workout was not done',
+        PARTIAL: '{label}, partly done',
+        ABANDONED: '{label}, stopped',
+      },
+    },
     errors: {
       typeRequired: 'Choose an event type.',
       titleTooLong: 'The title can have up to 100 characters.',

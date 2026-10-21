@@ -8,6 +8,7 @@ import type { CalendarDate } from '@/domain/calendarDate';
 import { listActivityTypes } from '@/data/local/activityTypes/activityTypeRepository';
 import type { ActivityType, ActivityTypeId } from '@/domain/activityType';
 import type { CalendarEvent } from '@/domain/calendarEvent';
+import type { WorkoutEventState } from '@/domain/workoutEventState';
 import {
   NO_FILTER,
   NO_SPORT,
@@ -31,6 +32,7 @@ import {
 } from '@/domain/calendarView';
 import { V1_ENABLED_SPORTS, type SportKey } from '@/domain/sport';
 import { useApp } from '@/features/AppProvider';
+import { listWorkoutEventLinksInRange, type WorkoutEventLink } from '@/data/local/training/workoutEventLinks';
 import { stripBidi } from '@/i18n/bidi';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/types';
@@ -68,6 +70,7 @@ import {
   formatWeekdayShort,
 } from './formatEventTime';
 import { ErrorScreen, LoadingScreen } from './StatusScreen';
+import { eventWorkoutState, useWorkoutA11y, workoutCardStyle, WorkoutStateBadge } from './WorkoutStateBadge';
 
 type PlayerRef = { id: string; name: string; createdAt: number };
 
@@ -78,6 +81,9 @@ type Loaded =
       rangeKey: string;
       players: PlayerRef[];
       events: CalendarEvent[];
+      /** CAL-TRAIN-001: the workout behind each workout event of the range (one bulk read) and the instant it was read. */
+      links: Map<string, WorkoutEventLink>;
+      now: number;
       /** The whole catalog, active and inactive (history stays filterable). */
       types: ActivityType[];
     }
@@ -131,8 +137,9 @@ export function FullCalendar() {
         listPlayers(boot.db),
         listCalendarEventsInRange(boot.db, from, to),
         listActivityTypes(boot.db),
+        listWorkoutEventLinksInRange(boot.db, from, to),
       ])
-        .then(([profiles, events, types]) => {
+        .then(([profiles, events, types, links]) => {
           if (!active) return;
           const players = profiles.map(({ player }) => ({
             id: player.id as string,
@@ -141,7 +148,7 @@ export function FullCalendar() {
           }));
           // Archived Players are off the roster: their events stay stored, not in the default calendar.
           const roster = new Set(players.map((p) => p.id));
-          setLoaded({ status: 'ready', rangeKey, players, events: events.filter((e) => roster.has(e.playerId)), types });
+          setLoaded({ status: 'ready', rangeKey, players, events: events.filter((e) => roster.has(e.playerId)), links, now: services.clock.wallNow(), types });
         })
         .catch((e: unknown) => {
           console.warn('[calendar] full calendar failed', e);
@@ -151,7 +158,7 @@ export function FullCalendar() {
       return () => {
         active = false;
       };
-    }, [boot, rangeKey]),
+    }, [boot, rangeKey, services]),
   );
 
   const ready = loaded.status === 'ready' ? loaded : null;
@@ -378,6 +385,7 @@ export function FullCalendar() {
               playerName={playerName(event.playerId)}
               meaning={meaning}
               players={players}
+              workoutState={eventWorkoutState(event, ready?.links.get(event.id), ready?.now ?? 0)}
             />
           ))
         )}
@@ -537,13 +545,17 @@ function EventRow({
   playerName,
   meaning,
   players,
+  workoutState,
 }: {
   event: CalendarEvent;
   playerName: string;
   meaning: ColorMeaning;
   players: PlayerRef[];
+  workoutState: WorkoutEventState | null;
 }) {
   const { t, language } = useI18n();
+  const workoutA11y = useWorkoutA11y();
+  const manuallyCompleted = workoutState === null && event.completion !== null;
   const id = `calendar-event-${event.id}`;
   const marker = eventMarker(event, meaning, players);
   const subtitle = eventSubtitle(t, event);
@@ -557,9 +569,9 @@ function EventRow({
     <Pressable
       testID={id}
       accessibilityRole="button"
-      accessibilityLabel={event.completion !== null ? t('calendar.completion.eventA11y', { label }) : label}
+      accessibilityLabel={workoutState !== null ? workoutA11y(label, workoutState) : manuallyCompleted ? t('calendar.completion.eventA11y', { label }) : label}
       onPress={() => router.push(eventPath(event.playerId, event.id))}
-      style={({ pressed }) => [styles.event, pressed && { opacity: 0.8 }]}>
+      style={({ pressed }) => [styles.event, workoutCardStyle(workoutState), pressed && { opacity: 0.8 }]}>
       <View style={[styles.stripe, { backgroundColor: marker.color }]} testID={`${id}-stripe`} />
       <View
         style={[styles.marker, styles.rowMarker, { backgroundColor: marker.color }]}
@@ -586,7 +598,8 @@ function EventRow({
             {sportLabel(t, event.sport)}
           </Text>
         ) : null}
-        {event.completion !== null ? (
+        <WorkoutStateBadge state={workoutState} testID={`${id}-workout-state`} />
+        {manuallyCompleted ? (
           <Text style={styles.completed} testID={`${id}-completed`}>
             {t('calendar.completion.badge')}
           </Text>
