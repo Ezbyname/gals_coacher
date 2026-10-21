@@ -1,6 +1,12 @@
 # CONTENT-REVIEW-SHEET — TRAINING-BLOCKS-001 (6 Exercises + 13 workouts + 6 Training Blocks)
 
-Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published as approved until a human approves this sheet.
+Sheet status: **PUBLISHED / OWNER APPROVED**.
+
+- Human content review = **PASS**.
+- Owner publication approval = **APPROVED**.
+- Published: **6 Exercises**, **13 General Athletic Professional Workouts** and **6 Training Blocks** (registry status `PUBLISHED`; stable ids unchanged).
+- The time-semantics model (`DURATION_TARGET`, `PERFORMANCE_GOAL_TIME`, `COMPLETION_TIME_CAP`) is approved and locked; schema v22 (two nullable `time_semantics` columns) is approved and verified; v21 stays data-only.
+- Provenance, evidence limitations and every `ORIGINAL_RECOMMENDATION` label below are unchanged: publication does not turn our own recommendations into sourced claims.
 
 Contents: **6 new built-in Exercises** (schema v21, data only), **13 general-athletic Professional Workouts** (no sport) and **6 Training Blocks** (5 × 6 weeks, Explosive Power 8 weeks).
 
@@ -28,7 +34,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 
 **Corrections to the Phase 1 report:** a landing-progression source and a deceleration-training source could not be found or opened; the landing evidence that was opened is adult-only; the adolescent plyometric review makes no landing recommendation and links 8 to under 10 weeks with more consistent (exploratory) gains; the youth running-HIIT review leaves bout length and rest open and reports no safety data.
 
-## Resolved human-review decisions (review round 1: CHANGES REQUIRED — SMALL CONTENT PATCH, applied)
+## Resolved human-review decisions (all RESOLVED; human review = PASS)
 
 **Decisions recorded as RESOLVED / APPROVED:**
 
@@ -47,7 +53,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - Time semantics (final content review, history-safe): what a seconds value MEANS belongs to the PRESCRIPTION and is stored with the copied plan item and with the session exercise (schema v22, `time_semantics`, NULL = legacy). `DURATION_TARGET` = work for this long; `PERFORMANCE_GOAL_TIME` = a goal time (what a stored TIME value meant before, so legacy TIME rows keep reading "Goal time"); `COMPLETION_TIME_CAP` = a fixed course or distance whose actual time is recorded, shown as "Time cap (seconds) — record your actual time" with the hint "Record your actual time. The value shown is only a recording cap, not a performance goal." A cap is NOT a pass / fail line: a real result above it is recorded as it is. Nothing is inferred from the exercise id, so the same exercise can be a goal time in an old plan and a cap in a block. The prescriptions below opt in explicitly: ATH-ACCELERATION-01: SPRINT_10M; ATH-ACCELERATION-01: SPRINT_20M; ATH-SPEED-01: SPRINT_20M; ATH-SPEED-01: SPRINT_30M_FLYING; ATH-DECEL-COD-01: T_DRILL; ATH-DECEL-COD-01: PRO_AGILITY_5_10_5; ATH-CONDITIONING-INTERVALS-01: ROW_500M (alternative); ATH-REPEATED-EFFORT-01: SPRINT_20M. Shuttle run and sled push alternatives are prescribed as work durations (DURATION_TARGET), the 500 m row as a completion-time cap.
 - Hebrew: the awkward supervision sentence is replaced everywhere by "למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית."; "באותה משך" → "באותו משך"; names: ירידה ונחיתה מבוקרת, תרגיל מראה בזוגות, אינטרוולים בריצה.
 
-**Still for the final human review:** native-speaker Hebrew review of the remaining text; then publication approval.
+**Closed by the final human review:** the coaching content, the Hebrew wording and the time semantics were reviewed and accepted; publication was approved by the owner.
 
 ## A. New Exercises (6, schema v21)
 
@@ -298,7 +304,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Focus** | ATHLETIC_FOUNDATION |
 | **Length** | about 30–40 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** היכרות עם דפוסי התנועה הבסיסיים — סקווט, לאנג׳, גשר עכוז / יישור ירך, דחיפה, משיכה ויציבות הגו — בעומס נמוך ובדגש על איכות התנועה.
@@ -368,7 +374,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Focus** | STRENGTH_FOUNDATION |
 | **Length** | about 40–50 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** סקווט, דחיפה אופקית, משיכה אופקית, גשר עכוז ויציבות הגו — יום כוח בסיסי שמשלים את כוח ב׳.
@@ -430,7 +436,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Focus** | STRENGTH_FOUNDATION |
 | **Length** | about 40–50 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** עבודה על רגל אחת, ציר ירך, משיכה, לחיצה מעל הראש ויציבות נגד סיבוב — משלים את כוח א׳.
@@ -492,7 +498,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Focus** | EXPLOSIVE_POWER |
 | **Length** | about 30–40 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** נחיתה מבוקרת לפני קפיצות: ירידה מצעד, קפיצת סקווט עם החזקת הנחיתה וקפיצות קצרות — כמות נמוכה, איכות גבוהה.
@@ -553,7 +559,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Focus** | EXPLOSIVE_POWER |
 | **Length** | about 35–45 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** נחיתה על רגל אחת, קפיצת קופסה, קפיצות צד וכוח מפרק הירך — פלט מתפרץ באיכות גבוהה עם מנוחות ארוכות.
@@ -622,7 +628,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Focus** | EXPLOSIVE_POWER |
 | **Length** | about 30–40 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** זריקות כדור כבד — סיבוב, הטחה ודחיפה — לצד יציבות נגד סיבוב. עומס נמוך יחסית על הרגליים, שימושי ביום שאחרי קפיצות.
@@ -682,7 +688,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Focus** | SPEED_ACCELERATION |
 | **Length** | about 30–40 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** מכניקת האצה ופרצי ספרינט קצרים (10–20 מטרים) באיכות גבוהה, עם מנוחה ארוכה בין החזרות.
@@ -741,7 +747,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Focus** | SPEED_ACCELERATION |
 | **Length** | about 35–45 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** ספרינט ארוך יותר עם ריצה מעופפת — פיתוח מהירות מרבית אחרי שבסיס ההאצה יציב. נפח נמוך ומנוחה מלאה.
@@ -800,7 +806,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Focus** | AGILITY_COD |
 | **Length** | about 35–45 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** קודם עצירה מבוקרת, אחר כך שינויי כיוון מתוכננים מראש: T-דריל ו־5-10-5, עם קפיצות צד.
@@ -865,7 +871,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Focus** | AGILITY_COD |
 | **Length** | about 30–40 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** תגובה לאות — מילה, כיוון או מראה של בן זוג — במקום מסלול ידוע מראש. דורש בן זוג או מאמן.
@@ -923,7 +929,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Focus** | CONDITIONING |
 | **Length** | about 25–35 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** ריצה קלה ורציפה בקצב שמאפשר לדבר — בסיס סיבולת אירובית. שיטה אחת בכל אימון.
@@ -979,7 +985,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | BEGINNER (content progression, not a readiness assessment) |
 | **Focus** | CONDITIONING |
 | **Length** | about 30–40 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** מקטעי ריצה מהירים אך מבוקרים עם מנוחה בין המקטעים. ללא ציוד מיוחד; לכל חלופה יש מינון משלה.
@@ -1042,7 +1048,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | **Difficulty** | INTERMEDIATE (content progression, not a readiness assessment) |
 | **Focus** | CONDITIONING |
 | **Length** | about 30–40 minutes |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 | **Evidence class** | structure and sequencing: `SYNTHESIZED` · every dosage: `ORIGINAL_RECOMMENDATION` |
 
 **Summary — HE:** ספרינטים קצרים חוזרים (20 מטרים) עם מנוחות קצרות, בשלושה סבבים — יכולת לחזור על מאמץ. גרסת שטח פשוטה.
@@ -1111,7 +1117,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 |---|---|
 | **Difficulty** | BEGINNER (content progression — not an age or a readiness assessment) |
 | **Duration** | 6 weeks · 2 sessions a week · 12 sessions |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 
 **Summary — HE:** שישה שבועות שמחברים כוח בסיסי, נחיתה וקפיצה, האצה ועצירה — בסיס תנועתי רחב לכל ספורט.
 
@@ -1189,7 +1195,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 |---|---|
 | **Difficulty** | INTERMEDIATE (content progression — not an age or a readiness assessment) |
 | **Duration** | 8 weeks · 2 sessions a week · 16 sessions |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 
 **Summary — HE:** שמונה שבועות: קודם איכות נחיתה, אחר כך קפיצות פשוטות ועד פלט מתפרץ באיכות גבוהה, עם נפח קפיצות מתון ושבוע אחרון של איחוד.
 
@@ -1274,7 +1280,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 |---|---|
 | **Difficulty** | INTERMEDIATE (content progression — not an age or a readiness assessment) |
 | **Duration** | 6 weeks · 2 sessions a week · 12 sessions |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 
 **Summary — HE:** שישה שבועות של האצה באיכות גבוהה ומנוחה מלאה, ובסוף עבודת מהירות מרבית — לא ריצה רציפה.
 
@@ -1349,7 +1355,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 |---|---|
 | **Difficulty** | INTERMEDIATE (content progression — not an age or a readiness assessment) |
 | **Duration** | 6 weeks · 2 sessions a week · 12 sessions |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 
 **Summary — HE:** שישה שבועות: עצירה מבוקרת, שינויי כיוון מתוכננים ואחר כך זריזות תגובתית לאות.
 
@@ -1425,7 +1431,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 |---|---|
 | **Difficulty** | BEGINNER (content progression — not an age or a readiness assessment) |
 | **Duration** | 6 weeks · 2 sessions a week · 12 sessions |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 
 **Summary — HE:** שישה שבועות של כוח כל הגוף: סקווט, ציר ירך, רגל אחת, דחיפה, משיכה ויציבות הגו — בהתקדמות הדרגתית ושבוע איחוד.
 
@@ -1498,7 +1504,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 |---|---|
 | **Difficulty** | BEGINNER (content progression — not an age or a readiness assessment) |
 | **Duration** | 6 weeks · 2 sessions a week · 12 sessions |
-| **Review status** | `PENDING_HUMAN_REVIEW` |
+| **Review status** | `PUBLISHED` |
 
 **Summary — HE:** שישה שבועות: בסיס אירובי, אינטרוולים בריצה ומאמץ חוזר בספרינטים קצרים. כושר כללי; כושר ספציפי לענף נשאר באימוני הענף.
 

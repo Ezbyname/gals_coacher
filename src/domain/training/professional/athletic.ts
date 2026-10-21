@@ -28,7 +28,7 @@ const FULL_REST: Pair = [
   'For maximal efforts take full rest between repetitions and stop when speed or technique drops — quality over quantity.',
 ];
 
-const BASE = { sport: null, trainingDomain: 'GENERAL_ATHLETIC', reviewStatus: 'PENDING_HUMAN_REVIEW' } as const;
+const BASE = { sport: null, trainingDomain: 'GENERAL_ATHLETIC', reviewStatus: 'PUBLISHED' } as const;
 
 export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
   {

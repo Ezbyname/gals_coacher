@@ -10,7 +10,7 @@ import { renderTrainingBlocksReviewSheet } from '../reviewSheet';
 describe('TRAINING-BLOCKS-001 CONTENT-REVIEW-SHEET', () => {
   const sheet = renderTrainingBlocksReviewSheet();
 
-  it('covers every new Exercise, every general workout and every block, all PENDING_HUMAN_REVIEW', () => {
+  it('covers every new Exercise, every general workout and every block, all PUBLISHED / OWNER APPROVED', () => {
     expect(sheet).toMatch(/6 Exercises \+ 13 workouts \+ 6 Training Blocks/);
     for (const e of ATHLETIC) expect(sheet).toContain(`### ${e.id}`);
     for (const w of GENERAL_ATHLETIC_WORKOUTS) {
@@ -21,8 +21,13 @@ describe('TRAINING-BLOCKS-001 CONTENT-REVIEW-SHEET', () => {
       expect(sheet).toContain(`### ${b.id} — ${b.name[1]}`);
       expect(sheet).toContain(`${b.weeks} weeks · ${b.sessionsPerWeek} sessions a week`);
     }
-    expect(sheet.match(/\| \*\*Review status\*\* \| `PENDING_HUMAN_REVIEW` \|/g)).toHaveLength(13 + 6);
-    expect(sheet).not.toMatch(/`PUBLISHED`/);
+    expect(sheet.match(/\| \*\*Review status\*\* \| `PUBLISHED` \|/g)).toHaveLength(13 + 6);
+    expect(sheet).not.toMatch(/PENDING_HUMAN_REVIEW/);
+    expect(sheet).toContain('Sheet status: **PUBLISHED / OWNER APPROVED**');
+    expect(sheet).toMatch(/Human content review = \*\*PASS\*\*/);
+    expect(sheet).toMatch(/Owner publication approval = \*\*APPROVED\*\*/);
+    expect(sheet).toMatch(/schema v22 .* is approved and verified; v21 stays data-only/);
+    expect(sheet).toMatch(/ORIGINAL_RECOMMENDATION/); // the evidence labels survive publication
   });
 
   it('lists every week of every block and the reuse matrix', () => {

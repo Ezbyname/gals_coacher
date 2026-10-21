@@ -162,7 +162,7 @@ export const TRAINING_BLOCKS: readonly TrainingBlock[] = [
       D_DOSAGE,
     ],
     sources: ['LTAD-1', 'ACSM-2009', 'PLYO-ADOLESCENT', 'LANDING-ADULTS'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'EXPLOSIVE-POWER-8W-01',
@@ -231,7 +231,7 @@ export const TRAINING_BLOCKS: readonly TrainingBlock[] = [
       D_DOSAGE,
     ],
     sources: ['LTAD-1', 'ACSM-2009', 'PLYO-ADOLESCENT', 'LANDING-ADULTS'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'SPEED-ACCELERATION-6W-01',
@@ -280,7 +280,7 @@ export const TRAINING_BLOCKS: readonly TrainingBlock[] = [
       D_DOSAGE,
     ],
     sources: ['LTAD-1', 'ACSM-2009'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'AGILITY-COD-6W-01',
@@ -334,7 +334,7 @@ export const TRAINING_BLOCKS: readonly TrainingBlock[] = [
       D_DOSAGE,
     ],
     sources: ['LTAD-1', 'AGILITY-2016', 'ACSM-2009'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'STRENGTH-FOUNDATION-6W-01',
@@ -382,7 +382,7 @@ export const TRAINING_BLOCKS: readonly TrainingBlock[] = [
       D_DOSAGE,
     ],
     sources: ['LTAD-1', 'ACSM-2009'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
   {
     id: 'CONDITIONING-6W-01',
@@ -439,7 +439,7 @@ export const TRAINING_BLOCKS: readonly TrainingBlock[] = [
       D_DOSAGE,
     ],
     sources: ['HIIT-YOUTH', 'RST-NSCA', 'RSA-2011'],
-    reviewStatus: 'PENDING_HUMAN_REVIEW',
+    reviewStatus: 'PUBLISHED',
   },
 ];
 

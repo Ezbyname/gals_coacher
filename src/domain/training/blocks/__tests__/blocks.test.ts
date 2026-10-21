@@ -52,11 +52,11 @@ describe('the registry: stable ids, sizes and review status', () => {
     }
   });
 
-  it('thirteen general workouts and six new exercises, all with the approved ids, all PENDING_HUMAN_REVIEW', () => {
+  it('thirteen general workouts and six new exercises, all with the approved ids, all PUBLISHED', () => {
     expect(GENERAL_ATHLETIC_WORKOUTS.map((w) => w.id)).toEqual(WORKOUT_IDS);
     expect(ATHLETIC.map((e) => e.id)).toEqual(NEW_EXERCISE_IDS);
-    for (const w of GENERAL_ATHLETIC_WORKOUTS) expect([w.id, w.reviewStatus]).toEqual([w.id, 'PENDING_HUMAN_REVIEW']);
-    for (const b of TRAINING_BLOCKS) expect([b.id, b.reviewStatus]).toEqual([b.id, 'PENDING_HUMAN_REVIEW']);
+    for (const w of GENERAL_ATHLETIC_WORKOUTS) expect([w.id, w.reviewStatus]).toEqual([w.id, 'PUBLISHED']);
+    for (const b of TRAINING_BLOCKS) expect([b.id, b.reviewStatus]).toEqual([b.id, 'PUBLISHED']);
   });
 
   it('the schedule covers every (week, slot) exactly once and runs in order', () => {

@@ -14,8 +14,9 @@ import { totalSessions, type TrainingBlock } from './types';
 
 /**
  * The bilingual CONTENT-REVIEW-SHEET for TRAINING-BLOCKS-001 (6 Exercises, 13 workouts, 6 Training Blocks), rendered from the very
- * same code the app ships, so it can never drift from the content. Every item is `PENDING_HUMAN_REVIEW`; nothing is published as
- * approved until a human approves this sheet.
+ * same code the app ships, so it can never drift from the content. Human review: PASS; owner publication approval: APPROVED —
+ * every workout and block carries the registry status `PUBLISHED`. Provenance, evidence limits and every ORIGINAL_RECOMMENDATION
+ * label are kept: publication does not turn our own recommendations into sourced claims.
  */
 
 const ex = (id: string): ExerciseDefinition => builtinExercise(id)!;
@@ -218,7 +219,13 @@ export function renderTrainingBlocksReviewSheet(): string {
   const out: string[] = [
     '# CONTENT-REVIEW-SHEET — TRAINING-BLOCKS-001 (6 Exercises + 13 workouts + 6 Training Blocks)',
     '',
-    'Status of every item below: **PENDING_HUMAN_REVIEW**. Nothing is published as approved until a human approves this sheet.',
+    'Sheet status: **PUBLISHED / OWNER APPROVED**.',
+    '',
+    '- Human content review = **PASS**.',
+    '- Owner publication approval = **APPROVED**.',
+    '- Published: **6 Exercises**, **13 General Athletic Professional Workouts** and **6 Training Blocks** (registry status `PUBLISHED`; stable ids unchanged).',
+    '- The time-semantics model (`DURATION_TARGET`, `PERFORMANCE_GOAL_TIME`, `COMPLETION_TIME_CAP`) is approved and locked; schema v22 (two nullable `time_semantics` columns) is approved and verified; v21 stays data-only.',
+    '- Provenance, evidence limitations and every `ORIGINAL_RECOMMENDATION` label below are unchanged: publication does not turn our own recommendations into sourced claims.',
     '',
     `Contents: **${ATHLETIC.length} new built-in Exercises** (schema v21, data only), **${GENERAL_ATHLETIC_WORKOUTS.length} general-athletic Professional Workouts** (no sport) and **${TRAINING_BLOCKS.length} Training Blocks** (5 × 6 weeks, Explosive Power 8 weeks).`,
     '',
@@ -236,7 +243,7 @@ export function renderTrainingBlocksReviewSheet(): string {
     '',
     '**Corrections to the Phase 1 report:** a landing-progression source and a deceleration-training source could not be found or opened; the landing evidence that was opened is adult-only; the adolescent plyometric review makes no landing recommendation and links 8 to under 10 weeks with more consistent (exploratory) gains; the youth running-HIIT review leaves bout length and rest open and reports no safety data.',
     '',
-    '## Resolved human-review decisions (review round 1: CHANGES REQUIRED — SMALL CONTENT PATCH, applied)',
+    '## Resolved human-review decisions (all RESOLVED; human review = PASS)',
     '',
     '**Decisions recorded as RESOLVED / APPROVED:**',
     '',
@@ -255,7 +262,7 @@ export function renderTrainingBlocksReviewSheet(): string {
     '- Time semantics (final content review, history-safe): what a seconds value MEANS belongs to the PRESCRIPTION and is stored with the copied plan item and with the session exercise (schema v22, `time_semantics`, NULL = legacy). `DURATION_TARGET` = work for this long; `PERFORMANCE_GOAL_TIME` = a goal time (what a stored TIME value meant before, so legacy TIME rows keep reading "Goal time"); `COMPLETION_TIME_CAP` = a fixed course or distance whose actual time is recorded, shown as "Time cap (seconds) — record your actual time" with the hint "Record your actual time. The value shown is only a recording cap, not a performance goal." A cap is NOT a pass / fail line: a real result above it is recorded as it is. Nothing is inferred from the exercise id, so the same exercise can be a goal time in an old plan and a cap in a block. The prescriptions below opt in explicitly: ' + CAP_PRESCRIPTIONS.join('; ') + '. Shuttle run and sled push alternatives are prescribed as work durations (DURATION_TARGET), the 500 m row as a completion-time cap.',
     '- Hebrew: the awkward supervision sentence is replaced everywhere by "למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית."; "באותה משך" → "באותו משך"; names: ירידה ונחיתה מבוקרת, תרגיל מראה בזוגות, אינטרוולים בריצה.',
     '',
-    '**Still for the final human review:** native-speaker Hebrew review of the remaining text; then publication approval.',
+    '**Closed by the final human review:** the coaching content, the Hebrew wording and the time semantics were reviewed and accepted; publication was approved by the owner.',
     '',
     `## A. New Exercises (${ATHLETIC.length}, schema v21)`,
     '',
