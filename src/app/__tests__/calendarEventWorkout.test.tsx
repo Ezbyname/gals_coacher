@@ -168,6 +168,8 @@ describe('manual completion', () => {
     expect(has('event-completion-status')).toBe(true);
     expect(has('event-complete')).toBe(false);
     expect(has('event-uncomplete')).toBe(false);
+    expect(has('event-workout-start')).toBe(false); // nothing here can create a new session
+    expect(has('event-workout-continue') || has('event-workout-view')).toBe(false);
     expect(await db!.getFirstAsync('SELECT completed_at, completion_source FROM calendar_events WHERE id = ?', [w.eventId])).toEqual(before);
     expect(await sessions()).toEqual([]);
   });

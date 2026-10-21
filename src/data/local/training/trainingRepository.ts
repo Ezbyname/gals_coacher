@@ -361,6 +361,7 @@ async function close(
 ): Promise<TrainingSession> {
   const now = deps.clock.wallNow();
   let result = null as TrainingSession | null;
+  let scheduled = false;
   await writeTransaction(db, async () => {
     const exists = await db.getFirstAsync('SELECT id FROM training_sessions WHERE id = ?', [id]);
     if (exists === null) throw new TrainingNotFoundError('session', id);
@@ -375,7 +376,12 @@ async function close(
       id,
     ]);
     result = await readSession(db, id);
+    scheduled =
+      session.plannedWorkoutId !== null &&
+      (await db.getFirstAsync('SELECT 1 FROM calendar_events WHERE planned_workout_id = ?', [session.plannedWorkoutId])) !== null;
   });
+  // After the commit only (a rollback throws before this line): the calendar shows the session's status, so it refreshes.
+  if (scheduled) emitDataChanged('calendar');
   return result!;
 }
 

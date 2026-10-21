@@ -15,7 +15,7 @@ import type { CalendarEvent } from '@/domain/calendarEvent';
 import { effectiveRules, type ReminderRule } from '@/domain/reminders';
 import { groupEntries } from '@/domain/training/composition';
 import type { SessionStatus } from '@/domain/training/training';
-import { workoutEventState, type WorkoutEventState } from '@/domain/workoutEventState';
+import { isStartableState, workoutEventState, type WorkoutEventState } from '@/domain/workoutEventState';
 import { rulesSummary } from '@/features/reminders/ruleLabel';
 import { readReminderPreferences } from '@/preferences/reminderPreference';
 import { prescriptionText, sessionPath, trainingErrorMessage } from '@/features/training/trainingLabels';
@@ -116,7 +116,7 @@ export function CalendarEventDetails({ playerId, eventId }: { playerId: string; 
                 planId: plan.id,
                 name: plan.name,
                 sections: groupEntries(plan.items).length,
-                startable: plan.items.length > 0,
+                startable: plan.items.length > 0 && isStartableState(workoutEventState({ ...event, sessionStatus: session?.status ?? null }, services.clock.wallNow())), // a legacy manually-completed workout (no session) offers no Start
                 sessionId: plan.sessionId,
                 inProgress: session?.status === 'IN_PROGRESS',
                 playerName: profile?.player.name ?? '',

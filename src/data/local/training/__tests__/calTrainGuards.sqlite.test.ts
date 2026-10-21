@@ -188,3 +188,58 @@ describe('reminders (26-30)', () => {
     }
   });
 });
+
+describe('calendar refresh after a session closes', () => {
+  async function observe(run: () => Promise<unknown>) {
+    const topics: DataTopic[] = [];
+    const off = onDataChanged((t) => topics.push(t));
+    try {
+      await run().catch(() => undefined);
+    } finally {
+      off();
+    }
+    return topics;
+  }
+  const stateOf = async (eventId: string) => {
+    const ev = (await getCalendarEvent(db, daniel, eventId))!;
+    return workoutEventState({ ...ev, sessionStatus: (await listWorkoutEventLinks(db, daniel)).get(eventId)!.sessionStatus }, now);
+  };
+
+  it('finish (COMPLETED) emits ONE signal, and the derived state changes from IN_PROGRESS', async () => {
+    const w = await mk('A');
+    const s = await startSession(db, w.planId, deps);
+    expect(await stateOf(w.event.id)).toBe('IN_PROGRESS');
+    await recordSet(db, s.exercises[0]!.sets[0]!.id, { DURATION_S: 30 }, deps);
+    expect(await observe(() => finishSession(db, s.id, deps))).toEqual(['calendar']);
+    expect(await stateOf(w.event.id)).toBe('COMPLETED');
+  });
+
+  it('a partial close emits ONE signal and the state becomes PARTIAL', async () => {
+    const w = await mk('A', FUTURE, 2);
+    const s = await startSession(db, w.planId, deps);
+    await recordSet(db, s.exercises[0]!.sets[0]!.id, { DURATION_S: 30 }, deps);
+    expect(await observe(() => finishSession(db, s.id, deps))).toEqual(['calendar']);
+    expect(await stateOf(w.event.id)).toBe('PARTIAL');
+  });
+
+  it('abandon emits ONE signal and the state becomes ABANDONED', async () => {
+    const w = await mk('A');
+    const s = await startSession(db, w.planId, deps);
+    expect(await observe(() => abandonSession(db, s.id, deps))).toEqual(['calendar']);
+    expect(await stateOf(w.event.id)).toBe('ABANDONED');
+  });
+
+  it('a failed close (nothing performed) emits nothing and the session stays IN_PROGRESS', async () => {
+    const w = await mk('A');
+    const s = await startSession(db, w.planId, deps);
+    expect(await observe(() => finishSession(db, s.id, deps))).toEqual([]);
+    expect(await stateOf(w.event.id)).toBe('IN_PROGRESS');
+  });
+
+  it('a session of an unscheduled plan emits nothing when it closes', async () => {
+    const loose = await savePlannedWorkout(db, { planId: null, playerId: daniel, name: 'Loose', entries: [{ kind: 'EXERCISE', exerciseId: 'PLANK', prescription: { sets: 1, target: 30, loadKg: null, restSec: 60 } }] }, deps);
+    if (!loose.ok) throw new Error('seed');
+    const s = await startSession(db, loose.plan.id, deps);
+    expect(await observe(() => abandonSession(db, s.id, deps))).toEqual([]);
+  });
+});
