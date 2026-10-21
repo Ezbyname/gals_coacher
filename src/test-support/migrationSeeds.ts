@@ -59,6 +59,18 @@ export function expectUnchangedExceptLaterSeeds(
     expect(rows.filter((r) => later.has(String(r.id))).map((r) => String(r.id))).toEqual(nodeIdsSeededAfter(version, upTo));
     rest = { ...rest, taxonomy_nodes: rows.filter((r) => !later.has(String(r.id))) };
   }
+  // v22 added ONE nullable column to two snapshot tables: every row that existed before reads NULL (= legacy), and the old
+  // rows are otherwise byte-identical, so the comparison drops the new column after proving it is NULL everywhere.
+  if (version < 22 && upTo >= 22) {
+    const without = (table: 'planned_workout_items' | 'session_exercises') => {
+      const rows = rest[table] as Record<string, unknown>[] | undefined;
+      if (rows === undefined) return;
+      for (const row of rows) expect([table, row.time_semantics ?? null]).toEqual([table, null]);
+      rest = { ...rest, [table]: rows.map(({ time_semantics: _dropped, ...row }) => row) };
+    };
+    without('planned_workout_items');
+    without('session_exercises');
+  }
   expect(rest).toEqual(before);
 }
 

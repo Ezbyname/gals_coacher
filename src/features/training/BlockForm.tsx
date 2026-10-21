@@ -431,7 +431,7 @@ function ItemEditor(props: {
   const id = `block-item-${index}`;
   const name = exerciseName(item.exercise, language);
   const measurement = item.exercise.measurement;
-  const targetKey = targetApplies(measurement.type) ? targetLabelKey(measurement.type, item.exercise.id) : null;
+  const targetKey = targetApplies(measurement.type) ? targetLabelKey(measurement.type) : null;
   const err = (field: keyof PrescriptionErrors) => {
     const code = props.errors?.[field];
     if (!code) return undefined;

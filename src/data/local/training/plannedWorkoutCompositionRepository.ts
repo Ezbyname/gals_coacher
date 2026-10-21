@@ -455,9 +455,12 @@ async function professionalEntries(
         const exercise = exercises.find((e) => e.id === item.exerciseId);
         if (!exercise) throw new TrainingNotFoundError('exercise', item.exerciseId);
         if (!exercise.active) throw new TrainingRuleError('EXERCISE_INACTIVE');
-        const prescription: Prescription = item.dosage
+        const base: Prescription = item.dosage
           ? { sets: item.dosage.sets, target: item.dosage.target, loadKg: null, restSec: item.dosage.restSec }
           : defaultPrescription(exercise.measurement, exercise.defaults);
+        // the meaning of the seconds value is part of the prescription and is copied with it (only a TIME exercise carries one)
+        if (item.timeSemantics !== undefined && exercise.measurement.type !== 'TIME') throw new TrainingRuleError('ASSIGNMENT_INVALID');
+        const prescription: Prescription = item.timeSemantics ? { ...base, timeSemantics: item.timeSemantics } : base;
         if (!validatePrescription(exercise.measurement, prescription).ok) throw new TrainingRuleError('ASSIGNMENT_INVALID');
         return { blockName, sectionId: null, sourceBlockId: null, exercise: snapshotOf(exercise), prescription };
       }),

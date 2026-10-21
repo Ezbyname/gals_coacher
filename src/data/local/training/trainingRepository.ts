@@ -1,3 +1,4 @@
+import { isTimeSemantics, storableTimeSemantics, type TimeSemantics } from '@/domain/exercise/timeSemantics';
 import type { Exercise } from '@/domain/exercise/exercise';
 import { isUuid } from '@/domain/ids';
 import { compositionProblem } from '@/domain/training/composition';
@@ -92,6 +93,8 @@ export interface SessionExercise {
   readonly blockName: string | null;
   readonly exercise: ExerciseSnapshot;
   readonly restSec: number | null;
+  /** What the seconds value means for this exercise in this session (copied from the plan item); absent = legacy Goal time. */
+  readonly timeSemantics?: TimeSemantics;
   readonly sets: readonly SessionSet[];
 }
 export interface TrainingSession {
@@ -429,12 +432,14 @@ export interface NewPlanItem {
 export async function insertPlanItem(db: PlayerDb, planId: string, position: number, item: NewPlanItem): Promise<void> {
   const s = item.exercise;
   const p = item.prescription;
+  // the meaning of a seconds value is written ONLY when the prescription carries one: a legacy item leaves the column NULL
+  const meaning = storableTimeSemantics(s.measurement.type, p.timeSemantics);
   await db.runAsync(
     `INSERT INTO planned_workout_items
        (planned_workout_id, position, block_name, exercise_id, exercise_name_he, exercise_name_en,
         measurement_type, comparison_policy, uses_load, distance_m, sets, target, load_kg, rest_sec,
-        section_id, source_block_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        section_id, source_block_id${meaning === null ? '' : ', time_semantics'})
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${meaning === null ? '' : ', ?'})`,
     [
       planId,
       position,
@@ -452,6 +457,7 @@ export async function insertPlanItem(db: PlayerDb, planId: string, position: num
       p.restSec,
       item.sectionId,
       item.sourceBlockId,
+      ...(meaning === null ? [] : [meaning]),
     ],
   );
 }
@@ -481,10 +487,12 @@ async function insertSession(
   for (const item of plan.items) {
     const exerciseId = deps.ids.newUuid();
     const s = item.exercise;
+    const meaning = storableTimeSemantics(s.measurement.type, item.prescription.timeSemantics); // copied, never re-derived
     await db.runAsync(
       `INSERT INTO session_exercises (id, session_id, position, planned_position, block_name, exercise_id,
          exercise_name_he, exercise_name_en, measurement_type, comparison_policy, uses_load, distance_m, rest_sec,
-         created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         created_at, updated_at${meaning === null ? '' : ', time_semantics'})
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?${meaning === null ? '' : ', ?'})`,
       [
         exerciseId,
         id,
@@ -501,6 +509,7 @@ async function insertSession(
         item.prescription.restSec,
         now,
         now,
+        ...(meaning === null ? [] : [meaning]),
       ],
     );
     for (let n = 1; n <= item.prescription.sets; n += 1) {
@@ -555,6 +564,13 @@ function readSnapshot(row: SnapshotRow, field: string, rowId: string): ExerciseS
   return { exerciseId: id, name: { he, en }, measurement };
 }
 
+/** A stored time meaning as the optional prescription property: absent for NULL (legacy), the value otherwise. */
+function storedSemantics(value: unknown, field: string, rowId: string): { timeSemantics?: TimeSemantics } {
+  if (value === null || value === undefined) return {};
+  if (!isTimeSemantics(value)) throw new TrainingDataError(field, 'UNKNOWN_CODE', rowId);
+  return { timeSemantics: value };
+}
+
 const nullableNumber = (v: unknown): number | null => (v === null ? null : typeof v === 'number' ? v : NaN);
 const isInt = (v: unknown): v is number => Number.isSafeInteger(v);
 
@@ -582,6 +598,7 @@ export async function readPlan(db: PlayerDb, id: string): Promise<PlannedWorkout
       rest_sec: unknown;
       section_id?: unknown;
       source_block_id?: unknown;
+      time_semantics?: unknown;
     }
   >('SELECT * FROM planned_workout_items WHERE planned_workout_id = ? ORDER BY position', [id]);
   const session = await db.getFirstAsync<{ id: string }>(
@@ -597,6 +614,7 @@ export async function readPlan(db: PlayerDb, id: string): Promise<PlannedWorkout
       target: nullableNumber(item.target),
       loadKg: nullableNumber(item.load_kg),
       restSec: nullableNumber(item.rest_sec),
+      ...storedSemantics(item.time_semantics, 'plan.timeSemantics', id),
     };
     if (!validatePrescription(exercise.measurement, prescription).ok) {
       throw new TrainingDataError('plan.prescription', 'INVALID_VALUE', id);
@@ -658,6 +676,7 @@ async function readSession(db: PlayerDb, id: string): Promise<TrainingSession> {
       planned_position: unknown;
       block_name: unknown;
       rest_sec: unknown;
+      time_semantics?: unknown;
     }
   >('SELECT * FROM session_exercises WHERE session_id = ? ORDER BY position', [id]);
   const sets = await db.getAllAsync<{
@@ -704,6 +723,7 @@ async function readSession(db: PlayerDb, id: string): Promise<TrainingSession> {
         blockName: typeof e.block_name === 'string' ? e.block_name : null,
         exercise,
         restSec: e.rest_sec as number | null,
+        ...storedSemantics(e.time_semantics, 'sessionExercise.timeSemantics', e.id),
         sets: sets
           .filter((s) => s.session_exercise_id === e.id)
           .map((s) => {

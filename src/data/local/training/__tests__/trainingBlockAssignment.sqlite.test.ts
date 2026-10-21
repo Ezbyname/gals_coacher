@@ -74,10 +74,12 @@ describe('assigning a block to one Player', () => {
       const plan = (await getPlannedWorkout(db, result.planIds[i]!))!;
       expect(plan.name).toBe(planName(block, session, 'en'));
       expect(plan.sessionId).toBeNull(); // an editable plan, never started
-      const expected = sessionSections(session).flatMap((s) => s.items.map((it) => ({ id: it.exerciseId, dosage: it.dosage })));
+      const expected = sessionSections(session).flatMap((s) => s.items.map((it) => ({ id: it.exerciseId, dosage: it.dosage, semantics: it.timeSemantics })));
       expect(plan.items.map((it) => it.exercise.exerciseId)).toEqual(expected.map((e) => e.id));
       for (const [n, e] of expected.entries()) {
-        if (e.dosage) expect(plan.items[n]!.prescription).toEqual({ sets: e.dosage.sets, target: e.dosage.target, loadKg: null, restSec: e.dosage.restSec });
+        if (e.dosage) {
+          expect(plan.items[n]!.prescription).toEqual({ sets: e.dosage.sets, target: e.dosage.target, loadKg: null, restSec: e.dosage.restSec, ...(e.semantics ? { timeSemantics: e.semantics } : {}) });
+        }
       }
     }
   });

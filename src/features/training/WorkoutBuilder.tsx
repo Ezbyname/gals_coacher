@@ -1,3 +1,4 @@
+import type { TimeSemantics } from '@/domain/exercise/timeSemantics';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -50,7 +51,7 @@ import { formatNumber, prescriptionText, targetLabelKey, trainingErrorMessage, t
  * back). A plan whose session already exists is shown read-only (the v17 freeze rule is also enforced below the UI).
  */
 
-type DItem = { snapshot: ExerciseSnapshot; sets: string; target: string; load: string; rest: string };
+type DItem = { snapshot: ExerciseSnapshot; sets: string; target: string; load: string; rest: string; timeSemantics: TimeSemantics | null };
 type Origin =
   | { type: 'KEEP'; positions: number[] }
   | { type: 'BLOCK'; blockId: string }
@@ -65,6 +66,7 @@ const itemOf = (snapshot: ExerciseSnapshot, p: Prescription): DItem => ({
   target: text(p.target),
   load: text(p.loadKg),
   rest: text(p.restSec),
+  timeSemantics: p.timeSemantics ?? null, // the stored meaning of the seconds value travels with the item (never re-derived)
 });
 function numberOf(value: string, time: boolean): number | null {
   if (value.trim() === '') return null;
@@ -77,6 +79,7 @@ function prescriptionOf(item: DItem): Prescription {
     target: numberOf(item.target, type === 'DURATION' || type === 'TIME'),
     loadKg: numberOf(item.load, false),
     restSec: numberOf(item.rest, false),
+    ...(item.timeSemantics ? { timeSemantics: item.timeSemantics } : {}),
   };
 }
 const blockEntryOf = (key: string, block: WorkoutBlock): DEntry => ({
@@ -407,7 +410,7 @@ function ItemFields(props: { testID: string; item: DItem; errors: PrescriptionEr
   const { item, testID } = props;
   const measurement = item.snapshot.measurement;
   const name = item.snapshot.name[language];
-  const targetKey = targetApplies(measurement.type) ? targetLabelKey(measurement.type, item.snapshot.exerciseId) : null;
+  const targetKey = targetApplies(measurement.type) ? targetLabelKey(measurement.type, item.timeSemantics) : null;
   const err = (field: keyof PrescriptionErrors) => {
     const code = props.errors?.[field];
     if (!code) return undefined;
@@ -421,7 +424,7 @@ function ItemFields(props: { testID: string; item: DItem; errors: PrescriptionEr
           {name}
         </Text>
         <Text style={styles.muted} testID={`${testID}-rx`}>
-          {prescriptionText(t, measurement, p, item.snapshot.exerciseId)}
+          {prescriptionText(t, measurement, p)}
         </Text>
       </View>
     );

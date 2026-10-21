@@ -222,7 +222,8 @@ function ExerciseCard(props: {
           target: first.plannedTarget,
           loadKg: first.plannedLoadKg,
           restSec: exercise.restSec,
-        }, exercise.exercise.exerciseId);
+          timeSemantics: exercise.timeSemantics ?? null,
+        });
   return (
     <View style={styles.card} testID={id}>
       {exercise.blockName ? <Text style={styles.muted}>{exercise.blockName}</Text> : null}
@@ -234,7 +235,7 @@ function ExerciseCard(props: {
           {t('training.plannedRx', { rx })}
         </Text>
       ) : null}
-      {first !== undefined && timeCapHint(t, exercise.exercise.measurement, first.plannedTarget, exercise.exercise.exerciseId) ? (
+      {first !== undefined && timeCapHint(t, exercise.exercise.measurement, first.plannedTarget, exercise.timeSemantics) ? (
         <Text style={styles.muted} testID={`${id}-time-cap-hint`}>
           {t('training.timeCapHint')}
         </Text>
@@ -298,7 +299,7 @@ function SetRow(props: {
   ) as Record<MeasurementKind, string>;
   const [errors, setErrors] = useState<SetValueErrors>({});
 
-  const planned = set.planned ? plannedSetText(t, measurement, set.plannedTarget, set.plannedLoadKg, exercise.exercise.exerciseId) : null;
+  const planned = set.planned ? plannedSetText(t, measurement, set.plannedTarget, set.plannedLoadKg, exercise.timeSemantics) : null;
   const done = set.status === 'DONE';
   const actual = done ? actualSetText(t, set.measurements) : null;
   const edited = set.measurements.some((m) => m.wasEdited);

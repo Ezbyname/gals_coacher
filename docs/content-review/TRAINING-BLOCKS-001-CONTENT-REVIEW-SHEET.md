@@ -44,7 +44,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 - Warm-up fatigue: the warm-up bodyweight squat is now 2 × 8 (was the default 3 × 15) in Strength B, Jump & Landing and Explosive Lower Body; in Strength A the warm-up glute bridge is 1 × 10 (the main 3 × 12 is unchanged, so there is no 6-set duplication).
 - Movement Foundation: the Hebrew now says "גשר עכוז / יישור ירך", matching the glute bridge that is actually in the workout (no hip-hinge drill was added).
 - The improvised "heavy basketball or football against a wall" substitute was removed: with no appropriate medicine ball, skip the throwing section or use another approved power exercise or workout.
-- Time semantics (final content review): a seconds value is a DURATION — how long to do the exercise (plank, run intervals, jump rope, partner mirror, easy run) — and is shown as a plain duration. ONLY the explicitly classified completion-time drills (SPRINT_10M, SPRINT_20M, SPRINT_30M_FLYING, T_DRILL, PRO_AGILITY_5_10_5, SHUTTLE_RUN, ROW_500M, SLED_PUSH) show a recording cap: the label is "Time cap (seconds) — record your actual time", the value reads "time cap 5 s", and the hint says "Record your actual time. The value shown is only a recording cap, not a performance goal." Being TIME-measured does NOT make an exercise a cap: the published Basketball course drills (cone dribble slalom, defensive slides, lane agility, court sprints) are unchanged. The classification is registry metadata keyed by exercise id — no database change.
+- Time semantics (final content review, history-safe): what a seconds value MEANS belongs to the PRESCRIPTION and is stored with the copied plan item and with the session exercise (schema v22, `time_semantics`, NULL = legacy). `DURATION_TARGET` = work for this long; `PERFORMANCE_GOAL_TIME` = a goal time (what a stored TIME value meant before, so legacy TIME rows keep reading "Goal time"); `COMPLETION_TIME_CAP` = a fixed course or distance whose actual time is recorded, shown as "Time cap (seconds) — record your actual time" with the hint "Record your actual time. The value shown is only a recording cap, not a performance goal." A cap is NOT a pass / fail line: a real result above it is recorded as it is. Nothing is inferred from the exercise id, so the same exercise can be a goal time in an old plan and a cap in a block. The prescriptions below opt in explicitly: ATH-ACCELERATION-01: SPRINT_10M; ATH-ACCELERATION-01: SPRINT_20M; ATH-SPEED-01: SPRINT_20M; ATH-SPEED-01: SPRINT_30M_FLYING; ATH-DECEL-COD-01: T_DRILL; ATH-DECEL-COD-01: PRO_AGILITY_5_10_5; ATH-CONDITIONING-INTERVALS-01: ROW_500M (alternative); ATH-REPEATED-EFFORT-01: SPRINT_20M. Shuttle run and sled push alternatives are prescribed as work durations (DURATION_TARGET), the 500 m row as a completion-time cap.
 - Hebrew: the awkward supervision sentence is replaced everywhere by "למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית."; "באותה משך" → "באותו משך"; names: ירידה ונחיתה מבוקרת, תרגיל מראה בזוגות, אינטרוולים בריצה.
 
 **Still for the final human review:** native-speaker Hebrew review of the remaining text; then publication approval.
@@ -707,8 +707,8 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SPRINT_10M | 10 m Sprint | ספרינט 10 מטר | 5 × 5s _(recording cap — record your actual time; not a goal)_, rest 90s |
-| 2 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 3 × 7s _(recording cap — record your actual time; not a goal)_, rest 120s |
+| 1 | SPRINT_10M | 10 m Sprint | ספרינט 10 מטר | 5 × 5s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_, rest 90s |
+| 2 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 3 × 7s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_, rest 120s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -761,13 +761,13 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
 | 1 | FALLING_START_ACCELERATION | Falling Start Acceleration | זינוק מנפילה | 3 × 1 reps, rest 60s |
-| 2 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 2 × 7s _(recording cap — record your actual time; not a goal)_, rest 120s |
+| 2 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 2 × 7s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_, rest 120s |
 
 **Section 3 — Flying runs / ריצה מעופפת**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SPRINT_30M_FLYING | 30 m Flying Sprint | ספרינט מעופף 30 מטר | 4 × 6s _(recording cap — record your actual time; not a goal)_, rest 180s |
+| 1 | SPRINT_30M_FLYING | 30 m Flying Sprint | ספרינט מעופף 30 מטר | 4 × 6s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_, rest 180s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 
@@ -825,8 +825,8 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | T_DRILL | T-Drill | תרגיל T | 3 × 16s _(recording cap — record your actual time; not a goal)_, rest 120s |
-| 2 | PRO_AGILITY_5_10_5 | Pro Agility (5-10-5) | זריזות 5-10-5 | 3 × 8s _(recording cap — record your actual time; not a goal)_, rest 120s |
+| 1 | T_DRILL | T-Drill | תרגיל T | 3 × 16s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_, rest 120s |
+| 2 | PRO_AGILITY_5_10_5 | Pro Agility (5-10-5) | זריזות 5-10-5 | 3 × 8s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_, rest 120s |
 
 **Section 4 — Lateral bounds / קפיצות צד**
 
@@ -1001,7 +1001,7 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 | 1 | RUN_INTERVALS | Run Intervals | אינטרוולים בריצה | 6 × 45s, rest 90s |
 | ↳ | alternative: BIKE_INTERVALS | Bike Intervals | אינטרוולים באופני כושר | 8 × 30s, rest 60s _(its own prescription)_ |
 | ↳ | alternative: SKI_ERG_INTERVALS | Ski Erg Intervals | אינטרוולים בסקי ארג | 6 × 30s, rest 60s _(its own prescription)_ |
-| ↳ | alternative: ROW_500M | 500 m Row | חתירה 500 מטר | 4 × 150s _(recording cap — record your actual time; not a goal)_, rest 120s _(its own prescription)_ |
+| ↳ | alternative: ROW_500M | 500 m Row | חתירה 500 מטר | 4 × 150s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_, rest 120s _(its own prescription)_ |
 | ↳ | alternative: JUMP_ROPE | Jump Rope | קפיצה בחבל | 6 × 40s, rest 60s _(its own prescription)_ |
 
 **Section 3 — Cool-down / סיום ושחרור**
@@ -1061,22 +1061,22 @@ _Read status: **opened** = the full text was read; **abstract only** = only the 
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s _(recording cap — record your actual time; not a goal)_, rest 25s |
-| ↳ | alternative: SHUTTLE_RUN | Shuttle Run | ריצה הלוך-חזור | 6 × 30s _(recording cap — record your actual time; not a goal)_, rest 30s _(its own prescription)_ |
-| ↳ | alternative: SLED_PUSH | Sled Push | דחיפת מזחלת | 6 × 10s _(recording cap — record your actual time; not a goal)_, rest 30s _(its own prescription)_ |
+| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_, rest 25s |
+| ↳ | alternative: SHUTTLE_RUN | Shuttle Run | ריצה הלוך-חזור | 6 × 30s _(DURATION_TARGET — work for this long)_, rest 30s _(its own prescription)_ |
+| ↳ | alternative: SLED_PUSH | Sled Push | דחיפת מזחלת | 6 × 10s _(DURATION_TARGET — work for this long)_, rest 30s _(its own prescription)_ |
 | ↳ | alternative: BATTLE_ROPE_WAVES | Battle Rope Waves | גלים בחבלי קרב | 6 × 20s, rest 30s _(its own prescription)_ |
 
 **Section 3 — Round 2 — after about two minutes of rest / סבב 2 — אחרי כשתי דקות מנוחה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s _(recording cap — record your actual time; not a goal)_, rest 25s |
+| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_, rest 25s |
 
 **Section 4 — Round 3 — after about two minutes of rest / סבב 3 — אחרי כשתי דקות מנוחה**
 
 | # | Exercise (ID) | EN | HE | Dosage |
 |---|---|---|---|---|
-| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s _(recording cap — record your actual time; not a goal)_, rest 25s |
+| 1 | SPRINT_20M | 20 m Sprint | ספרינט 20 מטר | 6 × 7s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_, rest 25s |
 
 **Coach notes (shown on the workout screen, NOT copied into a plan):**
 

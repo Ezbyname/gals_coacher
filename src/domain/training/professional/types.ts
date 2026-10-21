@@ -1,3 +1,4 @@
+import type { TimeSemantics } from '../../exercise/timeSemantics';
 import type { SourceKey } from '../../exercise/catalog/provenance';
 import type { Difficulty } from '../../exercise/taxonomy';
 import type { SportKey } from '../../sport';
@@ -18,12 +19,14 @@ export interface Dosage {
 export interface ProfessionalItem {
   readonly exerciseId: string;
   readonly dosage?: Dosage;
+  /** What the seconds value of a TIME exercise means in THIS use (only an explicit COMPLETION_TIME_CAP opts into the cap). Absent = legacy Goal time. */
+  readonly timeSemantics?: TimeSemantics;
   /**
    * TRAINING-BLOCKS-001: other Exercises that can replace this one when the equipment differs (e.g. a bike or a ski erg for
    * run intervals). Each substitution has its OWN dosage: a prescription for one modality is never assumed to suit another.
    * Shown for the coach; a plan is always copied with the item itself.
    */
-  readonly alternatives?: readonly { readonly exerciseId: string; readonly dosage: Dosage }[];
+  readonly alternatives?: readonly { readonly exerciseId: string; readonly dosage: Dosage; readonly timeSemantics?: TimeSemantics }[];
 }
 
 export interface ProfessionalSection {
@@ -112,7 +115,19 @@ export const x = (
   ...(alternatives ? { alternatives } : {}),
 });
 /** A substitution with its own dosage. */
-export const alt = (exerciseId: string, sets: number, target: number | null, restSec: number) => ({ exerciseId, dosage: { sets, target, restSec } });
+export const alt = (exerciseId: string, sets: number, target: number | null, restSec: number, timeSemantics?: TimeSemantics) => ({
+  exerciseId,
+  dosage: { sets, target, restSec },
+  ...(timeSemantics ? { timeSemantics } : {}),
+});
+/** An item whose seconds value is explicitly a COMPLETION TIME CAP (a fixed course or distance; the athlete records the actual time). */
+export const cap = (
+  exerciseId: string,
+  sets: number,
+  target: number,
+  restSec: number,
+  alternatives?: ProfessionalItem['alternatives'],
+): ProfessionalItem => ({ ...x(exerciseId, sets, target, restSec, alternatives), timeSemantics: 'COMPLETION_TIME_CAP' });
 /**
  * A per-session adjustment of a workout when it is used inside a Training Block (TRAINING-BLOCKS-001): progression is set in
  * the BLOCK, so one workout can serve several blocks and weeks without a duplicate template. Absolute values (never deltas);

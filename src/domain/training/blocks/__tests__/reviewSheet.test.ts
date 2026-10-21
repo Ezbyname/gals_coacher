@@ -53,9 +53,13 @@ describe('TRAINING-BLOCKS-001 CONTENT-REVIEW-SHEET', () => {
   });
 
   it('shows every TIME-measured value as a recording cap, never as a goal', () => {
-    expect(sheet).toMatch(/SPRINT_10M .*5s.*recording cap — record your actual time; not a goal/);
-    expect(sheet).toMatch(/PRO_AGILITY_5_10_5 .*8s.*recording cap/);
-    expect(sheet).toMatch(/T_DRILL .*16s.*recording cap/);
+    expect(sheet).toMatch(/SPRINT_10M .*5s.*COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal/);
+    expect(sheet).toMatch(/PRO_AGILITY_5_10_5 .*8s.*COMPLETION_TIME_CAP/);
+    expect(sheet).toMatch(/T_DRILL .*16s.*COMPLETION_TIME_CAP/);
+    expect(sheet).toMatch(/ROW_500M .*4 × 150s.*COMPLETION_TIME_CAP/);
+    expect(sheet).toMatch(/SHUTTLE_RUN .*6 × 30s.*DURATION_TARGET — work for this long/);
+    expect(sheet).toMatch(/SLED_PUSH .*6 × 10s.*DURATION_TARGET — work for this long/);
+    expect(sheet).toMatch(/schema v22, `time_semantics`, NULL = legacy/);
   });
 
   it('claims no injury prevention and links no video', () => {

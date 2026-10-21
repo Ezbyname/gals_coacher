@@ -1,4 +1,4 @@
-import { timeSemantics } from '@/domain/exercise/timeSemantics';
+import { resolveTimeSemantics, type TimeSemantics } from '@/domain/exercise/timeSemantics';
 import type { ExerciseMeasurement } from '@/domain/exercise/exercise';
 import type { MeasurementType } from '@/domain/measurement';
 import { PlayerArchivedError } from '@/data/local/players/errors';
@@ -17,8 +17,11 @@ export function formatNumber(value: number): string {
 }
 
 /** The label of the target field for this measurement type (none for RATING / COMPLETION). */
-export function targetLabelKey(type: MeasurementType, exerciseId?: string | null): TranslationKey | null {
-  if (timeSemantics(exerciseId, type) === 'COMPLETION_TIME_CAP') return 'training.targetTimeCap';
+export function targetLabelKey(type: MeasurementType, semantics?: TimeSemantics | null): TranslationKey | null {
+  // the label follows the MEANING stored with the prescription: a duration, the historical goal time, or a recording cap
+  const meaning = resolveTimeSemantics(type, semantics);
+  if (meaning === 'COMPLETION_TIME_CAP') return 'training.targetTimeCap';
+  if (meaning === 'DURATION_TARGET') return 'training.targetDuration';
   const keys: Partial<Record<MeasurementType, TranslationKey>> = {
     REPETITIONS: 'training.targetReps',
     DURATION: 'training.targetDuration',
@@ -30,15 +33,15 @@ export function targetLabelKey(type: MeasurementType, exerciseId?: string | null
 }
 
 /** The hint under a TIME-measured item that has a configured value: record the real time; the value is only a cap. */
-export function timeCapHint(t: T, measurement: ExerciseMeasurement, target: number | null, exerciseId?: string | null): string | null {
-  return timeSemantics(exerciseId, measurement.type) === 'COMPLETION_TIME_CAP' && target !== null ? t('training.timeCapHint') : null;
+export function timeCapHint(t: T, measurement: ExerciseMeasurement, target: number | null, semantics?: TimeSemantics | null): string | null {
+  return resolveTimeSemantics(measurement.type, semantics) === 'COMPLETION_TIME_CAP' && target !== null ? t('training.timeCapHint') : null;
 }
 
 /** A target value in the measurement's unit: 10 · 40 s · 20 m · 10 attempts. */
-function targetText(t: T, type: MeasurementType, value: number, exerciseId?: string | null): string {
+function targetText(t: T, type: MeasurementType, value: number, semantics?: TimeSemantics | null): string {
   const n = formatNumber(value);
-  // only an explicitly classified completion-time drill shows a recording CAP; every other seconds value is a plain duration
-  if (timeSemantics(exerciseId, type) === 'COMPLETION_TIME_CAP') return t('training.unit.timeCap', { n });
+  // only a prescription that explicitly says so shows a recording CAP; every other seconds value reads as before
+  if (resolveTimeSemantics(type, semantics) === 'COMPLETION_TIME_CAP') return t('training.unit.timeCap', { n });
   if (type === 'DURATION' || type === 'TIME') return t('training.unit.seconds', { n });
   if (type === 'DISTANCE') return t('training.unit.metres', { n });
   if (type === 'MADE_ATTEMPTS') return t('training.unit.attempts', { n });
@@ -53,17 +56,17 @@ export function plannedSetText(
   measurement: ExerciseMeasurement,
   target: number | null,
   loadKg: number | null,
-  exerciseId?: string | null,
+  semantics?: TimeSemantics | null,
 ): string | null {
-  const value = target === null ? null : targetText(t, measurement.type, target, exerciseId);
+  const value = target === null ? null : targetText(t, measurement.type, target, semantics);
   if (value !== null && loadKg !== null) return t('training.withLoad', { value, load: kg(t, loadKg) });
   if (value !== null) return value;
   return loadKg !== null ? kg(t, loadKg) : null;
 }
 
 /** A whole prescription: "3 × 10 @ 50 kg · rest 90 s". */
-export function prescriptionText(t: T, measurement: ExerciseMeasurement, p: Prescription, exerciseId?: string | null): string {
-  const one = plannedSetText(t, measurement, p.target, p.loadKg, exerciseId);
+export function prescriptionText(t: T, measurement: ExerciseMeasurement, p: Prescription): string {
+  const one = plannedSetText(t, measurement, p.target, p.loadKg, p.timeSemantics);
   const main =
     one === null
       ? t('training.setsOnly', { sets: p.sets })

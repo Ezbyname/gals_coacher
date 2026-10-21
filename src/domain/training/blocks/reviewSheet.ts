@@ -2,7 +2,7 @@ import { builtinExercise } from '../../exercise/catalog';
 import { ATHLETIC } from '../../exercise/catalog/athletic';
 import type { SourceKey } from '../../exercise/catalog/provenance';
 import type { ExerciseDefinition } from '../../exercise/exercise';
-import { COMPLETION_TIME_CAP_EXERCISES, timeSemantics } from '../../exercise/timeSemantics';
+import { resolveTimeSemantics, type TimeSemantics } from '../../exercise/timeSemantics';
 import { defaultPrescription } from '../training';
 import { GENERAL_ATHLETIC_WORKOUTS } from '../professional';
 import { dosage, exerciseBlock, sourceLine } from '../professional/reviewSheet';
@@ -19,11 +19,16 @@ import { totalSessions, type TrainingBlock } from './types';
  */
 
 const ex = (id: string): ExerciseDefinition => builtinExercise(id)!;
-const d = (id: string, dose: Dosage | undefined): string => {
+const d = (id: string, dose: Dosage | undefined, semantics?: TimeSemantics): string => {
   const e = ex(id);
   const text = dosage(e, dose ? { sets: dose.sets, target: dose.target, restSec: dose.restSec } : defaultPrescription(e.measurement, e.defaults));
-  // a TIME-measured value is only a recording CAP (the app says "record your actual time"), never a performance goal
-  return timeSemantics(id, e.measurement.type) === 'COMPLETION_TIME_CAP' ? text.replace(/ × (\d+)s/, ' × $1s _(recording cap — record your actual time; not a goal)_') : text;
+  const meaning = resolveTimeSemantics(e.measurement.type, semantics);
+  // the MEANING of a TIME value is stored with the prescription: a cap is only a recording reference, a duration is work time
+  if (e.measurement.type === 'TIME' && meaning === 'COMPLETION_TIME_CAP') {
+    return text.replace(/ × (\d+)s/, ' × $1s _(COMPLETION_TIME_CAP — a recording cap: record your actual time; not a goal)_');
+  }
+  if (e.measurement.type === 'TIME' && meaning === 'DURATION_TARGET') return text.replace(/ × (\d+)s/, ' × $1s _(DURATION_TARGET — work for this long)_');
+  return text;
 };
 
 /** What the sources do and do not support for each general workout, and what is Gals Coacher's own. */
@@ -118,10 +123,10 @@ function workoutBlock(w: ProfessionalWorkout): string {
     lines.push('| # | Exercise (ID) | EN | HE | Dosage |', '|---|---|---|---|---|');
     for (const [i, item] of section.items.entries()) {
       const e = ex(item.exerciseId);
-      lines.push(`| ${i + 1} | ${e.id} | ${e.name.en} | ${e.name.he} | ${d(item.exerciseId, item.dosage)}${item.dosage ? '' : " _(the Exercise's own default — existing catalog content)_"} |`);
+      lines.push(`| ${i + 1} | ${e.id} | ${e.name.en} | ${e.name.he} | ${d(item.exerciseId, item.dosage, item.timeSemantics)}${item.dosage ? '' : " _(the Exercise's own default — existing catalog content)_"} |`);
       for (const a of item.alternatives ?? []) {
         const ae = ex(a.exerciseId);
-        lines.push(`| ↳ | alternative: ${ae.id} | ${ae.name.en} | ${ae.name.he} | ${d(a.exerciseId, a.dosage)} _(its own prescription)_ |`);
+        lines.push(`| ↳ | alternative: ${ae.id} | ${ae.name.en} | ${ae.name.he} | ${d(a.exerciseId, a.dosage, a.timeSemantics)} _(its own prescription)_ |`);
       }
     }
     lines.push('');
@@ -197,6 +202,16 @@ function blockSection(b: TrainingBlock): string {
   return lines.join('\n');
 }
 
+/** Every prescription of the new content that explicitly opts into the cap: "workout: exercise". */
+const CAP_PRESCRIPTIONS: readonly string[] = GENERAL_ATHLETIC_WORKOUTS.flatMap((w) =>
+  w.sections.flatMap((s) =>
+    s.items.flatMap((i) => [
+      ...(i.timeSemantics === 'COMPLETION_TIME_CAP' ? [`${w.id}: ${i.exerciseId}`] : []),
+      ...(i.alternatives ?? []).filter((a) => a.timeSemantics === 'COMPLETION_TIME_CAP').map((a) => `${w.id}: ${a.exerciseId} (alternative)`),
+    ]),
+  ),
+).filter((value, index, all) => all.indexOf(value) === index);
+
 const USED_SOURCES: readonly SourceKey[] = ['LTAD-1', 'RST-NSCA', 'PLYO-ADOLESCENT', 'HIIT-YOUTH', 'LANDING-ADULTS', 'ACSM-2009', 'AGILITY-2016', 'RSA-2011', 'NSCA-YOUTH-2009', 'YOUTH-RT-2014', 'DECEL-2022'];
 
 export function renderTrainingBlocksReviewSheet(): string {
@@ -237,7 +252,7 @@ export function renderTrainingBlocksReviewSheet(): string {
     '- Warm-up fatigue: the warm-up bodyweight squat is now 2 × 8 (was the default 3 × 15) in Strength B, Jump & Landing and Explosive Lower Body; in Strength A the warm-up glute bridge is 1 × 10 (the main 3 × 12 is unchanged, so there is no 6-set duplication).',
     '- Movement Foundation: the Hebrew now says "גשר עכוז / יישור ירך", matching the glute bridge that is actually in the workout (no hip-hinge drill was added).',
     '- The improvised "heavy basketball or football against a wall" substitute was removed: with no appropriate medicine ball, skip the throwing section or use another approved power exercise or workout.',
-    '- Time semantics (final content review): a seconds value is a DURATION — how long to do the exercise (plank, run intervals, jump rope, partner mirror, easy run) — and is shown as a plain duration. ONLY the explicitly classified completion-time drills (' + COMPLETION_TIME_CAP_EXERCISES.join(', ') + ') show a recording cap: the label is "Time cap (seconds) — record your actual time", the value reads "time cap 5 s", and the hint says "Record your actual time. The value shown is only a recording cap, not a performance goal." Being TIME-measured does NOT make an exercise a cap: the published Basketball course drills (cone dribble slalom, defensive slides, lane agility, court sprints) are unchanged. The classification is registry metadata keyed by exercise id — no database change.',
+    '- Time semantics (final content review, history-safe): what a seconds value MEANS belongs to the PRESCRIPTION and is stored with the copied plan item and with the session exercise (schema v22, `time_semantics`, NULL = legacy). `DURATION_TARGET` = work for this long; `PERFORMANCE_GOAL_TIME` = a goal time (what a stored TIME value meant before, so legacy TIME rows keep reading "Goal time"); `COMPLETION_TIME_CAP` = a fixed course or distance whose actual time is recorded, shown as "Time cap (seconds) — record your actual time" with the hint "Record your actual time. The value shown is only a recording cap, not a performance goal." A cap is NOT a pass / fail line: a real result above it is recorded as it is. Nothing is inferred from the exercise id, so the same exercise can be a goal time in an old plan and a cap in a block. The prescriptions below opt in explicitly: ' + CAP_PRESCRIPTIONS.join('; ') + '. Shuttle run and sled push alternatives are prescribed as work durations (DURATION_TARGET), the 500 m row as a completion-time cap.',
     '- Hebrew: the awkward supervision sentence is replaced everywhere by "למתאמנים צעירים מומלץ לבצע את האימון בליווי מאמן או מבוגר אחראי, ולהתאים את העצימות לגיל, לניסיון וליכולת הגופנית."; "באותה משך" → "באותו משך"; names: ירידה ונחיתה מבוקרת, תרגיל מראה בזוגות, אינטרוולים בריצה.',
     '',
     '**Still for the final human review:** native-speaker Hebrew review of the remaining text; then publication approval.',

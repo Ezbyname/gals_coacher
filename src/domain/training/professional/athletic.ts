@@ -1,4 +1,4 @@
-import { alt, reuse, x, type GeneralWorkout, type Pair } from './types';
+import { alt, cap, reuse, x, type GeneralWorkout, type Pair } from './types';
 
 /**
  * TRAINING-BLOCKS-001 — the 13 general-athletic Professional Workouts (no sport). Built almost entirely from the EXISTING
@@ -232,7 +232,7 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     sections: [
       { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'A_SKIP', 'HIGH_KNEES') },
       { name: ['מכניקת האצה', 'Acceleration mechanics'], items: [x('FALLING_START_ACCELERATION', 4, 1, 60)] },
-      { name: ['ספרינטים קצרים', 'Short sprints'], items: [x('SPRINT_10M', 5, 5, 90), x('SPRINT_20M', 3, 7, 120)] },
+      { name: ['ספרינטים קצרים', 'Short sprints'], items: [cap('SPRINT_10M', 5, 5, 90), cap('SPRINT_20M', 3, 7, 120)] },
     ],
     coachNotes: [FULL_REST, CAP_NOTE, SURFACE],
     safety: GENERAL_SAFETY,
@@ -251,8 +251,8 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     minutes: [35, 45],
     sections: [
       { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'A_SKIP', 'HIGH_KNEES') },
-      { name: ['הכנה', 'Build-up'], items: [x('FALLING_START_ACCELERATION', 3, 1, 60), x('SPRINT_20M', 2, 7, 120)] },
-      { name: ['ריצה מעופפת', 'Flying runs'], items: [x('SPRINT_30M_FLYING', 4, 6, 180)] },
+      { name: ['הכנה', 'Build-up'], items: [x('FALLING_START_ACCELERATION', 3, 1, 60), cap('SPRINT_20M', 2, 7, 120)] },
+      { name: ['ריצה מעופפת', 'Flying runs'], items: [cap('SPRINT_30M_FLYING', 4, 6, 180)] },
     ],
     coachNotes: [FULL_REST, CAP_NOTE, SURFACE],
     safety: GENERAL_SAFETY,
@@ -272,7 +272,7 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     sections: [
       { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'LATERAL_LUNGE', 'A_SKIP') },
       { name: ['עצירה מבוקרת', 'Controlled deceleration'], items: [x('DECEL_STOP', 4, 4, 60)] },
-      { name: ['שינויי כיוון מתוכננים', 'Pre-planned changes of direction'], items: [x('T_DRILL', 3, 16, 120), x('PRO_AGILITY_5_10_5', 3, 8, 120)] },
+      { name: ['שינויי כיוון מתוכננים', 'Pre-planned changes of direction'], items: [cap('T_DRILL', 3, 16, 120), cap('PRO_AGILITY_5_10_5', 3, 8, 120)] },
       { name: ['קפיצות צד', 'Lateral bounds'], items: [x('LATERAL_BOUNDS', 3, 6, 60)] },
     ],
     coachNotes: [
@@ -361,7 +361,7 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
           x('RUN_INTERVALS', 6, 45, 90, [
             alt('BIKE_INTERVALS', 8, 30, 60),
             alt('SKI_ERG_INTERVALS', 6, 30, 60),
-            alt('ROW_500M', 4, 150, 120),
+            alt('ROW_500M', 4, 150, 120, 'COMPLETION_TIME_CAP'), // a fixed 500 m course: the athlete records the actual time
             alt('JUMP_ROPE', 6, 40, 60),
           ]),
         ],
@@ -395,9 +395,9 @@ export const GENERAL_WORKOUTS: readonly GeneralWorkout[] = [
     minutes: [30, 40],
     sections: [
       { name: ['חימום', 'Warm-up'], items: reuse('LEG_SWINGS', 'A_SKIP', 'HIGH_KNEES') },
-      { name: ['סבב 1', 'Round 1'], items: [x('SPRINT_20M', 6, 7, 25, [alt('SHUTTLE_RUN', 6, 30, 30), alt('SLED_PUSH', 6, 10, 30), alt('BATTLE_ROPE_WAVES', 6, 20, 30)])] },
-      { name: ['סבב 2 — אחרי כשתי דקות מנוחה', 'Round 2 — after about two minutes of rest'], items: [x('SPRINT_20M', 6, 7, 25)] },
-      { name: ['סבב 3 — אחרי כשתי דקות מנוחה', 'Round 3 — after about two minutes of rest'], items: [x('SPRINT_20M', 6, 7, 25)] },
+      { name: ['סבב 1', 'Round 1'], items: [cap('SPRINT_20M', 6, 7, 25, [alt('SHUTTLE_RUN', 6, 30, 30, 'DURATION_TARGET'), alt('SLED_PUSH', 6, 10, 30, 'DURATION_TARGET'), alt('BATTLE_ROPE_WAVES', 6, 20, 30)])] },
+      { name: ['סבב 2 — אחרי כשתי דקות מנוחה', 'Round 2 — after about two minutes of rest'], items: [cap('SPRINT_20M', 6, 7, 25)] },
+      { name: ['סבב 3 — אחרי כשתי דקות מנוחה', 'Round 3 — after about two minutes of rest'], items: [cap('SPRINT_20M', 6, 7, 25)] },
     ],
     coachNotes: [
       [

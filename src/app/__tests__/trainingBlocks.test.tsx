@@ -8,6 +8,7 @@ import { setExerciseActive } from '@/data/local/exercises/exerciseRepository';
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
 import { createPlayer } from '@/data/local/players/playerRepository';
+import { savePlannedWorkout } from '@/data/local/training/plannedWorkoutCompositionRepository';
 import { startSession } from '@/data/local/training/trainingRepository';
 import { stripBidi } from '@/i18n/bidi';
 import { systemClock } from '@/services/clock/Clock';
@@ -305,6 +306,27 @@ describe('time semantics through the real screens', () => {
     expect(hints).toHaveLength(2);
     for (const h of hints) expect(stripBidi(String(h.props.children))).toBe('Record your actual time. The value shown is only a recording cap, not a performance goal.');
     expect(text('session-ex-4-planned')).toMatch(/time cap 5 s/);
+  });
+
+  it('LEGACY: an old plan and an old session with SPRINT_10M and no stored meaning still read as the historical goal time — never as a cap', async () => {
+    await prepare('en');
+    const saved = await savePlannedWorkout(
+      db!,
+      { planId: null, playerId: players.Daniel!, name: 'Old sprints', entries: [{ kind: 'EXERCISE', exerciseId: 'SPRINT_10M', prescription: { sets: 3, target: 5, loadKg: null, restSec: 90 } }] },
+      deps,
+    );
+    if (!saved.ok) throw new Error('seed');
+    renderRouter(routes, { initialUrl: `/children/${players.Daniel}/training/plan/${saved.plan.id}` });
+    await screen.findByTestId('plan-item-0-name');
+    expect(text('plan-item-0-rx')).toMatch(/3 × 5 s/);
+    expect(text('plan-item-0-rx')).not.toMatch(/cap/);
+    expect(has('plan-item-0-time-cap-hint')).toBe(false);
+    await startSession(db!, saved.plan.id, deps);
+    const session = await db!.getFirstAsync<{ id: string }>('SELECT id FROM training_sessions LIMIT 1');
+    renderRouter(routes, { initialUrl: `/children/${players.Daniel}/training/session/${session!.id}` });
+    await screen.findByTestId('session-ex-0-name');
+    expect(text('session-ex-0-planned')).not.toMatch(/cap/);
+    expect(has('session-ex-0-time-cap-hint')).toBe(false);
   });
 
   it('Hebrew: a duration reads as a duration; a sprint reads as a cap', async () => {

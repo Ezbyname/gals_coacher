@@ -1,37 +1,37 @@
 import type { MeasurementType } from '../measurement';
 
 /**
- * What a seconds value MEANS for an Exercise (TRAINING-BLOCKS-001, final content review).
+ * What a seconds value MEANS in ONE prescription (TRAINING-BLOCKS-001). The meaning belongs to the prescription — to the copied
+ * plan item and to the session exercise it starts — and is stored with them (schema v22), so history never changes meaning:
  *
- *   DURATION_TARGET        the value is how long to do the exercise: a plank for 30 s, run intervals of 45 s, jump rope for 40 s.
- *   COMPLETION_TIME_CAP    the athlete COMPLETES a course or distance and records the actual time; the configured value is only a
- *                          recording cap — never a performance goal (a 10 m sprint with a 5 s cap).
+ *   DURATION_TARGET        how long to do it: a plank for 30 s, run intervals of 45 s, a shuttle run worked for 30 s.
+ *   PERFORMANCE_GOAL_TIME  a goal time for a timed task. This is what a TIME value meant before the cap existed ("Goal time"),
+ *                          so a stored TIME value with no explicit meaning resolves to it.
+ *   COMPLETION_TIME_CAP    the athlete COMPLETES a fixed course or distance and records the actual time; the configured value is
+ *                          only a recording cap — never a performance goal, never a pass / fail line. A real result above the
+ *                          cap is recorded as it is.
  *
- * `measurement == TIME` does NOT imply a cap: the rule would be wrong for anything that is not an explicitly classified
- * completion-time drill. Every other Exercise — including every existing one, and every user-created one — keeps the plain
- * duration / goal-time wording it always had. The classification is registry metadata keyed by the stable exercise id (a plan
- * item and a session item keep that id, so a copied plan and a session read the same semantics); no database column is involved.
+ * Nothing is inferred from the exercise id: the same exercise (a 20 m sprint) can be a goal time in an old custom workout and a
+ * cap in a new Training Block. Only a prescription that explicitly says so is a cap.
  */
-export type TimeSemantics = 'DURATION_TARGET' | 'COMPLETION_TIME_CAP';
+export const TIME_SEMANTICS = ['DURATION_TARGET', 'PERFORMANCE_GOAL_TIME', 'COMPLETION_TIME_CAP'] as const;
+export type TimeSemantics = (typeof TIME_SEMANTICS)[number];
+
+export const isTimeSemantics = (value: unknown): value is TimeSemantics => (TIME_SEMANTICS as readonly unknown[]).includes(value);
 
 /**
- * The genuine completion-time performance drills (distance or course, actual time recorded). Deliberately small: an exercise is
- * added only when its seconds value really is a cap on a recorded completion time. The published Basketball course drills
- * (cone dribble slalom, defensive slides, lane agility, court sprints) are NOT listed, so their wording is unchanged.
+ * The meaning of the seconds value of one prescription; null when the measurement has no seconds value.
+ *   DURATION measurement            → DURATION_TARGET (always)
+ *   TIME measurement, no stored one → PERFORMANCE_GOAL_TIME (the historical "Goal time")
+ *   TIME measurement, stored one    → that one
  */
-export const COMPLETION_TIME_CAP_EXERCISES: readonly string[] = [
-  'SPRINT_10M',
-  'SPRINT_20M',
-  'SPRINT_30M_FLYING',
-  'T_DRILL',
-  'PRO_AGILITY_5_10_5',
-  'SHUTTLE_RUN',
-  'ROW_500M',
-  'SLED_PUSH',
-];
+export function resolveTimeSemantics(type: MeasurementType, stored: TimeSemantics | null | undefined): TimeSemantics | null {
+  if (type === 'DURATION') return 'DURATION_TARGET';
+  if (type === 'TIME') return stored ?? 'PERFORMANCE_GOAL_TIME';
+  return null;
+}
 
-/** null when the measurement has no seconds value at all (repetitions, distance, attempts…). */
-export function timeSemantics(exerciseId: string | null | undefined, type: MeasurementType): TimeSemantics | null {
-  if (type !== 'TIME' && type !== 'DURATION') return null;
-  return type === 'TIME' && exerciseId != null && COMPLETION_TIME_CAP_EXERCISES.includes(exerciseId) ? 'COMPLETION_TIME_CAP' : 'DURATION_TARGET';
+/** The value worth storing with a prescription: only a TIME prescription carries an explicit meaning; everything else is null. */
+export function storableTimeSemantics(type: MeasurementType, value: TimeSemantics | null | undefined): TimeSemantics | null {
+  return type === 'TIME' && value != null && isTimeSemantics(value) ? value : null;
 }

@@ -1030,4 +1030,20 @@ export const migrations: readonly Migration[] = [
         ('RUN_INTERVALS', 1, NULL, 1, 0, 0);
     `,
   },
+  {
+    // TRAINING-BLOCKS-001 (owner-approved structural migration): what a seconds value MEANS travels WITH the copied prescription,
+    // so history never changes meaning. ONE nullable column on each of the two snapshot tables; every existing row upgrades
+    // as NULL = legacy, which resolves from the measurement (DURATION -> a duration, TIME -> the historical "Goal time"). No
+    // value is inferred from an exercise id and no existing row is rewritten. No trigger changes: planned_items_frozen_update
+    // already refuses every update once a session exists and leaves the prescription columns editable before one, and
+    // session_exercises_frozen_update refuses every update, so the new column is frozen automatically.
+    version: 22,
+    name: 'time_semantics_001',
+    sql: `
+      ALTER TABLE planned_workout_items ADD COLUMN time_semantics TEXT
+        CHECK (time_semantics IS NULL OR time_semantics IN ('DURATION_TARGET', 'PERFORMANCE_GOAL_TIME', 'COMPLETION_TIME_CAP'));
+      ALTER TABLE session_exercises ADD COLUMN time_semantics TEXT
+        CHECK (time_semantics IS NULL OR time_semantics IN ('DURATION_TARGET', 'PERFORMANCE_GOAL_TIME', 'COMPLETION_TIME_CAP'));
+    `,
+  },
 ];

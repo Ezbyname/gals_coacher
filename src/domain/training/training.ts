@@ -1,3 +1,4 @@
+import type { TimeSemantics } from '../exercise/timeSemantics';
 import { isComparisonPolicy, type ComparisonPolicy } from '../comparison';
 import { loadApplies, type ExerciseMeasurement, type LocalizedText } from '../exercise/exercise';
 import { isMeasurementType, type MeasurementType } from '../measurement';
@@ -39,6 +40,11 @@ export interface Prescription {
   readonly target: number | null;
   readonly loadKg: number | null;
   readonly restSec: number | null;
+  /**
+   * TRAINING-BLOCKS-001: what the seconds value of a TIME exercise means in THIS prescription. Absent / null = legacy (the
+   * historical "Goal time"). Stored with the plan item and copied to the session exercise, never derived from the exercise.
+   */
+  readonly timeSemantics?: TimeSemantics | null;
 }
 
 export type PrescriptionField = 'sets' | 'target' | 'loadKg' | 'restSec';

@@ -70,7 +70,7 @@ describe('runMigrations', () => {
     expect(() => assertValidMigrations(migrations)).not.toThrow();
   });
 
-  it('ships exactly versions 1..21', () => {
+  it('ships exactly versions 1..22', () => {
     expect(migrations.map((m) => [m.version, m.name])).toEqual([
       [1, 'app_meta'],
       [2, 'players'],
@@ -93,6 +93,7 @@ describe('runMigrations', () => {
       [19, 'sport_content_001'],
       [20, 'sport_content_002'],
       [21, 'training_blocks_001'],
+      [22, 'time_semantics_001'],
     ]);
   });
 });

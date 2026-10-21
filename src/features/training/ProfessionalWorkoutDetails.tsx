@@ -70,20 +70,23 @@ export function ProfessionalWorkoutDetails({ workoutId }: { workoutId: string })
           </Text>
           {section.items.map((item, i) => {
             const exercise = builtinExercise(item.exerciseId)!;
-            const prescription = item.dosage
-              ? { sets: item.dosage.sets, target: item.dosage.target, loadKg: null, restSec: item.dosage.restSec }
-              : defaultPrescription(exercise.measurement, exercise.defaults);
+            const prescription = {
+              ...(item.dosage
+                ? { sets: item.dosage.sets, target: item.dosage.target, loadKg: null, restSec: item.dosage.restSec }
+                : defaultPrescription(exercise.measurement, exercise.defaults)),
+              timeSemantics: item.timeSemantics ?? null,
+            };
             return (
               <View key={i} style={styles.item} testID={`professional-item-${s}-${i}`}>
                 <Text style={styles.body} testID={`professional-item-${s}-${i}-name`}>
                   {isolate(exercise.name[language])}
                 </Text>
                 <Text style={styles.muted} testID={`professional-item-${s}-${i}-dosage`}>
-                  {prescriptionText(t, exercise.measurement, prescription, exercise.id)}
+                  {prescriptionText(t, exercise.measurement, prescription)}
                 </Text>
-                {[item, ...(item.alternatives ?? []).map((a) => ({ exerciseId: a.exerciseId, dosage: a.dosage }))].some((it) => {
+                {[item, ...(item.alternatives ?? []).map((a) => ({ exerciseId: a.exerciseId, dosage: a.dosage, timeSemantics: a.timeSemantics }))].some((it) => {
                   const ie = builtinExercise(it.exerciseId)!;
-                  return timeCapHint(t, ie.measurement, it.dosage ? it.dosage.target : null, ie.id) !== null;
+                  return timeCapHint(t, ie.measurement, it.dosage ? it.dosage.target : null, it.timeSemantics) !== null;
                 }) ? (
                   <Text style={styles.muted} testID={`professional-item-${s}-${i}-time-cap-hint`}>
                     {t('training.timeCapHint')}
@@ -98,7 +101,7 @@ export function ProfessionalWorkoutDetails({ workoutId }: { workoutId: string })
                         <Text key={k} style={styles.muted} testID={`professional-item-${s}-${i}-alt-${k}`}>
                           {t('training.professional.alternativeLine', {
                             name: isolate(ae.name[language]),
-                            dosage: prescriptionText(t, ae.measurement, { sets: a.dosage.sets, target: a.dosage.target, loadKg: null, restSec: a.dosage.restSec }, ae.id),
+                            dosage: prescriptionText(t, ae.measurement, { sets: a.dosage.sets, target: a.dosage.target, loadKg: null, restSec: a.dosage.restSec, timeSemantics: a.timeSemantics ?? null }),
                           })}
                         </Text>
                       );
