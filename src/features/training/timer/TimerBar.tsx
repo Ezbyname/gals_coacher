@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ComponentProps } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { SessionExercise, SessionSet, TrainingSession } from '@/data/local/training/trainingRepository';
@@ -92,39 +92,54 @@ export function TimerBar({
         {announce !== null && (finished || mine.phase === 'PAUSED') ? announce : caption}
       </Text>
 
-      <View style={styles.buttons}>
+      <View style={styles.buttons} testID="timer-buttons">
         {mine.kind === 'WORK' && mine.phase === 'RUNNING' ? (
           <>
-            <BigButton testID="timer-pause" variant="secondary" label={t('training.timer.pause')} onPress={timer.pause} />
-            <BigButton testID="timer-stop" variant="secondary" label={t('training.timer.stop')} onPress={timer.stop} />
+            <TimerButton testID="timer-pause" variant="secondary" label={t('training.timer.pause')} onPress={timer.pause} />
+            <TimerButton testID="timer-stop" variant="secondary" label={t('training.timer.stop')} onPress={timer.stop} />
           </>
         ) : null}
         {mine.kind === 'WORK' && mine.phase === 'PAUSED' ? (
           <>
-            <BigButton testID="timer-resume" label={t('training.timer.resume')} onPress={timer.resume} />
-            <BigButton testID="timer-stop" variant="secondary" label={t('training.timer.stop')} onPress={timer.stop} />
+            <TimerButton testID="timer-resume" label={t('training.timer.resume')} onPress={timer.resume} />
+            <TimerButton testID="timer-stop" variant="secondary" label={t('training.timer.stop')} onPress={timer.stop} />
           </>
         ) : null}
         {mine.kind === 'WORK' && (finished || stopped) ? (
           <>
             {seconds !== null ? (
-              <BigButton testID="timer-record" label={t('training.timer.record', { seconds })} onPress={() => void onRecord(mine.identity.setId, seconds)} />
+              <TimerButton testID="timer-record" label={t('training.timer.record', { seconds })} onPress={() => void onRecord(mine.identity.setId, seconds)} />
             ) : null}
-            <BigButton testID="timer-dismiss" variant="secondary" label={t('training.timer.dismiss')} onPress={timer.dismiss} />
+            <TimerButton testID="timer-dismiss" variant="secondary" label={t('training.timer.dismiss')} onPress={timer.dismiss} />
           </>
         ) : null}
-        {isRest && !finished ? <BigButton testID="timer-skip-rest" variant="secondary" label={t('training.timer.skipRest')} onPress={timer.skipRest} /> : null}
-        {isRest && finished ? <BigButton testID="timer-dismiss" variant="secondary" label={t('training.timer.dismiss')} onPress={timer.dismiss} /> : null}
+        {isRest && !finished ? <TimerButton testID="timer-skip-rest" variant="secondary" label={t('training.timer.skipRest')} onPress={timer.skipRest} /> : null}
+        {isRest && finished ? <TimerButton testID="timer-dismiss" variant="secondary" label={t('training.timer.dismiss')} onPress={timer.dismiss} /> : null}
       </View>
     </View>
   );
 }
 
+/** One control of the bar: the controls share ONE row, so the bar stays short and leaves the workout visible. */
+function TimerButton(props: ComponentProps<typeof BigButton>) {
+  return (
+    <View style={styles.cell}>
+      <BigButton {...props} />
+    </View>
+  );
+}
+
+/**
+ * Layout: the bar is an ordinary row ABOVE the scroll view (in the normal flow, never absolutely positioned), so it
+ * reserves its own space and the workout starts below it; with no timer it renders nothing at all (no gap). It is kept
+ * compact — the digits stay large, the controls sit side by side — so most of the screen remains for the sets.
+ */
 const styles = StyleSheet.create({
-  bar: { margin: spacing.md, marginBottom: 0, padding: spacing.md, gap: spacing.xs, borderRadius: 14, borderWidth: 2 },
-  title: { fontSize: 17, fontWeight: '800', color: colors.ink, textAlign: 'auto' },
-  sub: { fontSize: 15, color: colors.inkMuted, textAlign: 'auto' },
-  digits: { fontSize: 64, fontWeight: '800', textAlign: 'center', fontVariant: ['tabular-nums'] },
-  caption: { fontSize: 15, fontWeight: '700', color: colors.ink, textAlign: 'center' },
-  buttons: { gap: spacing.sm, marginTop: spacing.xs },
+  bar: { marginHorizontal: spacing.md, marginTop: spacing.sm, padding: spacing.sm, gap: 2, borderRadius: 14, borderWidth: 2 },
+  title: { fontSize: 16, fontWeight: '800', color: colors.ink, textAlign: 'auto' },
+  sub: { fontSize: 14, color: colors.inkMuted, textAlign: 'auto' },
+  digits: { fontSize: 46, lineHeight: 54, fontWeight: '800', textAlign: 'center', fontVariant: ['tabular-nums'] },
+  caption: { fontSize: 14, fontWeight: '700', color: colors.ink, textAlign: 'center' },
+  buttons: { flexDirection: 'row', gap: spacing.sm, marginTop: 2 },
+  cell: { flex: 1, minWidth: 0 },
 });

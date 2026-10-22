@@ -154,7 +154,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
     ]);
 
   return (
-    <View style={styles.root}>
+    <View style={styles.root} testID="session-root">
     <TimerBar session={session} live={live} onRecord={(setId, seconds) => recordAction(setId, { DURATION_S: seconds }, () => {})} />
     <KeyboardSafeScrollView
       testID="session-scroll"
