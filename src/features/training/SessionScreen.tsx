@@ -144,7 +144,12 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
       { text: t('training.keepTraining'), style: 'cancel' },
       {
         text: t('training.confirmAbandon'),
-        onPress: () => void act(() => abandonSession(db!, session.id, deps)),
+        onPress: () =>
+          void act(async () => {
+            const closed = await abandonSession(db!, session.id, deps);
+            timer.clearForSession(session.id); // only after the close succeeded
+            return closed;
+          }),
       },
     ]);
 
@@ -207,7 +212,13 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
           <BigButton
             testID="session-finish"
             label={t('training.finish')}
-            onPress={() => void act(() => finishSession(db!, session.id, deps))}
+            onPress={() =>
+              void act(async () => {
+                const closed = await finishSession(db!, session.id, deps);
+                timer.clearForSession(session.id); // only after the close succeeded; a refused close keeps the timer
+                return closed;
+              })
+            }
           />
           <BigButton
             testID="session-abandon"
@@ -405,7 +416,18 @@ function SetRow(props: {
               <Small
                 testID={`${testID}-timer-start`}
                 label={t('training.timer.startTimer')}
-                onPress={() => timer.startWork({ sessionId: props.sessionId, exerciseId: exercise.id, exercisePosition: exercise.position, setId: set.id, setNumber: set.setNumber }, workSeconds)}
+                onPress={() => {
+                  const identity = { sessionId: props.sessionId, exerciseId: exercise.id, exercisePosition: exercise.position, setId: set.id, setNumber: set.setNumber };
+                  // An active work timer of another set is never discarded silently (a rest timer may be replaced freely).
+                  if (!timer.isActiveWorkElsewhere(identity)) {
+                    timer.startWork(identity, workSeconds);
+                    return;
+                  }
+                  Alert.alert(t('training.timer.replaceTitle'), t('training.timer.replaceBody'), [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('training.timer.replaceConfirm'), onPress: () => timer.startWork(identity, workSeconds) },
+                  ]);
+                }}
               />
             ) : null}
             <Small

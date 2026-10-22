@@ -53,6 +53,11 @@ export interface WorkoutTimerApi {
   /** The session is no longer IN_PROGRESS (or was left): whatever timer belongs to it ends now. */
   clearForSession(sessionId: string): void;
   readRemainingMs(): number;
+  /**
+   * An ACTIVE (running or paused) WORK timer exists for a DIFFERENT set. Starting another work timer would discard what it
+   * has counted, so the caller must confirm first. A rest timer or a finished / stopped result never counts.
+   */
+  isActiveWorkElsewhere(identity: TimerIdentity): boolean;
 }
 
 const Context = createContext<WorkoutTimerApi | null>(null);
@@ -188,6 +193,15 @@ export function WorkoutTimerProvider({
         if (stateRef.current?.identity.sessionId === sessionId) commit(null);
       },
       readRemainingMs: () => (stateRef.current === null ? 0 : remainingMs(stateRef.current, nowOf())),
+      isActiveWorkElsewhere: (identity) => {
+        const current = stateRef.current;
+        return (
+          current !== null &&
+          current.kind === 'WORK' &&
+          (current.phase === 'RUNNING' || current.phase === 'PAUSED') &&
+          !(current.identity.sessionId === identity.sessionId && current.identity.setId === identity.setId)
+        );
+      },
     };
   }, [state, announcement, announce, commit, nowOf, refreshPrefs]);
 

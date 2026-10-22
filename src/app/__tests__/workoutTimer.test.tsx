@@ -1,9 +1,9 @@
-import { resolve } from 'node:path';
+﻿import { resolve } from 'node:path';
 
 import { router } from 'expo-router';
 import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { openDatabaseAsync } from 'expo-sqlite';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
@@ -344,5 +344,117 @@ describe('Hebrew, direction and accessibility (49-53)', () => {
     expect(screen.getByTestId('timer-caption').props.accessibilityLiveRegion).toBe('polite');
     press('timer-pause');
     expect(caption()).toBe('Timer paused');
+  });
+});
+
+describe('an active WORK timer is never discarded silently (replacement rules)', () => {
+  const buttonsOf = (spy: jest.SpyInstance) => spy.mock.calls.at(-1)![2] as { text: string; style?: string; onPress?: () => void }[];
+
+  it('Start on another set while a work timer runs asks first; Cancel keeps the running timer untouched (17 s are not lost)', async () => {
+    await prepare('en', [plank(2, 45)]);
+    await openSession();
+    press(`${set(0, 1)}-timer-start`);
+    await screen.findByTestId('timer-bar');
+    await pass(17_000);
+    expect(text('timer-digits')).toBe('00:13');
+    const alert = jest.spyOn(Alert, 'alert');
+    press(`${set(0, 2)}-timer-start`);
+    expect(alert).toHaveBeenCalledTimes(1);
+    expect(String(alert.mock.calls.at(-1)![1])).toBe('A timer is already running for another set. Stop it and start this timer?');
+    act(() => buttonsOf(alert).find((b) => b.style === 'cancel')!.onPress?.());
+    expect(text('timer-title')).toMatch(/set 1$/); // still the first set
+    expect(text('timer-digits')).toBe('00:13'); // and still counting from where it was
+    expect(await measurements()).toEqual([]); // nothing recorded, nothing marked done
+  });
+
+  it('Stop and start discards the runtime timer and starts the new one — still without recording anything', async () => {
+    await prepare('en', [plank(2, 45)]);
+    await openSession();
+    press(`${set(0, 1)}-timer-start`);
+    await screen.findByTestId('timer-bar');
+    await pass(17_000);
+    const alert = jest.spyOn(Alert, 'alert');
+    press(`${set(0, 2)}-timer-start`);
+    act(() => buttonsOf(alert).find((b) => b.style !== 'cancel')!.onPress!());
+    await waitFor(() => expect(text('timer-title')).toMatch(/set 2$/));
+    expect(text('timer-digits')).toBe('00:30');
+    expect(await measurements()).toEqual([]);
+    expect(await db!.getAllAsync("SELECT status FROM session_sets WHERE status <> 'PENDING'")).toEqual([]);
+  });
+
+  it('a paused work timer is also protected', async () => {
+    await prepare('en', [plank(2, 45)]);
+    await openSession();
+    press(`${set(0, 1)}-timer-start`);
+    await screen.findByTestId('timer-bar');
+    press('timer-pause');
+    const alert = jest.spyOn(Alert, 'alert');
+    press(`${set(0, 2)}-timer-start`);
+    expect(alert).toHaveBeenCalledTimes(1);
+  });
+
+  it('Start on the SAME running set does nothing (idempotent, no question)', async () => {
+    await prepare('en', [plank(2, 45)]);
+    await openSession();
+    press(`${set(0, 1)}-timer-start`);
+    await screen.findByTestId('timer-bar');
+    await pass(5000);
+    const alert = jest.spyOn(Alert, 'alert');
+    press(`${set(0, 1)}-timer-start`);
+    expect(alert).not.toHaveBeenCalled();
+    expect(text('timer-digits')).toBe('00:25');
+  });
+
+  it('an active REST timer is replaced by a work timer without asking', async () => {
+    await prepare('en', [plank(3, 45)]);
+    await openSession();
+    fireEvent.changeText(screen.getByTestId(`${set(0, 1)}-DURATION_S`), '30');
+    press(`${set(0, 1)}-save`);
+    await waitFor(() => expect(text('timer-title')).toBe('Rest \u00b7 Next set'));
+    const alert = jest.spyOn(Alert, 'alert');
+    press(`${set(0, 3)}-timer-start`);
+    expect(alert).not.toHaveBeenCalled();
+    await waitFor(() => expect(text('timer-title')).toMatch(/set 3$/));
+    expect(await measurements()).toHaveLength(1); // only the user's own save
+  });
+
+  it('Hebrew confirmation wording', async () => {
+    await prepare('he', [plank(2, 45)]);
+    await openSession();
+    press(`${set(0, 1)}-timer-start`);
+    await screen.findByTestId('timer-bar');
+    const alert = jest.spyOn(Alert, 'alert');
+    press(`${set(0, 2)}-timer-start`);
+    expect(String(alert.mock.calls.at(-1)![1])).toBe('\u05db\u05d1\u05e8 \u05e4\u05d5\u05e2\u05dc \u05d8\u05d9\u05d9\u05de\u05e8 \u05dc\u05e1\u05d8 \u05d0\u05d7\u05e8. \u05dc\u05e2\u05e6\u05d5\u05e8 \u05d0\u05d5\u05ea\u05d5 \u05d5\u05dc\u05d4\u05ea\u05d7\u05d9\u05dc \u05d0\u05ea \u05d4\u05d8\u05d9\u05d9\u05de\u05e8 \u05d4\u05d6\u05d4?');
+    expect(buttonsOf(alert)[1]!.text).toBe('\u05e2\u05e6\u05d5\u05e8 \u05d5\u05d4\u05ea\u05d7\u05dc');
+  });
+});
+
+describe("Time's up -> Record 30 s, end to end on the real screen", () => {
+  it("expiry shows Time's up and Record 30 s; nothing is stored until the button is pressed; then exactly ONE MANUAL measurement of 30 s", async () => {
+    await prepare('en', [plank(2, 45)]);
+    await openSession();
+    const plannedBefore = await db!.getFirstAsync('SELECT planned_target FROM session_sets WHERE set_number = 1');
+    expect(plannedBefore).toEqual({ planned_target: 30 });
+
+    press(`${set(0, 1)}-timer-start`); // 1. Start timer
+    await screen.findByTestId('timer-bar');
+    await pass(30_500); // 2. the clock reaches expiry
+    await waitFor(() => expect(text('timer-caption')).toBe("Time's up")); // 3. Time's up
+    expect(text('timer-digits')).toBe('00:00');
+    expect(screen.getByTestId('timer-record')).toHaveTextContent(/Record .*30.* s/); // 4. the visible Record button
+    expect(await measurements()).toEqual([]); // 5. still NOTHING stored
+    expect(await db!.getAllAsync("SELECT status FROM session_sets WHERE status <> 'PENDING'")).toEqual([]);
+
+    press('timer-record'); // 6. the user presses Record 30 s
+    await waitFor(async () => expect((await measurements()).length).toBe(1));
+    expect(await measurements()).toEqual([{ kind: 'DURATION_S', measured_value: 30, final_value: 30, source: 'MANUAL' }]); // 7, 8, 9
+    expect(await db!.getFirstAsync('SELECT status, planned_target FROM session_sets WHERE set_number = 1')).toEqual({ status: 'DONE', planned_target: 30 }); // 10, 11
+
+    // 12. late timer callbacks (the finished timer's tick, the rest that follows) create nothing more
+    await pass(120_000);
+    await pass(60_000);
+    expect(await measurements()).toHaveLength(1);
+    expect(await db!.getAllAsync("SELECT set_number FROM session_sets WHERE status = 'DONE'")).toEqual([{ set_number: 1 }]);
   });
 });

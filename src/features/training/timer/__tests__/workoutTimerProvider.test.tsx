@@ -330,3 +330,27 @@ describe('announcements are limited to meaningful transitions (53)', () => {
     expect(seen.map((s) => s.split('#')[0])).toEqual(['WORK_STARTED', 'PAUSED', 'RESUMED', 'WORK_FINISHED']);
   });
 });
+
+describe('isActiveWorkElsewhere (a running or paused work timer of another set must be confirmed before it is replaced)', () => {
+  it('true for another set while running or paused; false for the same set, for rest, and for finished or stopped results', () => {
+    const { result } = mount();
+    const a = id();
+    const b = id({ setId: 'set2', setNumber: 2 });
+    expect(result.current.isActiveWorkElsewhere(b)).toBe(false); // no timer at all
+    act(() => result.current.startWork(a, 30));
+    expect(result.current.isActiveWorkElsewhere(b)).toBe(true);
+    expect(result.current.isActiveWorkElsewhere(a)).toBe(false); // the same set: idempotent start
+    expect(result.current.isActiveWorkElsewhere(id({ sessionId: 's2' }))).toBe(true); // same set id, another session
+    act(() => result.current.pause());
+    expect(result.current.isActiveWorkElsewhere(b)).toBe(true);
+    act(() => result.current.stop());
+    expect(result.current.isActiveWorkElsewhere(b)).toBe(false); // a stopped result is not an active timer
+    act(() => result.current.dismiss());
+    act(() => result.current.startRest(a, 30));
+    expect(result.current.isActiveWorkElsewhere(b)).toBe(false); // rest may be replaced freely
+    act(() => result.current.startWork(a, 2));
+    pass(3000);
+    expect(result.current.state!.phase).toBe('FINISHED');
+    expect(result.current.isActiveWorkElsewhere(b)).toBe(false);
+  });
+});
