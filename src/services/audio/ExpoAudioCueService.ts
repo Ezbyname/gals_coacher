@@ -16,6 +16,7 @@ export function createExpoAudioCueService(): AudioCueService {
   return {
     preload: async () => {
       // Loaded lazily: the native module is only needed on a device.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const audio = require('expo-audio') as typeof import('expo-audio');
       await audio.setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'mixWithOthers', shouldPlayInBackground: false });
       const sources: Record<AudioCue, number> = {

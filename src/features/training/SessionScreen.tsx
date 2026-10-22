@@ -20,6 +20,7 @@ import {
   type SetValueErrors,
   type SetValues,
 } from '@/domain/training/training';
+import { nextPendingSet, restTimerSeconds, suggestedSeconds, workTimerSeconds, type TimerIdentity } from '@/domain/training/workoutTimer';
 import { useApp } from '@/features/AppProvider';
 import { PlayerTargetLabel, useActivePlayer } from '@/features/players/ActivePlayerContext';
 import { formatDateTime } from '@/features/calendar/formatEventTime';
@@ -32,6 +33,8 @@ import { TextField } from '@/ui/TextField';
 import { colors, spacing } from '@/ui/theme';
 
 import { Small } from './BlockForm';
+import { findSet, TimerBar } from './timer/TimerBar';
+import { useWorkoutTimer } from './timer/WorkoutTimerProvider';
 import {
   actualSetText,
   formatNumber,
@@ -64,6 +67,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
   >({ status: 'loading' });
   const [failure, setFailure] = useState<TranslationKey | null>(null);
   const busy = useRef(false);
+  const timer = useWorkoutTimer();
 
   useFocusEffect(
     useCallback(() => {
@@ -112,6 +116,29 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
   const db = boot.status === 'ready' ? boot.db : null;
   const deps = { ids: services.ids, clock: services.clock };
 
+  /**
+   * The ONE record path (the Save button and the timer's Record button both use it). After a set that was PENDING is
+   * saved, a rest timer starts when this exercise has rest and another PENDING set of the SAME exercise is left.
+   * The timer itself never writes anything: this only runs from a user action.
+   */
+  const recordAction = (setId: string, values: SetValues, onErrors: (e: SetValueErrors) => void) =>
+    act(async () => {
+      const wasPending = findSet(session, setId)?.set.status === 'PENDING';
+      const result = await recordSet(db!, setId, values, deps);
+      if (!result.ok) {
+        onErrors(result.errors);
+        return null;
+      }
+      onErrors({});
+      if (wasPending) {
+        const found = findSet(result.session, setId);
+        const rest = found ? restTimerSeconds(found.exercise.restSec) : null;
+        const next = found ? nextPendingSet(found.exercise.sets, setId) : null;
+        if (found && rest !== null && next !== null) timer.startRest(timerIdentity(result.session.id, found.exercise, next), rest);
+      }
+      return result.session;
+    });
+
   const abandon = () =>
     Alert.alert(t('training.abandonTitle'), t('training.abandonBody'), [
       { text: t('training.keepTraining'), style: 'cancel' },
@@ -122,6 +149,8 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
     ]);
 
   return (
+    <View style={styles.root}>
+    <TimerBar session={session} live={live} onRecord={(setId, seconds) => recordAction(setId, { DURATION_S: seconds }, () => {})} />
     <KeyboardSafeScrollView
       testID="session-scroll"
       contentContainerStyle={styles.container}
@@ -161,17 +190,8 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
           index={index}
           exercise={exercise}
           live={live}
-          onRecord={(setId, values, onErrors) =>
-            act(async () => {
-              const result = await recordSet(db!, setId, values, deps);
-              if (!result.ok) {
-                onErrors(result.errors);
-                return null;
-              }
-              onErrors({});
-              return result.session;
-            })
-          }
+          sessionId={session.id}
+          onRecord={recordAction}
           onSkip={(setId) => act(() => skipSet(db!, setId, deps))}
           onAddSet={() => act(() => addSet(db!, exercise.id, deps))}
         />
@@ -198,11 +218,17 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
         </View>
       ) : null}
     </KeyboardSafeScrollView>
+    </View>
   );
+}
+
+function timerIdentity(sessionId: string, exercise: SessionExercise, set: SessionSet): TimerIdentity {
+  return { sessionId, exerciseId: exercise.id, exercisePosition: exercise.position, setId: set.id, setNumber: set.setNumber };
 }
 
 function ExerciseCard(props: {
   index: number;
+  sessionId: string;
   exercise: SessionExercise;
   live: boolean;
   onRecord: (setId: string, values: SetValues, onErrors: (e: SetValueErrors) => void) => Promise<void>;
@@ -248,6 +274,7 @@ function ExerciseCard(props: {
           set={set}
           previous={exercise.sets.slice(0, i)}
           live={props.live}
+          sessionId={props.sessionId}
           onRecord={props.onRecord}
           onSkip={props.onSkip}
         />
@@ -271,6 +298,7 @@ function SetRow(props: {
   set: SessionSet;
   previous: readonly SessionSet[];
   live: boolean;
+  sessionId: string;
   onRecord: (setId: string, values: SetValues, onErrors: (e: SetValueErrors) => void) => Promise<void>;
   onSkip: (setId: string) => Promise<void>;
 }) {
@@ -298,6 +326,16 @@ function SetRow(props: {
     ]),
   ) as Record<MeasurementKind, string>;
   const [errors, setErrors] = useState<SetValueErrors>({});
+  const timer = useWorkoutTimer();
+  const workSeconds = props.live && set.planned && set.status === 'PENDING' ? workTimerSeconds(measurement.type, set.plannedTarget) : null;
+  // A stopped timer of THIS set suggests what was actually worked; the user still has to save it.
+  const state = timer.state;
+  const stoppedHere = state !== null && state.phase === 'STOPPED' && state.identity.setId === set.id ? suggestedSeconds(state) : null;
+  const [suggested, setSuggested] = useState<number | null>(null);
+  if (stoppedHere !== null && suggested !== stoppedHere) {
+    setSuggested(stoppedHere);
+    setInputs((v) => ({ ...v, DURATION_S: String(stoppedHere) }));
+  }
 
   const planned = set.planned ? plannedSetText(t, measurement, set.plannedTarget, set.plannedLoadKg, exercise.timeSemantics) : null;
   const done = set.status === 'DONE';
@@ -363,6 +401,13 @@ function SetRow(props: {
             />
           ))}
           <View style={styles.actions}>
+            {workSeconds !== null ? (
+              <Small
+                testID={`${testID}-timer-start`}
+                label={t('training.timer.startTimer')}
+                onPress={() => timer.startWork({ sessionId: props.sessionId, exerciseId: exercise.id, exercisePosition: exercise.position, setId: set.id, setNumber: set.setNumber }, workSeconds)}
+              />
+            ) : null}
             <Small
               testID={`${testID}-save`}
               label={t(done ? 'training.updateSet' : 'training.saveSet')}
@@ -383,6 +428,7 @@ function SetRow(props: {
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   container: { padding: spacing.lg, gap: spacing.md },
   title: { fontSize: 22, fontWeight: '800', color: colors.ink, textAlign: 'auto' },
   name: { fontSize: 18, fontWeight: '800', color: colors.ink, textAlign: 'auto' },

@@ -235,7 +235,8 @@ describe('background / foreground (17, 18)', () => {
 describe('session close (19-22)', () => {
   it('19-21: clearing the session clears its timer (completed, partial and stopped all end the same way)', () => {
     const { result } = mount();
-    for (const _status of ['COMPLETED', 'PARTIAL', 'ABANDONED']) {
+    for (let closes = 0; closes < 3; closes += 1) {
+      // a session closed as COMPLETED, PARTIAL or ABANDONED is cleared by the same call
       act(() => result.current.startWork(id(), 30));
       act(() => result.current.clearForSession('s1'));
       expect(result.current.state).toBeNull();

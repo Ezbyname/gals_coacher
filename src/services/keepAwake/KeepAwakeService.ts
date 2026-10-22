@@ -12,6 +12,7 @@ export const TIMER_KEEP_AWAKE_TAG = 'gals-coacher-workout-timer';
 export function createExpoKeepAwakeService(): KeepAwakeService {
   let active = false;
   // Loaded lazily so a missing native module (tests, web) never breaks start-up.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const load = () => require('expo-keep-awake') as typeof import('expo-keep-awake');
   return {
     activate: () => {

@@ -4,6 +4,7 @@ import { Alert, ScrollView, StyleSheet, Text } from 'react-native';
 import { clearLanguageSwitch, markLanguageSwitch } from '@/features/startup/languageSwitchMarker';
 import { useI18n } from '@/i18n/I18nProvider';
 import { LANGUAGES, type Language } from '@/i18n/languages';
+import { TimerSettings } from '@/features/training/timer/TimerSettings';
 import { BigButton } from '@/ui/BigButton';
 import { colors, spacing } from '@/ui/theme';
 
@@ -44,6 +45,9 @@ export default function SettingsScreen() {
           onPress={() => choose(lang)}
         />
       ))}
+
+      <Text style={[styles.label, styles.section]}>{t('settings.timerTitle')}</Text>
+      <TimerSettings />
 
       <Text style={[styles.label, styles.section]}>{t('reminders.title')}</Text>
       <BigButton
