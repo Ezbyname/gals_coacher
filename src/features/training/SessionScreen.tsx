@@ -1,5 +1,5 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -20,6 +20,9 @@ import {
   type SetValueErrors,
   type SetValues,
 } from '@/domain/training/training';
+import { exerciseProgress, nextSetId, workoutProgress } from '@/domain/training/sessionProgress';
+import { timedRecordValues } from '@/domain/training/timedRecord';
+import { stopwatchEligible, suggestedTimeSeconds } from '@/domain/training/workoutStopwatch';
 import { nextPendingSet, restTimerSeconds, suggestedSeconds, workTimerSeconds, type TimerIdentity } from '@/domain/training/workoutTimer';
 import { useApp } from '@/features/AppProvider';
 import { PlayerTargetLabel, useActivePlayer } from '@/features/players/ActivePlayerContext';
@@ -33,8 +36,8 @@ import { TextField } from '@/ui/TextField';
 import { colors, spacing } from '@/ui/theme';
 
 import { Small } from './BlockForm';
-import { findSet, TimerBar } from './timer/TimerBar';
-import { useWorkoutTimer } from './timer/WorkoutTimerProvider';
+import { findSet, TimerBar, type TimedKind } from './timer/TimerBar';
+import { isStopwatch, useWorkoutTimer } from './timer/WorkoutTimerProvider';
 import {
   actualSetText,
   formatNumber,
@@ -47,6 +50,13 @@ import {
 } from './trainingLabels';
 
 type Change = (session: TrainingSession) => void;
+
+/** What a set row lets the screen read / fill, so a timer's Record can combine the timed value with the user's other fields. */
+interface SetFields {
+  get(): Partial<Record<MeasurementKind, string>>;
+  fill(kind: MeasurementKind, value: string): void;
+}
+type FieldRegistry = { current: Map<string, SetFields> };
 
 /**
  * One training session. In progress: every set shows what was planned next
@@ -68,6 +78,8 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
   const [failure, setFailure] = useState<TranslationKey | null>(null);
   const busy = useRef(false);
   const timer = useWorkoutTimer();
+  const registry = useRef<Map<string, SetFields>>(new Map());
+  const [missing, setMissing] = useState<{ setId: string; kinds: readonly MeasurementKind[] } | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -96,6 +108,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
   const archived = context.status === 'resolved' && context.archived === true;
   const live = session.status === 'IN_PROGRESS' && !archived;
   const update: Change = (next) => setState({ status: 'ready', session: next });
+  const nextId = live ? nextSetId(session.exercises) : null;
 
   /** Runs one write; a refused write shows its reason and reloads the truth. */
   const act = async (write: () => Promise<TrainingSession | null>) => {
@@ -139,6 +152,25 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
       return result.session;
     });
 
+  /**
+   * Record from the countdown / stopwatch. The timed value is only ONE of the kinds a set may need (FARMER_CARRY also needs
+   * a load, SLED_PUSH too): the others come from what the user has in the set's fields, never from the plan. When one is
+   * still missing nothing is saved — the timed value is put in the field and the bar says what is still needed.
+   */
+  const timedRecord = async (setId: string, kind: TimedKind, seconds: number) => {
+    const found = findSet(session, setId);
+    if (found === null) return;
+    const fields = registry.current.get(setId);
+    const { values, missing: lacking } = timedRecordValues(found.exercise.exercise.measurement, kind, seconds, fields?.get() ?? {});
+    if (lacking.length > 0) {
+      fields?.fill(kind, formatNumber(seconds));
+      setMissing({ setId, kinds: lacking });
+      return;
+    }
+    setMissing(null);
+    await recordAction(setId, values, () => {});
+  };
+
   const abandon = () =>
     Alert.alert(t('training.abandonTitle'), t('training.abandonBody'), [
       { text: t('training.keepTraining'), style: 'cancel' },
@@ -155,7 +187,7 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
 
   return (
     <View style={styles.root} testID="session-root">
-    <TimerBar session={session} live={live} onRecord={(setId, seconds) => recordAction(setId, { DURATION_S: seconds }, () => {})} />
+    <TimerBar session={session} live={live} missing={missing} onRecord={timedRecord} />
     <KeyboardSafeScrollView
       testID="session-scroll"
       contentContainerStyle={styles.container}
@@ -189,6 +221,8 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
         </Text>
       ) : null}
 
+      <WorkoutProgressBlock session={session} live={live} />
+
       {session.exercises.map((exercise, index) => (
         <ExerciseCard
           key={exercise.id}
@@ -196,6 +230,9 @@ export function SessionScreen({ sessionId }: { sessionId: string }) {
           exercise={exercise}
           live={live}
           sessionId={session.id}
+          nextId={nextId}
+          registry={registry}
+          onClockStarted={() => setMissing(null)}
           onRecord={recordAction}
           onSkip={(setId) => act(() => skipSet(db!, setId, deps))}
           onAddSet={() => act(() => addSet(db!, exercise.id, deps))}
@@ -237,9 +274,38 @@ function timerIdentity(sessionId: string, exercise: SessionExercise, set: Sessio
   return { sessionId, exerciseId: exercise.id, exercisePosition: exercise.position, setId: set.id, setNumber: set.setNumber };
 }
 
+/** Compact live progress while training, the finish summary afterwards. Derived from the set states — nothing is stored. */
+function WorkoutProgressBlock({ session, live }: { session: TrainingSession; live: boolean }) {
+  const { t } = useI18n();
+  const p = workoutProgress(session.exercises);
+  if (p.plannedSets === 0 && p.extraDone === 0 && p.extraPending === 0) return null;
+  const lines = [
+    t('training.progress.planned', { done: p.plannedDone, planned: p.plannedSets }),
+    t('training.progress.exercises', { done: p.exercisesCompleted, total: p.exercises }),
+    ...(p.skipped > 0 ? [t('training.progress.skipped', { n: p.skipped })] : []),
+    ...(p.extraDone > 0 ? [t('training.progress.extraPerformed', { n: p.extraDone })] : []),
+    ...(p.extraPending > 0 ? [t('training.progress.extraPending', { n: p.extraPending })] : []),
+  ];
+  return (
+    <View style={styles.progress} testID="session-progress">
+      <Text style={styles.name} accessibilityRole="header">
+        {t(live ? 'training.progress.progressTitle' : 'training.progress.summaryTitle')}
+      </Text>
+      {lines.map((line, i) => (
+        <Text key={i} style={styles.status} testID={`session-progress-${i}`}>
+          {line}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
 function ExerciseCard(props: {
   index: number;
   sessionId: string;
+  nextId: string | null;
+  registry: FieldRegistry;
+  onClockStarted: () => void;
   exercise: SessionExercise;
   live: boolean;
   onRecord: (setId: string, values: SetValues, onErrors: (e: SetValueErrors) => void) => Promise<void>;
@@ -261,6 +327,15 @@ function ExerciseCard(props: {
           restSec: exercise.restSec,
           timeSemantics: exercise.timeSemantics ?? null,
         });
+  const progress = exerciseProgress(exercise.sets);
+  const stateText =
+    progress.state === 'COMPLETED'
+      ? t('training.progress.completed')
+      : progress.state === 'COMPLETED_WITH_SKIPPED'
+        ? t('training.progress.completedSkipped')
+        : progress.state === 'PLANNED_DONE_EXTRA_PENDING'
+          ? t('training.progress.plannedDone')
+          : null;
   return (
     <View style={styles.card} testID={id}>
       {exercise.blockName ? <Text style={styles.muted}>{exercise.blockName}</Text> : null}
@@ -277,9 +352,27 @@ function ExerciseCard(props: {
           {t('training.timeCapHint')}
         </Text>
       ) : null}
+      {progress.planned > 0 || progress.extraDone > 0 || progress.extraPending > 0 ? (
+        <Text style={styles.status} testID={`${id}-progress`}>
+          {[
+            t('training.progress.planned', { done: progress.plannedDone, planned: progress.planned }),
+            ...(progress.skipped > 0 ? [t('training.progress.skipped', { n: progress.skipped })] : []),
+            ...(progress.extraDone > 0 ? [t('training.progress.extraPerformed', { n: progress.extraDone })] : []),
+            ...(progress.extraPending > 0 ? [t('training.progress.extraPending', { n: progress.extraPending })] : []),
+          ].join(' · ')}
+        </Text>
+      ) : null}
+      {stateText !== null && exercise.sets.length > 0 ? (
+        <Text style={styles.complete} testID={`${id}-state`}>
+          {stateText}
+        </Text>
+      ) : null}
       {exercise.sets.map((set, i) => (
         <SetRow
           key={set.id}
+          nextId={props.nextId}
+          registry={props.registry}
+          onClockStarted={props.onClockStarted}
           testID={`${id}-set-${set.setNumber}`}
           exercise={exercise}
           set={set}
@@ -304,6 +397,9 @@ const ERROR_KEYS: Record<NonNullable<SetValueErrors[MeasurementKind]>, Translati
 };
 
 function SetRow(props: {
+  nextId: string | null;
+  registry: FieldRegistry;
+  onClockStarted: () => void;
   testID: string;
   exercise: SessionExercise;
   set: SessionSet;
@@ -338,15 +434,55 @@ function SetRow(props: {
   ) as Record<MeasurementKind, string>;
   const [errors, setErrors] = useState<SetValueErrors>({});
   const timer = useWorkoutTimer();
+  // The screen reads this set's fields when a timer's Record needs the other kinds (e.g. the load), and fills one in.
+  const inputsRef = useRef(inputs);
+  inputsRef.current = inputs;
+  const { registry } = props;
+  useEffect(() => {
+    registry.current.set(set.id, {
+      get: () => inputsRef.current,
+      fill: (kind, value) => setInputs((v) => ({ ...v, [kind]: value })),
+    });
+    return () => {
+      registry.current.delete(set.id);
+    };
+  }, [registry, set.id]);
   const workSeconds = props.live && set.planned && set.status === 'PENDING' ? workTimerSeconds(measurement.type, set.plannedTarget) : null;
   // A stopped timer of THIS set suggests what was actually worked; the user still has to save it.
   const state = timer.state;
-  const stoppedHere = state !== null && state.phase === 'STOPPED' && state.identity.setId === set.id ? suggestedSeconds(state) : null;
+  const stoppedHere =
+    state !== null && state.phase === 'STOPPED' && state.identity.setId === set.id
+      ? isStopwatch(state)
+        ? suggestedTimeSeconds(state)
+        : suggestedSeconds(state)
+      : null;
+  const stoppedKind: TimedKind = isStopwatch(state) ? 'TIME_S' : 'DURATION_S';
   const [suggested, setSuggested] = useState<number | null>(null);
   if (stoppedHere !== null && suggested !== stoppedHere) {
     setSuggested(stoppedHere);
-    setInputs((v) => ({ ...v, DURATION_S: String(stoppedHere) }));
+    setInputs((v) => ({ ...v, [stoppedKind]: String(stoppedHere) }));
   }
+  const stopwatchAllowed = props.live && set.status === 'PENDING' && stopwatchEligible(measurement.type);
+  const startClock = (begin: (identity: TimerIdentity) => void) => {
+    const identity = { sessionId: props.sessionId, exerciseId: exercise.id, exercisePosition: exercise.position, setId: set.id, setNumber: set.setNumber };
+    // An active work timer / running stopwatch of another set is never discarded silently (a rest timer may be replaced freely).
+    if (!timer.isActiveWorkElsewhere(identity)) {
+      props.onClockStarted();
+      begin(identity);
+      return;
+    }
+    Alert.alert(t('training.timer.replaceTitle'), t('training.timer.replaceBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('training.timer.replaceConfirm'),
+        onPress: () => {
+          props.onClockStarted();
+          begin(identity);
+        },
+      },
+    ]);
+  };
+  const isNext = props.live && set.status === 'PENDING' && props.nextId === set.id;
 
   const planned = set.planned ? plannedSetText(t, measurement, set.plannedTarget, set.plannedLoadKg, exercise.timeSemantics) : null;
   const done = set.status === 'DONE';
@@ -383,10 +519,20 @@ function SetRow(props: {
   };
 
   return (
-    <View style={styles.set} testID={testID}>
-      <Text style={styles.setTitle} testID={`${testID}-label`}>
-        {t('training.setLabel', { n: set.setNumber })}
-      </Text>
+    <View style={[styles.set, isNext ? styles.setNext : null]} testID={testID}>
+      <View style={styles.setHeader}>
+        <Text style={styles.setTitle} testID={`${testID}-label`}>
+          {t('training.setLabel', { n: set.setNumber })}
+        </Text>
+        <Text style={[styles.pill, pillStyle(set.status)]} testID={`${testID}-state`}>
+          {t(`training.setState.${set.status}`)}
+        </Text>
+        {isNext ? (
+          <Text style={[styles.pill, styles.pillNext]} testID={`${testID}-next`}>
+            {t('training.setState.NEXT')}
+          </Text>
+        ) : null}
+      </View>
       <Text style={styles.muted} testID={`${testID}-planned`}>
         {set.planned
           ? planned === null
@@ -416,18 +562,14 @@ function SetRow(props: {
               <Small
                 testID={`${testID}-timer-start`}
                 label={t('training.timer.startTimer')}
-                onPress={() => {
-                  const identity = { sessionId: props.sessionId, exerciseId: exercise.id, exercisePosition: exercise.position, setId: set.id, setNumber: set.setNumber };
-                  // An active work timer of another set is never discarded silently (a rest timer may be replaced freely).
-                  if (!timer.isActiveWorkElsewhere(identity)) {
-                    timer.startWork(identity, workSeconds);
-                    return;
-                  }
-                  Alert.alert(t('training.timer.replaceTitle'), t('training.timer.replaceBody'), [
-                    { text: t('common.cancel'), style: 'cancel' },
-                    { text: t('training.timer.replaceConfirm'), onPress: () => timer.startWork(identity, workSeconds) },
-                  ]);
-                }}
+                onPress={() => startClock((identity) => timer.startWork(identity, workSeconds))}
+              />
+            ) : null}
+            {stopwatchAllowed ? (
+              <Small
+                testID={`${testID}-stopwatch-start`}
+                label={t('training.timer.startStopwatch')}
+                onPress={() => startClock((identity) => timer.startStopwatch(identity))}
               />
             ) : null}
             <Small
@@ -449,6 +591,8 @@ function SetRow(props: {
   );
 }
 
+const pillStyle = (status: SessionSet['status']) => (status === 'DONE' ? styles.pillDone : status === 'SKIPPED' ? styles.pillSkipped : styles.pillPending);
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   container: { padding: spacing.lg, gap: spacing.md },
@@ -466,6 +610,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   set: { gap: spacing.xs, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
+  setNext: { borderLeftWidth: 4, borderLeftColor: colors.court, paddingLeft: spacing.sm, backgroundColor: '#FDEBDD' },
+  setHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
+  pill: { fontSize: 12, fontWeight: '800', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, overflow: 'hidden' },
+  pillPending: { color: colors.inkMuted, backgroundColor: colors.border },
+  pillDone: { color: '#14532D', backgroundColor: '#DCFCE7' },
+  pillSkipped: { color: colors.inkMuted, backgroundColor: '#E5E7EB' },
+  pillNext: { color: colors.courtDark, backgroundColor: '#FDEBDD' },
+  complete: { fontSize: 15, color: colors.ink, fontWeight: '800', textAlign: 'auto' },
+  progress: { gap: 2, padding: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   setTitle: { fontSize: 15, fontWeight: '800', color: colors.ink, textAlign: 'auto' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   buttons: { gap: spacing.sm },

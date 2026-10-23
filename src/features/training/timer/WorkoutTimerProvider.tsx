@@ -13,6 +13,12 @@ import {
   type TimerKind,
   type TimerState,
 } from '@/domain/training/workoutTimer';
+import {
+  startStopwatch,
+  stopStopwatch,
+  stopwatchElapsedMs,
+  type StopwatchState,
+} from '@/domain/training/workoutStopwatch';
 import { useApp } from '@/features/AppProvider';
 import { DEFAULT_TIMER_PREFERENCES, readTimerPreferences, type TimerPreferences } from '@/preferences/timerPreference';
 
@@ -29,8 +35,23 @@ import { DEFAULT_TIMER_PREFERENCES, readTimerPreferences, type TimerPreferences 
 /** A late cue (the timer ran out while the app was away) is silent: the state is shown, the sound would be stale. */
 export const STALE_CUE_MS = 2000;
 const TICK_MS = 250;
+const STOPWATCH_TICK_MS = 100;
 
-export type TimerAnnouncementKind = 'WORK_STARTED' | 'PAUSED' | 'RESUMED' | 'WORK_FINISHED' | 'REST_FINISHED';
+/**
+ * TRAINING-STOPWATCH-001: the ONE execution clock of the session is either a countdown / rest timer or a stopwatch. They
+ * are different concepts with separate pure engines; they only share this single slot, so they can never run together.
+ */
+export type ExecutionClock = TimerState | StopwatchState;
+export const isStopwatch = (c: ExecutionClock | null): c is StopwatchState => c !== null && c.kind === 'STOPWATCH';
+
+export type TimerAnnouncementKind =
+  | 'WORK_STARTED'
+  | 'PAUSED'
+  | 'RESUMED'
+  | 'WORK_FINISHED'
+  | 'REST_FINISHED'
+  | 'STOPWATCH_STARTED'
+  | 'STOPWATCH_STOPPED';
 export interface TimerAnnouncement {
   readonly kind: TimerAnnouncementKind;
   /** Changes on every announcement, so a repeated kind is announced again. */
@@ -39,10 +60,12 @@ export interface TimerAnnouncement {
 
 export interface WorkoutTimerApi {
   /** The active timer; changes only on transitions (the digits are derived with `readRemainingMs`). */
-  readonly state: TimerState | null;
+  readonly state: ExecutionClock | null;
   readonly announcement: TimerAnnouncement | null;
   startWork(identity: TimerIdentity, seconds: number): void;
   startRest(identity: TimerIdentity, seconds: number): void;
+  /** Starts a STOPWATCH (TIME exercises). Idempotent for the same running stopwatch. */
+  startStopwatch(identity: TimerIdentity): void;
   pause(): void;
   resume(): void;
   /** Stops the WORK timer early; the elapsed time stays as a suggestion. */
@@ -53,6 +76,8 @@ export interface WorkoutTimerApi {
   /** The session is no longer IN_PROGRESS (or was left): whatever timer belongs to it ends now. */
   clearForSession(sessionId: string): void;
   readRemainingMs(): number;
+  /** The elapsed time of the stopwatch (0 when the slot holds no stopwatch). */
+  readElapsedMs(): number;
   /**
    * An ACTIVE (running or paused) WORK timer exists for a DIFFERENT set. Starting another work timer would discard what it
    * has counted, so the caller must confirm first. A rest timer or a finished / stopped result never counts.
@@ -77,8 +102,8 @@ export function WorkoutTimerProvider({
   readPrefs?: () => Promise<TimerPreferences>;
 }) {
   const { services } = useApp();
-  const stateRef = useRef<TimerState | null>(null);
-  const [state, setState] = useState<TimerState | null>(null);
+  const stateRef = useRef<ExecutionClock | null>(null);
+  const [state, setState] = useState<ExecutionClock | null>(null);
   const [announcement, setAnnouncement] = useState<TimerAnnouncement | null>(null);
   const seq = useRef(0);
   const prefs = useRef<TimerPreferences>(DEFAULT_TIMER_PREFERENCES);
@@ -97,7 +122,7 @@ export function WorkoutTimerProvider({
     seq.current += 1;
     setAnnouncement({ kind, seq: seq.current });
   }, []);
-  const commit = useCallback((next: TimerState | null) => {
+  const commit = useCallback((next: ExecutionClock | null) => {
     stateRef.current = next;
     setState(next);
   }, []);
@@ -123,7 +148,7 @@ export function WorkoutTimerProvider({
   /** Advances the active timer to now. Runs on the interval and the instant the app returns to the foreground. */
   const reconcile = useCallback(() => {
     const current = stateRef.current;
-    if (current === null || current.phase !== 'RUNNING') return;
+    if (current === null || current.phase !== 'RUNNING' || isStopwatch(current)) return; // a stopwatch has no expiry
     const now = nowOf();
     const result = tick(current, now);
     if (result.expired) {
@@ -153,14 +178,23 @@ export function WorkoutTimerProvider({
       commit(startTimer(kind, identity, seconds, nowOf())); // any other timer is replaced: only ONE exists
       if (kind === 'WORK') announce('WORK_STARTED');
     };
+    const begin = (identity: TimerIdentity) => {
+      const current = stateRef.current;
+      // Rapid repeated Start of the very same running stopwatch is idempotent.
+      if (isStopwatch(current) && current.phase === 'RUNNING' && current.identity.sessionId === identity.sessionId && current.identity.setId === identity.setId) return;
+      refreshPrefs();
+      commit(startStopwatch(identity, nowOf())); // any other execution clock is replaced: only ONE exists
+      announce('STOPWATCH_STARTED');
+    };
     return {
       state,
       announcement,
       startWork: (identity, seconds) => start('WORK', identity, seconds),
       startRest: (identity, seconds) => start('REST', identity, seconds),
+      startStopwatch: begin,
       pause: () => {
         const current = stateRef.current;
-        if (current === null) return;
+        if (current === null || isStopwatch(current)) return; // a stopwatch measures continuous time: no pause
         const next = pauseTimer(current, nowOf());
         if (next !== current) {
           commit(next);
@@ -169,7 +203,7 @@ export function WorkoutTimerProvider({
       },
       resume: () => {
         const current = stateRef.current;
-        if (current === null) return;
+        if (current === null || isStopwatch(current)) return;
         const next = resumeTimer(current, nowOf());
         if (next !== current) {
           commit(next);
@@ -179,6 +213,13 @@ export function WorkoutTimerProvider({
       stop: () => {
         const current = stateRef.current;
         if (current === null) return;
+        if (isStopwatch(current)) {
+          if (current.phase === 'RUNNING') {
+            commit(stopStopwatch(current, nowOf())); // only a SUGGESTED time: nothing is written
+            announce('STOPWATCH_STOPPED');
+          }
+          return;
+        }
         const next = stopTimer(current, nowOf());
         if (next !== current) commit(next);
       },
@@ -192,13 +233,20 @@ export function WorkoutTimerProvider({
       clearForSession: (sessionId) => {
         if (stateRef.current?.identity.sessionId === sessionId) commit(null);
       },
-      readRemainingMs: () => (stateRef.current === null ? 0 : remainingMs(stateRef.current, nowOf())),
+      readRemainingMs: () => {
+        const c = stateRef.current;
+        return c === null || isStopwatch(c) ? 0 : remainingMs(c, nowOf());
+      },
+      readElapsedMs: () => {
+        const c = stateRef.current;
+        return isStopwatch(c) ? stopwatchElapsedMs(c, nowOf()) : 0;
+      },
       isActiveWorkElsewhere: (identity) => {
         const current = stateRef.current;
         return (
           current !== null &&
-          current.kind === 'WORK' &&
-          (current.phase === 'RUNNING' || current.phase === 'PAUSED') &&
+          // a running / paused WORK countdown and a RUNNING stopwatch hold meaningful, unsaved work
+          (current.kind === 'STOPWATCH' ? current.phase === 'RUNNING' : current.kind === 'WORK' && (current.phase === 'RUNNING' || current.phase === 'PAUSED')) &&
           !(current.identity.sessionId === identity.sessionId && current.identity.setId === identity.setId)
         );
       },
@@ -233,12 +281,23 @@ export function WorkoutTimerProvider({
 
 /** The remaining time of the active timer, re-read about 4 times a second while it runs (display only). */
 export function useRemainingMs(api: WorkoutTimerApi): number {
+  useLiveTick(api);
+  return api.readRemainingMs();
+}
+
+/** The elapsed time of the stopwatch, re-read 10 times a second while it runs (tenths of a second are shown). */
+export function useElapsedMs(api: WorkoutTimerApi): number {
+  useLiveTick(api);
+  return api.readElapsedMs();
+}
+
+function useLiveTick(api: WorkoutTimerApi): void {
   const [, force] = useState(0);
   const running = api.state?.phase === 'RUNNING';
+  const period = api.state !== null && api.state.kind === 'STOPWATCH' ? STOPWATCH_TICK_MS : TICK_MS;
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => force((n) => n + 1), TICK_MS);
+    const id = setInterval(() => force((n) => n + 1), period);
     return () => clearInterval(id);
-  }, [running]);
-  return api.readRemainingMs();
+  }, [running, period]);
 }
