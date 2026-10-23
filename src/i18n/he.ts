@@ -758,6 +758,11 @@ export const he = {
     started: 'התחיל {when}',
     ended: 'הסתיים {when}',
     plannedRx: 'מתוכנן: {rx}',
+    // TRAINING-STOPWATCH-001: שינוי סדר התרגילים באימון.
+    reorder: {
+      handle: 'שינוי סדר: {name}',
+      hint: 'גוררים כדי לשנות את הסדר, או משתמשים ב״הזז למעלה״ וב״הזז למטה״',
+    },
     // TRAINING-STOPWATCH-001: מצב כל סט, והתקדמות חיה שנגזרת ממצבי הסטים (לא נשמרת).
     setState: {
       PENDING: 'ממתין',

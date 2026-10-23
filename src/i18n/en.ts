@@ -757,6 +757,11 @@ export const en = {
     started: 'Started {when}',
     ended: 'Ended {when}',
     plannedRx: 'Planned: {rx}',
+    // TRAINING-STOPWATCH-001: reordering the exercises of a workout.
+    reorder: {
+      handle: 'Reorder: {name}',
+      hint: 'Drag to change the order, or use Move up and Move down',
+    },
     // TRAINING-STOPWATCH-001: the state of one set, and live progress derived from the set states (never stored).
     setState: {
       PENDING: 'Pending',

@@ -153,6 +153,7 @@ export function trainingErrorMessage(e: unknown): TranslationKey {
       EXERCISE_INACTIVE: 'training.errors.exerciseInactive',
       PLAN_EMPTY: 'training.errors.planEmpty',
       POSITION_OUT_OF_RANGE: 'training.errors.positionOutOfRange',
+      REORDER_CROSS_SECTION: 'training.errors.changeFailed',
       ASSIGNMENT_INVALID: 'training.errors.changeFailed',
     };
     return keys[e.rule];

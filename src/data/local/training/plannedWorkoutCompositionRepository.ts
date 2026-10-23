@@ -13,6 +13,7 @@ import {
   type Prescription,
   type PrescriptionErrors,
 } from '@/domain/training/training';
+import { reorderItems } from '@/domain/training/reorder';
 import { professionalWorkout } from '@/domain/training/professional';
 import { adjustedSections } from '@/domain/training/professional/adjust';
 import type { WorkoutAdjustment } from '@/domain/training/professional/types';
@@ -150,6 +151,22 @@ export async function movePlannedEntry(db: PlayerDb, planId: string, from: numbe
 }
 
 /**
+ * Moves the exercise at flat `position` `from` to `to`, changing ONLY the order (the same rows come back, with the same
+ * exercise, prescription, section and provenance). Allowed inside one section, or between standalone exercises; moving an
+ * exercise into / out of a section is refused (REORDER_CROSS_SECTION). One transaction; frozen once a session exists.
+ * The source Block / Professional Workout is never read or touched.
+ */
+export async function reorderPlannedItem(db: PlayerDb, planId: string, from: number, to: number, deps: Deps): Promise<PlannedWorkout> {
+  return edit(db, planId, deps, async (plan) => {
+    const order = reorderItems(plan.items.map(asNew), from, to);
+    if (order === 'OUT_OF_RANGE') throw new TrainingRuleError('POSITION_OUT_OF_RANGE');
+    if (order === 'CROSS_SECTION') throw new TrainingRuleError('REORDER_CROSS_SECTION');
+    const items = plan.items.map(asNew);
+    return order.map((old) => ({ kind: 'EXERCISE' as const, item: items[old]! })); // flatten order is all that is written
+  });
+}
+
+/**
  * Sets the workout-specific prescription of the item at `position` (sets / target / load / rest). Only this plan
  * changes — never the source Block or another plan. An invalid prescription is returned (nothing written).
  */
@@ -192,7 +209,8 @@ export async function updatePlannedItem(
  */
 export type SaveEntry =
   | { readonly kind: 'KEEP'; readonly positions: readonly number[]; readonly prescriptions: readonly Prescription[] }
-  | { readonly kind: 'BLOCK'; readonly blockId: string; readonly prescriptions: readonly Prescription[] }
+  // `order` (optional): a permutation of the Block's item indexes — the order the section's exercises are saved in; `prescriptions` follow it.
+  | { readonly kind: 'BLOCK'; readonly blockId: string; readonly prescriptions: readonly Prescription[]; readonly order?: readonly number[] }
   | { readonly kind: 'EXERCISE'; readonly exerciseId: string; readonly prescription: Prescription };
 export interface SavePlanInput {
   /** null = a NEW plan (created only now); otherwise the saved plan being edited. */
@@ -265,7 +283,12 @@ export async function savePlannedWorkout(
         if (block.items.some((i) => !i.exercise.active)) throw new TrainingRuleError('EXERCISE_INACTIVE');
         if (entry.prescriptions.length !== block.items.length) throw new TrainingRuleError('POSITION_OUT_OF_RANGE');
         const sectionId = deps.ids.newUuid(); // every copy is its own section (the same Block may be copied twice)
-        for (const [i, item] of block.items.entries()) {
+        const order = entry.order ?? block.items.map((_, i) => i);
+        if (order.length !== block.items.length || new Set(order).size !== order.length || order.some((o) => !Number.isInteger(o) || o < 0 || o >= block.items.length)) {
+          throw new TrainingRuleError('POSITION_OUT_OF_RANGE'); // not a permutation: nothing is dropped, duplicated or invented
+        }
+        for (const [i, source] of order.entries()) {
+          const item = block.items[source]!;
           check(`${e}.${i}`, {
             blockName: block.name,
             sectionId,

@@ -16,6 +16,7 @@ import { listBlocks, type WorkoutBlock } from '@/data/local/training/workoutRepo
 import { filterExercises, NO_EXERCISE_FILTER, type Exercise } from '@/domain/exercise/exercise';
 import type { Taxonomy } from '@/domain/taxonomy/taxonomy';
 import { groupEntries } from '@/domain/training/composition';
+import { dropIndex, moveInList } from '@/domain/training/reorder';
 import {
   defaultPrescription,
   parseEntry,
@@ -41,6 +42,7 @@ import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
 
 import { Small } from './BlockForm';
+import { DragHandle } from './DragHandle';
 import { formatNumber, prescriptionText, targetLabelKey, trainingErrorMessage, type AssignKind } from './trainingLabels';
 
 /**
@@ -54,7 +56,8 @@ import { formatNumber, prescriptionText, targetLabelKey, trainingErrorMessage, t
 type DItem = { snapshot: ExerciseSnapshot; sets: string; target: string; load: string; rest: string; timeSemantics: TimeSemantics | null };
 type Origin =
   | { type: 'KEEP'; positions: number[] }
-  | { type: 'BLOCK'; blockId: string }
+  // `order`: which of the Block's own items sits at each place (identity until the user reorders inside the section)
+  | { type: 'BLOCK'; blockId: string; order: number[] }
   | { type: 'EXERCISE'; exerciseId: string };
 export type Seed = { kind: AssignKind; id: string };
 type DEntry = { key: string; kind: 'SECTION' | 'EXERCISE'; name: string | null; origin: Origin; items: DItem[] };
@@ -86,7 +89,7 @@ const blockEntryOf = (key: string, block: WorkoutBlock): DEntry => ({
   key,
   kind: 'SECTION',
   name: block.name,
-  origin: { type: 'BLOCK', blockId: block.id },
+  origin: { type: 'BLOCK', blockId: block.id, order: block.items.map((_, i) => i) },
   items: block.items.map((i) => itemOf(snapshotOf(i.exercise), i.prescription)),
 });
 const exerciseEntryOf = (key: string, exercise: Exercise): DEntry => ({
@@ -108,11 +111,20 @@ function seedEntry(seed: Seed, exercises: readonly Exercise[], blocks: readonly 
 const signature = (name: string, entries: readonly DEntry[]) =>
   JSON.stringify([name, entries.map((e) => [e.origin, e.items.map((i) => [i.snapshot.exerciseId, i.sets, i.target, i.load, i.rest])])]);
 
+/** The same entry with its items in a new order; the persisted references (kept positions / Block item order) move WITH them. */
+function reorderedItems(entry: DEntry, from: number, to: number): DEntry {
+  const items = moveInList(entry.items, from, to);
+  if (items === null || entry.kind !== 'SECTION') return entry; // a standalone exercise has no inner order
+  if (entry.origin.type === 'KEEP') return { ...entry, items, origin: { type: 'KEEP', positions: moveInList(entry.origin.positions, from, to)! } };
+  if (entry.origin.type === 'BLOCK') return { ...entry, items, origin: { ...entry.origin, order: moveInList(entry.origin.order, from, to)! } };
+  return entry;
+}
+
 function toSaveEntries(entries: readonly DEntry[]): SaveEntry[] {
   return entries.map((e): SaveEntry => {
     const prescriptions = e.items.map(prescriptionOf);
     if (e.origin.type === 'KEEP') return { kind: 'KEEP', positions: e.origin.positions, prescriptions };
-    if (e.origin.type === 'BLOCK') return { kind: 'BLOCK', blockId: e.origin.blockId, prescriptions };
+    if (e.origin.type === 'BLOCK') return { kind: 'BLOCK', blockId: e.origin.blockId, prescriptions, order: e.origin.order };
     return { kind: 'EXERCISE', exerciseId: e.origin.exerciseId, prescription: prescriptions[0]! };
   });
 }
@@ -224,13 +236,13 @@ function Builder({
 
   const change = (key: string, itemIndex: number, patch: Partial<DItem>) =>
     setEntries((list) => list.map((e) => (e.key === key ? { ...e, items: e.items.map((i, n) => (n === itemIndex ? { ...i, ...patch } : i)) } : e)));
-  const move = (index: number, by: -1 | 1) =>
-    setEntries((list) => {
-      const next = [...list];
-      const [moved] = next.splice(index, 1);
-      next.splice(index + by, 0, moved!);
-      return next;
-    });
+  const moveTo = (from: number, to: number) => setEntries((list) => moveInList(list, from, to) ?? list);
+  const move = (index: number, by: -1 | 1) => moveTo(index, index + by);
+  const moveItem = (key: string, from: number, to: number) =>
+    setEntries((list) => list.map((e) => (e.key === key ? reorderedItems(e, from, to) : e)));
+  // Drag: the dragged row follows the finger; the measured rows decide where it is dropped.
+  const rows = useRef<{ y: number; height: number }[]>([]);
+  const [dragging, setDragging] = useState<{ index: number; dy: number } | null>(null);
   const remove = (key: string) => setEntries((list) => list.filter((e) => e.key !== key));
   const addBlock = (block: WorkoutBlock) => {
     setEntries((list) => [...list, blockEntryOf(nextKey(), block)]);
@@ -313,6 +325,13 @@ function Builder({
           errors={errors.items}
           onChange={(itemIndex, patch) => change(entry.key, itemIndex, patch)}
           onMove={(by) => move(index, by)}
+          onMoveItem={(from, to) => moveItem(entry.key, from, to)}
+          onLayoutRow={(y, height) => {
+            rows.current[index] = { y, height };
+          }}
+          dragDy={dragging?.index === index ? dragging.dy : null}
+          onDrag={(dy) => setDragging(dy === null ? null : { index, dy })}
+          onDrop={(dy) => moveTo(index, dropIndex(rows.current.slice(0, entries.length), index, dy))}
           onRemove={() => remove(entry.key)}
         />
       ))}
@@ -371,6 +390,11 @@ function EntryCard(props: {
   errors: SavePlanErrors['items'];
   onChange: (itemIndex: number, patch: Partial<DItem>) => void;
   onMove: (by: -1 | 1) => void;
+  onMoveItem: (from: number, to: number) => void;
+  onLayoutRow: (y: number, height: number) => void;
+  dragDy: number | null;
+  onDrag: (dy: number | null) => void;
+  onDrop: (dy: number) => void;
   onRemove: () => void;
 }) {
   const { t, language } = useI18n();
@@ -378,20 +402,69 @@ function EntryCard(props: {
   const id = `builder-entry-${index}`;
   const title = entry.kind === 'SECTION' ? t('training.builder.sectionHeading', { name: isolate(entry.name ?? '') }) : t('training.builder.standalone');
   const label = entry.kind === 'SECTION' ? (entry.name ?? '') : entry.items[0]!.snapshot.name[language];
+  const itemRows = useRef<{ y: number; height: number }[]>([]);
+  const [itemDrag, setItemDrag] = useState<{ index: number; dy: number } | null>(null);
+  const reorderable = !props.readOnly && entry.kind === 'SECTION' && entry.items.length > 1;
   return (
-    <View style={styles.card} testID={id} accessibilityLabel={stripBidi(t('training.itemA11y', { position: index + 1, name: label }))}>
-      <Text style={styles.cardTitle} testID={`${id}-title`}>
-        {title}
-      </Text>
+    <View
+      style={[styles.card, props.dragDy !== null ? { transform: [{ translateY: props.dragDy }], zIndex: 2, opacity: 0.9 } : null]}
+      testID={id}
+      onLayout={(e) => props.onLayoutRow(e.nativeEvent.layout.y, e.nativeEvent.layout.height)}
+      accessibilityLabel={stripBidi(t('training.itemA11y', { position: index + 1, name: label }))}>
+      <View style={styles.cardHeader}>
+        <Text style={[styles.cardTitle, styles.cardTitleFlex]} testID={`${id}-title`}>
+          {title}
+        </Text>
+        {!props.readOnly ? (
+          <DragHandle
+            testID={`${id}-handle`}
+            label={stripBidi(t('training.reorder.handle', { name: label }))}
+            hint={t('training.reorder.hint')}
+            moveUpLabel={t('training.moveUp')}
+            moveDownLabel={t('training.moveDown')}
+            onDrag={props.onDrag}
+            onDrop={props.onDrop}
+            onStep={(by) => {
+              if ((by === -1 && index > 0) || (by === 1 && !props.last)) props.onMove(by);
+            }}
+          />
+        ) : null}
+      </View>
       {entry.items.map((item, n) => (
-        <ItemFields
+        <View
           key={`${item.snapshot.exerciseId}-${n}`}
-          testID={`${id}-item-${n}`}
-          item={item}
-          errors={props.errors?.[`${index}.${n}`]}
-          readOnly={props.readOnly}
-          onChange={(patch) => props.onChange(n, patch)}
-        />
+          testID={`${id}-row-${n}`}
+          onLayout={(e) => {
+            itemRows.current[n] = { y: e.nativeEvent.layout.y, height: e.nativeEvent.layout.height };
+          }}
+          style={itemDrag?.index === n ? { transform: [{ translateY: itemDrag.dy }], zIndex: 2, opacity: 0.9 } : null}>
+          {reorderable ? (
+            <View style={styles.cardHeader}>
+              <View style={styles.cardTitleFlex} />
+              <DragHandle
+                testID={`${id}-item-${n}-handle`}
+                label={stripBidi(t('training.reorder.handle', { name: item.snapshot.name[language] }))}
+                hint={t('training.reorder.hint')}
+                moveUpLabel={t('training.moveUp')}
+                moveDownLabel={t('training.moveDown')}
+                onDrag={(dy) => setItemDrag(dy === null ? null : { index: n, dy })}
+                onDrop={(dy) => props.onMoveItem(n, dropIndex(itemRows.current.slice(0, entry.items.length), n, dy))}
+                onStep={(by) => {
+                  if ((by === -1 && n > 0) || (by === 1 && n < entry.items.length - 1)) props.onMoveItem(n, n + by);
+                }}
+              />
+              {n > 0 ? <Small testID={`${id}-item-${n}-up`} label={t('training.moveUp')} onPress={() => props.onMoveItem(n, n - 1)} /> : null}
+              {n < entry.items.length - 1 ? <Small testID={`${id}-item-${n}-down`} label={t('training.moveDown')} onPress={() => props.onMoveItem(n, n + 1)} /> : null}
+            </View>
+          ) : null}
+          <ItemFields
+            testID={`${id}-item-${n}`}
+            item={item}
+            errors={props.errors?.[`${index}.${n}`]}
+            readOnly={props.readOnly}
+            onChange={(patch) => props.onChange(n, patch)}
+          />
+        </View>
       ))}
       {!props.readOnly ? (
         <View style={styles.actions}>
@@ -562,6 +635,8 @@ const styles = StyleSheet.create({
   warning: { fontSize: 15, color: colors.danger, fontWeight: '700', textAlign: 'auto' },
   card: { gap: spacing.sm, padding: spacing.md, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
   cardTitle: { fontSize: 16, fontWeight: '800', color: colors.ink, textAlign: 'auto' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  cardTitleFlex: { flex: 1 },
   item: { gap: spacing.sm },
   itemName: { fontSize: 17, fontWeight: '700', color: colors.ink, textAlign: 'auto' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },

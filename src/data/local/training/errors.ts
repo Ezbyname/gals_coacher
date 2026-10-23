@@ -53,6 +53,7 @@ export class TrainingNotFoundError extends Error {
  * - SET_ALREADY_RECORDED: a performed set cannot be skipped.
  * - PLAN_EMPTY (QB-WORKOUT-BUILDER-001A): a planned workout with nothing in it cannot be started.
  * - POSITION_OUT_OF_RANGE: a composition edit named an entry index that does not exist (nothing is clamped).
+ * - REORDER_CROSS_SECTION: an exercise reorders only within its own section; moving it out of / into another is refused.
  * - ASSIGNMENT_INVALID (QB-WORKOUT-BUILDER-001C): an assignment with no Player, the same Player twice, or a bad new-workout name.
  * - BLOCK_INACTIVE / EXERCISE_INACTIVE (QB-BLOCK-LIBRARY): inactive means "not available for NEW use" —
  *   a hidden Block or an inactive Exercise cannot be newly added to a composition.
@@ -68,6 +69,7 @@ export type TrainingRule =
   | 'EXERCISE_INACTIVE'
   | 'PLAN_EMPTY'
   | 'POSITION_OUT_OF_RANGE'
+  | 'REORDER_CROSS_SECTION'
   | 'ASSIGNMENT_INVALID';
 
 export class TrainingRuleError extends Error {
