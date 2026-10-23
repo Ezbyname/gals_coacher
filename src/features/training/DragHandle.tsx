@@ -1,16 +1,23 @@
-import { useMemo, useRef } from 'react';
-import { PanResponder, StyleSheet, Text, View, type AccessibilityActionEvent } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  PanResponder,
+  StyleSheet,
+  Text,
+  View,
+  type AccessibilityActionEvent,
+} from 'react-native';
 
 import { colors, touch } from '@/ui/theme';
 
 /** A drag shorter than this is a tap / a shaky press, never a reorder. */
 const DRAG_THRESHOLD_PX = 8;
+const GLYPH = '⋮⋮';
 
 /**
  * The grab handle of a reorderable row. ONLY the handle starts a drag, so the row's own fields and its Edit / Remove
  * buttons never move by accident. A drag reports the live offset (for the row to follow the finger) and, on release, the
  * final offset; the parent turns it into a drop position. The same reorder is available WITHOUT a gesture: the handle
- * exposes "move up" / "move down" accessibility actions that call `onStep`, exactly like the visible Move buttons.
+ * exposes 'move up' / 'move down' accessibility actions that call `onStep`, exactly like the visible Move buttons.
  *
  * Built on React Native's PanResponder (no gesture library is installed and none was added). It does not scroll the list
  * while a drag is in progress; a drag that would need scrolling is done with the Move buttons.
@@ -26,21 +33,23 @@ export function DragHandle(props: {
   onStep: (by: -1 | 1) => void;
 }) {
   const latest = useRef(props);
-  latest.current = props;
-  const responder = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
-        onPanResponderTerminationRequest: () => false, // the scroll view must not take the drag away
-        onPanResponderMove: (_event, g) => latest.current.onDrag(Math.abs(g.dy) >= DRAG_THRESHOLD_PX ? g.dy : 0),
-        onPanResponderRelease: (_event, g) => {
-          latest.current.onDrag(null);
-          if (Math.abs(g.dy) >= DRAG_THRESHOLD_PX) latest.current.onDrop(g.dy);
-        },
-        onPanResponderTerminate: () => latest.current.onDrag(null),
-      }),
-    [],
+  useEffect(() => {
+    latest.current = props; // the gesture callbacks always call the newest props
+  });
+  // eslint-disable-next-line react-hooks/refs -- the callbacks read the ref only when a gesture fires, never while rendering
+  const [responder] = useState(() =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false, // the scroll view must not take the drag away
+      onPanResponderMove: (_event, g) =>
+        latest.current.onDrag(Math.abs(g.dy) >= DRAG_THRESHOLD_PX ? g.dy : 0),
+      onPanResponderRelease: (_event, g) => {
+        latest.current.onDrag(null);
+        if (Math.abs(g.dy) >= DRAG_THRESHOLD_PX) latest.current.onDrop(g.dy);
+      },
+      onPanResponderTerminate: () => latest.current.onDrag(null),
+    }),
   );
   const onAction = (event: AccessibilityActionEvent) => {
     if (event.nativeEvent.actionName === 'moveUp') props.onStep(-1);
@@ -59,15 +68,21 @@ export function DragHandle(props: {
         { name: 'moveDown', label: props.moveDownLabel },
       ]}
       onAccessibilityAction={onAction}
-      style={styles.handle}>
+      style={styles.handle}
+    >
       <Text style={styles.glyph} importantForAccessibility="no">
-        ⋮⋮
+        {GLYPH}
       </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  handle: { minWidth: touch.buttonMinHeight, minHeight: touch.buttonMinHeight, alignItems: 'center', justifyContent: 'center' },
+  handle: {
+    minWidth: touch.buttonMinHeight,
+    minHeight: touch.buttonMinHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   glyph: { fontSize: 22, fontWeight: '800', color: colors.inkMuted },
 });

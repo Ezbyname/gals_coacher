@@ -436,15 +436,18 @@ function SetRow(props: {
   const timer = useWorkoutTimer();
   // The screen reads this set's fields when a timer's Record needs the other kinds (e.g. the load), and fills one in.
   const inputsRef = useRef(inputs);
-  inputsRef.current = inputs;
+  useEffect(() => {
+    inputsRef.current = inputs;
+  });
   const { registry } = props;
   useEffect(() => {
-    registry.current.set(set.id, {
+    const fields = registry.current;
+    fields.set(set.id, {
       get: () => inputsRef.current,
       fill: (kind, value) => setInputs((v) => ({ ...v, [kind]: value })),
     });
     return () => {
-      registry.current.delete(set.id);
+      fields.delete(set.id);
     };
   }, [registry, set.id]);
   const workSeconds = props.live && set.planned && set.status === 'PENDING' ? workTimerSeconds(measurement.type, set.plannedTarget) : null;
