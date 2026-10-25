@@ -499,11 +499,12 @@ function ItemEditor(props: {
   );
 }
 
-export function Small({ testID, label, onPress }: { testID: string; label: string; onPress: () => void }) {
+export function Small({ testID, label, a11yLabel, onPress }: { testID: string; label: string; a11yLabel?: string; onPress: () => void }) {
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
+      accessibilityLabel={a11yLabel}
       onPress={onPress}
       style={({ pressed }) => [styles.small, pressed && { opacity: 0.8 }]}>
       <Text style={styles.smallLabel}>{label}</Text>

@@ -1,29 +1,23 @@
-import type { TimeSemantics } from '@/domain/exercise/timeSemantics';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { listExercises } from '@/data/local/exercises/exerciseRepository';
 import { readTaxonomy } from '@/data/local/taxonomy/taxonomyRepository';
 import {
   savePlannedWorkout,
-  type SaveEntry,
   type SavePlanErrors,
 } from '@/data/local/training/plannedWorkoutCompositionRepository';
-import { getPlannedWorkout, snapshotOf, type PlannedWorkout } from '@/data/local/training/trainingRepository';
+import { getPlannedWorkout, type PlannedWorkout } from '@/data/local/training/trainingRepository';
 import { listBlocks, type WorkoutBlock } from '@/data/local/training/workoutRepository';
 import { filterExercises, NO_EXERCISE_FILTER, type Exercise } from '@/domain/exercise/exercise';
 import type { Taxonomy } from '@/domain/taxonomy/taxonomy';
 import { groupEntries } from '@/domain/training/composition';
+import { planSectionName, PUBLISHED_WORKOUT_TEMPLATES, type ProfessionalWorkout, type StandardSectionRole } from '@/domain/training/professional';
 import { dropIndex, moveInList } from '@/domain/training/reorder';
 import {
-  defaultPrescription,
-  parseEntry,
   targetApplies,
   WORKOUT_NAME_MAX_LENGTH,
-  type ExerciseSnapshot,
-  type Prescription,
   type PrescriptionErrors,
 } from '@/domain/training/training';
 import { useApp } from '@/features/AppProvider';
@@ -36,17 +30,24 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { isolate, stripBidi } from '@/i18n/bidi';
 import type { TranslationKey } from '@/i18n/types';
 import { BigButton } from '@/ui/BigButton';
-import { BottomInsetHandledContext } from '@/ui/bottomInset';
 import { KeyboardSafeScrollView } from '@/ui/KeyboardSafeScrollView';
 import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
 
 import { Small } from './BlockForm';
+import { Sheet } from './Sheet';
+import { TemplateLibrary } from './TemplateLibrary';
 import {
   blockEntryOf,
+  canMoveToSection,
+  canRemoveItem,
   exerciseEntryOf,
+  importTemplate,
   itemOf,
+  moveItemToSection,
+  moveTargets,
   prescriptionOf,
+  removeItem,
   reorderedItems,
   seedEntry,
   signature,
@@ -142,7 +143,7 @@ function Builder({
   plan: PlannedWorkout | null;
 }) {
   const { boot, services } = useApp();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const counter = useRef(0);
   const nextKey = () => `e${counter.current++}`;
   const seeded = useMemo(() => (plan === null && seed ? seedEntry(seed, exercises, blocks) : null), [plan, seed, exercises, blocks]);
@@ -153,7 +154,7 @@ function Builder({
         ? seeded === null ? [] : [seeded]
         : groupEntries(plan.items).map((e): DEntry =>
             e.kind === 'SECTION'
-              ? { key: `k${e.items[0]!.position}`, kind: 'SECTION', name: e.blockName, origin: { type: 'KEEP', positions: e.items.map((i) => i.position) }, items: e.items.map((i) => itemOf(i.exercise, i.prescription)) }
+              ? { key: `k${e.items[0]!.position}`, kind: 'SECTION', name: e.blockName, origin: { type: 'KEEP', positions: e.items.map((i) => i.position) }, ...(e.items[0]!.sectionId !== null ? { locked: true } : {}), items: e.items.map((i) => itemOf(i.exercise, i.prescription)) }
               : { key: `k${e.item.position}`, kind: 'EXERCISE', name: null, origin: { type: 'KEEP', positions: [e.item.position] }, items: [itemOf(e.item.exercise, e.item.prescription)] },
           ),
     [plan, seeded],
@@ -167,6 +168,9 @@ function Builder({
   const [blockOpen, setBlockOpen] = useState(false);
   const [exerciseOpen, setExerciseOpen] = useState(false);
   const [browsing, setBrowsing] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [importFailed, setImportFailed] = useState(false);
+  const [moving, setMoving] = useState<{ key: string; index: number } | null>(null);
   const busy = useRef(false);
   const readOnly = plan !== null && plan.sessionId !== null;
   const dirty = signature(name, entries) !== signature(initialName, initialEntries);
@@ -191,6 +195,20 @@ function Builder({
     setEntries((list) => [...list, exerciseEntryOf(nextKey(), exercise)]);
     setExerciseOpen(false);
     setBrowsing(false);
+  };
+
+  const importWorkout = (workout: ProfessionalWorkout) => {
+    const result = importTemplate(entries, workout, exercises, language, nextKey);
+    setLibraryOpen(false);
+    setImportFailed(!result.ok);
+    if (result.ok) setEntries(result.entries);
+  };
+  const removeOne = (key: string, itemIndex: number) => setEntries((list) => removeItem(list, key, itemIndex));
+  const moveToSection = (target: { key: string } | { role: StandardSectionRole }) => {
+    if (!moving) return;
+    const result = moveItemToSection(entries, moving.key, moving.index, target, language, nextKey);
+    if (result.ok) setEntries(result.entries);
+    setMoving(null);
   };
 
   const save = async () => {
@@ -272,6 +290,8 @@ function Builder({
           onDrag={(dy) => setDragging(dy === null ? null : { index, dy })}
           onDrop={(dy) => moveTo(index, dropIndex(rows.current.slice(0, entries.length), index, dy))}
           onRemove={() => remove(entry.key)}
+          onRemoveItem={(itemIndex) => removeOne(entry.key, itemIndex)}
+          onMoveToSection={(itemIndex) => setMoving({ key: entry.key, index: itemIndex })}
         />
       ))}
 
@@ -279,9 +299,15 @@ function Builder({
         <>
           <BigButton testID="builder-add-block" variant="secondary" label={t('training.builder.addBlock')} onPress={() => setBlockOpen(true)} />
           <BigButton testID="builder-add-exercise" variant="secondary" label={t('training.builder.addExercise')} onPress={() => setExerciseOpen(true)} />
+          <BigButton testID="builder-add-template" variant="secondary" label={t('training.tpl.addTemplate')} onPress={() => setLibraryOpen(true)} />
         </>
       ) : null}
 
+      {importFailed ? (
+        <Text style={styles.error} testID="builder-import-failed">
+          {t('training.tpl.unavailable')}
+        </Text>
+      ) : null}
       {failure ? (
         <Text style={styles.error} testID="builder-failed">
           {t(failure)}
@@ -316,6 +342,8 @@ function Builder({
         onBrowse={() => setBrowsing(true)}
         onClose={() => setExerciseOpen(false)}
       />
+      <TemplateLibrary visible={libraryOpen} templates={PUBLISHED_WORKOUT_TEMPLATES} exercises={exercises} onImport={importWorkout} onClose={() => setLibraryOpen(false)} />
+      <MoveToSection visible={moving !== null} targets={moving ? moveTargets(entries, moving.key) : []} onPick={moveToSection} onClose={() => setMoving(null)} />
       <ExercisePicker visible={browsing} data={pickerData} onPick={addExercise} onClose={() => setBrowsing(false)} />
     </KeyboardSafeScrollView>
   );
@@ -335,6 +363,8 @@ function EntryCard(props: {
   onDrag: (dy: number | null) => void;
   onDrop: (dy: number) => void;
   onRemove: () => void;
+  onRemoveItem: (itemIndex: number) => void;
+  onMoveToSection: (itemIndex: number) => void;
 }) {
   const { t, language } = useI18n();
   const { entry, index } = props;
@@ -344,6 +374,9 @@ function EntryCard(props: {
   const itemRows = useRef<{ y: number; height: number }[]>([]);
   const [itemDrag, setItemDrag] = useState<{ index: number; dy: number } | null>(null);
   const reorderable = !props.readOnly && entry.kind === 'SECTION' && entry.items.length > 1;
+  // an entry can hand its items to another section only when their provenance allows it (never a copied Block's items)
+  const movable = canMoveToSection(entry);
+  const removable = canRemoveItem(entry) && entry.items.length > 1;
   return (
     <View
       style={[styles.card, props.dragDy !== null ? { transform: [{ translateY: props.dragDy }], zIndex: 2, opacity: 0.9 } : null]}
@@ -403,6 +436,26 @@ function EntryCard(props: {
             readOnly={props.readOnly}
             onChange={(patch) => props.onChange(n, patch)}
           />
+          {!props.readOnly && (movable || removable) ? (
+            <View style={styles.actions}>
+              {movable ? (
+                <Small
+                  testID={`${id}-item-${n}-move-section`}
+                  label={t('training.tpl.moveToSection')}
+                  a11yLabel={stripBidi(t('training.tpl.moveA11y', { name: item.snapshot.name[language] }))}
+                  onPress={() => props.onMoveToSection(n)}
+                />
+              ) : null}
+              {removable ? (
+                <Small
+                  testID={`${id}-item-${n}-remove`}
+                  label={t('training.tpl.removeItem')}
+                  a11yLabel={stripBidi(t('training.tpl.removeItemA11y', { name: item.snapshot.name[language] }))}
+                  onPress={() => props.onRemoveItem(n)}
+                />
+              ) : null}
+            </View>
+          ) : null}
         </View>
       ))}
       {!props.readOnly ? (
@@ -461,31 +514,6 @@ function ItemFields(props: { testID: string; item: DItem; errors: PrescriptionEr
 
 const norm = (s: string) => stripBidi(s).normalize('NFC').toLocaleLowerCase().trim();
 
-/** A full-screen sheet over the Builder (the draft stays mounted underneath: nothing typed there is lost). */
-function Sheet(props: { visible: boolean; testID: string; title: string; closeTestID: string; onClose: () => void; children: ReactNode }) {
-  const { t } = useI18n();
-  const insets = useSafeAreaInsets();
-  return (
-    <Modal visible={props.visible} animationType="slide" onRequestClose={props.onClose}>
-      <BottomInsetHandledContext.Provider value={false}>
-        <View style={[styles.sheet, { paddingTop: insets.top }]} testID={props.testID}>
-          <View style={styles.sheetBar}>
-            <Text style={styles.sheetTitle} accessibilityRole="header">
-              {props.title}
-            </Text>
-            <Pressable testID={props.closeTestID} accessibilityRole="button" accessibilityLabel={t('training.builder.close')} onPress={props.onClose} style={styles.sheetClose}>
-              <Text style={styles.sheetCloseLabel}>{t('training.builder.close')}</Text>
-            </Pressable>
-          </View>
-          <KeyboardSafeScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-            {props.children}
-          </KeyboardSafeScrollView>
-        </View>
-      </BottomInsetHandledContext.Provider>
-    </Modal>
-  );
-}
-
 /** Searchable ACTIVE blocks (name, count and the first exercises): picking one copies it into the draft. */
 function BlockPicker({ visible, blocks, onPick, onClose }: { visible: boolean; blocks: WorkoutBlock[]; onPick: (block: WorkoutBlock) => void; onClose: () => void }) {
   const { t, language } = useI18n();
@@ -524,6 +552,35 @@ function BlockPicker({ visible, blocks, onPick, onClose }: { visible: boolean; b
             </Text>
           </Pressable>
         ))
+      )}
+    </Sheet>
+  );
+}
+
+/** Where can this exercise go? Another existing section, or a missing Warm-up / Main workout / Cool-down (created in its place). Works without dragging. */
+function MoveToSection({ visible, targets, onPick, onClose }: { visible: boolean; targets: ReturnType<typeof moveTargets>; onPick: (target: { key: string } | { role: StandardSectionRole }) => void; onClose: () => void }) {
+  const { t, language } = useI18n();
+  return (
+    <Sheet visible={visible} testID="builder-move-picker" title={t('training.tpl.moveTitle')} closeTestID="builder-move-picker-close" onClose={onClose}>
+      {targets.length === 0 ? (
+        <Text style={styles.muted} testID="builder-move-none">
+          {t('training.tpl.moveNone')}
+        </Text>
+      ) : (
+        targets.map((target) => {
+          const key = 'key' in target ? target.key : target.role;
+          const label = 'key' in target ? target.name : t('training.tpl.moveNew', { name: planSectionName(target.role, '', language) });
+          return (
+            <Pressable
+              key={key}
+              testID={`builder-move-option-${key}`}
+              accessibilityRole="button"
+              onPress={() => onPick(target)}
+              style={({ pressed }) => [styles.option, pressed && { opacity: 0.8 }]}>
+              <Text style={styles.itemName}>{label}</Text>
+            </Pressable>
+          );
+        })
       )}
     </Sheet>
   );
@@ -581,9 +638,4 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   buttons: { gap: spacing.sm },
   option: { minHeight: touch.buttonMinHeight, justifyContent: 'center', gap: 2, padding: spacing.md, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
-  sheet: { flex: 1, backgroundColor: colors.background },
-  sheetBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, minHeight: touch.buttonMinHeight },
-  sheetTitle: { flexShrink: 1, fontSize: 18, fontWeight: '800', color: colors.ink, textAlign: 'auto' },
-  sheetClose: { minHeight: touch.buttonMinHeight, justifyContent: 'center', paddingHorizontal: spacing.md },
-  sheetCloseLabel: { fontSize: 16, fontWeight: '700', color: colors.courtDark },
 });

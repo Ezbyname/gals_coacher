@@ -180,7 +180,7 @@ export function asItems(e: DEntry): DEntry {
 export const canMoveToSection = (e: DEntry): boolean => e.kind === 'EXERCISE' || (e.kind === 'SECTION' && !e.locked && (e.origin.type === 'KEEP' || e.origin.type === 'ITEMS'));
 
 /** Can an item be removed on its own? Not from a freshly added Block copy (its item list must match the Block). */
-export const canRemoveItem = (e: DEntry): boolean => e.kind === 'SECTION' && e.origin.type !== 'BLOCK';
+export const canRemoveItem = (e: DEntry): boolean => e.kind === 'SECTION' && !e.locked && e.origin.type !== 'BLOCK';
 
 /** Where a missing standard section goes: Warm-up before Main (else first); Main between Warm-up and Cool-down; Cool-down last. */
 export function insertIndexForRole(roles: readonly (SectionRole | null)[], role: StandardSectionRole): number {
