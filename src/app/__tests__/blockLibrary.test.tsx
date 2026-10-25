@@ -264,11 +264,11 @@ describe('S2 — a Template holding unavailable items cannot start a NEW workout
     const dialogs = captureAlerts();
     press(`choose-${template.id}-start`);
     await waitFor(() => expect(dialogs).toHaveLength(1));
-    expect(dialogs[0]!.title).toBe('This workout template contains items that are no longer available');
+    expect(dialogs[0]!.title).toBe('This workout preset contains items that are no longer available');
     expect(dialogs[0]!.body).toContain('Before creating a new workout, choose what to do.');
     expect(dialogs[0]!.body).toContain('• Shooting — block hidden');
     expect(dialogs[0]!.body).toContain('• Barbell Bench Press — exercise inactive');
-    expect(dialogs[0]!.buttons.map((b) => b.text)).toEqual(['Cancel', 'Restore items', 'Edit template']);
+    expect(dialogs[0]!.buttons.map((b) => b.text)).toEqual(['Cancel', 'Restore items', 'Edit preset']);
     press(`choose-${template.id}-plan`);
     await waitFor(() => expect(dialogs).toHaveLength(2));
     const overview = await listTraining(db!, playerId);
