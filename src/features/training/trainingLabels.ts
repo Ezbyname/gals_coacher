@@ -154,6 +154,7 @@ export function trainingErrorMessage(e: unknown): TranslationKey {
       PLAN_EMPTY: 'training.errors.planEmpty',
       POSITION_OUT_OF_RANGE: 'training.errors.positionOutOfRange',
       REORDER_CROSS_SECTION: 'training.errors.changeFailed',
+      MOVE_PROVENANCE_REFUSED: 'training.errors.changeFailed',
       ASSIGNMENT_INVALID: 'training.errors.changeFailed',
     };
     return keys[e.rule];

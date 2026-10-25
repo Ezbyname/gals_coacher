@@ -42,8 +42,23 @@ import { TextField } from '@/ui/TextField';
 import { colors, spacing, touch } from '@/ui/theme';
 
 import { Small } from './BlockForm';
+import {
+  blockEntryOf,
+  exerciseEntryOf,
+  itemOf,
+  prescriptionOf,
+  reorderedItems,
+  seedEntry,
+  signature,
+  toSaveEntries,
+  type DEntry,
+  type DItem,
+  type Seed,
+} from './builderDraft';
 import { DragHandle } from './DragHandle';
-import { formatNumber, prescriptionText, targetLabelKey, trainingErrorMessage, type AssignKind } from './trainingLabels';
+import { prescriptionText, targetLabelKey, trainingErrorMessage } from './trainingLabels';
+
+export type { Seed } from './builderDraft';
 
 /**
  * QB-WORKOUT-BUILDER-001B — the Workout Builder. The Player's workout is composed in a LOCAL DRAFT: opening it (or
@@ -52,82 +67,6 @@ import { formatNumber, prescriptionText, targetLabelKey, trainingErrorMessage, t
  * exactly what the user sees, and prescriptions are edited for THIS workout only (the source Block is never read
  * back). A plan whose session already exists is shown read-only (the v17 freeze rule is also enforced below the UI).
  */
-
-type DItem = { snapshot: ExerciseSnapshot; sets: string; target: string; load: string; rest: string; timeSemantics: TimeSemantics | null };
-type Origin =
-  | { type: 'KEEP'; positions: number[] }
-  // `order`: which of the Block's own items sits at each place (identity until the user reorders inside the section)
-  | { type: 'BLOCK'; blockId: string; order: number[] }
-  | { type: 'EXERCISE'; exerciseId: string };
-export type Seed = { kind: AssignKind; id: string };
-type DEntry = { key: string; kind: 'SECTION' | 'EXERCISE'; name: string | null; origin: Origin; items: DItem[] };
-
-const text = (n: number | null) => (n === null ? '' : formatNumber(n));
-const itemOf = (snapshot: ExerciseSnapshot, p: Prescription): DItem => ({
-  snapshot,
-  sets: String(p.sets),
-  target: text(p.target),
-  load: text(p.loadKg),
-  rest: text(p.restSec),
-  timeSemantics: p.timeSemantics ?? null, // the stored meaning of the seconds value travels with the item (never re-derived)
-});
-function numberOf(value: string, time: boolean): number | null {
-  if (value.trim() === '') return null;
-  return parseEntry(value, time ? 'DURATION_S' : 'LOAD_KG') ?? NaN;
-}
-function prescriptionOf(item: DItem): Prescription {
-  const type = item.snapshot.measurement.type;
-  return {
-    sets: numberOf(item.sets, false) ?? NaN,
-    target: numberOf(item.target, type === 'DURATION' || type === 'TIME'),
-    loadKg: numberOf(item.load, false),
-    restSec: numberOf(item.rest, false),
-    ...(item.timeSemantics ? { timeSemantics: item.timeSemantics } : {}),
-  };
-}
-const blockEntryOf = (key: string, block: WorkoutBlock): DEntry => ({
-  key,
-  kind: 'SECTION',
-  name: block.name,
-  origin: { type: 'BLOCK', blockId: block.id, order: block.items.map((_, i) => i) },
-  items: block.items.map((i) => itemOf(snapshotOf(i.exercise), i.prescription)),
-});
-const exerciseEntryOf = (key: string, exercise: Exercise): DEntry => ({
-  key,
-  kind: 'EXERCISE',
-  name: null,
-  origin: { type: 'EXERCISE', exerciseId: exercise.id },
-  items: [itemOf(snapshotOf(exercise), defaultPrescription(exercise.measurement, exercise.defaults))],
-});
-/** QB-WORKOUT-BUILDER-001C: the first entry of a NEW workout opened from Exercise / Block Details (null = no longer available). */
-function seedEntry(seed: Seed, exercises: readonly Exercise[], blocks: readonly WorkoutBlock[]): DEntry | null {
-  if (seed.kind === 'BLOCK') {
-    const block = blocks.find((b) => b.id === seed.id);
-    return block && block.active && block.items.every((i) => i.exercise.active) ? blockEntryOf('seed', block) : null;
-  }
-  const exercise = exercises.find((e) => e.id === seed.id);
-  return exercise && exercise.active ? exerciseEntryOf('seed', exercise) : null;
-}
-const signature = (name: string, entries: readonly DEntry[]) =>
-  JSON.stringify([name, entries.map((e) => [e.origin, e.items.map((i) => [i.snapshot.exerciseId, i.sets, i.target, i.load, i.rest])])]);
-
-/** The same entry with its items in a new order; the persisted references (kept positions / Block item order) move WITH them. */
-function reorderedItems(entry: DEntry, from: number, to: number): DEntry {
-  const items = moveInList(entry.items, from, to);
-  if (items === null || entry.kind !== 'SECTION') return entry; // a standalone exercise has no inner order
-  if (entry.origin.type === 'KEEP') return { ...entry, items, origin: { type: 'KEEP', positions: moveInList(entry.origin.positions, from, to)! } };
-  if (entry.origin.type === 'BLOCK') return { ...entry, items, origin: { ...entry.origin, order: moveInList(entry.origin.order, from, to)! } };
-  return entry;
-}
-
-function toSaveEntries(entries: readonly DEntry[]): SaveEntry[] {
-  return entries.map((e): SaveEntry => {
-    const prescriptions = e.items.map(prescriptionOf);
-    if (e.origin.type === 'KEEP') return { kind: 'KEEP', positions: e.origin.positions, prescriptions };
-    if (e.origin.type === 'BLOCK') return { kind: 'BLOCK', blockId: e.origin.blockId, prescriptions, order: e.origin.order };
-    return { kind: 'EXERCISE', exerciseId: e.origin.exerciseId, prescription: prescriptions[0]! };
-  });
-}
 
 const FIELD_ERRORS: Record<keyof PrescriptionErrors, TranslationKey> = {
   sets: 'training.errors.setsInvalid',

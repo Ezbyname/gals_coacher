@@ -211,7 +211,15 @@ export type SaveEntry =
   | { readonly kind: 'KEEP'; readonly positions: readonly number[]; readonly prescriptions: readonly Prescription[] }
   // `order` (optional): a permutation of the Block's item indexes — the order the section's exercises are saved in; `prescriptions` follow it.
   | { readonly kind: 'BLOCK'; readonly blockId: string; readonly prescriptions: readonly Prescription[]; readonly order?: readonly number[] }
-  | { readonly kind: 'EXERCISE'; readonly exerciseId: string; readonly prescription: Prescription };
+  | { readonly kind: 'EXERCISE'; readonly exerciseId: string; readonly prescription: Prescription }
+  // WORKOUT-TEMPLATES-001: a named section of explicit items (an imported template, or a section the user rearranged). Written in the
+  // legacy shape: the section name is its identity, `section_id` and `source_block_id` stay NULL together. An item is either an
+  // EXISTING plan item (`keep`: its stored position — only a standalone / template-imported item, never one that belongs to a copied
+  // Block section) or a NEW exercise resolved from the catalog by id (names sent from the screen are never trusted).
+  | { readonly kind: 'SECTION'; readonly name: string; readonly items: readonly SectionItem[] };
+export type SectionItem =
+  | { readonly keep: number; readonly prescription: Prescription }
+  | { readonly exerciseId: string; readonly prescription: Prescription };
 export interface SavePlanInput {
   /** null = a NEW plan (created only now); otherwise the saved plan being edited. */
   readonly planId: string | null;
@@ -296,6 +304,23 @@ export async function savePlannedWorkout(
             exercise: snapshotOf(item.exercise),
             prescription: entry.prescriptions[i]!,
           });
+        }
+      } else if (entry.kind === 'SECTION') {
+        const sectionName = entry.name.trim();
+        if (sectionName.length === 0 || entry.items.length === 0) throw new TrainingRuleError('POSITION_OUT_OF_RANGE');
+        for (const [i, it] of entry.items.entries()) {
+          if ('keep' in it) {
+            const old = stored?.items.find((x) => x.position === it.keep);
+            if (stored === null || !old || used.has(it.keep)) throw new TrainingRuleError('POSITION_OUT_OF_RANGE');
+            if (old.sectionId !== null || old.sourceBlockId !== null) throw new TrainingRuleError('MOVE_PROVENANCE_REFUSED');
+            used.add(it.keep);
+            check(`${e}.${i}`, { blockName: sectionName, sectionId: null, sourceBlockId: null, exercise: old.exercise, prescription: it.prescription });
+          } else {
+            const exercise = exercises.find((x) => x.id === it.exerciseId);
+            if (!exercise) throw new TrainingNotFoundError('exercise', it.exerciseId);
+            if (!exercise.active) throw new TrainingRuleError('EXERCISE_INACTIVE');
+            check(`${e}.${i}`, { blockName: sectionName, sectionId: null, sourceBlockId: null, exercise: snapshotOf(exercise), prescription: it.prescription });
+          }
         }
       } else {
         const exercise = exercises.find((x) => x.id === entry.exerciseId);
