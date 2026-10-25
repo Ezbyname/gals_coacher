@@ -1046,4 +1046,97 @@ export const migrations: readonly Migration[] = [
         CHECK (time_semantics IS NULL OR time_semantics IN ('DURATION_TARGET', 'PERFORMANCE_GOAL_TIME', 'COMPLETION_TIME_CAP'));
     `,
   },
+  {
+    // WORKOUT-TEMPLATES-001: the Family's PERSONAL workout templates ("Save as template" / "My templates"). ADDITIVE ONLY: three new
+    // tables, their indexes and triggers; no existing table, row or trigger is touched, and nothing is migrated into them. Separate
+    // from the legacy workout_templates / workout_blocks (which keep their live references and their own meaning).
+    // A personal template is a CONTENT SNAPSHOT: sections and items are written once (before `sealed`) and never changed or deleted;
+    // afterwards only rename / archive (name, name_key, active, updated_at) may change. A section keeps its ROLE as data
+    // (WARM_UP / MAIN / COOL_DOWN / CUSTOM) so nothing is inferred from a translated name. Exercises are referenced by stable id.
+    // Importing a template into a plan copies it; the plan never points back here.
+    version: 23,
+    name: 'workout_templates_001',
+    sql: `
+      CREATE TABLE user_workout_templates (
+        id TEXT PRIMARY KEY NOT NULL CHECK (length(trim(id)) > 0),
+        family_id TEXT NOT NULL REFERENCES families (id),
+        name TEXT NOT NULL CHECK (length(trim(name, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        name_key TEXT NOT NULL CHECK (length(name_key) > 0),
+        active INTEGER NOT NULL DEFAULT 1 CHECK (typeof(active) = 'integer' AND active IN (0, 1)),
+        sealed INTEGER NOT NULL DEFAULT 0 CHECK (typeof(sealed) = 'integer' AND sealed IN (0, 1)),
+        created_at INTEGER NOT NULL CHECK (typeof(created_at) = 'integer'),
+        updated_at INTEGER NOT NULL CHECK (typeof(updated_at) = 'integer')
+      );
+      -- names are unique (case-insensitively, through name_key) among ACTIVE templates of a Family; an archived name is free again
+      CREATE UNIQUE INDEX user_workout_templates_active_name ON user_workout_templates (family_id, name_key) WHERE active = 1;
+
+      CREATE TABLE user_workout_template_sections (
+        template_id TEXT NOT NULL REFERENCES user_workout_templates (id),
+        position INTEGER NOT NULL CHECK (typeof(position) = 'integer' AND position >= 0),
+        role TEXT NOT NULL CHECK (role IN ('WARM_UP', 'MAIN', 'COOL_DOWN', 'CUSTOM')),
+        name TEXT CHECK (name IS NULL OR length(trim(name, ' ' || char(9, 10, 11, 12, 13))) > 0),
+        CHECK (role <> 'CUSTOM' OR name IS NOT NULL),
+        PRIMARY KEY (template_id, position)
+      );
+      -- a standard role appears at most once per template
+      CREATE UNIQUE INDEX user_workout_template_sections_one_role ON user_workout_template_sections (template_id, role) WHERE role <> 'CUSTOM';
+
+      CREATE TABLE user_workout_template_items (
+        template_id TEXT NOT NULL,
+        section_position INTEGER NOT NULL CHECK (typeof(section_position) = 'integer' AND section_position >= 0),
+        position INTEGER NOT NULL CHECK (typeof(position) = 'integer' AND position >= 0),
+        exercise_id TEXT NOT NULL REFERENCES exercises (id),
+        sets INTEGER NOT NULL CHECK (typeof(sets) = 'integer' AND sets >= 1),
+        target REAL CHECK (target IS NULL OR target > 0),
+        load_kg REAL CHECK (load_kg IS NULL OR load_kg > 0),
+        rest_sec INTEGER CHECK (rest_sec IS NULL OR (typeof(rest_sec) = 'integer' AND rest_sec >= 0)),
+        time_semantics TEXT CHECK (time_semantics IS NULL OR time_semantics IN ('DURATION_TARGET', 'PERFORMANCE_GOAL_TIME', 'COMPLETION_TIME_CAP')),
+        PRIMARY KEY (template_id, section_position, position),
+        FOREIGN KEY (template_id, section_position) REFERENCES user_workout_template_sections (template_id, position)
+      );
+
+      -- never deleted (archive instead)
+      CREATE TRIGGER user_workout_templates_never_deleted BEFORE DELETE ON user_workout_templates
+      BEGIN SELECT RAISE(ABORT, 'personal workout templates are never deleted; archive them'); END;
+      -- identity never changes; the content flag only goes 0 -> 1; a sealed template is never unsealed
+      CREATE TRIGGER user_workout_templates_identity_frozen BEFORE UPDATE ON user_workout_templates
+      WHEN NEW.id <> OLD.id OR NEW.family_id <> OLD.family_id OR NEW.created_at <> OLD.created_at OR NEW.sealed < OLD.sealed
+      BEGIN SELECT RAISE(ABORT, 'a personal workout template keeps its identity and its content'); END;
+      -- rename / archive only after the content is sealed
+      CREATE TRIGGER user_workout_templates_edit_after_seal BEFORE UPDATE ON user_workout_templates
+      WHEN OLD.sealed = 0 AND NEW.sealed = 0
+      BEGIN SELECT RAISE(ABORT, 'a personal workout template is written once and then sealed'); END;
+      -- sealing requires a complete structure: sections 0..n-1, each with items 0..m-1 (m >= 1)
+      CREATE TRIGGER user_workout_templates_seal_complete BEFORE UPDATE OF sealed ON user_workout_templates
+      WHEN OLD.sealed = 0 AND NEW.sealed = 1 AND (
+        NOT EXISTS (SELECT 1 FROM user_workout_template_sections WHERE template_id = NEW.id)
+        OR (SELECT count(*) FROM user_workout_template_sections WHERE template_id = NEW.id)
+           <> (SELECT max(position) + 1 FROM user_workout_template_sections WHERE template_id = NEW.id)
+        OR EXISTS (
+          SELECT 1 FROM user_workout_template_sections s
+          WHERE s.template_id = NEW.id AND (
+            (SELECT count(*) FROM user_workout_template_items i WHERE i.template_id = s.template_id AND i.section_position = s.position) = 0
+            OR (SELECT count(*) FROM user_workout_template_items i WHERE i.template_id = s.template_id AND i.section_position = s.position)
+               <> (SELECT max(i.position) + 1 FROM user_workout_template_items i WHERE i.template_id = s.template_id AND i.section_position = s.position)
+          )
+        )
+      )
+      BEGIN SELECT RAISE(ABORT, 'a personal workout template needs contiguous sections, each with exercises'); END;
+      -- content is written before the seal and never after, and never changed or removed
+      CREATE TRIGGER user_workout_template_sections_sealed_insert BEFORE INSERT ON user_workout_template_sections
+      WHEN (SELECT sealed FROM user_workout_templates WHERE id = NEW.template_id) = 1
+      BEGIN SELECT RAISE(ABORT, 'a sealed personal workout template cannot gain sections'); END;
+      CREATE TRIGGER user_workout_template_sections_frozen_update BEFORE UPDATE ON user_workout_template_sections
+      BEGIN SELECT RAISE(ABORT, 'personal workout template sections never change'); END;
+      CREATE TRIGGER user_workout_template_sections_never_deleted BEFORE DELETE ON user_workout_template_sections
+      BEGIN SELECT RAISE(ABORT, 'personal workout template sections are never deleted'); END;
+      CREATE TRIGGER user_workout_template_items_sealed_insert BEFORE INSERT ON user_workout_template_items
+      WHEN (SELECT sealed FROM user_workout_templates WHERE id = NEW.template_id) = 1
+      BEGIN SELECT RAISE(ABORT, 'a sealed personal workout template cannot gain exercises'); END;
+      CREATE TRIGGER user_workout_template_items_frozen_update BEFORE UPDATE ON user_workout_template_items
+      BEGIN SELECT RAISE(ABORT, 'personal workout template exercises never change'); END;
+      CREATE TRIGGER user_workout_template_items_never_deleted BEFORE DELETE ON user_workout_template_items
+      BEGIN SELECT RAISE(ABORT, 'personal workout template exercises are never deleted'); END;
+    `,
+  },
 ];

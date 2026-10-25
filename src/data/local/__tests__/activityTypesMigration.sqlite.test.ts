@@ -102,7 +102,7 @@ describe('migration v7 (activity types) on real SQLite', () => {
 
   it('fresh install: the six built-ins exactly once, active, no name; deletion refused', async () => {
     const { db, migration } = await openLocalDatabase();
-    expect(migration.to).toBe(22);
+    expect(migration.to).toBe(23);
     expect(migration.applied).toContain('activity_types');
     expect(await catalogRows(db as unknown as Db)).toEqual(SEEDED);
     expect(
@@ -124,8 +124,8 @@ describe('migration v7 (activity types) on real SQLite', () => {
     const before = await createV6Database();
 
     const { db, migration } = await openLocalDatabase();
-    expect(migration).toEqual({ from: 6, to: 22, applied: ['activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002', 'training_blocks_001', 'time_semantics_001'] });
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 22 });
+    expect(migration).toEqual({ from: 6, to: 23, applied: ['activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002', 'training_blocks_001', 'time_semantics_001', 'workout_templates_001'] });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 23 });
     // Byte-for-byte: no event row (type, dates, titles, notes, completion …) or other row changed.
     expect(await dumpV6Data(db as unknown as Db)).toEqual(before);
     expect(await catalogRows(db as unknown as Db)).toEqual(SEEDED);
@@ -169,7 +169,7 @@ describe('migration v7 (activity types) on real SQLite', () => {
 
     // Idempotent: reopening applies nothing and never re-seeds.
     const again = await openLocalDatabase();
-    expect(again.migration).toEqual({ from: 22, to: 22, applied: [] });
+    expect(again.migration).toEqual({ from: 23, to: 23, applied: [] });
     expect(await catalogRows(again.db as unknown as Db)).toEqual(SEEDED);
     expect(await dumpV6Data(again.db as unknown as Db)).toEqual(before);
     await again.db.closeAsync();
@@ -198,16 +198,16 @@ describe('migration v7 (activity types) on real SQLite', () => {
     await db.closeAsync();
 
     const relaunch = await openLocalDatabase();
-    expect(relaunch.migration).toEqual({ from: 6, to: 22, applied: ['activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002', 'training_blocks_001', 'time_semantics_001'] });
+    expect(relaunch.migration).toEqual({ from: 6, to: 23, applied: ['activity_types', 'exercises', 'training', 'taxonomy', 'basketball_content', 'template_classification', 'calendar_event_import', 'player_team_name', 'player_archive', 'calendar_event_sync_links', 'planned_workout_composition', 'planned_workout_calendar_link', 'sport_content_001', 'sport_content_002', 'training_blocks_001', 'time_semantics_001', 'workout_templates_001'] });
     expect(await catalogRows(relaunch.db as unknown as Db)).toEqual(SEEDED);
     await relaunch.db.closeAsync();
   });
 
   it('refuses a newer schema (v10)', async () => {
     const newer = openTracked(file);
-    await newer.execAsync('PRAGMA user_version = 23');
+    await newer.execAsync('PRAGMA user_version = 24');
     await newer.closeAsync();
-    await expect(openLocalDatabase()).rejects.toThrow(/v23 .* only knows v22\. Refusing to downgrade/);
+    await expect(openLocalDatabase()).rejects.toThrow(/v24 .* only knows v23\. Refusing to downgrade/);
   });
 });
 

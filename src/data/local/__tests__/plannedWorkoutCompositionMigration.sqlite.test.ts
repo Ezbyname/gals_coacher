@@ -121,7 +121,7 @@ async function seedV16Rows(db: Db): Promise<Seed> {
 
 type Columns = Record<string, string[]>;
 const tableNames = async (d: Db) =>
-  (await d.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")).map((r) => r.name);
+  (await d.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'user_workout_template%' ORDER BY name")).map((r) => r.name);
 const columnsOf = async (d: Db): Promise<Columns> => {
   const out: Columns = {};
   for (const t of await tableNames(d)) out[t] = (await d.getAllAsync<{ name: string }>(`SELECT name FROM pragma_table_info('${t}') ORDER BY cid`)).map((c) => c.name);
@@ -133,8 +133,8 @@ const dumpWith = async (d: Db, columns: Columns) => {
   for (const [t, cols] of Object.entries(columns)) out[t] = await d.getAllAsync(`SELECT ${cols.join(', ')} FROM ${t} ORDER BY rowid`);
   return out;
 };
-const triggers = async (d: Db) => (await d.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'trigger' ORDER BY name")).map((r) => r.name);
-const objects = async (d: Db) => d.getAllAsync<{ type: string; name: string; sql: string }>("SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name");
+const triggers = async (d: Db) => (await d.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'trigger' AND name NOT LIKE 'user_workout_template%' ORDER BY name")).map((r) => r.name);
+const objects = async (d: Db) => d.getAllAsync<{ type: string; name: string; sql: string }>("SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' AND name NOT LIKE 'user_workout_template%' ORDER BY type, name");
 
 const OLD_TRIGGERS = ['planned_items_frozen_update', 'planned_items_never_deleted', 'planned_workouts_frozen_update'];
 const NEW_TRIGGERS = ['planned_items_archived_player_delete', 'planned_items_archived_player_insert', 'planned_items_archived_player_update', 'planned_items_frozen_delete', 'planned_workouts_archived_player_update'];
@@ -144,9 +144,9 @@ it('MIG-17-01: a fresh database reaches v17 with the two nullable columns, the n
   dbs.push(d);
   await d.execAsync('PRAGMA foreign_keys = ON');
   const result = await runMigrations(d, migrations);
-  expect(result.to).toBe(22);
-  expect(result.applied.at(-6)).toBe('planned_workout_composition'); // v18 (calendar link) follows; proven in its own suite
-  expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 22 });
+  expect(result.to).toBe(23);
+  expect(result.applied.at(-7)).toBe('planned_workout_composition'); // v18 (calendar link) follows; proven in its own suite
+  expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 23 });
   const cols = await d.getAllAsync("SELECT name, type, \"notnull\" AS not_null, dflt_value FROM pragma_table_info('planned_workout_items') WHERE name IN ('section_id', 'source_block_id') ORDER BY cid");
   expect(cols).toEqual([
     { name: 'section_id', type: 'TEXT', not_null: 0, dflt_value: null },
@@ -213,10 +213,10 @@ describe('upgrade from a realistic v16 database', () => {
     const objectsAfter = await objects(db);
     const columns = await columnsOf(db);
     const rows = await dumpWith(db, columns);
-    expect(await runMigrations(db, migrations)).toEqual({ from: 22, to: 22, applied: [] });
+    expect(await runMigrations(db, migrations)).toEqual({ from: 23, to: 23, applied: [] });
     expect(await objects(db)).toEqual(objectsAfter);
     expect(await dumpWith(db, columns)).toEqual(rows);
-    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 22 });
+    expect(await db.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 23 });
   });
 
   it('MIG-17-04: existing plans stay readable (legacy: no section id, no provenance), with their exact content and grouping', async () => {
@@ -347,6 +347,6 @@ describe('upgrade from a realistic v16 database', () => {
     expect(await triggers(db)).toEqual(triggersBefore); // the old freeze triggers are back / never left
     expect(await dumpWith(db, columns)).toEqual(rows);
     // and the same database then migrates cleanly
-    expect((await runMigrations(db, migrations)).to).toBe(22);
+    expect((await runMigrations(db, migrations)).to).toBe(23);
   });
 });

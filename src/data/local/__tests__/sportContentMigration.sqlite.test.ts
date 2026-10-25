@@ -43,13 +43,13 @@ async function open(list = migrations): Promise<Db> {
 }
 
 const tableNames = async (d: Db) =>
-  (await d.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")).map((r) => r.name);
+  (await d.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'user_workout_template%' ORDER BY name")).map((r) => r.name);
 async function dumpAll(d: Db): Promise<Record<string, unknown[]>> {
   const out: Record<string, unknown[]> = {};
   for (const t of await tableNames(d)) out[t] = await d.getAllAsync(`SELECT * FROM ${t} ORDER BY rowid`);
   return out;
 }
-const schemaObjects = (d: Db) => d.getAllAsync<{ type: string; name: string; sql: string }>("SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name");
+const schemaObjects = (d: Db) => d.getAllAsync<{ type: string; name: string; sql: string }>("SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' AND name NOT LIKE 'user_workout_template%' ORDER BY type, name");
 
 /** A realistic v18: Players, a calendar with a linked workout, a custom exercise, plans, a closed session and a running one. */
 async function seedV18(): Promise<Db> {
@@ -253,7 +253,7 @@ describe('migration v22 (time semantics) on real SQLite', () => {
     const objectsBefore = (await schemaObjects(d)) as { type: string; name: string; sql: string | null }[];
     const colsPlan = await columnsOfTable(d, 'planned_workout_items');
     const colsSession = await columnsOfTable(d, 'session_exercises');
-    expect(await runMigrations(d, migrations)).toEqual({ from: 21, to: 22, applied: ['time_semantics_001'] });
+    expect(await runMigrations(d, migrations)).toEqual({ from: 21, to: 23, applied: ['time_semantics_001', 'workout_templates_001'] });
     expectUnchangedExceptLaterSeeds(await dumpAll(d), rowsBefore, 21); // every old row, byte for byte (the new column dropped after proving it NULL)
     expect(await columnsOfTable(d, 'planned_workout_items')).toEqual([...colsPlan, 'time_semantics']);
     expect(await columnsOfTable(d, 'session_exercises')).toEqual([...colsSession, 'time_semantics']);
@@ -304,8 +304,8 @@ describe('migration v22 (time semantics) on real SQLite', () => {
     expect(await columnsOfTable(d, 'planned_workout_items')).toEqual(columns); // no half-added column
     expect(await columnsOfTable(d, 'session_exercises')).not.toContain('time_semantics');
     expect(await dumpAll(d)).toEqual(rows);
-    expect((await runMigrations(d, migrations)).to).toBe(22);
-    expect(await runMigrations(d, migrations)).toEqual({ from: 22, to: 22, applied: [] });
+    expect((await runMigrations(d, migrations)).to).toBe(23);
+    expect(await runMigrations(d, migrations)).toEqual({ from: 23, to: 23, applied: [] });
   });
 
   it('a fresh install and an upgrade end with the same schema', async () => {

@@ -85,7 +85,7 @@ async function seedV17Rows(db: Db): Promise<Seed> {
 
 type Columns = Record<string, string[]>;
 const tableNames = async (d: Db) =>
-  (await d.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name")).map((r) => r.name);
+  (await d.getAllAsync<{ name: string }>("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'user_workout_template%' ORDER BY name")).map((r) => r.name);
 const columnsOf = async (d: Db): Promise<Columns> => {
   const out: Columns = {};
   for (const t of await tableNames(d)) out[t] = (await d.getAllAsync<{ name: string }>(`SELECT name FROM pragma_table_info('${t}') ORDER BY cid`)).map((c) => c.name);
@@ -97,15 +97,15 @@ const dumpWith = async (d: Db, columns: Columns) => {
   return out;
 };
 const names = async (d: Db, type: 'trigger' | 'index') =>
-  (await d.getAllAsync<{ name: string }>(`SELECT name FROM sqlite_master WHERE type = '${type}' AND name NOT LIKE 'sqlite_%' ORDER BY name`)).map((r) => r.name);
-const objects = async (d: Db) => d.getAllAsync<{ type: string; name: string; sql: string }>("SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name");
+  (await d.getAllAsync<{ name: string }>(`SELECT name FROM sqlite_master WHERE type = '${type}' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'user_workout_template%' ORDER BY name`)).map((r) => r.name);
+const objects = async (d: Db) => d.getAllAsync<{ type: string; name: string; sql: string }>("SELECT type, name, sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' AND name NOT LIKE 'user_workout_template%' ORDER BY type, name");
 
 const NEW_TRIGGERS = ['calendar_events_plan_link_fixed', 'calendar_events_plan_not_started', 'calendar_events_plan_player_fixed', 'calendar_events_plan_same_player'];
 
 describe('migration v18 (planned workout ↔ calendar link) on real SQLite', () => {
   it('MIG-18-01: a fresh database reaches v18: a nullable FK column, the partial unique index and the four guards', async () => {
     const d = await open();
-    expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 22 });
+    expect(await d.getFirstAsync('PRAGMA user_version')).toEqual({ user_version: 23 });
     const col = await d.getAllAsync("SELECT name, type, \"notnull\" AS not_null, dflt_value FROM pragma_table_info('calendar_events') WHERE name = 'planned_workout_id'");
     expect(col).toEqual([{ name: 'planned_workout_id', type: 'TEXT', not_null: 0, dflt_value: null }]);
     expect(await d.getAllAsync("SELECT \"table\", \"from\", \"to\" FROM pragma_foreign_key_list('calendar_events') WHERE \"from\" = 'planned_workout_id'")).toEqual([
@@ -146,7 +146,7 @@ describe('migration v18 (planned workout ↔ calendar link) on real SQLite', () 
     const rows = await dumpWith(db, columns);
     const objs = await objects(db);
     const again = await runMigrations(db, migrations);
-    expect(again).toEqual({ from: 22, to: 22, applied: [] });
+    expect(again).toEqual({ from: 23, to: 23, applied: [] });
     expect(await columnsOf(db)).toEqual(columns);
     expect(await dumpWith(db, columns)).toEqual(rows);
     expect(await objects(db)).toEqual(objs);
@@ -219,6 +219,6 @@ describe('migration v18 (planned workout ↔ calendar link) on real SQLite', () 
     expect(await names(db, 'trigger')).toEqual(triggersBefore);
     expect(await names(db, 'index')).toEqual(indexesBefore);
     expect(await dumpWith(db, columns)).toEqual(rows);
-    expect((await runMigrations(db, migrations)).to).toBe(22); // the same database then migrates cleanly
+    expect((await runMigrations(db, migrations)).to).toBe(23); // the same database then migrates cleanly
   });
 });
