@@ -1,8 +1,8 @@
 import { resolve } from 'node:path';
 
-import { fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
+import { act, fireEvent, renderRouter, screen, waitFor } from 'expo-router/testing-library';
 import { openDatabaseAsync } from 'expo-sqlite';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
@@ -123,5 +123,105 @@ describe('Hebrew (TPL-UI-04)', () => {
     press(`tpl-option-${FIRST.id}`);
     await screen.findByTestId('tpl-preview');
     expect(screen.getByText('הוספה לאימון')).toBeTruthy();
+  });
+});
+
+const templateRows = () => db!.getAllAsync<{ name: string; active: number; sealed: number }>('SELECT name, active, sealed FROM user_workout_templates ORDER BY created_at, name');
+const sectionRoles = async () => (await db!.getAllAsync<{ role: string }>('SELECT role FROM user_workout_template_sections ORDER BY template_id, position')).map((r) => r.role);
+async function importFirst() {
+  await openLibrary();
+  press(`tpl-option-${FIRST.id}`);
+  await screen.findByTestId('tpl-preview');
+  press('tpl-import');
+  await screen.findByTestId('builder-entry-0');
+}
+
+describe('Save as template / My templates (TPL-UI-05…)', () => {
+  it('TPL-UI-05: Save as template stores a sealed snapshot with section roles; no plan is written; the draft stays', async () => {
+    await prepare('en');
+    await importFirst();
+    press('builder-save-as-template');
+    await screen.findByTestId('builder-save-as');
+    type('builder-save-as-name', 'My copy of the first');
+    press('builder-save-as-confirm');
+    await screen.findByTestId('builder-template-saved');
+    expect(await templateRows()).toEqual([{ name: 'My copy of the first', active: 1, sealed: 1 }]);
+    expect((await sectionRoles()).length).toBe(FIRST.sections.length);
+    expect(await planCount()).toBe(0);
+    expect(titles().length).toBe(FIRST.sections.length); // the draft is unchanged
+  });
+
+  it('TPL-UI-06: a duplicate name is refused with a message and nothing is overwritten or renamed for the user', async () => {
+    await prepare('en');
+    await importFirst();
+    for (const attempt of ['Twice', 'twice']) {
+      press('builder-save-as-template');
+      await screen.findByTestId('builder-save-as');
+      type('builder-save-as-name', attempt);
+      press('builder-save-as-confirm');
+      if (attempt === 'Twice') await screen.findByTestId('builder-template-saved');
+    }
+    await waitFor(() => expect(screen.queryAllByText('A template with this name already exists. Choose another name.').length).toBe(1));
+    expect((await templateRows()).map((r) => r.name)).toEqual(['Twice']);
+  });
+
+  it('TPL-UI-07: a standalone exercise cannot be snapshotted: the user is told to move it into a section; nothing is written', async () => {
+    await prepare('en');
+    await importFirst();
+    press('builder-add-exercise');
+    type(await screen.findByTestId('builder-exercise-search').then(() => 'builder-exercise-search'), 'plank');
+    const option = (await screen.findAllByTestId(/^builder-exercise-option-/))[0]!;
+    fireEvent.press(option);
+    await waitFor(() => expect(titles().length).toBe(FIRST.sections.length + 1));
+    press('builder-save-as-template');
+    await screen.findByTestId('builder-save-as');
+    press('builder-save-as-confirm');
+    await screen.findByTestId('builder-save-as-content-error');
+    expect((await templateRows()).length).toBe(0);
+  });
+
+  it('TPL-UI-08: My templates lists the saved one; Use adds an independent copy to the draft; Rename, Duplicate and Archive work; plans are untouched', async () => {
+    await prepare('en');
+    await importFirst();
+    press('builder-save-as-template');
+    await screen.findByTestId('builder-save-as');
+    type('builder-save-as-name', 'Base');
+    press('builder-save-as-confirm');
+    await screen.findByTestId('builder-template-saved');
+    press('builder-save'); // an ordinary plan from the imported draft
+    await screen.findByTestId('training-create-workout');
+    const plansBefore = await planCount();
+    press('training-create-workout');
+    await screen.findByTestId('builder-name');
+    press('builder-add-template');
+    await screen.findByTestId('tpl-library');
+    press('tpl-tab-mine');
+    const [row] = await screen.findAllByTestId(/^tpl-mine-option-/);
+    const id = String(row!.props.testID).replace('tpl-mine-option-', '');
+    // rename
+    press(`tpl-mine-rename-${id}`);
+    type('tpl-rename-name', 'Base renamed');
+    press('tpl-rename-confirm');
+    await waitFor(() => expect(screen.queryAllByText('Base renamed').length).toBeGreaterThan(0));
+    // duplicate
+    press(`tpl-mine-duplicate-${id}`);
+    await waitFor(() => expect(screen.queryAllByTestId(/^tpl-mine-option-/).length).toBe(2));
+    expect((await templateRows()).map((r) => r.name).sort()).toEqual(['Base renamed', 'Base renamed (copy)']);
+    // archive (confirmed)
+    const dialogs: { buttons: { text?: string; onPress?: () => void }[] }[] = [];
+    jest.spyOn(Alert, 'alert').mockImplementation((_t, _b, buttons = []) => void dialogs.push({ buttons }));
+    press(`tpl-mine-archive-${id}`);
+    await act(async () => dialogs[0]!.buttons.find((b) => b.text === 'Archive')!.onPress!());
+    await waitFor(() => expect(screen.queryAllByTestId(/^tpl-mine-option-/).length).toBe(1));
+    expect((await templateRows()).map((r) => r.active).sort()).toEqual([0, 1]);
+    expect(await planCount()).toBe(plansBefore); // nothing happened to any plan
+    // use the remaining one: an independent copy lands in the draft
+    const [left] = screen.queryAllByTestId(/^tpl-mine-option-/);
+    fireEvent.press(left!);
+    await screen.findByTestId('tpl-mine-preview');
+    press('tpl-mine-import');
+    await screen.findByTestId('builder-entry-0');
+    expect(titles().length).toBe(FIRST.sections.length);
+    expect(await planCount()).toBe(plansBefore);
   });
 });

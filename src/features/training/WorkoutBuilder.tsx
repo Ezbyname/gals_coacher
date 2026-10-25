@@ -5,6 +5,16 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { listExercises } from '@/data/local/exercises/exerciseRepository';
 import { readTaxonomy } from '@/data/local/taxonomy/taxonomyRepository';
 import {
+  archivePersonalTemplate,
+  createPersonalTemplate,
+  duplicatePersonalTemplate,
+  listPersonalTemplates,
+  renamePersonalTemplate,
+  type PersonalTemplate,
+  type PersonalTemplateErrors,
+  type TemplateNameError,
+} from '@/data/local/training/personalTemplateRepository';
+import {
   savePlannedWorkout,
   type SavePlanErrors,
 } from '@/data/local/training/plannedWorkoutCompositionRepository';
@@ -41,8 +51,10 @@ import {
   blockEntryOf,
   canMoveToSection,
   canRemoveItem,
+  draftToTemplateSections,
   exerciseEntryOf,
   importTemplate,
+  personalTemplateSource,
   itemOf,
   moveItemToSection,
   moveTargets,
@@ -54,6 +66,7 @@ import {
   toSaveEntries,
   type DEntry,
   type DItem,
+  type ImportSource,
   type Seed,
 } from './builderDraft';
 import { DragHandle } from './DragHandle';
@@ -170,6 +183,9 @@ function Builder({
   const [browsing, setBrowsing] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [importFailed, setImportFailed] = useState(false);
+  const [mine, setMine] = useState<PersonalTemplate[]>([]);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [savedNote, setSavedNote] = useState(false);
   const [moving, setMoving] = useState<{ key: string; index: number } | null>(null);
   const busy = useRef(false);
   const readOnly = plan !== null && plan.sessionId !== null;
@@ -197,11 +213,73 @@ function Builder({
     setBrowsing(false);
   };
 
-  const importWorkout = (workout: ProfessionalWorkout) => {
-    const result = importTemplate(entries, workout, exercises, language, nextKey);
+  const importFrom = (source: ImportSource) => {
+    const result = importTemplate(entries, source, exercises, language, nextKey);
     setLibraryOpen(false);
     setImportFailed(!result.ok);
     if (result.ok) setEntries(result.entries);
+  };
+  const importWorkout = (workout: ProfessionalWorkout) => importFrom(workout);
+  const importMine = (template: PersonalTemplate) => importFrom(personalTemplateSource(template));
+
+  // ---- personal templates (My templates): the Builder owns the calls, the library only presents
+  const templateDeps = { ids: services.ids, clock: services.clock };
+  const loadMine = useCallback(async () => {
+    if (boot.status !== 'ready') return;
+    try {
+      setMine(await listPersonalTemplates(boot.db));
+    } catch (e) {
+      console.warn('[training] personal templates load failed', e);
+    }
+  }, [boot]);
+  const openLibrary = () => {
+    setLibraryOpen(true);
+    void loadMine();
+  };
+  const renameMine = async (template: PersonalTemplate, name: string): Promise<TemplateNameError | null> => {
+    if (boot.status !== 'ready') return null;
+    try {
+      const result = await renamePersonalTemplate(boot.db, template.id, name, templateDeps);
+      await loadMine();
+      return result.ok ? null : (result.errors.name ?? 'REQUIRED');
+    } catch (e) {
+      console.warn('[training] personal template rename failed', e);
+      return null;
+    }
+  };
+  const duplicateMine = async (template: PersonalTemplate) => {
+    if (boot.status !== 'ready') return;
+    try {
+      await duplicatePersonalTemplate(boot.db, template.id, { ...templateDeps, copyLabel: t('training.tpl.copyLabel') });
+    } catch (e) {
+      console.warn('[training] personal template duplicate failed', e);
+    }
+    await loadMine();
+  };
+  const archiveMine = async (template: PersonalTemplate) => {
+    if (boot.status !== 'ready') return;
+    try {
+      await archivePersonalTemplate(boot.db, template.id, templateDeps);
+    } catch (e) {
+      console.warn('[training] personal template archive failed', e);
+    }
+    await loadMine();
+  };
+  /** Save as template: snapshots the DRAFT (not the stored plan); null = saved. Writes only the template, never a plan. */
+  const saveAsTemplate = async (templateName: string): Promise<SaveAsErrors | null> => {
+    if (boot.status !== 'ready') return { failed: true };
+    const converted = draftToTemplateSections(entries);
+    if (!converted.ok) return { content: converted.reason };
+    try {
+      const result = await createPersonalTemplate(boot.db, { name: templateName, sections: converted.sections }, templateDeps);
+      if (!result.ok) return result.errors;
+      setSaveOpen(false);
+      setSavedNote(true);
+      return null;
+    } catch (e) {
+      console.warn('[training] save as template failed', e);
+      return { failed: true };
+    }
   };
   const removeOne = (key: string, itemIndex: number) => setEntries((list) => removeItem(list, key, itemIndex));
   const moveToSection = (target: { key: string } | { role: StandardSectionRole }) => {
@@ -299,13 +377,18 @@ function Builder({
         <>
           <BigButton testID="builder-add-block" variant="secondary" label={t('training.builder.addBlock')} onPress={() => setBlockOpen(true)} />
           <BigButton testID="builder-add-exercise" variant="secondary" label={t('training.builder.addExercise')} onPress={() => setExerciseOpen(true)} />
-          <BigButton testID="builder-add-template" variant="secondary" label={t('training.tpl.addTemplate')} onPress={() => setLibraryOpen(true)} />
+          <BigButton testID="builder-add-template" variant="secondary" label={t('training.tpl.addTemplate')} onPress={openLibrary} />
         </>
       ) : null}
 
       {importFailed ? (
         <Text style={styles.error} testID="builder-import-failed">
           {t('training.tpl.unavailable')}
+        </Text>
+      ) : null}
+      {savedNote ? (
+        <Text style={styles.muted} testID="builder-template-saved">
+          {t('training.tpl.saved')}
         </Text>
       ) : null}
       {failure ? (
@@ -319,6 +402,17 @@ function Builder({
         </Text>
       ) : null}
       <View style={styles.buttons}>
+        {entries.length > 0 ? (
+          <BigButton
+            testID="builder-save-as-template"
+            variant="secondary"
+            label={t('training.tpl.saveAs')}
+            onPress={() => {
+              setSavedNote(false);
+              setSaveOpen(true);
+            }}
+          />
+        ) : null}
         {!readOnly ? (
           <BigButton testID="builder-save" label={saving ? t('training.builder.saving') : t('training.builder.save')} onPress={() => void save()} disabled={!canSave} />
         ) : null}
@@ -342,7 +436,19 @@ function Builder({
         onBrowse={() => setBrowsing(true)}
         onClose={() => setExerciseOpen(false)}
       />
-      <TemplateLibrary visible={libraryOpen} templates={PUBLISHED_WORKOUT_TEMPLATES} exercises={exercises} onImport={importWorkout} onClose={() => setLibraryOpen(false)} />
+      <TemplateLibrary
+        visible={libraryOpen}
+        templates={PUBLISHED_WORKOUT_TEMPLATES}
+        exercises={exercises}
+        onImport={importWorkout}
+        mine={mine}
+        onImportMine={importMine}
+        onRename={renameMine}
+        onDuplicate={(template) => void duplicateMine(template)}
+        onArchive={(template) => void archiveMine(template)}
+        onClose={() => setLibraryOpen(false)}
+      />
+      <SaveAsTemplate visible={saveOpen} initialName={name} onSave={saveAsTemplate} onClose={() => setSaveOpen(false)} />
       <MoveToSection visible={moving !== null} targets={moving ? moveTargets(entries, moving.key) : []} onPick={moveToSection} onClose={() => setMoving(null)} />
       <ExercisePicker visible={browsing} data={pickerData} onPick={addExercise} onClose={() => setBrowsing(false)} />
     </KeyboardSafeScrollView>
@@ -553,6 +659,65 @@ function BlockPicker({ visible, blocks, onPick, onClose }: { visible: boolean; b
           </Pressable>
         ))
       )}
+    </Sheet>
+  );
+}
+
+type SaveAsErrors = { name?: TemplateNameError; content?: NonNullable<PersonalTemplateErrors['content']> | 'STANDALONE_ITEMS'; failed?: true };
+
+/** Names the new personal template. A duplicate name is refused (never overwritten or renamed for the user); nothing is written until it is accepted. */
+function SaveAsTemplate({ visible, initialName, onSave, onClose }: { visible: boolean; initialName: string; onSave: (name: string) => Promise<SaveAsErrors | null>; onClose: () => void }) {
+  const { t } = useI18n();
+  const [value, setValue] = useState<string | null>(null);
+  const [errors, setErrors] = useState<SaveAsErrors>({});
+  const [busy, setBusy] = useState(false);
+  const shown = value ?? initialName;
+  const close = () => {
+    setValue(null);
+    setErrors({});
+    onClose();
+  };
+  return (
+    <Sheet visible={visible} testID="builder-save-as" title={t('training.tpl.saveAsTitle')} closeTestID="builder-save-as-close" onClose={close}>
+      <Text style={styles.muted}>{t('training.tpl.saveAsHint')}</Text>
+      <TextField
+        testID="builder-save-as-name"
+        label={t('training.tpl.saveAsName')}
+        value={shown}
+        onChangeText={(next) => {
+          setValue(next);
+          setErrors({});
+        }}
+        maxLength={WORKOUT_NAME_MAX_LENGTH}
+        error={errors.name ? t(`training.tpl.nameError.${errors.name}`) : undefined}
+      />
+      {errors.content ? (
+        <Text style={styles.error} testID="builder-save-as-content-error">
+          {t(`training.tpl.contentError.${errors.content}`)}
+        </Text>
+      ) : null}
+      {errors.failed ? (
+        <Text style={styles.error} testID="builder-save-as-failed">
+          {t('training.tpl.saveFailed')}
+        </Text>
+      ) : null}
+      <BigButton
+        testID="builder-save-as-confirm"
+        label={t('training.tpl.saveAsConfirm')}
+        disabled={busy}
+        onPress={() => {
+          setBusy(true);
+          void onSave(shown)
+            .then((result) => {
+              if (result === null) {
+                setValue(null);
+                setErrors({});
+              } else setErrors(result);
+            })
+            .finally(() => setBusy(false));
+        }}
+      />
+      <BigButton testID="builder-save-as-cancel" variant="secondary" label={t('training.tpl.cancel')} onPress={close} />
     </Sheet>
   );
 }

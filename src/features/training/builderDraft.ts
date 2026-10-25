@@ -1,10 +1,11 @@
 import type { TimeSemantics } from '@/domain/exercise/timeSemantics';
 import { snapshotOf } from '@/data/local/training/trainingRepository';
 import type { SaveEntry } from '@/data/local/training/plannedWorkoutCompositionRepository';
+import type { PersonalTemplate, PersonalTemplateSection } from '@/data/local/training/personalTemplateRepository';
 import type { WorkoutBlock } from '@/data/local/training/workoutRepository';
 import type { Exercise } from '@/domain/exercise/exercise';
 import { planSectionName, roleFromPlanSectionName, STANDARD_ROLE_ORDER } from '@/domain/training/professional/templateMeta';
-import type { ProfessionalWorkout, SectionRole, StandardSectionRole } from '@/domain/training/professional/types';
+import type { SectionRole, StandardSectionRole } from '@/domain/training/professional/types';
 import { moveInList } from '@/domain/training/reorder';
 import { defaultPrescription, parseEntry, type ExerciseSnapshot, type Prescription } from '@/domain/training/training';
 
@@ -116,11 +117,37 @@ type Language = 'he' | 'en';
 export const entryRole = (e: DEntry): SectionRole | null => (e.kind !== 'SECTION' ? null : (e.role ?? roleFromPlanSectionName(e.name ?? '')));
 
 /** What each item of a template section will be written as: the template's own dosage, or the exercise's defaults; never a load. */
-export function templatePrescription(item: { exerciseId: string; dosage?: { sets: number; target: number | null; restSec: number }; timeSemantics?: TimeSemantics }, exercise: Exercise): Prescription {
+export function templatePrescription(item: ImportItem, exercise: Exercise): Prescription {
   return item.dosage
-    ? { sets: item.dosage.sets, target: item.dosage.target, loadKg: null, restSec: item.dosage.restSec, ...(item.timeSemantics ? { timeSemantics: item.timeSemantics } : {}) }
+    ? { sets: item.dosage.sets, target: item.dosage.target, loadKg: item.loadKg ?? null, restSec: item.dosage.restSec, ...(item.timeSemantics ? { timeSemantics: item.timeSemantics } : {}) }
     : defaultPrescription(exercise.measurement, exercise.defaults);
 }
+
+/** What the Builder can import: a built-in Workout Template (a Professional Workout) or a personal template, both reduced to this shape. */
+export interface ImportItem {
+  readonly exerciseId: string;
+  readonly dosage?: { readonly sets: number; readonly target: number | null; readonly restSec: number | null };
+  /** Only a personal template carries a load (the built-in ones never do). */
+  readonly loadKg?: number | null;
+  readonly timeSemantics?: TimeSemantics;
+}
+export interface ImportSource {
+  readonly sections: readonly { readonly role?: SectionRole; readonly name: readonly [he: string, en: string]; readonly items: readonly ImportItem[] }[];
+}
+
+/** A personal template as an import source (a section's role travels as data; a standard section is named by its role). */
+export const personalTemplateSource = (t: PersonalTemplate): ImportSource => ({
+  sections: t.sections.map((section) => ({
+    role: section.role,
+    name: [section.name ?? '', section.name ?? ''] as const,
+    items: section.items.map((i) => ({
+      exerciseId: i.exerciseId,
+      dosage: { sets: i.prescription.sets, target: i.prescription.target, restSec: i.prescription.restSec },
+      loadKg: i.prescription.loadKg,
+      ...(i.prescription.timeSemantics ? { timeSemantics: i.prescription.timeSemantics } : {}),
+    })),
+  })),
+});
 
 export type ImportResult = { ok: true; entries: DEntry[] } | { ok: false; reason: 'EXERCISE_UNAVAILABLE'; exerciseId: string };
 
@@ -132,7 +159,7 @@ export type ImportResult = { ok: true; entries: DEntry[] } | { ok: false; reason
  */
 export function importTemplate(
   entries: readonly DEntry[],
-  workout: ProfessionalWorkout,
+  workout: ImportSource,
   exercises: readonly Exercise[],
   language: Language,
   nextKey: () => string,
@@ -275,4 +302,27 @@ export function removeItem(entries: readonly DEntry[], key: string, itemIndex: n
     if (e.origin.type === 'ITEMS') return [{ ...e, items: e.items.filter((_, i) => i !== itemIndex), origin: { type: 'ITEMS' as const, refs: e.origin.refs.filter((_, i) => i !== itemIndex) } }];
     return [e];
   });
+}
+
+export type DraftTemplateResult = { ok: true; sections: PersonalTemplateSection[] } | { ok: false; reason: 'STANDALONE_ITEMS' | 'EMPTY' };
+
+/**
+ * The draft as the sections of a PERSONAL template ("Save as template"): each section with its role (its own, else the exact canonical
+ * name, else CUSTOM), its exercises by stable id and the prescription as typed. A standalone exercise belongs to no section, so it cannot be
+ * snapshotted: the user first moves it into a section (Move to section).
+ */
+export function draftToTemplateSections(entries: readonly DEntry[]): DraftTemplateResult {
+  if (entries.length === 0) return { ok: false, reason: 'EMPTY' };
+  if (entries.some((e) => e.kind === 'EXERCISE')) return { ok: false, reason: 'STANDALONE_ITEMS' };
+  return {
+    ok: true,
+    sections: entries.map((e) => {
+      const role = entryRole(e) ?? 'CUSTOM';
+      return {
+        role,
+        name: role === 'CUSTOM' ? (e.name ?? '') : null,
+        items: e.items.map((item) => ({ exerciseId: item.snapshot.exerciseId, prescription: prescriptionOf(item) })),
+      };
+    }),
+  };
 }
