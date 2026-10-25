@@ -29,9 +29,21 @@ export interface ProfessionalItem {
   readonly alternatives?: readonly { readonly exerciseId: string; readonly dosage: Dosage; readonly timeSemantics?: TimeSemantics }[];
 }
 
+/**
+ * WORKOUT-TEMPLATES-001: what a section IS FOR. Never inferred from a translated section name when the role exists. Every NEW
+ * built-in Workout Template has exactly one WARM_UP, one MAIN and one COOL_DOWN section; sections of the already-PUBLISHED
+ * workouts (grandfathered) have no role.
+ */
+export const SECTION_ROLES = ['WARM_UP', 'MAIN', 'COOL_DOWN', 'CUSTOM'] as const;
+export type SectionRole = (typeof SECTION_ROLES)[number];
+/** The three standard roles (a CUSTOM section is named by its author). */
+export type StandardSectionRole = Exclude<SectionRole, 'CUSTOM'>;
+
 export interface ProfessionalSection {
   readonly name: Pair;
   readonly items: readonly ProfessionalItem[];
+  /** Absent on grandfathered workouts. */
+  readonly role?: SectionRole;
 }
 
 export type ReviewStatus = 'PENDING_HUMAN_REVIEW' | 'HUMAN_REVIEWED' | 'PUBLISHED';
@@ -51,6 +63,13 @@ export const TRAINING_FOCUSES = [
   'DEFENSE',
   'TRANSITION',
   'FUNDAMENTALS',
+  // WORKOUT-TEMPLATES-001: gym programmes and the core / mobility / recovery workouts
+  'GYM_FULL_BODY',
+  'GYM_UPPER_LOWER',
+  'GYM_PUSH_PULL_LEGS',
+  'CORE',
+  'MOBILITY',
+  'RECOVERY',
   // TRAINING-BLOCKS-001: general athletic development (no sport)
   'ATHLETIC_FOUNDATION',
   'STRENGTH_FOUNDATION',
@@ -71,6 +90,13 @@ export const PROFESSIONAL_SPORTS: readonly ProfessionalSport[] = ['SURFING', 'FO
  */
 export type TrainingDomain = 'SPORT_SPECIFIC' | 'GENERAL_ATHLETIC';
 
+/**
+ * WORKOUT-TEMPLATES-001: who a built-in template is written for. GENERAL = suitable without individual supervision;
+ * EXPERIENCED_OR_SUPERVISED = loaded barbell work that assumes lifting experience or a coach. Not a medical or readiness claim.
+ */
+export const TEMPLATE_AUDIENCES = ['GENERAL', 'EXPERIENCED_OR_SUPERVISED'] as const;
+export type TemplateAudience = (typeof TEMPLATE_AUDIENCES)[number];
+
 interface ProfessionalWorkoutBase {
   readonly id: string;
   readonly difficulty: Difficulty;
@@ -87,7 +113,11 @@ interface ProfessionalWorkoutBase {
   /** Sources consulted; empty = no external source was consulted (the content is built from the app's own curated catalog). */
   readonly sources: readonly SourceKey[];
   readonly reviewStatus: ReviewStatus;
+  /** Absent = GENERAL. */
+  readonly audience?: TemplateAudience;
 }
+
+export const audienceOf = (w: ProfessionalWorkoutBase): TemplateAudience => w.audience ?? 'GENERAL';
 
 export interface SportWorkout extends ProfessionalWorkoutBase {
   readonly sport: ProfessionalSport;

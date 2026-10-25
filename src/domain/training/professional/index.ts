@@ -4,9 +4,13 @@ import type { Difficulty } from '../../exercise/taxonomy';
 import { EXPANDED_WORKOUTS } from './expanded';
 import { GENERAL_WORKOUTS } from './athletic';
 import { IBBC_WORKOUTS } from './ibbc';
+import { WORKOUT_TEMPLATE_DRAFTS } from './templates';
 import { reuse, x, type Pair, type ProfessionalSport, type ProfessionalWorkout, type TrainingFocus } from './types';
 
 export * from './types';
+export * from './templateMeta';
+export { WORKOUT_TEMPLATE_DRAFTS, WORKOUT_TEMPLATES_001_IDS } from './templates';
+export { TEMPLATE_PROVENANCE } from './templateProvenance';
 
 /**
  * SPORT-CONTENT-001 — the professional starter workouts (Surfing and Football × Beginner / Intermediate / Advanced).
@@ -251,7 +255,7 @@ export const SPORT_CONTENT_003_WORKOUT_IDS: readonly string[] = IBBC_WORKOUTS.ma
 export const GENERAL_ATHLETIC_WORKOUTS: readonly ProfessionalWorkout[] = GENERAL_WORKOUTS;
 export const TRAINING_BLOCKS_001_WORKOUT_IDS: readonly string[] = GENERAL_WORKOUTS.map((w) => w.id);
 
-const BY_ID = new Map<string, ProfessionalWorkout>([...PROFESSIONAL_WORKOUTS, ...GENERAL_WORKOUTS].map((w) => [w.id, w]));
+const BY_ID = new Map<string, ProfessionalWorkout>([...PROFESSIONAL_WORKOUTS, ...GENERAL_WORKOUTS, ...WORKOUT_TEMPLATE_DRAFTS].map((w) => [w.id, w]));
 
 export function professionalWorkout(id: string): ProfessionalWorkout | null {
   return BY_ID.get(id) ?? null;
@@ -275,3 +279,13 @@ export function generalWorkoutsFor(difficulty: Difficulty | null, focus: Trainin
 export function professionalExerciseCount(workout: ProfessionalWorkout): number {
   return workout.sections.reduce((sum, s) => sum + s.items.length, 0);
 }
+
+/**
+ * WORKOUT-TEMPLATES-001: the workouts a USER may browse and import — every PUBLISHED one (the 30 grandfathered workouts, plus any new
+ * template the owner has published). Drafts (PENDING_HUMAN_REVIEW / HUMAN_REVIEWED) are never listed.
+ */
+export const PUBLISHED_WORKOUT_TEMPLATES: readonly ProfessionalWorkout[] = [
+  ...PROFESSIONAL_WORKOUTS,
+  ...GENERAL_WORKOUTS,
+  ...WORKOUT_TEMPLATE_DRAFTS,
+].filter((w) => w.reviewStatus === 'PUBLISHED');
