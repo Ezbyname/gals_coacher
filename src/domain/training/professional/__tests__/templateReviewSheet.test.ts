@@ -12,7 +12,8 @@ describe('WORKOUT-TEMPLATES-001 content review sheet', () => {
     expect((sheet.match(/### WARM_UP/g) ?? []).length).toBe(12);
     expect((sheet.match(/### MAIN/g) ?? []).length).toBe(12);
     expect((sheet.match(/### COOL_DOWN/g) ?? []).length).toBe(12);
-    expect((sheet.match(/Owner decision/g) ?? []).length).toBe(12);
+    expect((sheet.match(/Owner decision/g) ?? []).length).toBe(15); // 12 templates + 3 Program Blocks
+    for (const id of ['GYM-BEGINNER-4W-01', 'GYM-INTERMEDIATE-4W-01', 'GYM-ADVANCED-4W-01']) expect(sheet).toContain(`## ${id} — `);
   });
   it('states that nothing is published and no decision is source-supported', () => {
     expect(sheet).toContain('DRAFT — nothing is published');

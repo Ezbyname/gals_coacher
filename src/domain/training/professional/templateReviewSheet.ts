@@ -1,4 +1,5 @@
 import { builtinExercise } from '../../exercise/catalog';
+import { PROGRAM_BLOCK_DRAFTS } from '../blocks/programBlocks';
 
 import { WORKOUT_TEMPLATE_DRAFTS } from './templates';
 import { TEMPLATE_PROVENANCE } from './templateProvenance';
@@ -45,6 +46,16 @@ export function renderTemplateReviewSheet(): string {
     out.push('**Provenance (per decision):**', '');
     for (const d of TEMPLATE_PROVENANCE[w.id]!) out.push(`- \`${d.evidence}\` — ${d.decision[1]} / ${d.decision[0]}${d.sources.length ? ` (source: ${d.sources.join(', ')})` : ''}`);
     out.push('', `**Owner decision:** ☐ approve  ☐ edit  ☐ reject${audienceOf(w) === 'EXPERIENCED_OR_SUPERVISED' ? '  — heavy barbell: explicit content review required' : ''}`, '');
+  }
+  out.push('# Program Blocks (drafts) — the gym programmes built from the templates above', '');
+  out.push('Status: **DRAFT — PENDING_HUMAN_REVIEW.** Not listed, not assignable. Progression, RIR and the lighter week are informational notes only; nothing changes a prescription automatically and no load is written. Nothing is source-supported.', '');
+  for (const b of PROGRAM_BLOCK_DRAFTS) {
+    out.push(`## ${b.id} — ${b.name[1]} / ${b.name[0]}`, '');
+    out.push(`- ${b.weeks} weeks × ${b.sessionsPerWeek} sessions = ${b.schedule.length} planned workouts · Level: ${b.difficulty} · Consecutive training days allowed: **${b.allowAdjacentTrainingDays === true ? 'yes' : 'no'}** · Review status: **${b.reviewStatus}**`);
+    out.push(`- Summary EN: ${b.summary[1]}`, `- Summary HE: ${b.summary[0]}`, '');
+    out.push('| Week | Slot | Workout template | Note (informational) |', '|---|---|---|---|');
+    for (const x of b.schedule) out.push(`| ${x.week} | ${x.slot} | ${x.workoutId} | ${x.note ? x.note[1] : ''} |`);
+    out.push('', '**Owner decision:** ☐ approve  ☐ edit  ☐ reject', '');
   }
   return out.join('\n');
 }

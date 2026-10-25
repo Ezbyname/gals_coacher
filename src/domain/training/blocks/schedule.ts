@@ -56,7 +56,7 @@ export function planSessionDates(
     return { ok: false, error: 'WEEKDAY_INVALID' };
   }
   const set = new Set(weekdays);
-  if (weekdays.some((d) => set.has((d + 1) % 7))) return { ok: false, error: 'WEEKDAYS_ADJACENT' };
+  if (block.allowAdjacentTrainingDays !== true && weekdays.some((d) => set.has((d + 1) % 7))) return { ok: false, error: 'WEEKDAYS_ADJACENT' };
   const dates: CalendarDate[] = [];
   for (let day = utc(start); dates.length < totalSessions(block); day += MS_PER_DAY) {
     const d = fromUtc(day);

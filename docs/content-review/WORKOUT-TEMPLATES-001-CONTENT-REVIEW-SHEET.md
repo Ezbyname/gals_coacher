@@ -538,3 +538,80 @@ Upper Volume / Lower Volume are deliberately deferred.
 - `SYNTHESIZED` — The cool-down: easy movement, breathing and gentle stretching. No claim of guaranteed recovery or injury prevention. / השחרור: תנועה קלה, נשימה ומתיחה עדינה. אין טענה להתאוששות מובטחת או למניעת פציעות.
 
 **Owner decision:** ☐ approve  ☐ edit  ☐ reject
+
+# Program Blocks (drafts) — the gym programmes built from the templates above
+
+Status: **DRAFT — PENDING_HUMAN_REVIEW.** Not listed, not assignable. Progression, RIR and the lighter week are informational notes only; nothing changes a prescription automatically and no load is written. Nothing is source-supported.
+
+## GYM-BEGINNER-4W-01 — Beginner Gym — 4 Weeks / חדר כושר למתחילים — 4 שבועות
+
+- 4 weeks × 3 sessions = 12 planned workouts · Level: BEGINNER · Consecutive training days allowed: **no** · Review status: **PENDING_HUMAN_REVIEW**
+- Summary EN: Four weeks, three full-body sessions a week (A and B alternating). A technique base before heavier lifting.
+- Summary HE: ארבעה שבועות, שלושה אימוני גוף מלא בשבוע (א׳ ו־ב׳ לסירוגין). בסיס לימוד טכניקה לפני הרמות כבדות.
+
+| Week | Slot | Workout template | Note (informational) |
+|---|---|---|---|
+| 1 | 1 | GYM-BEG-FULLBODY-A | Choose a weight that lets every set finish with at least 3 repetitions in reserve (RIR 3 or more). Clean technique first. |
+| 1 | 2 | GYM-BEG-FULLBODY-B |  |
+| 1 | 3 | GYM-BEG-FULLBODY-A |  |
+| 2 | 1 | GYM-BEG-FULLBODY-B |  |
+| 2 | 2 | GYM-BEG-FULLBODY-A |  |
+| 2 | 3 | GYM-BEG-FULLBODY-B |  |
+| 3 | 1 | GYM-BEG-FULLBODY-A | You may move closer to 2–3 repetitions in reserve (RIR 2–3) while technique stays clean on every repetition. |
+| 3 | 2 | GYM-BEG-FULLBODY-B |  |
+| 3 | 3 | GYM-BEG-FULLBODY-A |  |
+| 4 | 1 | GYM-BEG-FULLBODY-B | Lighter (deload) week — a recommendation only: the same exercises, fewer sets and a lighter weight, nowhere near failure. It does not change the workout automatically. |
+| 4 | 2 | GYM-BEG-FULLBODY-A | Lighter (deload) week — a recommendation only: the same exercises, fewer sets and a lighter weight, nowhere near failure. It does not change the workout automatically. |
+| 4 | 3 | GYM-BEG-FULLBODY-B | Lighter (deload) week — a recommendation only: the same exercises, fewer sets and a lighter weight, nowhere near failure. It does not change the workout automatically. |
+
+**Owner decision:** ☐ approve  ☐ edit  ☐ reject
+
+## GYM-INTERMEDIATE-4W-01 — Intermediate Gym — 4 Weeks / חדר כושר בינוני — 4 שבועות
+
+- 4 weeks × 4 sessions = 16 planned workouts · Level: INTERMEDIATE · Consecutive training days allowed: **yes** · Review status: **PENDING_HUMAN_REVIEW**
+- Summary EN: Four weeks, four sessions a week: Upper A, Lower A, Upper B, Lower B. Upper and lower alternate, so consecutive days are allowed.
+- Summary HE: ארבעה שבועות, ארבעה אימונים בשבוע: עליון א׳, תחתון א׳, עליון ב׳, תחתון ב׳. עליון ותחתון מתחלפים, ולכן מותר לקבוע ימים רצופים.
+
+| Week | Slot | Workout template | Note (informational) |
+|---|---|---|---|
+| 1 | 1 | GYM-INT-UPPER-A | You may move closer to 2–3 repetitions in reserve (RIR 2–3) while technique stays clean on every repetition. |
+| 1 | 2 | GYM-INT-LOWER-A |  |
+| 1 | 3 | GYM-INT-UPPER-B |  |
+| 1 | 4 | GYM-INT-LOWER-B |  |
+| 2 | 1 | GYM-INT-UPPER-A |  |
+| 2 | 2 | GYM-INT-LOWER-A |  |
+| 2 | 3 | GYM-INT-UPPER-B |  |
+| 2 | 4 | GYM-INT-LOWER-B |  |
+| 3 | 1 | GYM-INT-UPPER-A | Working sets at about 1–3 repetitions in reserve (RIR 1–3); never finish a set at technical failure. |
+| 3 | 2 | GYM-INT-LOWER-A |  |
+| 3 | 3 | GYM-INT-UPPER-B |  |
+| 3 | 4 | GYM-INT-LOWER-B |  |
+| 4 | 1 | GYM-INT-UPPER-A | Lighter (deload) week — a recommendation only: the same exercises, fewer sets and a lighter weight, nowhere near failure. It does not change the workout automatically. |
+| 4 | 2 | GYM-INT-LOWER-A | Lighter (deload) week — a recommendation only: the same exercises, fewer sets and a lighter weight, nowhere near failure. It does not change the workout automatically. |
+| 4 | 3 | GYM-INT-UPPER-B | Lighter (deload) week — a recommendation only: the same exercises, fewer sets and a lighter weight, nowhere near failure. It does not change the workout automatically. |
+| 4 | 4 | GYM-INT-LOWER-B | Lighter (deload) week — a recommendation only: the same exercises, fewer sets and a lighter weight, nowhere near failure. It does not change the workout automatically. |
+
+**Owner decision:** ☐ approve  ☐ edit  ☐ reject
+
+## GYM-ADVANCED-4W-01 — Advanced Gym — 4 Weeks / חדר כושר מתקדם — 4 שבועות
+
+- 4 weeks × 3 sessions = 12 planned workouts · Level: ADVANCED · Consecutive training days allowed: **no** · Review status: **PENDING_HUMAN_REVIEW**
+- Summary EN: Four weeks, three sessions a week: Push, Pull, Legs. Written for experienced lifters or people training with a coach.
+- Summary HE: ארבעה שבועות, שלושה אימונים בשבוע: דחיפה, משיכה, רגליים. מיועד למנוסים או למתאמנים עם מאמן.
+
+| Week | Slot | Workout template | Note (informational) |
+|---|---|---|---|
+| 1 | 1 | GYM-ADV-PUSH | Working sets at about 1–3 repetitions in reserve (RIR 1–3); never finish a set at technical failure. |
+| 1 | 2 | GYM-ADV-PULL |  |
+| 1 | 3 | GYM-ADV-LEGS |  |
+| 2 | 1 | GYM-ADV-PUSH |  |
+| 2 | 2 | GYM-ADV-PULL |  |
+| 2 | 3 | GYM-ADV-LEGS |  |
+| 3 | 1 | GYM-ADV-PUSH |  |
+| 3 | 2 | GYM-ADV-PULL |  |
+| 3 | 3 | GYM-ADV-LEGS |  |
+| 4 | 1 | GYM-ADV-PUSH | Lighter (deload) week — a recommendation only: the same exercises, fewer sets and a lighter weight, nowhere near failure. It does not change the workout automatically. |
+| 4 | 2 | GYM-ADV-PULL | Lighter (deload) week — a recommendation only: the same exercises, fewer sets and a lighter weight, nowhere near failure. It does not change the workout automatically. |
+| 4 | 3 | GYM-ADV-LEGS | Lighter (deload) week — a recommendation only: the same exercises, fewer sets and a lighter weight, nowhere near failure. It does not change the workout automatically. |
+
+**Owner decision:** ☐ approve  ☐ edit  ☐ reject

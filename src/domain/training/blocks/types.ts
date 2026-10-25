@@ -43,6 +43,11 @@ export interface TrainingBlock {
   readonly difficulty: Difficulty;
   readonly weeks: number;
   readonly sessionsPerWeek: number;
+  /**
+   * WORKOUT-TEMPLATES-001: when true, the weekdays chosen for scheduling MAY be consecutive (an upper / lower split alternates regions). Absent or
+   * false = the original rule: there is always a rest day between sessions. Only an explicitly approved Program Block sets it.
+   */
+  readonly allowAdjacentTrainingDays?: boolean;
   readonly schedule: readonly BlockSession[];
   readonly progression: readonly Pair[];
   readonly recovery: Pair;

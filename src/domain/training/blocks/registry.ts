@@ -1,6 +1,7 @@
 import { GENERAL_SAFETY } from '../professional/athletic';
 import type { Pair, WorkoutAdjustment } from '../professional/types';
 
+import { PROGRAM_BLOCK_DRAFTS } from './programBlocks';
 import type { BlockDecision, BlockSession, TrainingBlock } from './types';
 
 /**
@@ -443,5 +444,6 @@ export const TRAINING_BLOCKS: readonly TrainingBlock[] = [
   },
 ];
 
-const BY_ID = new Map(TRAINING_BLOCKS.map((b) => [b.id, b]));
+// the gym Program Block drafts are looked up by id (tests, QA) but never listed: TRAINING_BLOCKS stays the PUBLISHED set
+const BY_ID = new Map([...TRAINING_BLOCKS, ...PROGRAM_BLOCK_DRAFTS].map((b) => [b.id, b]));
 export const trainingBlock = (id: string): TrainingBlock | null => BY_ID.get(id) ?? null;
