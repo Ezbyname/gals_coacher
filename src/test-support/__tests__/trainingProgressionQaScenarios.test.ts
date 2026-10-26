@@ -1,19 +1,17 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { createCustomExercise, getExercise, updateCustomExercise } from '@/data/local/exercises/exerciseRepository';
-import { listExercises } from '@/data/local/exercises/exerciseRepository';
+import { createCustomExercise, getExercise, listExercises, updateCustomExercise } from '@/data/local/exercises/exerciseRepository';
 import { migrations } from '@/data/local/migrations';
 import { runMigrations } from '@/data/local/migrations/runMigrations';
 import { createPlayer } from '@/data/local/players/playerRepository';
 import { findPreviousPerformance } from '@/data/local/training/previousPerformanceRepository';
 import { savePlannedWorkout, type SaveEntry } from '@/data/local/training/plannedWorkoutCompositionRepository';
-import { abandonSession, addSet, finishSession, recordSet, skipSet, startSession } from '@/data/local/training/trainingRepository';
+import { abandonSession, addSet, finishSession, recordSet, skipSet, snapshotOf, startSession } from '@/data/local/training/trainingRepository';
 import { professionalWorkout } from '@/domain/training/professional';
-import { repeatPlan, useActualPerformance, type BaselineResult } from '@/domain/training/previousPerformance';
+import { repeatPlan, useActualPerformance as baselineFromActuals, type BaselineResult } from '@/domain/training/previousPerformance';
 import type { Prescription, SetValues } from '@/domain/training/training';
 import { exerciseEntryOf, importTemplate, itemOf, prescriptionPatch, toSaveEntries, type DEntry } from '@/features/training/builderDraft';
-import { snapshotOf } from '@/data/local/training/trainingRepository';
 import type { ExerciseMeasurement } from '@/domain/exercise/exercise';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { openNodeSqlite } from '@/test-support/nodeSqlite';
@@ -187,7 +185,7 @@ run('training progression QA scenario export', () => {
     for (const s of scenarios) {
       const dto = await findPreviousPerformance(db, s.player, { exerciseId: s.exerciseId, measurementType: s.measurement.type });
       const repeat = dto ? repeatPlan(dto, s.measurement) : null;
-      const baseline = dto ? useActualPerformance(dto, s.measurement) : null;
+      const baseline = dto ? baselineFromActuals(dto, s.measurement) : null;
       results[s.id] = { dto, repeat, baseline };
       outputs[s.id] = results[s.id];
     }
