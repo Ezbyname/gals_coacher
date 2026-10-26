@@ -10,7 +10,7 @@ import { reuse, x, type Pair, type ProfessionalSport, type ProfessionalWorkout, 
 export * from './types';
 export * from './templateMeta';
 export { WORKOUT_TEMPLATE_DRAFTS, WORKOUT_TEMPLATES_001_IDS } from './templates';
-export { TEMPLATE_PROVENANCE } from './templateProvenance';
+export { TEMPLATE_PROVENANCE, TEMPLATE_REVIEW_LOG, type ReviewTransition } from './templateProvenance';
 
 /**
  * SPORT-CONTENT-001 — the professional starter workouts (Surfing and Football × Beginner / Intermediate / Advanced).

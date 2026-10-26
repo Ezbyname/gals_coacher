@@ -65,6 +65,30 @@ const BARBELL: TemplateDecision = {
 
 const common = [STRUCTURE, SELECTION, DOSAGE, WARMUP, COOLDOWN, PRINCIPLE] as const;
 
+/**
+ * The explicit, OWNER-APPROVED review transitions of the new templates (nothing is published without one). 2026-10-26: after the content
+ * review the owner approved four templates with revisions, which were made; each went PENDING_HUMAN_REVIEW -> HUMAN_REVIEWED -> PUBLISHED.
+ * Approval does not change the evidence classes: selection / order and sets / reps / rest stay ORIGINAL_RECOMMENDATION, the
+ * Warm-up / Main / Cool-down structure stays SYNTHESIZED, and nothing is SOURCE_SUPPORTED.
+ */
+export interface ReviewTransition {
+  readonly from: 'PENDING_HUMAN_REVIEW' | 'HUMAN_REVIEWED';
+  readonly to: 'HUMAN_REVIEWED' | 'PUBLISHED';
+  readonly approvedBy: 'OWNER';
+  readonly on: string;
+  readonly note: string;
+}
+const OWNER_APPROVED = (note: string): readonly ReviewTransition[] => [
+  { from: 'PENDING_HUMAN_REVIEW', to: 'HUMAN_REVIEWED', approvedBy: 'OWNER', on: '2026-10-26', note },
+  { from: 'HUMAN_REVIEWED', to: 'PUBLISHED', approvedBy: 'OWNER', on: '2026-10-26', note: 'Published after the approved revisions and the focused tests.' },
+];
+export const TEMPLATE_REVIEW_LOG: Readonly<Record<string, readonly ReviewTransition[]>> = {
+  'GYM-BEG-FULLBODY-A': OWNER_APPROVED('Approved with revisions: Romanian deadlift replaced by reverse lunge; warm-up squat 1 x 10, glute bridge removed from the warm-up, band pull-apart added.'),
+  'GYM-BEG-FULLBODY-B': OWNER_APPROVED('Approved with revision: glute bridge removed from the warm-up (kept in Main).'),
+  'CORE-FOUNDATION-01': OWNER_APPROVED('Approved with revision: warm-up glute bridge 1 x 10.'),
+  'MOBILITY-FULLBODY-01': OWNER_APPROVED('Approved with revisions: renamed Lower Body & Spine Mobility; jumping jacks removed from the warm-up.'),
+};
+
 export const TEMPLATE_PROVENANCE: Readonly<Record<string, readonly TemplateDecision[]>> = {
   'GYM-BEG-FULLBODY-A': common,
   'GYM-BEG-FULLBODY-B': common,

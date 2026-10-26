@@ -1,5 +1,5 @@
 import { PROFESSIONAL_WORKOUTS, GENERAL_ATHLETIC_WORKOUTS, PUBLISHED_WORKOUT_TEMPLATES, professionalWorkout } from '..';
-import { TEMPLATE_PROVENANCE } from '../templateProvenance';
+import { TEMPLATE_PROVENANCE, TEMPLATE_REVIEW_LOG } from '../templateProvenance';
 import { WORKOUT_TEMPLATE_DRAFTS, WORKOUT_TEMPLATES_001_IDS } from '../templates';
 import {
   SECTION_ROLE_NAMES,
@@ -46,11 +46,53 @@ describe('the 12 NEW built-in drafts', () => {
     expect(w.sections.map((s) => s.role)).toEqual(['WARM_UP', 'MAIN', 'COOL_DOWN']);
     expect(w.sections.map((s) => s.name[1])).toEqual(['Warm-up', 'Main workout', 'Cool-down']);
   });
-  it('every draft is PENDING_HUMAN_REVIEW: none is published, none is in the user-visible list', () => {
-    for (const w of WORKOUT_TEMPLATE_DRAFTS) expect([w.id, w.reviewStatus]).toEqual([w.id, 'PENDING_HUMAN_REVIEW']);
+  it('exactly the four owner-approved templates are PUBLISHED (with a recorded review transition); the other eight stay PENDING_HUMAN_REVIEW and unlisted', () => {
+    const approved = ['GYM-BEG-FULLBODY-A', 'GYM-BEG-FULLBODY-B', 'CORE-FOUNDATION-01', 'MOBILITY-FULLBODY-01'];
     const shown = new Set(PUBLISHED_WORKOUT_TEMPLATES.map((w) => w.id));
-    for (const id of WORKOUT_TEMPLATES_001_IDS) expect(shown.has(id)).toBe(false);
-    expect(PUBLISHED_WORKOUT_TEMPLATES).toHaveLength(30); // the grandfathered 17 sport + 13 general workouts, unchanged
+    for (const w of WORKOUT_TEMPLATE_DRAFTS) {
+      const isApproved = approved.includes(w.id);
+      expect([w.id, w.reviewStatus]).toEqual([w.id, isApproved ? 'PUBLISHED' : 'PENDING_HUMAN_REVIEW']);
+      expect([w.id, shown.has(w.id)]).toEqual([w.id, isApproved]);
+      // a publication needs an explicit owner-approved PENDING -> HUMAN_REVIEWED -> PUBLISHED record; a pending draft has none
+      expect([w.id, (TEMPLATE_REVIEW_LOG[w.id] ?? []).map((t) => [t.from, t.to, t.approvedBy])]).toEqual([
+        w.id,
+        isApproved ? [['PENDING_HUMAN_REVIEW', 'HUMAN_REVIEWED', 'OWNER'], ['HUMAN_REVIEWED', 'PUBLISHED', 'OWNER']] : [],
+      ]);
+    }
+    expect(Object.keys(TEMPLATE_REVIEW_LOG).sort()).toEqual([...approved].sort());
+    for (const id of ['RECOVERY-EASY-01', 'GYM-INT-UPPER-A', 'GYM-INT-UPPER-B', 'GYM-INT-LOWER-A', 'GYM-INT-LOWER-B', 'GYM-ADV-PUSH', 'GYM-ADV-PULL', 'GYM-ADV-LEGS']) expect(shown.has(id)).toBe(false);
+    expect(PUBLISHED_WORKOUT_TEMPLATES).toHaveLength(34); // the grandfathered 17 sport + 13 general workouts, plus the four approved templates
+  });
+  it('the four approved templates have exactly the approved final content', () => {
+    const ids = (id: string, role: 'WARM_UP' | 'MAIN' | 'COOL_DOWN') => professionalWorkout(id)!.sections.find((s) => s.role === role)!.items;
+    const dose = (id: string, role: 'WARM_UP' | 'MAIN' | 'COOL_DOWN', ex: string) => ids(id, role).find((i) => i.exerciseId === ex)?.dosage;
+    const names = (id: string, role: 'WARM_UP' | 'MAIN' | 'COOL_DOWN') => ids(id, role).map((i) => i.exerciseId);
+    // Full Body A: no Romanian deadlift (catalog: INTERMEDIATE); reverse lunge instead; upper-body prep; a light warm-up squat
+    expect(names('GYM-BEG-FULLBODY-A', 'WARM_UP')).toEqual(['JUMPING_JACKS', 'WORLDS_GREATEST_STRETCH', 'CAT_COW', 'BODYWEIGHT_SQUAT', 'BAND_PULL_APART']);
+    expect(names('GYM-BEG-FULLBODY-A', 'MAIN')).toEqual(['GOBLET_SQUAT', 'DUMBBELL_BENCH_PRESS', 'ONE_ARM_DUMBBELL_ROW', 'REVERSE_LUNGE', 'PLANK']);
+    expect(dose('GYM-BEG-FULLBODY-A', 'WARM_UP', 'BODYWEIGHT_SQUAT')).toMatchObject({ sets: 1, target: 10 });
+    expect(dose('GYM-BEG-FULLBODY-A', 'WARM_UP', 'BAND_PULL_APART')).toMatchObject({ sets: 1, target: 12 });
+    expect(JSON.stringify(professionalWorkout('GYM-BEG-FULLBODY-A'))).not.toContain('ROMANIAN_DEADLIFT');
+    expect(names('GYM-BEG-FULLBODY-A', 'COOL_DOWN')).toEqual(['HIP_FLEXOR_STRETCH', 'STANDING_HAMSTRING_STRETCH', 'CHILDS_POSE']);
+    // Full Body B: the glute bridge is in Main only (3 x 12)
+    expect(names('GYM-BEG-FULLBODY-B', 'WARM_UP')).toEqual(['JUMPING_JACKS', 'WORLDS_GREATEST_STRETCH', 'THORACIC_OPEN_BOOK', 'BAND_PULL_APART']);
+    expect(names('GYM-BEG-FULLBODY-B', 'MAIN')).toEqual(['LEG_PRESS', 'DUMBBELL_SHOULDER_PRESS', 'LAT_PULLDOWN', 'GLUTE_BRIDGE', 'DEAD_BUG']);
+    expect(dose('GYM-BEG-FULLBODY-B', 'MAIN', 'GLUTE_BRIDGE')).toMatchObject({ sets: 3, target: 12 });
+    expect(names('GYM-BEG-FULLBODY-B', 'WARM_UP')).not.toContain('GLUTE_BRIDGE');
+    // Core: only the warm-up glute bridge changes (1 x 10); Pallof press stays
+    expect(dose('CORE-FOUNDATION-01', 'WARM_UP', 'GLUTE_BRIDGE')).toMatchObject({ sets: 1, target: 10 });
+    expect(names('CORE-FOUNDATION-01', 'MAIN')).toEqual(['PLANK', 'DEAD_BUG', 'BIRD_DOG', 'SIDE_PLANK', 'PALLOF_PRESS']);
+    // Mobility: new HE / EN name, same stable id, no jumping jacks
+    const mob = professionalWorkout('MOBILITY-FULLBODY-01')!;
+    expect(mob.name).toEqual(['מוביליטי לפלג גוף תחתון ועמוד השדרה', 'Lower Body & Spine Mobility']);
+    expect(names('MOBILITY-FULLBODY-01', 'WARM_UP')).toEqual(['LEG_SWINGS', 'CAT_COW']);
+    expect(JSON.stringify(mob)).not.toContain('JUMPING_JACKS');
+    expect(names('MOBILITY-FULLBODY-01', 'MAIN')).toEqual(['WORLDS_GREATEST_STRETCH', 'HIP_90_90', 'THORACIC_OPEN_BOOK', 'ANKLE_KNEE_TO_WALL', 'HIP_FLEXOR_STRETCH']);
+  });
+  it('the category visibility after publication: Hypertrophy/Gym, Core and Mobility are visible; Recovery stays hidden', () => {
+    const visible = new Set(PUBLISHED_WORKOUT_TEMPLATES.map((w) => categoryOf(w)));
+    for (const c of ['STRENGTH', 'HYPERTROPHY_GYM', 'ATHLETICISM', 'EXPLOSIVE_POWER', 'SPEED', 'AGILITY_COD', 'CONDITIONING', 'CORE', 'MOBILITY', 'BASKETBALL', 'FOOTBALL', 'SURFING'] as const) expect([c, visible.has(c)]).toEqual([c, true]);
+    expect(visible.has('RECOVERY')).toBe(false);
   });
   it('the 30 PUBLISHED workouts are unchanged by this feature (grandfathered: no role added, no section appended)', () => {
     expect(PROFESSIONAL_WORKOUTS).toHaveLength(17);

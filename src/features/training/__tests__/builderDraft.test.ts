@@ -43,7 +43,7 @@ describe('importTemplate: a template becomes draft sections; nothing is written 
       ['GOBLET_SQUAT', '3', '10', '90', ''],
       ['DUMBBELL_BENCH_PRESS', '3', '10', '90', ''],
       ['ONE_ARM_DUMBBELL_ROW', '3', '10', '60', ''],
-      ['ROMANIAN_DEADLIFT', '3', '10', '90', ''],
+      ['REVERSE_LUNGE', '3', '10', '60', ''],
       ['PLANK', '3', '30', '45', ''],
     ]);
     expect(JSON.stringify(professionalWorkout('GYM-BEG-FULLBODY-A'))).toBe(before); // the source is only READ
@@ -64,7 +64,7 @@ describe('importTemplate: a template becomes draft sections; nothing is written 
     const main = save[1]!;
     if (main.kind !== 'SECTION') throw new Error('kind');
     expect(main.name).toBe('Main workout');
-    expect(main.items.map((i) => ('exerciseId' in i ? i.exerciseId : null))).toEqual(['GOBLET_SQUAT', 'DUMBBELL_BENCH_PRESS', 'ONE_ARM_DUMBBELL_ROW', 'ROMANIAN_DEADLIFT', 'PLANK']);
+    expect(main.items.map((i) => ('exerciseId' in i ? i.exerciseId : null))).toEqual(['GOBLET_SQUAT', 'DUMBBELL_BENCH_PRESS', 'ONE_ARM_DUMBBELL_ROW', 'REVERSE_LUNGE', 'PLANK']);
     expect(main.items[0]!.prescription).toEqual({ sets: 3, target: 10, loadKg: null, restSec: 90 });
   });
   it('an inactive or unknown exercise refuses the import and returns the draft unchanged', () => {
@@ -84,7 +84,7 @@ describe('importTemplate: a template becomes draft sections; nothing is written 
     const mergeable = importTemplate(first.slice(0, 1), professionalWorkout('GYM-BEG-FULLBODY-B')!, EXERCISES, 'en', nextKey);
     if (!mergeable.ok) throw new Error('import');
     expect(mergeable.entries.length).toBe(3); // the draft's last section was Warm-up and the template starts with Warm-up: merged
-    expect(mergeable.entries[0]!.items.length).toBe(10);
+    expect(mergeable.entries[0]!.items.length).toBe(9); // 5 + the 4 of B's warm-up
   });
 });
 

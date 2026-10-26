@@ -42,18 +42,19 @@ const UPPER_COOLDOWN = reuse('CHILDS_POSE', 'THORACIC_OPEN_BOOK', 'CAT_COW');
 export const WORKOUT_TEMPLATE_DRAFTS: readonly GeneralWorkout[] = [
   {
     ...BASE,
+    reviewStatus: 'PUBLISHED',
     id: 'GYM-BEG-FULLBODY-A',
     difficulty: 'BEGINNER',
     focus: 'GYM_FULL_BODY',
     name: ['גוף מלא א׳ — מתחילים', 'Full Body A — Beginner'],
     summary: [
-      'סקוואט, לחיצה, חתירה והינג׳ — תבנית בסיס לכל הגוף, עם עומס שבוחרים לפי היכולת.',
-      'Squat, press, row and hinge — a base full-body workout, with a load chosen by ability.',
+      'סקוואט, לחיצה, חתירה ולאנג׳ לאחור — תבנית בסיס לכל הגוף, עם עומס שבוחרים לפי היכולת.',
+      'Squat, press, row and reverse lunge — a base full-body workout, with a load chosen by ability.',
     ],
     minutes: [45, 60],
     sections: [
-      warmUp(...reuse('JUMPING_JACKS', 'WORLDS_GREATEST_STRETCH', 'CAT_COW', 'BODYWEIGHT_SQUAT', 'GLUTE_BRIDGE')),
-      main(x('GOBLET_SQUAT', 3, 10, 90), x('DUMBBELL_BENCH_PRESS', 3, 10, 90), x('ONE_ARM_DUMBBELL_ROW', 3, 10, 60), x('ROMANIAN_DEADLIFT', 3, 10, 90), x('PLANK', 3, 30, 45)),
+      warmUp(...reuse('JUMPING_JACKS', 'WORLDS_GREATEST_STRETCH', 'CAT_COW'), x('BODYWEIGHT_SQUAT', 1, 10, 0), x('BAND_PULL_APART', 1, 12, 0)),
+      main(x('GOBLET_SQUAT', 3, 10, 90), x('DUMBBELL_BENCH_PRESS', 3, 10, 90), x('ONE_ARM_DUMBBELL_ROW', 3, 10, 60), x('REVERSE_LUNGE', 3, 10, 60), x('PLANK', 3, 30, 45)),
       coolDown(...reuse('HIP_FLEXOR_STRETCH', 'STANDING_HAMSTRING_STRETCH', 'CHILDS_POSE')),
     ],
     coachNotes: [DOSAGE_NOTE],
@@ -62,6 +63,7 @@ export const WORKOUT_TEMPLATE_DRAFTS: readonly GeneralWorkout[] = [
   },
   {
     ...BASE,
+    reviewStatus: 'PUBLISHED',
     id: 'GYM-BEG-FULLBODY-B',
     difficulty: 'BEGINNER',
     focus: 'GYM_FULL_BODY',
@@ -72,7 +74,7 @@ export const WORKOUT_TEMPLATE_DRAFTS: readonly GeneralWorkout[] = [
     ],
     minutes: [45, 60],
     sections: [
-      warmUp(...reuse('JUMPING_JACKS', 'WORLDS_GREATEST_STRETCH', 'THORACIC_OPEN_BOOK', 'BAND_PULL_APART', 'GLUTE_BRIDGE')),
+      warmUp(...reuse('JUMPING_JACKS', 'WORLDS_GREATEST_STRETCH', 'THORACIC_OPEN_BOOK', 'BAND_PULL_APART')),
       main(x('LEG_PRESS', 3, 10, 90), x('DUMBBELL_SHOULDER_PRESS', 3, 10, 90), x('LAT_PULLDOWN', 3, 10, 90), x('GLUTE_BRIDGE', 3, 12, 45), x('DEAD_BUG', 3, 10, 30)),
       coolDown(...reuse('HIP_FLEXOR_STRETCH', 'THORACIC_OPEN_BOOK', 'CHILDS_POSE')),
     ],
@@ -227,6 +229,7 @@ export const WORKOUT_TEMPLATE_DRAFTS: readonly GeneralWorkout[] = [
   },
   {
     ...BASE,
+    reviewStatus: 'PUBLISHED',
     id: 'CORE-FOUNDATION-01',
     difficulty: 'BEGINNER',
     focus: 'CORE',
@@ -237,7 +240,7 @@ export const WORKOUT_TEMPLATE_DRAFTS: readonly GeneralWorkout[] = [
     ],
     minutes: [25, 35],
     sections: [
-      warmUp(...reuse('CAT_COW', 'WORLDS_GREATEST_STRETCH', 'GLUTE_BRIDGE')),
+      warmUp(...reuse('CAT_COW', 'WORLDS_GREATEST_STRETCH'), x('GLUTE_BRIDGE', 1, 10, 0)),
       main(x('PLANK', 3, 30, 45), x('DEAD_BUG', 3, 10, 30), x('BIRD_DOG', 3, 10, 30), x('SIDE_PLANK', 2, 25, 30), x('PALLOF_PRESS', 3, 10, 45)),
       coolDown(...reuse('CHILDS_POSE', 'CAT_COW', 'HIP_FLEXOR_STRETCH')),
     ],
@@ -247,17 +250,18 @@ export const WORKOUT_TEMPLATE_DRAFTS: readonly GeneralWorkout[] = [
   },
   {
     ...BASE,
+    reviewStatus: 'PUBLISHED',
     id: 'MOBILITY-FULLBODY-01',
     difficulty: 'BEGINNER',
     focus: 'MOBILITY',
-    name: ['מוביליטי — גוף מלא', 'Full-Body Mobility'],
+    name: ['מוביליטי לפלג גוף תחתון ועמוד השדרה', 'Lower Body & Spine Mobility'],
     summary: [
       'תנועתיות לירכיים, לגב החזי ולקרסוליים — בקצב רגוע.',
       'Mobility for the hips, the upper back and the ankles — at a calm pace.',
     ],
     minutes: [20, 30],
     sections: [
-      warmUp(...reuse('LEG_SWINGS', 'CAT_COW', 'JUMPING_JACKS')),
+      warmUp(...reuse('LEG_SWINGS', 'CAT_COW')),
       main(...reuse('WORLDS_GREATEST_STRETCH', 'HIP_90_90', 'THORACIC_OPEN_BOOK', 'ANKLE_KNEE_TO_WALL', 'HIP_FLEXOR_STRETCH')),
       coolDown(...reuse('CHILDS_POSE', 'STANDING_HAMSTRING_STRETCH', 'CALF_STRETCH')),
     ],

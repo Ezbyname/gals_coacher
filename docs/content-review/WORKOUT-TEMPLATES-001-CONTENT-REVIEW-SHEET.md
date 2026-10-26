@@ -1,6 +1,6 @@
 # CONTENT-REVIEW-SHEET — WORKOUT-TEMPLATES-001 (12 draft Workout Templates)
 
-Status: **DRAFT — nothing is published.** Every template is `PENDING_HUMAN_REVIEW`; the library lists only PUBLISHED workouts, so none of these is visible to users. Approve, edit or reject each one below.
+Status: **four templates were PUBLISHED on explicit owner approval (2026-10-26, after the content review and its revisions): Full Body A, Full Body B, Core Foundation and Lower Body & Spine Mobility. The other eight remain `PENDING_HUMAN_REVIEW`** and are not visible to users (the library lists only PUBLISHED workouts). Everything below marked pending applies only to those eight.
 
 Evidence: no external source was opened for this feature (the ACSM 2009 page could not be read), so **no decision is marked SOURCE_SUPPORTED**. Every dosage is `ORIGINAL_RECOMMENDATION`; the general principle is `UNVERIFIED` until a human re-opens the source. No medical or injury-prevention claim is made.
 
@@ -8,9 +8,13 @@ Upper Volume / Lower Volume are deliberately deferred.
 
 ## GYM-BEG-FULLBODY-A — Full Body A — Beginner / גוף מלא א׳ — מתחילים
 
-- Category: HYPERTROPHY_GYM · Level: BEGINNER · Audience: GENERAL · About 45–60 minutes · Review status: **PENDING_HUMAN_REVIEW**
-- Summary EN: Squat, press, row and hinge — a base full-body workout, with a load chosen by ability.
-- Summary HE: סקוואט, לחיצה, חתירה והינג׳ — תבנית בסיס לכל הגוף, עם עומס שבוחרים לפי היכולת.
+> Owner-approved review transition 2026-10-26: PENDING_HUMAN_REVIEW → HUMAN_REVIEWED — Approved with revisions: Romanian deadlift replaced by reverse lunge; warm-up squat 1 x 10, glute bridge removed from the warm-up, band pull-apart added.
+
+> Owner-approved review transition 2026-10-26: HUMAN_REVIEWED → PUBLISHED — Published after the approved revisions and the focused tests.
+
+- Category: HYPERTROPHY_GYM · Level: BEGINNER · Audience: GENERAL · About 45–60 minutes · Review status: **PUBLISHED**
+- Summary EN: Squat, press, row and reverse lunge — a base full-body workout, with a load chosen by ability.
+- Summary HE: סקוואט, לחיצה, חתירה ולאנג׳ לאחור — תבנית בסיס לכל הגוף, עם עומס שבוחרים לפי היכולת.
 
 ### WARM_UP — Warm-up / חימום
 
@@ -19,8 +23,8 @@ Upper Volume / Lower Volume are deliberately deferred.
 | JUMPING_JACKS | Jumping Jacks | ג׳אמפינג ג׳קס | 2 × 30s, rest 15s (catalog default) |
 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s (catalog default) |
 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0s (catalog default) |
-| BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 3 × 15 reps, rest 60s (catalog default) |
-| GLUTE_BRIDGE | Glute Bridge | גשר עכוז | 3 × 15 reps, rest 45s (catalog default) |
+| BODYWEIGHT_SQUAT | Bodyweight Squat | סקוואט במשקל גוף | 1 × 10 reps, rest 0s |
+| BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 1 × 12 reps, rest 0s |
 
 ### MAIN — Main workout / אימון מרכזי
 
@@ -29,7 +33,7 @@ Upper Volume / Lower Volume are deliberately deferred.
 | GOBLET_SQUAT | Goblet Squat | סקוואט גביע | 3 × 10 reps, rest 90s |
 | DUMBBELL_BENCH_PRESS | Dumbbell Bench Press | לחיצת חזה במשקולות | 3 × 10 reps, rest 90s |
 | ONE_ARM_DUMBBELL_ROW | One-Arm Dumbbell Row | חתירה ביד אחת עם משקולת | 3 × 10 reps, rest 60s |
-| ROMANIAN_DEADLIFT | Romanian Deadlift | דדליפט רומני | 3 × 10 reps, rest 90s |
+| REVERSE_LUNGE | Reverse Lunge | מכרע לאחור | 3 × 10 reps, rest 60s |
 | PLANK | Plank | פלאנק | 3 × 30s, rest 45s |
 
 ### COOL_DOWN — Cool-down / שחרור
@@ -53,7 +57,11 @@ Upper Volume / Lower Volume are deliberately deferred.
 
 ## GYM-BEG-FULLBODY-B — Full Body B — Beginner / גוף מלא ב׳ — מתחילים
 
-- Category: HYPERTROPHY_GYM · Level: BEGINNER · Audience: GENERAL · About 45–60 minutes · Review status: **PENDING_HUMAN_REVIEW**
+> Owner-approved review transition 2026-10-26: PENDING_HUMAN_REVIEW → HUMAN_REVIEWED — Approved with revision: glute bridge removed from the warm-up (kept in Main).
+
+> Owner-approved review transition 2026-10-26: HUMAN_REVIEWED → PUBLISHED — Published after the approved revisions and the focused tests.
+
+- Category: HYPERTROPHY_GYM · Level: BEGINNER · Audience: GENERAL · About 45–60 minutes · Review status: **PUBLISHED**
 - Summary EN: Leg press, shoulder press, lat pulldown and glute bridge — the partner of workout A.
 - Summary HE: לחיצת רגליים, לחיצת כתפיים, משיכה עליונה וגשר — השלמה לאימון א׳.
 
@@ -65,7 +73,6 @@ Upper Volume / Lower Volume are deliberately deferred.
 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s (catalog default) |
 | THORACIC_OPEN_BOOK | Thoracic Open Book | פתיחת ספר (גב עליון) | 1 × 8 reps, rest 0s (catalog default) |
 | BAND_PULL_APART | Band Pull-Apart | פתיחת גומייה לצדדים | 2 × 15 reps, rest 30s (catalog default) |
-| GLUTE_BRIDGE | Glute Bridge | גשר עכוז | 3 × 15 reps, rest 45s (catalog default) |
 
 ### MAIN — Main workout / אימון מרכזי
 
@@ -418,7 +425,11 @@ Upper Volume / Lower Volume are deliberately deferred.
 
 ## CORE-FOUNDATION-01 — Core Foundation / ליבה — בסיס
 
-- Category: CORE · Level: BEGINNER · Audience: GENERAL · About 25–35 minutes · Review status: **PENDING_HUMAN_REVIEW**
+> Owner-approved review transition 2026-10-26: PENDING_HUMAN_REVIEW → HUMAN_REVIEWED — Approved with revision: warm-up glute bridge 1 x 10.
+
+> Owner-approved review transition 2026-10-26: HUMAN_REVIEWED → PUBLISHED — Published after the approved revisions and the focused tests.
+
+- Category: CORE · Level: BEGINNER · Audience: GENERAL · About 25–35 minutes · Review status: **PUBLISHED**
 - Summary EN: Plank, dead bug, bird dog and stability work — a base for a stable trunk.
 - Summary HE: פלאנק, באג מת, ציפור־כלב ותרגילי יציבות — בסיס לליבה יציבה.
 
@@ -428,7 +439,7 @@ Upper Volume / Lower Volume are deliberately deferred.
 |---|---|---|---|
 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0s (catalog default) |
 | WORLDS_GREATEST_STRETCH | World’s Greatest Stretch | המתיחה הכי טובה בעולם | 1 × 5 reps, rest 0s (catalog default) |
-| GLUTE_BRIDGE | Glute Bridge | גשר עכוז | 3 × 15 reps, rest 45s (catalog default) |
+| GLUTE_BRIDGE | Glute Bridge | גשר עכוז | 1 × 10 reps, rest 0s |
 
 ### MAIN — Main workout / אימון מרכזי
 
@@ -458,9 +469,13 @@ Upper Volume / Lower Volume are deliberately deferred.
 
 **Owner decision:** ☐ approve  ☐ edit  ☐ reject
 
-## MOBILITY-FULLBODY-01 — Full-Body Mobility / מוביליטי — גוף מלא
+## MOBILITY-FULLBODY-01 — Lower Body & Spine Mobility / מוביליטי לפלג גוף תחתון ועמוד השדרה
 
-- Category: MOBILITY · Level: BEGINNER · Audience: GENERAL · About 20–30 minutes · Review status: **PENDING_HUMAN_REVIEW**
+> Owner-approved review transition 2026-10-26: PENDING_HUMAN_REVIEW → HUMAN_REVIEWED — Approved with revisions: renamed Lower Body & Spine Mobility; jumping jacks removed from the warm-up.
+
+> Owner-approved review transition 2026-10-26: HUMAN_REVIEWED → PUBLISHED — Published after the approved revisions and the focused tests.
+
+- Category: MOBILITY · Level: BEGINNER · Audience: GENERAL · About 20–30 minutes · Review status: **PUBLISHED**
 - Summary EN: Mobility for the hips, the upper back and the ankles — at a calm pace.
 - Summary HE: תנועתיות לירכיים, לגב החזי ולקרסוליים — בקצב רגוע.
 
@@ -470,7 +485,6 @@ Upper Volume / Lower Volume are deliberately deferred.
 |---|---|---|---|
 | LEG_SWINGS | Leg Swings | נדנודי רגל | 1 × 12 reps, rest 0s (catalog default) |
 | CAT_COW | Cat-Cow | חתול-פרה | 1 × 10 reps, rest 0s (catalog default) |
-| JUMPING_JACKS | Jumping Jacks | ג׳אמפינג ג׳קס | 2 × 30s, rest 15s (catalog default) |
 
 ### MAIN — Main workout / אימון מרכזי
 
