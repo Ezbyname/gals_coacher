@@ -628,6 +628,25 @@ export const en = {
       done: 'Done',
       seedUnavailable: 'The item you chose is no longer available, so the workout starts empty.',
     },
+    // TRAINING-PROGRESSION-001: Last performance (read-only history offered while building a NEW workout)
+    prev: {
+      lastPerformance: 'Last performance',
+      previousPlan: 'Previous plan',
+      actual: 'Actual',
+      when: '{date} · {name}',
+      toggleA11y: 'Last performance of {name}',
+      repeatPlan: 'Repeat last plan',
+      useBaseline: 'Use last performance as baseline',
+      repeatA11y: 'Repeat last plan for {name}',
+      baselineA11y: 'Use last performance as baseline for {name}',
+      applied: 'Applied to this exercise. You can still edit it.',
+      nonUniform: 'The previous plan used different prescriptions between sets.',
+      unsupported: 'This result is shown for reference only. It is not used as a new target.',
+      timed: 'A measured time is not used as a new goal or cap.',
+      notApplicable: 'The previous values do not fit this exercise as it is defined now.',
+      setLine: '{label}: {value}',
+      editedLine: '{value} (corrected from {measured})',
+    },
     // WORKOUT-TEMPLATES-001: built-in Workout Templates (the template library, preview, import) and Move to section.
     tpl: {
       addTemplate: 'Add workout template',

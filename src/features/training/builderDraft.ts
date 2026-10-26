@@ -48,6 +48,14 @@ export const itemOf = (snapshot: ExerciseSnapshot, p: Prescription): DItem => ({
   rest: text(p.restSec),
   timeSemantics: p.timeSemantics ?? null, // the stored meaning of the seconds value travels with the item (never re-derived)
 });
+/** The draft fields a Prescription writes into ONE exercise of the draft (TRAINING-PROGRESSION-001: Repeat last plan / Use last performance as baseline). */
+export const prescriptionPatch = (p: Prescription): Partial<DItem> => ({
+  sets: String(p.sets),
+  target: text(p.target),
+  load: text(p.loadKg),
+  rest: text(p.restSec),
+  timeSemantics: p.timeSemantics ?? null,
+});
 export function numberOf(value: string, time: boolean): number | null {
   if (value.trim() === '') return null;
   return parseEntry(value, time ? 'DURATION_S' : 'LOAD_KG') ?? NaN;

@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { listExercises } from '@/data/local/exercises/exerciseRepository';
@@ -18,16 +18,19 @@ import {
   savePlannedWorkout,
   type SavePlanErrors,
 } from '@/data/local/training/plannedWorkoutCompositionRepository';
+import { findPreviousPerformances, performanceKey } from '@/data/local/training/previousPerformanceRepository';
 import { getPlannedWorkout, type PlannedWorkout } from '@/data/local/training/trainingRepository';
 import { listBlocks, type WorkoutBlock } from '@/data/local/training/workoutRepository';
 import { filterExercises, NO_EXERCISE_FILTER, type Exercise } from '@/domain/exercise/exercise';
 import type { Taxonomy } from '@/domain/taxonomy/taxonomy';
 import { groupEntries } from '@/domain/training/composition';
+import type { PreviousExercisePerformance } from '@/domain/training/previousPerformance';
 import { planSectionName, PUBLISHED_WORKOUT_TEMPLATES, type ProfessionalWorkout, type StandardSectionRole } from '@/domain/training/professional';
 import { dropIndex, moveInList } from '@/domain/training/reorder';
 import {
   targetApplies,
   WORKOUT_NAME_MAX_LENGTH,
+  type Prescription,
   type PrescriptionErrors,
 } from '@/domain/training/training';
 import { useApp } from '@/features/AppProvider';
@@ -58,6 +61,7 @@ import {
   itemOf,
   moveItemToSection,
   moveTargets,
+  prescriptionPatch,
   prescriptionOf,
   removeItem,
   reorderedItems,
@@ -70,6 +74,7 @@ import {
   type Seed,
 } from './builderDraft';
 import { DragHandle } from './DragHandle';
+import { LastPerformance } from './LastPerformance';
 import { prescriptionText, targetLabelKey, trainingErrorMessage } from './trainingLabels';
 
 export type { Seed } from './builderDraft';
@@ -186,6 +191,8 @@ function Builder({
   const [mine, setMine] = useState<PersonalTemplate[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
   const [savedNote, setSavedNote] = useState(false);
+  // TRAINING-PROGRESSION-001: the Player's Last Performance per exercise (read-only; null = none). Keyed by exercise id + measurement type.
+  const [previous, setPrevious] = useState<Record<string, PreviousExercisePerformance | null>>({});
   const [moving, setMoving] = useState<{ key: string; index: number } | null>(null);
   const busy = useRef(false);
   const readOnly = plan !== null && plan.sessionId !== null;
@@ -289,6 +296,26 @@ function Builder({
     setMoving(null);
   };
 
+  const wanted = entries.flatMap((e) => e.items.map((i) => ({ exerciseId: i.snapshot.exerciseId, measurementType: i.snapshot.measurement.type })));
+  const wantedKey = wanted.map(performanceKey).join(',');
+  useEffect(() => {
+    if (readOnly || boot.status !== 'ready') return;
+    const missing = wanted.filter((q) => !(performanceKey(q) in previous));
+    if (missing.length === 0) return;
+    let live = true;
+    // route-scoped playerId (never ActivePlayerContext): another Player's performance cannot be looked up from here
+    findPreviousPerformances(boot.db, playerId, missing)
+      .then((found) => {
+        if (live) setPrevious((p) => ({ ...p, ...Object.fromEntries(found) }));
+      })
+      .catch((e: unknown) => console.warn('[training] previous performance lookup failed', e));
+    return () => {
+      live = false;
+    };
+    // `wanted` is derived from wantedKey
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantedKey, previous, readOnly, boot, playerId]);
+
   const save = async () => {
     if (busy.current || !canSave || boot.status !== 'ready') return;
     busy.current = true;
@@ -369,6 +396,8 @@ function Builder({
           onDrop={(dy) => moveTo(index, dropIndex(rows.current.slice(0, entries.length), index, dy))}
           onRemove={() => remove(entry.key)}
           onRemoveItem={(itemIndex) => removeOne(entry.key, itemIndex)}
+          previous={previous}
+          onApplyPrevious={(itemIndex, prescription) => change(entry.key, itemIndex, prescriptionPatch(prescription))}
           onMoveToSection={(itemIndex) => setMoving({ key: entry.key, index: itemIndex })}
         />
       ))}
@@ -471,6 +500,8 @@ function EntryCard(props: {
   onRemove: () => void;
   onRemoveItem: (itemIndex: number) => void;
   onMoveToSection: (itemIndex: number) => void;
+  previous: Record<string, PreviousExercisePerformance | null>;
+  onApplyPrevious: (itemIndex: number, prescription: Prescription) => void;
 }) {
   const { t, language } = useI18n();
   const { entry, index } = props;
@@ -482,6 +513,7 @@ function EntryCard(props: {
   const reorderable = !props.readOnly && entry.kind === 'SECTION' && entry.items.length > 1;
   // an entry can hand its items to another section only when their provenance allows it (never a copied Block's items)
   const movable = canMoveToSection(entry);
+  const previousOf = (item: DItem) => props.previous[performanceKey({ exerciseId: item.snapshot.exerciseId, measurementType: item.snapshot.measurement.type })] ?? null;
   const removable = canRemoveItem(entry) && entry.items.length > 1;
   return (
     <View
@@ -542,6 +574,15 @@ function EntryCard(props: {
             readOnly={props.readOnly}
             onChange={(patch) => props.onChange(n, patch)}
           />
+          {!props.readOnly && previousOf(item) !== null ? (
+            <LastPerformance
+              testID={`${id}-item-${n}-last`}
+              name={item.snapshot.name[language]}
+              performance={previousOf(item)!}
+              measurement={item.snapshot.measurement}
+              onApply={(prescription) => props.onApplyPrevious(n, prescription)}
+            />
+          ) : null}
           {!props.readOnly && (movable || removable) ? (
             <View style={styles.actions}>
               {movable ? (

@@ -629,6 +629,25 @@ export const he = {
       done: 'סיום',
       seedUnavailable: 'הפריט שבחרתם כבר לא זמין, ולכן האימון מתחיל ריק.',
     },
+    // TRAINING-PROGRESSION-001: ביצוע קודם (היסטוריה לקריאה בלבד בזמן בניית אימון חדש)
+    prev: {
+      lastPerformance: 'ביצוע קודם',
+      previousPlan: 'תכנון קודם',
+      actual: 'בפועל',
+      when: '{date} · {name}',
+      toggleA11y: 'ביצוע קודם של {name}',
+      repeatPlan: 'חזור על התכנון הקודם',
+      useBaseline: 'השתמש בביצוע הקודם כבסיס',
+      repeatA11y: 'חזרה על התכנון הקודם עבור {name}',
+      baselineA11y: 'שימוש בביצוע הקודם כבסיס עבור {name}',
+      applied: 'הוחל על התרגיל הזה. עדיין אפשר לערוך.',
+      nonUniform: 'בתכנון הקודם היו מרשמים שונים בין הסטים.',
+      unsupported: 'התוצאה מוצגת לעיון בלבד. היא לא משמשת כיעד חדש.',
+      timed: 'זמן שנמדד לא משמש כיעד או כתקרה חדשים.',
+      notApplicable: 'הערכים הקודמים לא מתאימים לתרגיל הזה כפי שהוא מוגדר עכשיו.',
+      setLine: '{label}: {value}',
+      editedLine: '{value} (תוקן מ־{measured})',
+    },
     // WORKOUT-TEMPLATES-001: תבניות אימון מובנות (ספריית התבניות, תצוגה מקדימה, הוספה) והעברה לחלק.
     tpl: {
       addTemplate: 'הוספת תבנית אימון',
