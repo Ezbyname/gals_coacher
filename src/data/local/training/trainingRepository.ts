@@ -682,6 +682,9 @@ export async function readPlan(db: PlayerDb, id: string): Promise<PlannedWorkout
   };
 }
 
+/** TRAINING-PROGRESSION-001: the same read, for callers that already hold the connection queue (read-only history lookups). */
+export { readSession as readSessionUnserialized };
+
 async function readSession(db: PlayerDb, id: string): Promise<TrainingSession> {
   const row = await db.getFirstAsync<{
     id: unknown;
