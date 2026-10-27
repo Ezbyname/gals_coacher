@@ -74,7 +74,6 @@ const type = (testID: string, value: string) => fireEvent.changeText(screen.getB
 const has = (testID: string) => screen.queryByTestId(testID) !== null;
 const text = (testID: string) => stripBidi(String(screen.getByTestId(testID).props.children));
 const value = (testID: string) => screen.getByTestId(testID).props.value as string;
-const planCount = async () => (await db!.getFirstAsync<{ n: number }>('SELECT count(*) AS n FROM planned_workouts'))!.n;
 const dump = async () => JSON.stringify(await Promise.all(['planned_workouts', 'planned_workout_items', 'training_sessions', 'session_exercises', 'session_sets', 'set_measurements'].map((t) => db!.getAllAsync(`SELECT * FROM ${t} ORDER BY rowid`))));
 const disabled = (testID: string) => screen.getByTestId(testID).props.accessibilityState?.disabled === true;
 
