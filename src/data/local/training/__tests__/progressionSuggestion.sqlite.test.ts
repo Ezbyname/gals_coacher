@@ -1,3 +1,4 @@
+import { BUILTIN_EXERCISES } from '@/domain/exercise/catalog';
 import { createSequentialIdService } from '@/services/ids/IdService';
 import { STALE_AFTER_DAYS, suggestProgression, type ProgressionSuggestion } from '@/domain/training/progressionSuggestion';
 import type { Prescription, SetValues } from '@/domain/training/training';
@@ -202,5 +203,40 @@ describe('progression history + suggestion on real SQLite (PSQ)', () => {
     for (const i of [2, 3, 4, 5]) expect(after[i]).toEqual(before[i]); // sessions, session exercises, sets, measurements
     expect(after[0]!.slice(0, before[0]!.length)).toEqual(before[0]); // the old plans, unchanged
     expect(after[0]!.length).toBe(before[0]!.length + 1);
+  });
+
+  it('PSQ-11: distance is part of the exercise identity: every fixed-distance TIME exercise has its own id, pinned, and the frozen session row carries the same distance', async () => {
+    const withDistance = BUILTIN_EXERCISES.filter((e) => e.measurement.distanceM !== null);
+    // Pinned: changing the distance of an id (instead of introducing a new id) would silently mix contexts in old history.
+    expect(Object.fromEntries(withDistance.map((e) => [e.id, e.measurement.distanceM]))).toEqual({ SPRINT_10M: 10, SPRINT_20M: 20, SPRINT_30M_FLYING: 30, ROW_500M: 500, SLED_PUSH: 20 });
+    expect(withDistance.every((e) => e.measurement.type === 'TIME')).toBe(true);
+    // The distance each TIME exercise is performed over is stored (frozen) with the session, and differs per exercise id.
+    await perform(p1, [ex('SPRINT_10M', rx(1, 8)), ex('SPRINT_20M', rx(1, 15))], [[{ TIME_S: 7.2 }], [{ TIME_S: 14.2 }]]);
+    const rows = await db.getAllAsync<{ exercise_id: string; distance_m: number }>('SELECT exercise_id, distance_m FROM session_exercises ORDER BY position');
+    expect(rows).toEqual([{ exercise_id: 'SPRINT_10M', distance_m: 10 }, { exercise_id: 'SPRINT_20M', distance_m: 20 }]);
+    // Custom exercises cannot declare a distance, so no user-made exercise can vary it under one id.
+    expect(await db.getFirstAsync('SELECT 1 FROM exercises WHERE builtin = 0 AND id IN (SELECT exercise_id FROM session_exercises WHERE distance_m IS NOT NULL)')).toBeNull();
+  });
+
+  it('PSQ-12: history over another distance (another exercise id) never enters the evidence window, and the suggestion uses only the exact id', async () => {
+    const run = (id: string, goal: number, time: number) => perform(p1, [ex(id, rx(1, goal))], [[{ TIME_S: time }]]);
+    const ten1 = await run('SPRINT_10M', 8, 7.2);
+    await run('SPRINT_20M', 15, 14.2);
+    await run('SPRINT_30M_FLYING', 20, 19.0);
+    const ten2 = await run('SPRINT_10M', 8, 7.2);
+    const twenty = await run('SPRINT_20M', 15, 14.4);
+    const ten = (await findRecentPerformances(db, p1, [q('SPRINT_10M', 'TIME')])).get('SPRINT_10M|TIME')!;
+    expect(ten.map((f) => f.sessionId)).toEqual([ten2.sessionId, ten1.sessionId]);
+    expect(ten.map((f) => f.sessionId)).not.toContain(twenty.sessionId);
+    const TIME10 = { ...TIME, distanceM: 10 };
+    expect(await suggest(p1, 'SPRINT_10M', TIME10)).toMatchObject({ status: 'SUGGESTION', currentValue: 8, suggestedValue: 7.2 }); // 14.4 of the 20 m runs would have given 14.4 / a miss
+    expect(await suggest(p1, 'SPRINT_20M', TIME)).toMatchObject({ status: 'SUGGESTION', currentValue: 15, suggestedValue: 14.4 });
+    // One workout per distance: mixing the two would make two occurrences; keeping them apart gives none.
+    await run('SPRINT_30M_FLYING', 20, 19.0);
+    const lone = await perform(p2, [ex('SPRINT_10M', rx(1, 8))], [[{ TIME_S: 7.2 }]]);
+    await perform(p2, [ex('SPRINT_20M', rx(1, 8))], [[{ TIME_S: 7.2 }]]);
+    const mixed = await suggest(p2, 'SPRINT_10M', TIME10);
+    expect(mixed).toMatchObject({ status: 'NO_SUGGESTION', reasonCode: 'INSUFFICIENT_EVIDENCE' });
+    expect(mixed.evidence.occurrences.map((e) => e.sessionId)).toEqual([lone.sessionId]);
   });
 });

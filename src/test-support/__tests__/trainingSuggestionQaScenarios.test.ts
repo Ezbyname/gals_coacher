@@ -222,6 +222,21 @@ run('training progression suggestion QA scenario export', () => {
     await scn('T_CAP', 'SPRINT_20M', [sprint(20, [10], 'COMPLETION_TIME_CAP'), sprint(20, [10], 'COMPLETION_TIME_CAP')], 'a COMPLETION_TIME_CAP is never a goal');
     await scn('T_LOAD', 'SLED_PUSH', [{ entries: [ent('SLED_PUSH', rx(2, 20, 50))], acts: [[{ TIME_S: 6.12, LOAD_KG: 50 }, { TIME_S: 7.5, LOAD_KG: 50 }]] }, { entries: [ent('SLED_PUSH', rx(2, 20, 50))], acts: [[{ TIME_S: 6, LOAD_KG: 50 }, { TIME_S: 7, LOAD_KG: 50 }]] }], 'TIME with a load (sled push)');
 
+    // ---------------------------------------------------------------- CONTEXT: another distance is another exercise id (PY-SUG-CONTEXT-01)
+    {
+      const at = (id: 'SPRINT_10M' | 'SPRINT_20M' | 'SPRINT_30M_FLYING', goal: number, time: number): Workout => ({ entries: [ent(id, rx(1, goal))], acts: [[tm(time)]] });
+      // ONE Player, interleaved TIME history over three distances; each exact id has two comparable workouts of its own
+      const ctxPlayer = await mkPlayer('P-CONTEXT');
+      await scn('CTX_10M', 'SPRINT_10M', [at('SPRINT_10M', 8, 7.2), at('SPRINT_20M', 15, 14.4), at('SPRINT_30M_FLYING', 20, 19), at('SPRINT_10M', 8, 7.2), at('SPRINT_20M', 15, 14.2)], 'one Player, 10 m / 20 m / 30 m runs interleaved: only the two 10 m workouts are evidence for SPRINT_10M', { player: ctxPlayer });
+      const exercise = (await getExercise(db, 'SPRINT_20M'))!;
+      const sessions = scenarios.find((x) => x.id === 'CTX_10M')!.sessions;
+      scenarios.push({ id: 'CTX_20M', player: ctxPlayer, queryPlayer: ctxPlayer, exerciseId: 'SPRINT_20M', measurement: exercise.measurement, nowMs: t + 2 * DAY, sessions, note: 'the same Player, asked for SPRINT_20M: only the two 20 m workouts are evidence' });
+      const thirty = (await getExercise(db, 'SPRINT_30M_FLYING'))!;
+      scenarios.push({ id: 'CTX_30M', player: ctxPlayer, queryPlayer: ctxPlayer, exerciseId: 'SPRINT_30M_FLYING', measurement: thirty.measurement, nowMs: t + 2 * DAY, sessions, note: 'the same Player, asked for SPRINT_30M_FLYING: ONE workout only (mixing distances would make it two)' });
+      // a second Player: one workout per distance; mixing them would look like two workouts of one exercise
+      await scn('CTX_LONE', 'SPRINT_10M', [at('SPRINT_10M', 8, 7.2), at('SPRINT_20M', 8, 7.2)], 'one 10 m and one 20 m workout (same goal and time): a single occurrence of SPRINT_10M');
+    }
+
     // ---------------------------------------------------------------- DURATION
     const hold = await custom('Hold test', 'DURATION', 'HIGHER_IS_BETTER');
     const drill = await custom('Timed drill test', 'DURATION', 'LOWER_IS_BETTER');

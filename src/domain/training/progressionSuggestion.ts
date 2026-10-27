@@ -17,6 +17,13 @@ import { adaptPrescription, type MeasurementKind, type Prescription } from './tr
  *
  * The step tables, ceilings, noise threshold and the 42-day limit are deterministic PRODUCT DEFAULTS for V1: they are not equipment increments,
  * not a scientific prescription and not a claim that the suggested value is "the right one". The user can always edit before Save.
+ *
+ * COMPARISON CONTEXT (what makes two occurrences comparable). The history lookup matches the exact `exercise_id` plus the equal
+ * `measurement_type`, and this function additionally requires the same set count, reps / time target, planned load and time meaning.
+ * DISTANCE is part of the exercise identity: a TIME exercise over a fixed distance is defined by `measurement.distanceM` in the built-in
+ * catalog (SPRINT_10M = 10, SPRINT_20M = 20, SPRINT_30M_FLYING = 30, ROW_500M = 500) and a different distance is a DIFFERENT `exercise_id`.
+ * Custom exercises cannot declare a distance (it is always null), so nothing user-made can vary it either. Exact `exercise_id` matching
+ * therefore enforces distance comparability, and no distance field is read here (a catalog test pins every id -> distance pair).
  */
 
 // ------------------------------------------------------------------------------------------------------------------ product defaults

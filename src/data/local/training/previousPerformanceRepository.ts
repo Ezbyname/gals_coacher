@@ -12,6 +12,8 @@ import { readSessionUnserialized } from './trainingRepository';
  *
  * The Player is ALWAYS an argument and always part of the query (the Builder passes its route-scoped player id): there is no path that omits it.
  * Matching is by `exercise_id` plus the compatible (equal) `measurement_type`; a name is never compared.
+ * A fixed distance (SPRINT_10M vs SPRINT_20M) is part of the exercise identity, so another distance is another `exercise_id` and can never enter
+ * the window (see the comparison-context note in progressionSuggestion.ts; guarded by PSQ-11 / PSQ-12).
  * SQLite does the cheap pre-filtering (Player, TRAINING purpose, COMPLETED / PARTIAL, an occurrence with a DONE planned set that holds a result),
  * newest first; the pure selector (`performanceFromSession`) then re-applies the full eligibility rules and decides among duplicate occurrences.
  * No new index is needed (measured on schema v23: well under 5 ms even for a Player with 1,500 sessions and an exercise never performed).
