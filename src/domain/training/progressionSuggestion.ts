@@ -19,7 +19,7 @@ import { adaptPrescription, type MeasurementKind, type Prescription } from './tr
  * not a scientific prescription and not a claim that the suggested value is "the right one". The user can always edit before Save.
  *
  * COMPARISON CONTEXT (what makes two occurrences comparable). The history lookup matches the exact `exercise_id` plus the equal
- * `measurement_type`, and this function additionally requires the same set count, reps / time target, planned load and time meaning.
+ * `measurement_type`, and this function additionally requires the same set count, reps / time target, planned load, planned rest and time meaning.
  * DISTANCE is part of the exercise identity: a TIME exercise over a fixed distance is defined by `measurement.distanceM` in the built-in
  * catalog (SPRINT_10M = 10, SPRINT_20M = 20, SPRINT_30M_FLYING = 30, ROW_500M = 500) and a different distance is a DIFFERENT `exercise_id`.
  * Custom exercises cannot declare a distance (it is always null), so nothing user-made can vary it either. Exact `exercise_id` matching
@@ -171,13 +171,14 @@ function occurrenceProblem(p: PreviousExercisePerformance, current: ExerciseMeas
   return null;
 }
 
-/** The same planned prescription across the window (sets, target, load; TIME also the time meaning). */
+/** The same planned prescription across the window (sets, target, load, REST; TIME also the time meaning). Only a two-workout window can differ. */
 function comparable(list: readonly PreviousExercisePerformance[], current: ExerciseMeasurement): boolean {
   const first = list[0]!.previousPlan;
   return list.every((p) => {
     const pl = p.previousPlan;
     return (
       pl.sets === first.sets &&
+      pl.restSec === first.restSec &&
       same(pl.target, first.target) &&
       same(pl.loadKg, first.loadKg) &&
       resolveTimeSemantics(current.type, pl.timeSemantics) === resolveTimeSemantics(current.type, first.timeSemantics)

@@ -30,8 +30,8 @@ const set = (n: number, status: SetStatus, values: V = {}, o: { planned?: boolea
 });
 let n = 0;
 /** One eligible occurrence of exercise X, `daysAgo` before NOW. */
-function occ(m: ExerciseMeasurement, sets: PerformanceSet[], daysAgo = 3, o: { semantics?: PerformanceExercise['timeSemantics']; status?: 'COMPLETED' | 'PARTIAL' } = {}): PreviousExercisePerformance {
-  const e: PerformanceExercise = { position: 0, exercise: { exerciseId: 'X', measurement: m }, restSec: 90, ...(o.semantics ? { timeSemantics: o.semantics } : {}), sets };
+function occ(m: ExerciseMeasurement, sets: PerformanceSet[], daysAgo = 3, o: { semantics?: PerformanceExercise['timeSemantics']; status?: 'COMPLETED' | 'PARTIAL'; rest?: number } = {}): PreviousExercisePerformance {
+  const e: PerformanceExercise = { position: 0, exercise: { exerciseId: 'X', measurement: m }, restSec: o.rest ?? 90, ...(o.semantics ? { timeSemantics: o.semantics } : {}), sets };
   const dto = performanceFromSession(
     { id: `s${String(n++).padStart(3, '0')}`, playerId: 'p1', plannedWorkoutId: 'plan', name: 'W', purpose: 'TRAINING', status: o.status ?? 'COMPLETED', startedAt: NOW - daysAgo * DAY, exercises: [e] },
     'X',
@@ -260,5 +260,28 @@ describe('unsupported types, staleness, determinism (PS-X)', () => {
     const s = run(REPS_LOAD, [benchOcc([11, 10, 10], 3), benchOcc([10, 10, 10], 10)]);
     expect(s.evidence.occurrences.map((e) => e.results)).toEqual([[11, 10, 10], [10, 10, 10]]);
     expect(s.evidence.occurrences[0]).toMatchObject({ plannedSets: 3, plannedTarget: 10, plannedLoadKg: 40, loadsKg: [40, 40, 40] });
+  });
+});
+
+describe('planned REST is part of the two-workout comparison (PS-REST)', () => {
+  const benchRest = (days: number, rest: number) => occ(REPS_LOAD, bench([10, 10, 10]), days, { rest });
+  const sprintRest = (days: number, rest: number) => occ(TIME, [set(1, 'DONE', { TIME_S: 7.2 }, { target: 8 })], days, { rest });
+  it('PS-REST-01: REP+LOAD, same sets / target / load but rest 60 s vs 120 s -> EVIDENCE_NOT_COMPARABLE, no 42.5 kg', () => {
+    expect(reason(run(REPS_LOAD, [benchRest(3, 120), benchRest(10, 60)]))).toBe('EVIDENCE_NOT_COMPARABLE');
+    expect(reason(run(REPS_LOAD, [benchRest(3, 60), benchRest(10, 120)]))).toBe('EVIDENCE_NOT_COMPARABLE');
+  });
+  it('PS-REST-02: REP+LOAD with the same rest (60 s and 60 s) still gives the N=2 suggestion', () => {
+    const s = run(REPS_LOAD, [benchRest(3, 60), benchRest(10, 60)]);
+    expect(s).toMatchObject({ status: 'SUGGESTION', changedField: 'load', suggestedValue: 42.5 });
+    if (s.status === 'SUGGESTION') expect(s.prescription.restSec).toBe(60);
+  });
+  it('PS-REST-03: TIME goal, same goal / context but rest 60 s vs 180 s -> EVIDENCE_NOT_COMPARABLE, not combined into a lower goal', () => {
+    expect(reason(run(TIME, [sprintRest(3, 60), sprintRest(10, 180)]))).toBe('EVIDENCE_NOT_COMPARABLE');
+  });
+  it('PS-REST-04: TIME goal with the same rest still gives the goal suggestion', () => {
+    expect(run(TIME, [sprintRest(3, 60), sprintRest(10, 60)])).toMatchObject({ status: 'SUGGESTION', changedField: 'target', currentValue: 8, suggestedValue: 7.2 });
+  });
+  it('PS-REST-05: N=1 rules compare no rest across occurrences: reps-without-load and DURATION are unchanged', () => {
+    expect(run(REPS, [occ(REPS, [set(1, 'DONE', { REPETITIONS: 10 })], 3, { rest: 30 }), occ(REPS, [set(1, 'DONE', { REPETITIONS: 10 })], 10, { rest: 120 })])).toMatchObject({ status: 'SUGGESTION', suggestedValue: 12, workouts: 1 });
   });
 });

@@ -237,6 +237,16 @@ run('training progression suggestion QA scenario export', () => {
       await scn('CTX_LONE', 'SPRINT_10M', [at('SPRINT_10M', 8, 7.2), at('SPRINT_20M', 8, 7.2)], 'one 10 m and one 20 m workout (same goal and time): a single occurrence of SPRINT_10M');
     }
 
+    // ---------------------------------------------------------------- CONTEXT: the planned REST must match across two workouts (PY-SUG-CONTEXT-02)
+    {
+      const benchRest = (rest: number): Workout => ({ entries: [ent(BENCH, rx(3, 10, 40, { restSec: rest }))], acts: [[rl(10, 40), rl(10, 40), rl(10, 40)]] });
+      const tenRest = (rest: number): Workout => ({ entries: [ent('SPRINT_10M', rx(1, 8, null, { restSec: rest }))], acts: [[tm(7.2)]] });
+      await scn('REST_RL_DIFF', BENCH, [benchRest(60), benchRest(120)], '3 x 10 @ 40 kg twice, all 10 / 10 / 10 at 40, but rest 60 s then 120 s');
+      await scn('REST_RL_SAME', BENCH, [benchRest(60), benchRest(60)], 'control: 3 x 10 @ 40 kg twice with the SAME rest (60 s)');
+      await scn('REST_T_DIFF', 'SPRINT_10M', [tenRest(60), tenRest(180)], 'goal 8.0 s met twice (7.2 s) but rest 60 s then 180 s');
+      await scn('REST_T_SAME', 'SPRINT_10M', [tenRest(60), tenRest(60)], 'control: goal 8.0 s met twice with the SAME rest (60 s)');
+    }
+
     // ---------------------------------------------------------------- DURATION
     const hold = await custom('Hold test', 'DURATION', 'HIGHER_IS_BETTER');
     const drill = await custom('Timed drill test', 'DURATION', 'LOWER_IS_BETTER');
