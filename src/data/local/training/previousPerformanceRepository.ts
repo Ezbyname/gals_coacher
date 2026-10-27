@@ -62,3 +62,48 @@ async function lookup(db: PlayerDb, playerId: string, q: PerformanceQuery): Prom
     if (rows.length < PAGE) return null;
   }
 }
+
+/**
+ * TRAINING-PROGRESSION-002 (S1) — the newest `count` (<= 2) eligible occurrences per exercise, newest first (one per session), for the
+ * deterministic progression suggestion. Same rules and same query as `findPreviousPerformances` (so the first element IS the Last Performance);
+ * READ-ONLY, Player-scoped, no new index. An exercise with no eligible history maps to an empty array.
+ */
+export const MAX_SUGGESTION_OCCURRENCES = 2;
+
+export function findRecentPerformances(
+  db: PlayerDb,
+  playerId: string,
+  queries: readonly PerformanceQuery[],
+  count: number = MAX_SUGGESTION_OCCURRENCES,
+): Promise<Map<string, PreviousExercisePerformance[]>> {
+  const limit = Math.max(1, Math.min(count, MAX_SUGGESTION_OCCURRENCES));
+  const distinct = [...new Map(queries.map((q) => [performanceKey(q), q])).values()];
+  return runSerialized(db, async () => {
+    const out = new Map<string, PreviousExercisePerformance[]>();
+    for (const q of distinct) out.set(performanceKey(q), await lookupMany(db, playerId, q, limit));
+    return out;
+  });
+}
+
+async function lookupMany(db: PlayerDb, playerId: string, q: PerformanceQuery, limit: number): Promise<PreviousExercisePerformance[]> {
+  const found: PreviousExercisePerformance[] = [];
+  for (let offset = 0; ; offset += PAGE) {
+    const rows = await db.getAllAsync<{ id: string }>(
+      `SELECT s.id FROM training_sessions s
+        WHERE s.player_id = ? AND s.purpose = 'TRAINING' AND s.status IN ('COMPLETED', 'PARTIAL')
+          AND EXISTS (
+            SELECT 1 FROM session_exercises e
+             WHERE e.session_id = s.id AND e.exercise_id = ? AND e.measurement_type = ?
+               AND EXISTS (SELECT 1 FROM session_sets t JOIN set_measurements m ON m.set_id = t.id
+                            WHERE t.session_exercise_id = e.id AND t.planned = 1 AND t.status = 'DONE'))
+        ORDER BY s.started_at DESC, s.id DESC LIMIT ? OFFSET ?`,
+      [playerId, q.exerciseId, q.measurementType, PAGE, offset],
+    );
+    for (const row of rows) {
+      const one = performanceFromSession(await readSessionUnserialized(db, row.id), q.exerciseId, q.measurementType);
+      if (one !== null) found.push(one);
+      if (found.length >= limit) return found;
+    }
+    if (rows.length < PAGE) return found;
+  }
+}
