@@ -18,7 +18,7 @@ import {
   savePlannedWorkout,
   type SavePlanErrors,
 } from '@/data/local/training/plannedWorkoutCompositionRepository';
-import { findPreviousPerformances, performanceKey } from '@/data/local/training/previousPerformanceRepository';
+import { findRecentPerformances, performanceKey } from '@/data/local/training/previousPerformanceRepository';
 import { getPlannedWorkout, type PlannedWorkout } from '@/data/local/training/trainingRepository';
 import { listBlocks, type WorkoutBlock } from '@/data/local/training/workoutRepository';
 import { filterExercises, NO_EXERCISE_FILTER, type Exercise } from '@/domain/exercise/exercise';
@@ -192,7 +192,9 @@ function Builder({
   const [saveOpen, setSaveOpen] = useState(false);
   const [savedNote, setSavedNote] = useState(false);
   // TRAINING-PROGRESSION-001: the Player's Last Performance per exercise (read-only; null = none). Keyed by exercise id + measurement type.
-  const [previous, setPrevious] = useState<Record<string, PreviousExercisePerformance | null>>({});
+  // TRAINING-PROGRESSION-002: the newest eligible occurrences (<= 2, newest first); the first one is the Last Performance, an empty list = none.
+  const [previous, setPrevious] = useState<Record<string, PreviousExercisePerformance[]>>({});
+  const [nowMs] = useState(() => services.clock.wallNow());
   const [moving, setMoving] = useState<{ key: string; index: number } | null>(null);
   const busy = useRef(false);
   const readOnly = plan !== null && plan.sessionId !== null;
@@ -304,7 +306,7 @@ function Builder({
     if (missing.length === 0) return;
     let live = true;
     // route-scoped playerId (never ActivePlayerContext): another Player's performance cannot be looked up from here
-    findPreviousPerformances(boot.db, playerId, missing)
+    findRecentPerformances(boot.db, playerId, missing)
       .then((found) => {
         if (live) setPrevious((p) => ({ ...p, ...Object.fromEntries(found) }));
       })
@@ -397,6 +399,7 @@ function Builder({
           onRemove={() => remove(entry.key)}
           onRemoveItem={(itemIndex) => removeOne(entry.key, itemIndex)}
           previous={previous}
+          nowMs={nowMs}
           onApplyPrevious={(itemIndex, prescription) => change(entry.key, itemIndex, prescriptionPatch(prescription))}
           onMoveToSection={(itemIndex) => setMoving({ key: entry.key, index: itemIndex })}
         />
@@ -500,7 +503,8 @@ function EntryCard(props: {
   onRemove: () => void;
   onRemoveItem: (itemIndex: number) => void;
   onMoveToSection: (itemIndex: number) => void;
-  previous: Record<string, PreviousExercisePerformance | null>;
+  previous: Record<string, PreviousExercisePerformance[]>;
+  nowMs: number;
   onApplyPrevious: (itemIndex: number, prescription: Prescription) => void;
 }) {
   const { t, language } = useI18n();
@@ -513,7 +517,8 @@ function EntryCard(props: {
   const reorderable = !props.readOnly && entry.kind === 'SECTION' && entry.items.length > 1;
   // an entry can hand its items to another section only when their provenance allows it (never a copied Block's items)
   const movable = canMoveToSection(entry);
-  const previousOf = (item: DItem) => props.previous[performanceKey({ exerciseId: item.snapshot.exerciseId, measurementType: item.snapshot.measurement.type })] ?? null;
+  const recentOf = (item: DItem): PreviousExercisePerformance[] => props.previous[performanceKey({ exerciseId: item.snapshot.exerciseId, measurementType: item.snapshot.measurement.type })] ?? [];
+  const previousOf = (item: DItem) => recentOf(item)[0] ?? null;
   const removable = canRemoveItem(entry) && entry.items.length > 1;
   return (
     <View
@@ -579,6 +584,8 @@ function EntryCard(props: {
               testID={`${id}-item-${n}-last`}
               name={item.snapshot.name[language]}
               performance={previousOf(item)!}
+              recent={recentOf(item)}
+              nowMs={props.nowMs}
               measurement={item.snapshot.measurement}
               onApply={(prescription) => props.onApplyPrevious(n, prescription)}
             />
